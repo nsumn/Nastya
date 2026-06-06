@@ -76,7 +76,7 @@ def card_message(t: Tariff, card_details: str) -> str:
         "После оплаты нажми кнопку «✅ Оплатить и отправить чек» и пришли "
         "сюда фото/скриншот чека.\n"
         "Администратор проверит платёж вручную и пришлёт тебе ссылку на "
-        "канал прямо в этот чат."
+        "канал прямо в этот чат в течение 5 минут."
     )
 
 
@@ -88,12 +88,16 @@ def sbp_in_development() -> str:
     )
 
 
-def stars_message(t: Tariff) -> str:
-    return (
+def stars_offer(t: Tariff, buy_stars_link: str) -> str:
+    text = (
         "⭐ Оплата Telegram Stars\n\n"
         f"Тариф: {t.title}\n\n"
-        "Перейди по кнопке ниже, чтобы оформить доступ через Telegram Stars."
+        "После оплаты вы автоматически попадаете в канал.\n\n"
     )
+    if buy_stars_link:
+        text += (f'Купить выгодно звёзды вы можете '
+                 f'<a href="{buy_stars_link}">здесь</a>.')
+    return text
 
 
 def stars_unavailable() -> str:

@@ -29,7 +29,7 @@ async def choose_method(call: CallbackQuery, config: Config) -> None:
         await call.answer("Тариф не найден", show_alert=True)
         return
     await call.message.edit_text(texts.choose_method(tariff),
-                                 reply_markup=kb.methods_kb(tariff))
+                                 reply_markup=kb.methods_kb(tariff, config))
     await call.answer()
 
 
@@ -42,10 +42,14 @@ async def pay_sbp(call: CallbackQuery, config: Config,
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
+    if not config.methods_enabled.get("sbp", True):
+        await call.answer("Этот способ оплаты сейчас недоступен", show_alert=True)
+        return
 
-    # Platega ещё не подключена — показываем «в разработке».
+    # Platega ещё не подключена — показываем «в разработке» в том же сообщении.
     if not (config.platega_merchant_id and config.platega_secret):
-        await call.message.answer(texts.sbp_in_development())
+        await call.message.edit_text(texts.sbp_in_development(),
+                                     reply_markup=kb.back_to_methods_kb(tariff))
         await call.answer()
         return
 
@@ -115,6 +119,9 @@ async def pay_card(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
+    if not config.methods_enabled.get("card", True):
+        await call.answer("Этот способ оплаты сейчас недоступен", show_alert=True)
+        return
     await call.message.edit_text(
         texts.card_message(tariff, config.card_details),
         reply_markup=kb.card_kb(tariff),
@@ -129,6 +136,9 @@ async def request_receipt(call: CallbackQuery, config: Config) -> None:
         await call.answer("Тариф не найден", show_alert=True)
         return
     awaiting_receipt.add(call.from_user.id)
+    await db.add_payment(call.from_user.id, call.from_user.username,
+                         call.from_user.full_name, "💳 карта",
+                         tariff.price, tariff.currency)
     await call.message.answer(texts.receipt_prompt())
     await call.answer()
 
@@ -154,6 +164,9 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
+    if not config.methods_enabled.get("stars", True):
+        await call.answer("Этот способ оплаты сейчас недоступен", show_alert=True)
+        return
     # Тестовая цена для своего аккаунта, обычная — для всех остальных.
     price = tariff.stars_price
     if config.test_user_id and call.from_user.id == config.test_user_id:
@@ -162,6 +175,9 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
         await call.message.answer(texts.stars_unavailable())
         await call.answer()
         return
+    await call.message.edit_text(
+        texts.stars_offer(tariff, config.buy_stars_link),
+        reply_markup=kb.back_to_methods_kb(tariff))
     await call.answer()
     # Нативный счёт Telegram Stars: валюта XTR, provider_token пустой.
     await call.bot.send_invoice(
@@ -193,6 +209,10 @@ async def on_successful_payment(message: Message, config: Config) -> None:
     else:
         link = ""
     await message.answer(texts.stars_delivered(link))
+
+    u = message.from_user
+    await db.add_payment(u.id, u.username, u.full_name, "⭐ звёзды",
+                         sp.total_amount, "XTR")
 
     if config.admin_chat_id:
         u = message.from_user

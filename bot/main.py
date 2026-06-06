@@ -10,9 +10,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 
 from . import database as db
-from . import services
+from . import services, settings_store
 from .config import load_config
-from .handlers import payment, relay, start
+from .handlers import admin, payment, relay, start
 from .platega import PlategaClient
 from .webhook import build_app
 
@@ -36,6 +36,7 @@ async def main() -> None:
         raise RuntimeError("BOT_TOKEN не задан. Заполни .env (см. .env.example).")
 
     await db.init_db(config.db_path)
+    await settings_store.load_overrides(config)  # цены/способы из БД
 
     bot = Bot(config.bot_token,
               default=DefaultBotProperties(parse_mode="HTML",
@@ -47,9 +48,10 @@ async def main() -> None:
     )
 
     dp = Dispatcher()
+    dp.include_router(admin.router)    # админ-команды и FSM — раньше relay
     dp.include_router(start.router)
     dp.include_router(payment.router)
-    dp.include_router(relay.router)  # подключаем последним
+    dp.include_router(relay.router)    # подключаем последним
 
     # веб-сервер для вебхуков Platega
     app = build_app(bot, config, platega)

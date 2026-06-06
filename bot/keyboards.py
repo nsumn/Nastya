@@ -50,12 +50,25 @@ def tariff_kb(t: Tariff) -> InlineKeyboardMarkup:
     return b.as_markup()
 
 
-def methods_kb(t: Tariff) -> InlineKeyboardMarkup:
+def methods_kb(t: Tariff, config: Config) -> InlineKeyboardMarkup:
+    m = config.methods_enabled
     b = InlineKeyboardBuilder()
-    b.row(InlineKeyboardButton(text="📲 Оплатить по СБП", callback_data=f"sbp:{t.id}"))
-    b.row(InlineKeyboardButton(text="💳 Карта РФ", callback_data=f"card:{t.id}"))
-    b.row(InlineKeyboardButton(text="⭐ Telegram Stars", callback_data=f"stars:{t.id}"))
+    if m.get("sbp", True):
+        b.row(InlineKeyboardButton(text="📲 Оплатить по СБП",
+                                   callback_data=f"sbp:{t.id}"))
+    if m.get("card", True):
+        b.row(InlineKeyboardButton(text="💳 Карта РФ",
+                                   callback_data=f"card:{t.id}"))
+    if m.get("stars", True):
+        b.row(InlineKeyboardButton(text="⭐ Telegram Stars",
+                                   callback_data=f"stars:{t.id}"))
     b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"tariff:{t.id}"))
+    return b.as_markup()
+
+
+def back_to_methods_kb(t: Tariff) -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"pay:{t.id}"))
     return b.as_markup()
 
 
@@ -81,4 +94,40 @@ def stars_kb(t: Tariff) -> InlineKeyboardMarkup:
     if t.stars_link:
         b.row(InlineKeyboardButton(text="⭐ Перейти к оплате", url=t.stars_link))
     b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"pay:{t.id}"))
+    return b.as_markup()
+
+
+# ---------- админ-панель ----------
+
+def admin_menu_kb() -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="💰 Изменить цену (RUB)",
+                               callback_data="adm:price"))
+    b.row(InlineKeyboardButton(text="⭐ Изменить цену (звёзды)",
+                               callback_data="adm:starsprice"))
+    b.row(InlineKeyboardButton(text="🔧 Способы оплаты",
+                               callback_data="adm:methods"))
+    b.row(InlineKeyboardButton(text="📋 Кто оплатил",
+                               callback_data="adm:payers"))
+    return b.as_markup()
+
+
+def admin_methods_kb(config: Config) -> InlineKeyboardMarkup:
+    m = config.methods_enabled
+    def mark(name: str) -> str:
+        return "✅ вкл" if m.get(name, True) else "❌ выкл"
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text=f"💳 Карта РФ — {mark('card')}",
+                               callback_data="adm:toggle:card"))
+    b.row(InlineKeyboardButton(text=f"📲 СБП — {mark('sbp')}",
+                               callback_data="adm:toggle:sbp"))
+    b.row(InlineKeyboardButton(text=f"⭐ Звёзды — {mark('stars')}",
+                               callback_data="adm:toggle:stars"))
+    b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data="adm:menu"))
+    return b.as_markup()
+
+
+def admin_back_kb() -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="⬅️ В меню", callback_data="adm:menu"))
     return b.as_markup()

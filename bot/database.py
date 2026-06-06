@@ -43,7 +43,85 @@ async def init_db(path: str) -> None:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+            """
+        )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS payments (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER NOT NULL,
+                username   TEXT,
+                full_name  TEXT,
+                method     TEXT NOT NULL,
+                amount     REAL NOT NULL,
+                currency   TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now', '+3 hours'))
+            )
+            """
+        )
         await db.commit()
+
+
+# ---------- settings (key-value) ----------
+
+async def get_setting(key: str) -> Optional[str]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            "SELECT value FROM settings WHERE key = ?", (key,)
+        ) as cur:
+            row = await cur.fetchone()
+            return row[0] if row else None
+
+
+async def set_setting(key: str, value: str) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            (key, str(value)),
+        )
+        await db.commit()
+
+
+async def all_settings() -> dict:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute("SELECT key, value FROM settings") as cur:
+            return {k: v for k, v in await cur.fetchall()}
+
+
+# ---------- payments (журнал оплат) ----------
+
+async def add_payment(user_id: int, username: Optional[str],
+                      full_name: Optional[str], method: str,
+                      amount: float, currency: str) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO payments (user_id, username, full_name, method, "
+            "amount, currency) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, username, full_name, method, amount, currency),
+        )
+        await db.commit()
+
+
+async def list_payments(limit: int = 30) -> list[dict]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM payments ORDER BY id DESC LIMIT ?", (limit,)
+        ) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def count_payments() -> int:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute("SELECT COUNT(*) FROM payments") as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 0
 
 
 # ---------- orders ----------

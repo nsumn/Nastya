@@ -59,6 +59,9 @@ async def deliver_purchase(bot: Bot, config: Config, tx_id: str) -> None:
     except Exception as e:  # noqa: BLE001
         log.exception("Failed to deliver link to user %s: %s", order["user_id"], e)
 
+    await db.add_payment(order["user_id"], None, None, "📲 СБП",
+                         order["amount"], tariff.currency)
+
     if config.admin_chat_id:
         try:
             await bot.send_message(

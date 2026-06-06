@@ -55,10 +55,14 @@ class Config:
     support_username: str
     privacy_url: str
     terms_url: str
+    buy_stars_link: str
     test_user_id: int = 0       # для этого id особая цена в звёздах (тест)
     test_stars_price: int = 1   # тестовая цена в звёздах
 
     tariffs: dict[str, Tariff] = field(default_factory=dict)
+    # Включённые способы оплаты (меняются админом на лету).
+    methods_enabled: dict = field(
+        default_factory=lambda: {"card": True, "sbp": True, "stars": True})
 
     @property
     def callback_path(self) -> str:
@@ -129,6 +133,8 @@ def load_config() -> Config:
         terms_url=_get(
             "TERMS_URL",
             "https://telegra.ph/Polzovatelskoe-soglashenie-04-01-19"),
+        buy_stars_link=_get("BUY_STARS_LINK",
+                            "https://buyns.t.me/?start=ref-9ahrunie2par"),
         test_user_id=int(_get("TEST_USER_ID", "0") or "0"),
         test_stars_price=int(_get("TEST_STARS_PRICE", "1") or "1"),
         tariffs=tariffs,
