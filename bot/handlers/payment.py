@@ -139,7 +139,11 @@ async def request_receipt(call: CallbackQuery, config: Config) -> None:
     await db.add_payment(call.from_user.id, call.from_user.username,
                          call.from_user.full_name, "💳 карта",
                          tariff.price, tariff.currency)
-    await call.message.answer(texts.receipt_prompt())
+    if config.methods_enabled.get("card", True):
+        await call.message.answer(texts.receipt_prompt())
+    else:
+        # карту выключили, пока человек был в процессе — чек всё равно примем
+        await call.message.answer(texts.receipt_prompt_offline())
     await call.answer()
 
     if config.admin_chat_id:
