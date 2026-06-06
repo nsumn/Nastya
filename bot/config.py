@@ -27,7 +27,8 @@ class Tariff:
     duration: str        # «Срок действия: ...»
     description: str
     channel_link: str    # ссылка, которую бот выдаёт после оплаты по СБП
-    stars_link: str      # ссылка для оплаты Telegram Stars
+    stars_link: str      # канал, который выдаётся после оплаты Telegram Stars
+    stars_price: int = 0  # цена в звёздах (⭐). 0 = оплата звёздами выключена
 
 
 @dataclass
@@ -93,6 +94,7 @@ def load_config() -> Config:
         ),
         channel_link=channel_link,
         stars_link=stars_link,
+        stars_price=int(_get("STARS_PRICE", "0") or "0"),
     )
 
     tariffs = {vip_oge.id: vip_oge}

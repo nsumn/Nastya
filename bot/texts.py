@@ -96,6 +96,21 @@ def stars_message(t: Tariff) -> str:
     )
 
 
+def stars_unavailable() -> str:
+    return (
+        "⭐ Оплата звёздами скоро будет доступна.\n"
+        "Пока выбери другой способ оплаты."
+    )
+
+
+def stars_delivered(link: str) -> str:
+    link = link or "ссылку пришлёт администратор"
+    return (
+        "✅ Оплата звёздами получена! Спасибо 🎉\n\n"
+        f"Твоя ссылка на канал:\n{link}"
+    )
+
+
 def receipt_prompt() -> str:
     return (
         "🧾 Жду твой чек.\n\n"

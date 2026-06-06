@@ -5,7 +5,8 @@ import asyncio
 import logging
 
 from aiogram import F, Router
-from aiogram.types import CallbackQuery
+from aiogram.types import (CallbackQuery, LabeledPrice, Message,
+                           PreCheckoutQuery)
 
 from .. import database as db
 from .. import keyboards as kb
@@ -153,6 +154,48 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
-    await call.message.edit_text(texts.stars_message(tariff),
-                                 reply_markup=kb.stars_kb(tariff))
+    if not tariff.stars_price:
+        await call.message.answer(texts.stars_unavailable())
+        await call.answer()
+        return
     await call.answer()
+    # Нативный счёт Telegram Stars: валюта XTR, provider_token пустой.
+    await call.bot.send_invoice(
+        chat_id=call.from_user.id,
+        title=tariff.title,
+        description=f"Доступ: {tariff.title}",
+        payload=f"stars:{tariff.id}",
+        provider_token="",
+        currency="XTR",
+        prices=[LabeledPrice(label=tariff.title, amount=tariff.stars_price)],
+    )
+
+
+@router.pre_checkout_query()
+async def pre_checkout(query: PreCheckoutQuery) -> None:
+    # Подтверждаем готовность принять платёж (обязательный шаг).
+    await query.answer(ok=True)
+
+
+@router.message(F.successful_payment)
+async def on_successful_payment(message: Message, config: Config) -> None:
+    sp = message.successful_payment
+    tariff_id = sp.invoice_payload.split(":", 1)[-1]
+    tariff = config.tariffs.get(tariff_id)
+    link = tariff.stars_link if tariff else ""
+
+    await message.answer(texts.stars_delivered(link))
+
+    if config.admin_chat_id:
+        u = message.from_user
+        uname = f"@{u.username}" if u.username else "—"
+        title = tariff.title if tariff else tariff_id
+        await message.bot.send_message(
+            config.admin_chat_id,
+            f"⭐ ОПЛАТА ЗВЁЗДАМИ ПОДТВЕРЖДЕНА\n"
+            f"Тариф: {title}\n"
+            f"Сумма: {sp.total_amount} ⭐\n"
+            f"От: <a href=\"tg://user?id={u.id}\">{u.full_name}</a>\n"
+            f"Юзернейм: {uname}\n"
+            f"ID: <code>{u.id}</code>",
+        )
