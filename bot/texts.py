@@ -61,6 +61,14 @@ def card_message(t: Tariff, card_details: str) -> str:
     )
 
 
+def sbp_in_development() -> str:
+    return (
+        "🛠 Оплата по СБП временно в разработке.\n\n"
+        "Подключаем платёжную систему — скоро заработает автоматически.\n"
+        "Пока выбери другой способ оплаты: 💳 Карта РФ или ⭐ Telegram Stars."
+    )
+
+
 def stars_message(t: Tariff) -> str:
     return (
         "⭐ Оплата Telegram Stars\n\n"

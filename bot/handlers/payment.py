@@ -42,6 +42,12 @@ async def pay_sbp(call: CallbackQuery, config: Config,
         await call.answer("Тариф не найден", show_alert=True)
         return
 
+    # Platega ещё не подключена — показываем «в разработке».
+    if not (config.platega_merchant_id and config.platega_secret):
+        await call.message.answer(texts.sbp_in_development())
+        await call.answer()
+        return
+
     await call.answer("Создаю счёт…")
     try:
         tx = await platega.create_transaction(
