@@ -75,8 +75,8 @@ nano .env
 которые уже заполнены в чате):
 
 ```env
-BOT_TOKEN=сюда_токен_бота
-ADMIN_CHAT_ID=5563353676
+BOT_TOKEN=сюда_токен_бота_от_BotFather
+ADMIN_CHAT_ID=твой_chat_id
 PLATEGA_MERCHANT_ID=
 PLATEGA_SECRET=
 PLATEGA_BASE_URL=https://app.platega.io
@@ -85,13 +85,16 @@ PUBLIC_BASE_URL=
 RETURN_URL=https://t.me
 FAILED_URL=https://t.me
 PORT=8080
-CHANNEL_LINK=https://t.me/+HrUsCz-dFCxlMmQy
-STARS_LINK=https://t.me/+cUE6fU-p8881Mjdi
+CHANNEL_LINK=https://t.me/+xxxxxxxxxxxx
+STARS_LINK=https://t.me/+xxxxxxxxxxxx
 REVIEWS_LINK=
 ADMIN_LINK=
-CARD_DETAILS=Номер карты: 2204 3113 2037 8061\nБанк: Яндекс Банк
+CARD_DETAILS=Номер карты: 0000 0000 0000 0000\nБанк: Ваш банк
 DB_PATH=bot.db
 ```
+
+> Реальные значения (токен, chat_id, ссылки на каналы, номер карты) подставляй
+> прямо на сервере — они НЕ должны попадать в репозиторий.
 
 Сохрани: **Ctrl+O** → Enter, выйди: **Ctrl+X**.
 
