@@ -182,8 +182,12 @@ async def on_successful_payment(message: Message, config: Config) -> None:
     sp = message.successful_payment
     tariff_id = sp.invoice_payload.split(":", 1)[-1]
     tariff = config.tariffs.get(tariff_id)
-    link = tariff.stars_link if tariff else ""
 
+    if tariff:
+        link = await services.make_invite(
+            message.bot, tariff.stars_channel_id, tariff.stars_link)
+    else:
+        link = ""
     await message.answer(texts.stars_delivered(link))
 
     if config.admin_chat_id:

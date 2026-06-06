@@ -18,6 +18,22 @@ POLL_INTERVAL = 8        # секунд между опросами статус
 POLL_TIMEOUT = 30 * 60   # как долго опрашиваем (30 минут)
 
 
+async def make_invite(bot: Bot, chat_id: int, fallback_link: str) -> str:
+    """Создаёт одноразовую (на 1 человека) ссылку-приглашение в канал.
+
+    Если chat_id не задан или бот не админ канала — возвращает запасную
+    статичную ссылку.
+    """
+    if not chat_id:
+        return fallback_link or "ссылку пришлёт администратор"
+    try:
+        invite = await bot.create_chat_invite_link(chat_id, member_limit=1)
+        return invite.invite_link
+    except Exception as e:  # noqa: BLE001
+        log.warning("create_chat_invite_link failed for %s: %s", chat_id, e)
+        return fallback_link or "ссылку пришлёт администратор"
+
+
 async def deliver_purchase(bot: Bot, config: Config, tx_id: str) -> None:
     """Выдаёт ссылку покупателю и уведомляет администратора.
 
@@ -36,8 +52,10 @@ async def deliver_purchase(bot: Bot, config: Config, tx_id: str) -> None:
         log.error("deliver_purchase: unknown tariff %s", order["tariff_id"])
         return
 
+    link = await make_invite(bot, tariff.channel_id, tariff.channel_link)
     try:
-        await bot.send_message(order["user_id"], texts.purchase_delivered(tariff))
+        await bot.send_message(order["user_id"],
+                               texts.purchase_delivered(tariff, link))
     except Exception as e:  # noqa: BLE001
         log.exception("Failed to deliver link to user %s: %s", order["user_id"], e)
 

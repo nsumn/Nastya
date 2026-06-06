@@ -26,6 +26,23 @@ async def btn_tariffs(message: Message, config: Config) -> None:
     await message.answer(texts.TARIFF_PROMPT, reply_markup=kb.welcome_kb(config))
 
 
+@router.message(F.forward_origin)
+async def show_forwarded_chat_id(message: Message, config: Config) -> None:
+    """Помощник для админа: перешли пост из канала боту — получишь ID канала
+    (нужен для одноразовых ссылок: CHANNEL_ID / STARS_CHANNEL_ID)."""
+    if message.chat.id != config.admin_chat_id:
+        return
+    chat = getattr(message.forward_origin, "chat", None)
+    if chat is None:
+        return
+    await message.reply(
+        f"📡 Канал: {chat.title}\n"
+        f"ID: <code>{chat.id}</code>\n\n"
+        "Впиши это число в .env как CHANNEL_ID (основной канал) "
+        "или STARS_CHANNEL_ID (канал для звёзд)."
+    )
+
+
 @router.message(F.text == kb.BTN_PROFILE)
 async def btn_profile(message: Message) -> None:
     purchases = await db.count_purchases(message.from_user.id)

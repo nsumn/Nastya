@@ -120,12 +120,12 @@ def receipt_prompt() -> str:
     )
 
 
-def purchase_delivered(t: Tariff) -> str:
-    link = t.channel_link or "ссылку пришлёт администратор"
+def purchase_delivered(t: Tariff, link: str = "") -> str:
+    link = link or t.channel_link or "ссылку пришлёт администратор"
     return (
         "✅ Оплата подтверждена! Спасибо за покупку 🎉\n\n"
         f"Тариф: {t.title}\n\n"
-        f"Твоя ссылка на канал:\n{link}"
+        f"Твоя персональная ссылка на канал (одноразовая):\n{link}"
     )
 
 
