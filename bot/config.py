@@ -1,0 +1,115 @@
+"""Конфигурация бота: читается из переменных окружения (.env).
+
+Тарифы заданы здесь же словарём TARIFFS — чтобы добавить новый тариф,
+достаточно дописать ещё один пункт. Кнопки в боте строятся автоматически.
+"""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def _get(name: str, default: str = "") -> str:
+    return os.getenv(name, default).strip()
+
+
+@dataclass
+class Tariff:
+    id: str
+    button: str          # текст кнопки в приветствии
+    title: str           # «Тариф: ...»
+    price: float
+    currency: str
+    duration: str        # «Срок действия: ...»
+    description: str
+    channel_link: str    # ссылка, которую бот выдаёт после оплаты по СБП
+    stars_link: str      # ссылка для оплаты Telegram Stars
+
+
+@dataclass
+class Config:
+    bot_token: str
+    admin_chat_id: int
+
+    platega_merchant_id: str
+    platega_secret: str
+    platega_base_url: str
+    platega_sbp_method: int
+
+    public_base_url: str
+    return_url: str
+    failed_url: str
+    port: int
+
+    reviews_link: str
+    admin_link: str
+    card_details: str
+    db_path: str
+
+    tariffs: dict[str, Tariff] = field(default_factory=dict)
+
+    @property
+    def callback_path(self) -> str:
+        return "/platega/callback"
+
+    @property
+    def callback_url(self) -> str:
+        if not self.public_base_url:
+            return ""
+        return self.public_base_url.rstrip("/") + self.callback_path
+
+
+def load_config() -> Config:
+    channel_link = _get("CHANNEL_LINK")
+    stars_link = _get("STARS_LINK")
+
+    # Тариф из ТЗ. Чтобы добавить ещё — скопируй блок с новым id.
+    vip_oge = Tariff(
+        id="vip_oge_2026",
+        button="VIP ОГЭ 2026",
+        title="📖 VIP ОГЭ БЕЗ",
+        price=1590.0,
+        currency="RUB",
+        duration="навсегда",
+        description=(
+            "🔥 Что входит в VIP | ОГЭ 2026:\n\n"
+            "- Сборник ОГЭ по Всемпредметам (с инструкцией)\n"
+            "- Решение второй части (по возможности)\n"
+            "- Распределение вариантов ОГЭ по регионам\n"
+            "- Точные ответы на оценку 4-5 по всем предметам\n"
+            "- Ориентиры для каждого региона на варианты\n"
+            "- Задания по всем регионам\n"
+            "- Публикации ответов за 4-12 часов до проведения экзамена\n"
+            "- Ответы на 77/78 регион включительно\n\n"
+            "Реальные отзывы о работе канала\n\n"
+            "‼️ Доступ включает в себя ответы на все регионы и предметы"
+        ),
+        channel_link=channel_link,
+        stars_link=stars_link,
+    )
+
+    tariffs = {vip_oge.id: vip_oge}
+
+    admin_chat_id = int(_get("ADMIN_CHAT_ID", "0") or "0")
+
+    return Config(
+        bot_token=_get("BOT_TOKEN"),
+        admin_chat_id=admin_chat_id,
+        platega_merchant_id=_get("PLATEGA_MERCHANT_ID"),
+        platega_secret=_get("PLATEGA_SECRET"),
+        platega_base_url=_get("PLATEGA_BASE_URL", "https://app.platega.io"),
+        platega_sbp_method=int(_get("PLATEGA_SBP_METHOD", "2") or "2"),
+        public_base_url=_get("PUBLIC_BASE_URL"),
+        return_url=_get("RETURN_URL", "https://t.me"),
+        failed_url=_get("FAILED_URL", "https://t.me"),
+        port=int(_get("PORT", "8080") or "8080"),
+        reviews_link=_get("REVIEWS_LINK"),
+        admin_link=_get("ADMIN_LINK"),
+        card_details=_get("CARD_DETAILS").replace("\\n", "\n"),
+        db_path=_get("DB_PATH", "bot.db"),
+        tariffs=tariffs,
+    )
