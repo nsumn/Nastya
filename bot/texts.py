@@ -5,29 +5,24 @@ import html
 
 from .config import Config, Tariff
 
-TARIFF_PROMPT = "⬇️ ЖМИ НА НУЖНЫЙ ТАРИФ ⬇️"
+TARIFF_PROMPT = "👇 ВЫБЕРИ ТАРИФ 👇"
 
 
 def welcome(config: Config) -> str:
-    """Приветствие. «Наши отзывы» и «Администрация» — кликабельные ссылки
+    """Приветствие. «Наши отзывы» и «Менеджер» — кликабельные ссылки
     прямо в тексте (а не кнопки), если ссылки заданы."""
     reviews = config.reviews_link
     admin = config.admin_link
-    otzyvy = (f'<a href="{reviews}">📚 НАШИ ОТЗЫВЫ</a>'
-              if reviews else "📚 НАШИ ОТЗЫВЫ")
-    admin_line = (f'<a href="{admin}">👥 Администрация</a>'
-                  if admin else "👥 Администрация")
+    otzyvy = (f'<a href="{reviews}">📚 Наши отзывы</a>'
+              if reviews else "📚 Наши отзывы")
+    manager = (f'<a href="{admin}">👥 Менеджер</a>'
+               if admin else "👥 Менеджер")
     return (
-        "🔥 Приветствуем! В этом боте ты можешь легко выбрать подходящий тариф — "
-        "без лишних разговоров с администратором\n\n"
-        "— ЧТО МОЖНО ЗАКАЗАТЬ ЗДЕСЬ\n\n"
-        "• Полные ответы;\n"
-        "• Подробные решения;\n"
-        "• Официальные критерии;\n"
-        "• Полезные материалы и шпоры;\n\n"
+        "Приветствуем! В этом боте ты можешь легко приобрести VIP-канал — "
+        "без лишних разговоров с администратором 😎\n\n"
         "И главное — всё сдашь на отлично! 🏆\n\n"
         f"{otzyvy}\n\n"
-        f"{admin_line}"
+        f"{manager}"
     )
 
 
@@ -40,8 +35,7 @@ def tariff_card(t: Tariff, reviews_link: str = "") -> str:
         )
     return (
         f"Тариф: {t.title}\n"
-        f"Цена: {t.price} 🇷🇺{t.currency}\n"
-        f"Срок действия: {t.duration}\n\n"
+        f"Цена: {t.price} 🇷🇺{t.currency}\n\n"
         f"Описание: {desc}"
     )
 
@@ -96,7 +90,8 @@ def stars_offer(t: Tariff, buy_stars_link: str) -> str:
     )
     if buy_stars_link:
         text += (f'Купить выгодно звёзды вы можете '
-                 f'<a href="{buy_stars_link}">здесь</a>.')
+                 f'<a href="{buy_stars_link}">здесь</a>\n'
+                 f'(1000⭐️ = 1454₽)')
     return text
 
 
