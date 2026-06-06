@@ -36,11 +36,8 @@ def contacts_kb(config: Config) -> InlineKeyboardMarkup:
 
 
 def welcome_kb(config: Config) -> InlineKeyboardMarkup:
+    """Инлайн-кнопки тарифов (отзывы/администрация теперь ссылки в тексте)."""
     b = InlineKeyboardBuilder()
-    if config.reviews_link:
-        b.row(InlineKeyboardButton(text="📚 Наши отзывы", url=config.reviews_link))
-    if config.admin_link:
-        b.row(InlineKeyboardButton(text="👥 Администрация", url=config.admin_link))
     for t in config.tariffs.values():
         b.row(InlineKeyboardButton(text=t.button, callback_data=f"tariff:{t.id}"))
     return b.as_markup()

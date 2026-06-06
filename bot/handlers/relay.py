@@ -57,10 +57,17 @@ async def relay_messages(message: Message, config: Config) -> None:
     is_receipt = u.id in awaiting_receipt
     awaiting_receipt.discard(u.id)
 
+    if u.username:
+        username_line = (
+            f"Юзернейм: <a href=\"https://t.me/{u.username}\">@{u.username}</a>\n")
+    else:
+        username_line = "Юзернейм: — (не задан)\n"
+
     tag = "🧾 ЧЕК ОБ ОПЛАТЕ" if is_receipt else "📨 Сообщение"
     header = (
         f"{tag}\n"
         f"От: <a href=\"tg://user?id={u.id}\">{name}</a>\n"
+        f"{username_line}"
         f"ID: <code>{u.id}</code>\n"
         f"Ответь reply на это сообщение, чтобы написать пользователю."
     )

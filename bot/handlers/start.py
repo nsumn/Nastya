@@ -15,13 +15,15 @@ router = Router(name="start")
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, config: Config) -> None:
-    await message.answer(texts.WELCOME, reply_markup=kb.welcome_kb(config))
-    await message.answer("👇", reply_markup=kb.main_reply_kb())
+    # Приветствие (с кликабельными ссылками) + меню снизу — без «пальца».
+    await message.answer(texts.welcome(config), reply_markup=kb.main_reply_kb())
+    # Карточка выбора тарифа: стрелка указывает на кнопку тарифа ниже.
+    await message.answer(texts.TARIFF_PROMPT, reply_markup=kb.welcome_kb(config))
 
 
 @router.message(F.text == kb.BTN_TARIFFS)
 async def btn_tariffs(message: Message, config: Config) -> None:
-    await message.answer(texts.WELCOME, reply_markup=kb.welcome_kb(config))
+    await message.answer(texts.TARIFF_PROMPT, reply_markup=kb.welcome_kb(config))
 
 
 @router.message(F.text == kb.BTN_PROFILE)
@@ -38,7 +40,8 @@ async def btn_contacts(message: Message, config: Config) -> None:
 
 @router.callback_query(F.data == "back:start")
 async def back_to_start(call: CallbackQuery, config: Config) -> None:
-    await call.message.edit_text(texts.WELCOME, reply_markup=kb.welcome_kb(config))
+    await call.message.edit_text(texts.TARIFF_PROMPT,
+                                 reply_markup=kb.welcome_kb(config))
     await call.answer()
 
 
@@ -49,6 +52,7 @@ async def show_tariff(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
-    await call.message.edit_text(texts.tariff_card(tariff),
-                                 reply_markup=kb.tariff_kb(tariff))
+    await call.message.edit_text(
+        texts.tariff_card(tariff, config.reviews_link),
+        reply_markup=kb.tariff_kb(tariff))
     await call.answer()
