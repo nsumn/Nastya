@@ -154,7 +154,11 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
-    if not tariff.stars_price:
+    # Тестовая цена для своего аккаунта, обычная — для всех остальных.
+    price = tariff.stars_price
+    if config.test_user_id and call.from_user.id == config.test_user_id:
+        price = config.test_stars_price
+    if not price:
         await call.message.answer(texts.stars_unavailable())
         await call.answer()
         return
@@ -167,7 +171,7 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
         payload=f"stars:{tariff.id}",
         provider_token="",
         currency="XTR",
-        prices=[LabeledPrice(label=tariff.title, amount=tariff.stars_price)],
+        prices=[LabeledPrice(label=tariff.title, amount=price)],
     )
 
 

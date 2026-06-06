@@ -55,6 +55,8 @@ class Config:
     support_username: str
     privacy_url: str
     terms_url: str
+    test_user_id: int = 0       # для этого id особая цена в звёздах (тест)
+    test_stars_price: int = 1   # тестовая цена в звёздах
 
     tariffs: dict[str, Tariff] = field(default_factory=dict)
 
@@ -127,5 +129,7 @@ def load_config() -> Config:
         terms_url=_get(
             "TERMS_URL",
             "https://telegra.ph/Polzovatelskoe-soglashenie-04-01-19"),
+        test_user_id=int(_get("TEST_USER_ID", "0") or "0"),
+        test_stars_price=int(_get("TEST_STARS_PRICE", "1") or "1"),
         tariffs=tariffs,
     )
