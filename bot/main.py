@@ -38,7 +38,8 @@ async def main() -> None:
     await db.init_db(config.db_path)
 
     bot = Bot(config.bot_token,
-              default=DefaultBotProperties(parse_mode="HTML"))
+              default=DefaultBotProperties(parse_mode="HTML",
+                                           link_preview_is_disabled=True))
     platega = PlategaClient(
         merchant_id=config.platega_merchant_id,
         secret=config.platega_secret,
