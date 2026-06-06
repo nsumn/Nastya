@@ -1,0 +1,15 @@
+[Unit]
+Description=Nastya Telegram payment bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/nastya-bot
+ExecStart=/opt/nastya-bot/.venv/bin/python -m bot.main
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
