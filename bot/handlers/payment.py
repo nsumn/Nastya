@@ -5,7 +5,8 @@ import asyncio
 import logging
 
 from aiogram import F, Router
-from aiogram.types import (CallbackQuery, LabeledPrice, Message,
+from aiogram.types import (CallbackQuery, InlineKeyboardButton,
+                           InlineKeyboardMarkup, LabeledPrice, Message,
                            PreCheckoutQuery)
 
 from .. import database as db
@@ -179,19 +180,22 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
         await call.message.answer(texts.stars_unavailable())
         await call.answer()
         return
-    await call.message.edit_text(
-        texts.stars_offer(tariff, config.buy_stars_link),
-        reply_markup=kb.back_to_methods_kb(tariff))
     await call.answer()
-    # Нативный счёт Telegram Stars: валюта XTR, provider_token пустой.
+    # Счёт Telegram Stars сразу с кнопкой оплаты (отдельного текста нет).
+    rows = [[InlineKeyboardButton(text=f"⭐ Оплатить {price} ⭐", pay=True)]]
+    if config.buy_stars_link:
+        rows.append([InlineKeyboardButton(
+            text="💎 Купить звёзды дешевле (1000⭐ = 1454₽)",
+            url=config.buy_stars_link)])
     await call.bot.send_invoice(
         chat_id=call.from_user.id,
         title=tariff.title,
-        description=f"Доступ: {tariff.title}",
+        description="После оплаты вы автоматически попадаете в канал.",
         payload=f"stars:{tariff.id}",
         provider_token="",
         currency="XTR",
         prices=[LabeledPrice(label=tariff.title, amount=price)],
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
     )
 
 
