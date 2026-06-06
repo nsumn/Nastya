@@ -5,8 +5,7 @@ import asyncio
 import logging
 
 from aiogram import F, Router
-from aiogram.types import (CallbackQuery, InlineKeyboardButton,
-                           InlineKeyboardMarkup, LabeledPrice, Message,
+from aiogram.types import (CallbackQuery, LabeledPrice, Message,
                            PreCheckoutQuery)
 
 from .. import database as db
@@ -22,6 +21,9 @@ router = Router(name="payment")
 # как чек и помечаем для администратора. Хранится в памяти процесса.
 awaiting_receipt: set[int] = set()
 
+# user_id -> message_id выставленного счёта в звёздах (чтобы удалить по «Назад»).
+stars_invoices: dict[int, int] = {}
+
 
 @router.callback_query(F.data.startswith("pay:"))
 async def choose_method(call: CallbackQuery, config: Config) -> None:
@@ -29,6 +31,13 @@ async def choose_method(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
+    # удалить ранее выставленный счёт звёзд, если пользователь нажал «Назад»
+    inv_id = stars_invoices.pop(call.from_user.id, None)
+    if inv_id:
+        try:
+            await call.bot.delete_message(call.from_user.id, inv_id)
+        except Exception:  # noqa: BLE001
+            pass
     await call.message.edit_text(texts.choose_method(tariff),
                                  reply_markup=kb.methods_kb(tariff, config))
     await call.answer()
@@ -180,23 +189,21 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
         await call.message.answer(texts.stars_unavailable())
         await call.answer()
         return
+    await call.message.edit_text(
+        texts.stars_offer(tariff, config.buy_stars_link),
+        reply_markup=kb.back_to_methods_kb(tariff))
     await call.answer()
-    # Счёт Telegram Stars сразу с кнопкой оплаты (отдельного текста нет).
-    rows = [[InlineKeyboardButton(text=f"⭐ Оплатить {price} ⭐", pay=True)]]
-    if config.buy_stars_link:
-        rows.append([InlineKeyboardButton(
-            text="💎 Купить звёзды дешевле (1000⭐ = 1454₽)",
-            url=config.buy_stars_link)])
-    await call.bot.send_invoice(
+    # Нативный счёт Telegram Stars: валюта XTR, provider_token пустой.
+    sent = await call.bot.send_invoice(
         chat_id=call.from_user.id,
         title=tariff.title,
-        description="После оплаты вы автоматически попадаете в канал.",
+        description=f"Доступ: {tariff.title}",
         payload=f"stars:{tariff.id}",
         provider_token="",
         currency="XTR",
         prices=[LabeledPrice(label=tariff.title, amount=price)],
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
     )
+    stars_invoices[call.from_user.id] = sent.message_id
 
 
 @router.pre_checkout_query()
