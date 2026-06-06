@@ -93,6 +93,16 @@ async def mark_delivered(tx_id: str) -> bool:
         return cur.rowcount > 0
 
 
+async def count_purchases(user_id: int) -> int:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            "SELECT COUNT(*) FROM orders WHERE user_id = ? AND status = 'DELIVERED'",
+            (user_id,),
+        ) as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 0
+
+
 async def pending_orders() -> list[dict]:
     async with aiosqlite.connect(_DB_PATH) as db:
         db.row_factory = aiosqlite.Row

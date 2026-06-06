@@ -49,6 +49,9 @@ class Config:
     admin_link: str
     card_details: str
     db_path: str
+    support_username: str
+    privacy_url: str
+    terms_url: str
 
     tariffs: dict[str, Tariff] = field(default_factory=dict)
 
@@ -111,5 +114,12 @@ def load_config() -> Config:
         admin_link=_get("ADMIN_LINK"),
         card_details=_get("CARD_DETAILS").replace("\\n", "\n"),
         db_path=_get("DB_PATH", "bot.db"),
+        support_username=_get("SUPPORT_USERNAME", "@shewmilka"),
+        privacy_url=_get(
+            "PRIVACY_URL",
+            "https://telegra.ph/Politika-konfidencialnosti-04-01-26"),
+        terms_url=_get(
+            "TERMS_URL",
+            "https://telegra.ph/Polzovatelskoe-soglashenie-04-01-19"),
         tariffs=tariffs,
     )

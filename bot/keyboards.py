@@ -1,10 +1,38 @@
 """Инлайн-клавиатуры бота."""
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           KeyboardButton, ReplyKeyboardMarkup)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .config import Config, Tariff
+
+# Подписи нижних (reply) кнопок — используются и в клавиатуре, и в фильтрах.
+BTN_TARIFFS = "🧾 Тарифы"
+BTN_PROFILE = "👤 Мой профиль"
+BTN_CONTACTS = "❗️ Контакты/FAQ"
+
+
+def main_reply_kb() -> ReplyKeyboardMarkup:
+    """Постоянное меню снизу, у поля ввода."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
+            [KeyboardButton(text=BTN_CONTACTS)],
+        ],
+        resize_keyboard=True,
+    )
+
+
+def contacts_kb(config: Config) -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    if config.privacy_url:
+        b.row(InlineKeyboardButton(
+            text="Политика конфиденциальности", url=config.privacy_url))
+    if config.terms_url:
+        b.row(InlineKeyboardButton(
+            text="Пользовательское соглашение", url=config.terms_url))
+    return b.as_markup()
 
 
 def welcome_kb(config: Config) -> InlineKeyboardMarkup:

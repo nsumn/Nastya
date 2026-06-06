@@ -1,6 +1,8 @@
 """Тексты сообщений бота."""
 from __future__ import annotations
 
+import html
+
 from .config import Config, Tariff
 
 WELCOME = (
@@ -99,4 +101,24 @@ def payment_canceled() -> str:
     return (
         "❌ Платёж отменён или не прошёл.\n"
         "Попробуй ещё раз или выбери другой способ оплаты."
+    )
+
+
+def contacts(support_username: str) -> str:
+    return (
+        f"👤 Поддержка {support_username}\n\n"
+        "Совершая оплату, вы соглашаетесь с политикой конфиденциальности "
+        "и пользовательским соглашением."
+    )
+
+
+def profile(user, purchases: int) -> str:
+    username = f"@{user.username}" if user.username else "—"
+    name = html.escape(user.full_name or "—")
+    return (
+        "👤 Твой профиль\n\n"
+        f"Имя: {name}\n"
+        f"Username: {username}\n"
+        f"ID: <code>{user.id}</code>\n"
+        f"Покупок: {purchases}"
     )
