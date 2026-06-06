@@ -74,7 +74,7 @@ def load_config() -> Config:
     vip_oge = Tariff(
         id="vip_oge_2026",
         button="VIP ОГЭ 2026",
-        title="📖 VIP ОГЭ БЕЗ",
+        title="📖 VIP ОГЭ",
         price=1590.0,
         currency="RUB",
         duration="навсегда",

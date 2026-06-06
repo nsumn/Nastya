@@ -16,10 +16,7 @@ router = Router(name="start")
 @router.message(CommandStart())
 async def cmd_start(message: Message, config: Config) -> None:
     await message.answer(texts.WELCOME, reply_markup=kb.welcome_kb(config))
-    await message.answer(
-        "📋 Меню всегда снизу: Тарифы · Мой профиль · Контакты/FAQ 👇",
-        reply_markup=kb.main_reply_kb(),
-    )
+    await message.answer("👇", reply_markup=kb.main_reply_kb())
 
 
 @router.message(F.text == kb.BTN_TARIFFS)
