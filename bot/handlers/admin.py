@@ -8,6 +8,8 @@
 """
 from __future__ import annotations
 
+import html
+
 from aiogram import F, Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -25,6 +27,7 @@ router = Router(name="admin")
 class AdminSG(StatesGroup):
     price = State()
     stars_price = State()
+    description = State()
 
 
 def _is_admin(user_id: int, config: Config) -> bool:
@@ -157,6 +160,59 @@ async def adm_starsprice_set(message: Message, config: Config,
     await state.clear()
     await message.answer(
         f"✅ Цена в звёздах «{config.tariffs[tid].button}»: {price} ⭐",
+        reply_markup=kb.admin_menu_kb())
+
+
+# ---------- описание тарифа ----------
+
+@router.callback_query(F.data == "adm:desc")
+async def adm_desc(call: CallbackQuery, config: Config) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    await call.message.edit_text(
+        "📝 У какого тарифа изменить описание?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "setdesc"))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:setdesc:"))
+async def adm_desc_pick(call: CallbackQuery, config: Config,
+                        state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    if tid not in config.tariffs:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.description)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"📝 Пришли новое описание для «{config.tariffs[tid].button}» "
+        f"одним сообщением (можно с эмодзи и переносами строк):",
+        reply_markup=kb.admin_back_kb())
+    await call.answer()
+
+
+@router.message(StateFilter(AdminSG.description))
+async def adm_desc_set(message: Message, config: Config,
+                       state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    text = (message.text or message.caption or "").strip()
+    if not text:
+        await message.answer("Пришли текст описания одним сообщением.")
+        return
+    tid = (await state.get_data()).get("tid")
+    if not tid or tid not in config.tariffs:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+    await settings_store.set_description(config, tid, html.escape(text))
+    await state.clear()
+    await message.answer(
+        f"✅ Описание «{config.tariffs[tid].button}» обновлено.",
         reply_markup=kb.admin_menu_kb())
 
 

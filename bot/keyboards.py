@@ -105,6 +105,8 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
                                callback_data="adm:price"))
     b.row(InlineKeyboardButton(text="⭐ Изменить цену (звёзды)",
                                callback_data="adm:starsprice"))
+    b.row(InlineKeyboardButton(text="📝 Изменить описание",
+                               callback_data="adm:desc"))
     b.row(InlineKeyboardButton(text="🔧 Способы оплаты",
                                callback_data="adm:methods"))
     b.row(InlineKeyboardButton(text="📋 Кто оплатил",
@@ -139,8 +141,10 @@ def admin_tariff_pick_kb(config: Config, action: str) -> InlineKeyboardMarkup:
     for t in config.tariffs.values():
         if action == "setprice":
             label = f"{t.button} — {t.price:g}₽"
-        else:
+        elif action == "setstars":
             label = f"{t.button} — {t.stars_price}⭐"
+        else:  # setdesc
+            label = t.button
         b.row(InlineKeyboardButton(text=label,
                                    callback_data=f"adm:{action}:{t.id}"))
     b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data="adm:menu"))

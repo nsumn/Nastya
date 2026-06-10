@@ -26,6 +26,9 @@ async def load_overrides(config: Config) -> None:
                 tariff.stars_price = int(sprice)
             except ValueError:
                 pass
+        desc = settings.get(f"desc:{tid}")
+        if desc is not None:
+            tariff.description = desc
     for name in ("card", "sbp", "stars"):
         val = settings.get(f"method:{name}")
         if val is not None:
@@ -45,3 +48,8 @@ async def set_stars_price(config: Config, tariff_id: str, price: int) -> None:
 async def set_method(config: Config, name: str, enabled: bool) -> None:
     config.methods_enabled[name] = enabled
     await db.set_setting(f"method:{name}", "1" if enabled else "0")
+
+
+async def set_description(config: Config, tariff_id: str, desc: str) -> None:
+    config.tariffs[tariff_id].description = desc
+    await db.set_setting(f"desc:{tariff_id}", desc)
