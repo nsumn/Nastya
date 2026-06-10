@@ -53,14 +53,31 @@ async def adm_menu(call: CallbackQuery, config: Config,
 # ---------- цена в рублях ----------
 
 @router.callback_query(F.data == "adm:price")
-async def adm_price(call: CallbackQuery, config: Config,
-                    state: FSMContext) -> None:
+async def adm_price(call: CallbackQuery, config: Config) -> None:
     if not _is_admin(call.from_user.id, config):
         await call.answer()
         return
-    await state.set_state(AdminSG.price)
     await call.message.edit_text(
-        "💰 Введите новую цену в рублях (например 1490):",
+        "💰 У какого тарифа изменить цену в рублях?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "setprice"))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:setprice:"))
+async def adm_price_pick(call: CallbackQuery, config: Config,
+                         state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    if tid not in config.tariffs:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.price)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"💰 Введите новую цену в рублях для «{config.tariffs[tid].button}» "
+        f"(например 1490):",
         reply_markup=kb.admin_back_kb())
     await call.answer()
 
@@ -75,24 +92,46 @@ async def adm_price_set(message: Message, config: Config,
     except ValueError:
         await message.answer("Нужно число, например 1490. Попробуй ещё раз.")
         return
-    for t in config.tariffs.values():
-        await settings_store.set_price(config, t.id, price)
+    tid = (await state.get_data()).get("tid")
+    if not tid or tid not in config.tariffs:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+    await settings_store.set_price(config, tid, price)
     await state.clear()
-    await message.answer(f"✅ Цена обновлена: {price} RUB",
-                         reply_markup=kb.admin_menu_kb())
+    await message.answer(
+        f"✅ Цена «{config.tariffs[tid].button}»: {price:g} RUB",
+        reply_markup=kb.admin_menu_kb())
 
 
 # ---------- цена в звёздах ----------
 
 @router.callback_query(F.data == "adm:starsprice")
-async def adm_starsprice(call: CallbackQuery, config: Config,
-                         state: FSMContext) -> None:
+async def adm_starsprice(call: CallbackQuery, config: Config) -> None:
     if not _is_admin(call.from_user.id, config):
         await call.answer()
         return
-    await state.set_state(AdminSG.stars_price)
     await call.message.edit_text(
-        "⭐ Введите новую цену в звёздах для всех (например 1000):",
+        "⭐ У какого тарифа изменить цену в звёздах?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "setstars"))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:setstars:"))
+async def adm_starsprice_pick(call: CallbackQuery, config: Config,
+                              state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    if tid not in config.tariffs:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.stars_price)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"⭐ Введите новую цену в звёздах для «{config.tariffs[tid].button}» "
+        f"(например 1000):",
         reply_markup=kb.admin_back_kb())
     await call.answer()
 
@@ -109,11 +148,16 @@ async def adm_starsprice_set(message: Message, config: Config,
     except ValueError:
         await message.answer("Нужно целое число ≥ 1, например 1000.")
         return
-    for t in config.tariffs.values():
-        await settings_store.set_stars_price(config, t.id, price)
+    tid = (await state.get_data()).get("tid")
+    if not tid or tid not in config.tariffs:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+    await settings_store.set_stars_price(config, tid, price)
     await state.clear()
-    await message.answer(f"✅ Цена в звёздах обновлена: {price} ⭐",
-                         reply_markup=kb.admin_menu_kb())
+    await message.answer(
+        f"✅ Цена в звёздах «{config.tariffs[tid].button}»: {price} ⭐",
+        reply_markup=kb.admin_menu_kb())
 
 
 # ---------- способы оплаты ----------

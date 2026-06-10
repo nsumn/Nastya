@@ -84,7 +84,7 @@ def load_config() -> Config:
         id="vip_oge_2026",
         button="VIP ОГЭ 2026",
         title="🔹VIP ОГЭ/ГВЭ 2026 (все предметы)🔹",
-        price=1590.0,
+        price=990.0,
         currency="RUB",
         duration="навсегда",
         description=(
@@ -106,12 +106,40 @@ def load_config() -> Config:
         ),
         channel_link=channel_link,
         stars_link=stars_link,
-        stars_price=int(_get("STARS_PRICE", "0") or "0"),
+        stars_price=619,
         channel_id=int(_get("CHANNEL_ID", "0") or "0"),
         stars_channel_id=int(_get("STARS_CHANNEL_ID", "0") or "0"),
     )
 
-    tariffs = {vip_oge.id: vip_oge}
+    peresdacha = Tariff(
+        id="peresdacha_vip_oge",
+        button="ПЕРЕСДАЧА VIP ОГЭ",
+        title="🔁 ПЕРЕСДАЧА VIP ОГЭ",
+        price=890.0,
+        currency="RUB",
+        duration="навсегда",
+        description=(
+            "Доступ для тех, кто идёт на пересдачу ОГЭ/ГВЭ 2026.\n\n"
+            "Ты будешь первым получать задания, точные ответы и подробные "
+            "решения на пересдачу по всем предметам.\n\n"
+            "❓ЧТО ВХОДИТ:👇\n\n"
+            "✨Ответы на пересдачу ОГЭ/ГВЭ по ВСЕМ предметам\n"
+            "✨Подробные решения\n"
+            "💫Распределение вариантов по регионам\n"
+            "🌟Ориентиры на реальные варианты\n\n"
+            "📌 Всё, чтобы спокойно закрыть экзамен со второй попытки 🤍\n\n"
+            "Не жди — потом будет дороже ❌"
+        ),
+        channel_link=_get("PERESDACHA_CHANNEL_LINK") or channel_link,
+        stars_link=_get("PERESDACHA_CHANNEL_LINK") or stars_link,
+        stars_price=555,
+        channel_id=int(_get("PERESDACHA_CHANNEL_ID", "0") or "0")
+        or int(_get("CHANNEL_ID", "0") or "0"),
+        stars_channel_id=int(_get("PERESDACHA_CHANNEL_ID", "0") or "0")
+        or int(_get("STARS_CHANNEL_ID", "0") or "0"),
+    )
+
+    tariffs = {vip_oge.id: vip_oge, peresdacha.id: peresdacha}
 
     admin_chat_id = int(_get("ADMIN_CHAT_ID", "0") or "0")
 
