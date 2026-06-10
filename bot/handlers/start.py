@@ -43,36 +43,6 @@ async def show_forwarded_chat_id(message: Message, config: Config) -> None:
     )
 
 
-# каналы, о которых уже уведомили админа (чтобы не спамить)
-_notified_channels: set[int] = set()
-
-
-@router.channel_post()
-async def on_channel_post(message: Message, config: Config) -> None:
-    """Бот-админ видит пост в канале → присылает админу ID канала.
-    Работает даже при запрете пересылки. Уведомляет один раз на канал
-    и только для каналов, ещё не прописанных в настройках."""
-    if not config.admin_chat_id:
-        return
-    chat = message.chat
-    known = set()
-    for t in config.tariffs.values():
-        known.add(t.channel_id)
-        known.add(t.stars_channel_id)
-    if chat.id in known or chat.id in _notified_channels:
-        return
-    _notified_channels.add(chat.id)
-    try:
-        await message.bot.send_message(
-            config.admin_chat_id,
-            f"📡 Бот видит канал (он тут админ): {chat.title}\n"
-            f"ID: <code>{chat.id}</code>\n\n"
-            "Пришли мне этот ID, чтобы подключить авто-приём в этот канал."
-        )
-    except Exception:  # noqa: BLE001
-        pass
-
-
 @router.message(F.text == kb.BTN_PROFILE)
 async def btn_profile(message: Message) -> None:
     purchases = await db.count_purchases(message.from_user.id)
