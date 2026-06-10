@@ -35,7 +35,7 @@ def tariff_card(t: Tariff, reviews_link: str = "") -> str:
         )
     return (
         f"Тариф: {t.title}\n"
-        f"Цена: {t.price} 🇷🇺{t.currency}\n\n"
+        f"Цена: {t.price:g} 🇷🇺{t.currency}\n\n"
         f"Описание: {desc}"
     )
 
@@ -43,7 +43,7 @@ def tariff_card(t: Tariff, reviews_link: str = "") -> str:
 def choose_method(t: Tariff) -> str:
     return (
         f"Тариф: {t.title}\n"
-        f"К оплате: {t.price} {t.currency}\n\n"
+        f"К оплате: {t.price:g} {t.currency}\n\n"
         "Выбери удобный способ оплаты ⬇️"
     )
 
@@ -52,7 +52,7 @@ def sbp_message(t: Tariff) -> str:
     return (
         "📲 Оплата по СБП\n\n"
         f"Тариф: {t.title}\n"
-        f"Сумма: {t.price} {t.currency}\n\n"
+        f"Сумма: {t.price:g} {t.currency}\n\n"
         "Нажми кнопку «Оплатить» ниже, оплати по QR/СБП, и бот "
         "автоматически проверит платёж.\n"
         "После подтверждения ты сразу получишь ссылку на канал. ✅"
@@ -64,7 +64,7 @@ def card_message(t: Tariff, card_details: str) -> str:
     return (
         "💳 Оплата по карте РФ\n\n"
         f"Тариф: {t.title}\n"
-        f"Сумма: {t.price} {t.currency}\n\n"
+        f"Сумма: {t.price:g} {t.currency}\n\n"
         "Реквизиты для перевода:\n"
         f"{details}\n\n"
         "После оплаты нажми кнопку «✅ Оплатить и отправить чек» и пришли "
