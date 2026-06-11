@@ -28,6 +28,7 @@ class AdminSG(StatesGroup):
     price = State()
     stars_price = State()
     description = State()
+    card = State()
 
 
 def _is_admin(user_id: int, config: Config) -> bool:
@@ -213,6 +214,40 @@ async def adm_desc_set(message: Message, config: Config,
     await state.clear()
     await message.answer(
         f"✅ Описание «{config.tariffs[tid].button}» обновлено.",
+        reply_markup=kb.admin_menu_kb())
+
+
+# ---------- реквизиты карты ----------
+
+@router.callback_query(F.data == "adm:card")
+async def adm_card(call: CallbackQuery, config: Config,
+                   state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    current = config.card_details or "— (не заданы)"
+    await state.set_state(AdminSG.card)
+    await call.message.edit_text(
+        f"💳 Текущие реквизиты:\n{current}\n\n"
+        "Пришли новые реквизиты одним сообщением (например:\n"
+        "Номер карты: 1234 5678 9012 3456\nБанк: Тинькофф):",
+        reply_markup=kb.admin_back_kb())
+    await call.answer()
+
+
+@router.message(StateFilter(AdminSG.card))
+async def adm_card_set(message: Message, config: Config,
+                       state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    text = (message.text or message.caption or "").strip()
+    if not text:
+        await message.answer("Пришли реквизиты одним сообщением.")
+        return
+    await settings_store.set_card_details(config, html.escape(text))
+    await state.clear()
+    await message.answer(
+        f"✅ Реквизиты карты обновлены:\n{config.card_details}",
         reply_markup=kb.admin_menu_kb())
 
 

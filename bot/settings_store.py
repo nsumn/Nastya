@@ -33,6 +33,9 @@ async def load_overrides(config: Config) -> None:
         val = settings.get(f"method:{name}")
         if val is not None:
             config.methods_enabled[name] = (val == "1")
+    card = settings.get("card_details")
+    if card is not None:
+        config.card_details = card
 
 
 async def set_price(config: Config, tariff_id: str, price: float) -> None:
@@ -53,3 +56,8 @@ async def set_method(config: Config, name: str, enabled: bool) -> None:
 async def set_description(config: Config, tariff_id: str, desc: str) -> None:
     config.tariffs[tariff_id].description = desc
     await db.set_setting(f"desc:{tariff_id}", desc)
+
+
+async def set_card_details(config: Config, details: str) -> None:
+    config.card_details = details
+    await db.set_setting("card_details", details)

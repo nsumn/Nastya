@@ -107,6 +107,8 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
                                callback_data="adm:starsprice"))
     b.row(InlineKeyboardButton(text="📝 Изменить описание",
                                callback_data="adm:desc"))
+    b.row(InlineKeyboardButton(text="💳 Изменить карту",
+                               callback_data="adm:card"))
     b.row(InlineKeyboardButton(text="🔧 Способы оплаты",
                                callback_data="adm:methods"))
     b.row(InlineKeyboardButton(text="📋 Кто оплатил",
