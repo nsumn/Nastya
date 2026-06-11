@@ -146,9 +146,8 @@ async def request_receipt(call: CallbackQuery, config: Config) -> None:
         await call.answer("Тариф не найден", show_alert=True)
         return
     awaiting_receipt.add(call.from_user.id)
-    await db.add_payment(call.from_user.id, call.from_user.username,
-                         call.from_user.full_name, "💳 карта",
-                         tariff.price, tariff.currency)
+    # В журнал «кто оплатил» картой НЕ пишем здесь — нажатие кнопки ещё не
+    # оплата. Реальные оплаты картой админ подтверждает вручную (чек в чате).
     if config.methods_enabled.get("card", True):
         await call.message.answer(texts.receipt_prompt())
     else:

@@ -54,6 +54,96 @@ async def adm_menu(call: CallbackQuery, config: Config,
     await call.answer()
 
 
+async def _payers_text() -> str:
+    payments = await db.list_payments(30)
+    total = await db.count_payments()
+    if not payments:
+        return "📋 Реальных оплат пока нет."
+    lines = [f"📋 Оплаты (последние {len(payments)} из {total}), время МСК:\n"]
+    for p in payments:
+        uname = f"@{p['username']}" if p['username'] else "—"
+        name = p['full_name'] or "—"
+        lines.append(
+            f"• {p['created_at']} — {p['method']} {p['amount']} {p['currency']}\n"
+            f"  {name} ({uname}, id {p['user_id']})")
+    return "\n".join(lines)
+
+
+# ---------- нижние кнопки администратора ----------
+
+@router.message(F.text == kb.ADM_BTN_INVITE)
+async def btn_invite(message: Message, config: Config,
+                     state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer("🔗 В какой канал сделать ссылку для вступления?",
+                         reply_markup=kb.admin_tariff_pick_kb(config, "makeinvite"))
+
+
+@router.message(F.text == kb.ADM_BTN_PRICE)
+async def btn_price(message: Message, config: Config,
+                    state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer("💰 У какого тарифа изменить цену в рублях?",
+                         reply_markup=kb.admin_tariff_pick_kb(config, "setprice"))
+
+
+@router.message(F.text == kb.ADM_BTN_STARS)
+async def btn_stars(message: Message, config: Config,
+                    state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer("⭐ У какого тарифа изменить цену в звёздах?",
+                         reply_markup=kb.admin_tariff_pick_kb(config, "setstars"))
+
+
+@router.message(F.text == kb.ADM_BTN_DESC)
+async def btn_desc(message: Message, config: Config,
+                   state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer("📝 У какого тарифа изменить описание?",
+                         reply_markup=kb.admin_tariff_pick_kb(config, "setdesc"))
+
+
+@router.message(F.text == kb.ADM_BTN_CARD)
+async def btn_card(message: Message, config: Config,
+                   state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    current = config.card_details or "— (не заданы)"
+    await state.set_state(AdminSG.card)
+    await message.answer(
+        f"💳 Текущие реквизиты:\n{current}\n\n"
+        "Пришли новые реквизиты одним сообщением:",
+        reply_markup=kb.admin_back_kb())
+
+
+@router.message(F.text == kb.ADM_BTN_METHODS)
+async def btn_methods(message: Message, config: Config,
+                      state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer(
+        "🔧 Способы оплаты (нажми, чтобы включить/выключить):",
+        reply_markup=kb.admin_methods_kb(config))
+
+
+@router.message(F.text == kb.ADM_BTN_PAYERS)
+async def btn_payers(message: Message, config: Config,
+                     state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer(await _payers_text(), reply_markup=kb.admin_back_kb())
+
+
 # ---------- цена в рублях ----------
 
 @router.callback_query(F.data == "adm:price")
@@ -279,7 +369,7 @@ async def adm_makeinvite(call: CallbackQuery, config: Config) -> None:
         call.bot, tariff.channel_id, tariff.channel_link)
     label = "канал пересдачи" if "peresdacha" in tid else "VIP-канал"
     await call.message.answer(
-        f"Увидели оплату!\nСсылка для вступления в {label}:\n{link}")
+        f"Увидели оплату!\n\nСсылка для вступления в {label}:\n{link}")
 
 
 # ---------- способы оплаты ----------
@@ -314,18 +404,6 @@ async def adm_payers(call: CallbackQuery, config: Config) -> None:
     if not _is_admin(call.from_user.id, config):
         await call.answer()
         return
-    payments = await db.list_payments(30)
-    total = await db.count_payments()
-    if not payments:
-        text = "📋 Оплат пока нет."
-    else:
-        lines = [f"📋 Оплаты (последние {len(payments)} из {total}), время МСК:\n"]
-        for p in payments:
-            uname = f"@{p['username']}" if p['username'] else "—"
-            name = p['full_name'] or "—"
-            lines.append(
-                f"• {p['created_at']} — {p['method']} {p['amount']} {p['currency']}\n"
-                f"  {name} ({uname}, id {p['user_id']})")
-        text = "\n".join(lines)
-    await call.message.edit_text(text, reply_markup=kb.admin_back_kb())
+    await call.message.edit_text(await _payers_text(),
+                                 reply_markup=kb.admin_back_kb())
     await call.answer()

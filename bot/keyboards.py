@@ -24,6 +24,32 @@ def main_reply_kb() -> ReplyKeyboardMarkup:
     )
 
 
+# Нижние кнопки администратора (вместо тарифов/профиля/контактов)
+ADM_BTN_INVITE = "🔗 Ссылка для вступления"
+ADM_BTN_PRICE = "💰 Изменить цену"
+ADM_BTN_STARS = "⭐ Цена в звёздах"
+ADM_BTN_DESC = "📝 Описание"
+ADM_BTN_CARD = "💳 Карта"
+ADM_BTN_METHODS = "🔧 Способы оплаты"
+ADM_BTN_PAYERS = "📋 Кто оплатил"
+
+
+def admin_reply_kb() -> ReplyKeyboardMarkup:
+    """Нижнее меню администратора."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=ADM_BTN_INVITE)],
+            [KeyboardButton(text=ADM_BTN_PRICE),
+             KeyboardButton(text=ADM_BTN_STARS)],
+            [KeyboardButton(text=ADM_BTN_DESC),
+             KeyboardButton(text=ADM_BTN_CARD)],
+            [KeyboardButton(text=ADM_BTN_METHODS),
+             KeyboardButton(text=ADM_BTN_PAYERS)],
+        ],
+        resize_keyboard=True,
+    )
+
+
 def contacts_kb(config: Config) -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
     if config.privacy_url:
