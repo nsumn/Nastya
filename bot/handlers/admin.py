@@ -18,7 +18,7 @@ from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
 from .. import keyboards as kb
-from .. import settings_store
+from .. import services, settings_store
 from ..config import Config
 
 router = Router(name="admin")
@@ -249,6 +249,37 @@ async def adm_card_set(message: Message, config: Config,
     await message.answer(
         f"✅ Реквизиты карты обновлены:\n{config.card_details}",
         reply_markup=kb.admin_menu_kb())
+
+
+# ---------- ссылка для вступления (одноразовая) ----------
+
+@router.callback_query(F.data == "adm:invite")
+async def adm_invite(call: CallbackQuery, config: Config) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    await call.message.edit_text(
+        "🔗 В какой канал сделать ссылку для вступления?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "makeinvite"))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:makeinvite:"))
+async def adm_makeinvite(call: CallbackQuery, config: Config) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    tariff = config.tariffs.get(tid)
+    if tariff is None:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await call.answer("Создаю ссылку…")
+    link = await services.make_invite(
+        call.bot, tariff.channel_id, tariff.channel_link)
+    label = "канал пересдачи" if "peresdacha" in tid else "VIP-канал"
+    await call.message.answer(
+        f"Увидели оплату!\nСсылка для вступления в {label}:\n{link}")
 
 
 # ---------- способы оплаты ----------
