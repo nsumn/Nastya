@@ -1,3 +1,4 @@
 aiogram>=3.4,<4.0
 aiosqlite>=0.19
 python-dotenv>=1.0
+emoji>=2.0          # для linkbot: удаление смайликов из списков ссылок
