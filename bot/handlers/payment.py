@@ -17,9 +17,9 @@ from ..platega import PlategaClient, STATUS_CONFIRMED, STATUS_CANCELED
 log = logging.getLogger(__name__)
 router = Router(name="payment")
 
-# Пользователи, нажавшие «отправить чек» — их следующее сообщение трактуем
-# как чек и помечаем для администратора. Хранится в памяти процесса.
-awaiting_receipt: set[int] = set()
+# Пользователи, нажавшие «отправить чек»: user_id -> название тарифа.
+# Нужно, чтобы в шапке чека у админа было видно, за какой тариф платят.
+awaiting_receipt: dict[int, str] = {}
 
 # user_id -> message_id выставленного счёта в звёздах (чтобы удалить по «Назад»).
 stars_invoices: dict[int, int] = {}
@@ -145,7 +145,7 @@ async def request_receipt(call: CallbackQuery, config: Config) -> None:
     if tariff is None:
         await call.answer("Тариф не найден", show_alert=True)
         return
-    awaiting_receipt.add(call.from_user.id)
+    awaiting_receipt[call.from_user.id] = tariff.title
     # В журнал «кто оплатил» картой НЕ пишем здесь — нажатие кнопки ещё не
     # оплата. Реальные оплаты картой админ подтверждает вручную (чек в чате).
     if config.methods_enabled.get("card", True):

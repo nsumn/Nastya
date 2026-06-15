@@ -54,8 +54,8 @@ async def relay_messages(message: Message, config: Config) -> None:
     # --- сообщение от обычного пользователя -> администратору ---
     u = message.from_user
     name = html.escape(u.full_name or "пользователь")
-    is_receipt = u.id in awaiting_receipt
-    awaiting_receipt.discard(u.id)
+    tariff_title = awaiting_receipt.pop(u.id, None)
+    is_receipt = tariff_title is not None
 
     if u.username:
         username_line = (
@@ -63,7 +63,10 @@ async def relay_messages(message: Message, config: Config) -> None:
     else:
         username_line = "Юзернейм: — (не задан)\n"
 
-    tag = "🧾 ЧЕК ОБ ОПЛАТЕ" if is_receipt else "📨 Сообщение"
+    if is_receipt:
+        tag = f"🧾 ЧЕК ОБ ОПЛАТЕ\nТариф: {html.escape(tariff_title)}"
+    else:
+        tag = "📨 Сообщение"
     header = (
         f"{tag}\n"
         f"От: <a href=\"tg://user?id={u.id}\">{name}</a>\n"
