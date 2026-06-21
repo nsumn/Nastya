@@ -139,7 +139,9 @@ def load_config() -> Config:
         or int(_get("STARS_CHANNEL_ID", "0") or "0"),
     )
 
-    tariffs = {vip_oge.id: vip_oge, peresdacha.id: peresdacha}
+    # Сейчас показываем только «Пересдачу». Чтобы вернуть VIP — добавь
+    # обратно vip_oge.id: vip_oge в этот словарь.
+    tariffs = {peresdacha.id: peresdacha}
 
     admin_chat_id = int(_get("ADMIN_CHAT_ID", "0") or "0")
 
