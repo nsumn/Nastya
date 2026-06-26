@@ -28,6 +28,11 @@ class Config:
     daily_send_time: str
     # Включена ли ежедневная рассылка вообще.
     daily_enabled: bool
+    # Чат админа, который обрабатывает покупки сборников (чеки, переписка).
+    # Может отличаться от ADMIN_CHAT_ID. Если не задан — берётся ADMIN_CHAT_ID.
+    shop_admin_chat_id: int | None
+    # Реквизиты для оплаты картой РФ (показываются покупателю).
+    card_details: str
 
 
 def load_config() -> Config:
@@ -37,10 +42,13 @@ def load_config() -> Config:
             "Не задан BOT_TOKEN. Скопируй oge_bot/.env.example в .env и заполни его."
         )
 
+    admin_chat_id = _get_int("ADMIN_CHAT_ID")
     return Config(
         bot_token=token,
-        admin_chat_id=_get_int("ADMIN_CHAT_ID"),
+        admin_chat_id=admin_chat_id,
         db_path=os.getenv("DB_PATH", "oge_bot.db").strip() or "oge_bot.db",
         daily_send_time=os.getenv("DAILY_SEND_TIME", "10:00").strip() or "10:00",
         daily_enabled=os.getenv("DAILY_ENABLED", "1").strip() not in {"0", "false", "False", ""},
+        shop_admin_chat_id=_get_int("SHOP_ADMIN_CHAT_ID", admin_chat_id),
+        card_details=os.getenv("CARD_DETAILS", "Реквизиты пока не указаны — напиши администратору.").strip(),
     )

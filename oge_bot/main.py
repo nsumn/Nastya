@@ -26,6 +26,7 @@ async def _set_commands(bot: Bot) -> None:
         [
             BotCommand(command="start", description="Главное меню"),
             BotCommand(command="materials", description="Материалы по предметам"),
+            BotCommand(command="shop", description="Купить сборник"),
             BotCommand(command="today", description="Материал дня"),
             BotCommand(command="subscribe", description="Подписаться на рассылку"),
             BotCommand(command="unsubscribe", description="Отписаться от рассылки"),

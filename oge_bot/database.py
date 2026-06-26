@@ -27,7 +27,34 @@ class Database:
                 )
                 """
             )
+            # Карта «id сообщения в чате админа -> id пользователя» для relay:
+            # админ отвечает reply на пересланное сообщение, бот доставляет
+            # ответ нужному покупателю.
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS relay (
+                    admin_msg_id INTEGER PRIMARY KEY,
+                    user_id      INTEGER NOT NULL
+                )
+                """
+            )
             await db.commit()
+
+    async def save_relay(self, admin_msg_id: int, user_id: int) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute(
+                "INSERT OR REPLACE INTO relay (admin_msg_id, user_id) VALUES (?, ?)",
+                (admin_msg_id, user_id),
+            )
+            await db.commit()
+
+    async def get_relay_user(self, admin_msg_id: int) -> int | None:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute(
+                "SELECT user_id FROM relay WHERE admin_msg_id = ?", (admin_msg_id,)
+            ) as cur:
+                row = await cur.fetchone()
+                return int(row[0]) if row else None
 
     async def ensure_user(self, chat_id: int) -> None:
         """Регистрирует пользователя при /start (без подписки)."""

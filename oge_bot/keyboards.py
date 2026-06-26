@@ -5,17 +5,39 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .content import SUBJECTS, Subject, Topic
+from .shop import COLLECTIONS, CURRENCY, Collection
 
 
 def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="📚 Материалы", callback_data="subjects")
+    kb.button(text="🛒 Купить сборник", callback_data="shop")
     kb.button(text="🎲 Материал дня", callback_data="today")
     if subscribed:
         kb.button(text="🔕 Отписаться от рассылки", callback_data="unsub")
     else:
         kb.button(text="🔔 Подписаться на рассылку", callback_data="sub")
     kb.button(text="ℹ️ Помощь", callback_data="help")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def shop_menu() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for c in COLLECTIONS:
+        kb.button(
+            text=f"{c.emoji} {c.title} — {c.price} {CURRENCY}",
+            callback_data=f"buy:{c.id}",
+        )
+    kb.button(text="⬅️ В меню", callback_data="home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def collection_card_kb(collection: Collection) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Оплатил — отправить чек", callback_data=f"receipt:{collection.id}")
+    kb.button(text="⬅️ К сборникам", callback_data="shop")
     kb.adjust(1)
     return kb.as_markup()
 
