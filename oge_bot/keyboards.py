@@ -79,6 +79,15 @@ def collection_card_kb(collection: Collection) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def closed_card_kb() -> InlineKeyboardMarkup:
+    """Кнопки на карточке при остановленных продажах: поддержка + назад."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✍️ Написать в поддержку", url=CONTACT_URL)
+    kb.button(text="⬅️ К сборникам", callback_data="shop")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def subjects_menu() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for subject in SUBJECTS:

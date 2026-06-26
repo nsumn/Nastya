@@ -37,15 +37,18 @@ async def cb_shop(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data.startswith("buy:"))
 async def cb_buy(callback: CallbackQuery, config: Config) -> None:
-    if not SALES_OPEN:
-        await callback.message.edit_text(
-            texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb()
-        )
-        await callback.answer()
-        return
     collection = get_collection(callback.data.split(":", 1)[1])
     if collection is None:
         await callback.answer("Сборник не найден", show_alert=True)
+        return
+    # Продажи остановлены — показываем карточку как обычно, но вместо реквизитов
+    # карты выводим сообщение об остановке продаж.
+    if not SALES_OPEN:
+        await callback.message.edit_text(
+            texts.collection_card_closed(collection.title, collection.price, CURRENCY),
+            reply_markup=keyboards.closed_card_kb(),
+        )
+        await callback.answer()
         return
     await callback.message.edit_text(
         texts.collection_card(
