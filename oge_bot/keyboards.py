@@ -5,6 +5,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .content import SUBJECTS, Subject, Topic
+from .legal import CONTACT_URL
 from .shop import COLLECTIONS, CURRENCY, Collection
 
 
@@ -18,6 +19,26 @@ def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
     else:
         kb.button(text="🔔 Подписаться на рассылку", callback_data="sub")
     kb.button(text="ℹ️ Помощь", callback_data="help")
+    # Нижний блок: справочные кнопки.
+    kb.button(text="❓ FAQ", callback_data="faq")
+    kb.button(text="📞 Контакты", callback_data="contacts")
+    kb.button(text="📄 Пользовательское соглашение", callback_data="terms")
+    kb.button(text="🔒 Политика конфиденциальности", callback_data="privacy")
+    # 1 кнопка в ряд для основных, FAQ и Контакты — в один ряд.
+    kb.adjust(1, 1, 1, 1, 1, 2, 1, 1)
+    return kb.as_markup()
+
+
+def back_home_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🏠 В меню", callback_data="home")
+    return kb.as_markup()
+
+
+def contacts_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✍️ Написать", url=CONTACT_URL)
+    kb.button(text="🏠 В меню", callback_data="home")
     kb.adjust(1)
     return kb.as_markup()
 

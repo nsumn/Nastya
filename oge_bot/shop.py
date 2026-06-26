@@ -36,12 +36,8 @@ COLLECTIONS: list[Collection] = [
     Collection(id="geography", title="География", emoji="🌍"),
     Collection(id="history", title="История", emoji="📜"),
     Collection(id="social", title="Обществознание", emoji="⚖️"),
-    Collection(id="literature", title="Литература", emoji="📖"),
     Collection(id="informatics", title="Информатика", emoji="💻"),
     Collection(id="english", title="Английский язык", emoji="🇬🇧"),
-    Collection(id="german", title="Немецкий язык", emoji="🇩🇪"),
-    Collection(id="french", title="Французский язык", emoji="🇫🇷"),
-    Collection(id="spanish", title="Испанский язык", emoji="🇪🇸"),
 ]
 
 
