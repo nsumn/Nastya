@@ -5,8 +5,16 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .content import SUBJECTS, Subject, Topic
-from .legal import CONTACT_URL
+from .legal import CONTACT_URL, FAQ_URL, PRIVACY_URL, TERMS_URL
 from .shop import COLLECTIONS, CURRENCY, Collection
+
+
+def _doc_button(kb: InlineKeyboardBuilder, text: str, url: str | None, cb: str) -> None:
+    """Кнопка-ссылка на telegra.ph, либо текст внутри бота, если URL не задан."""
+    if url:
+        kb.button(text=text, url=url)
+    else:
+        kb.button(text=text, callback_data=cb)
 
 
 def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
@@ -19,12 +27,11 @@ def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
     else:
         kb.button(text="🔔 Подписаться на рассылку", callback_data="sub")
     kb.button(text="ℹ️ Помощь", callback_data="help")
-    # Нижний блок: справочные кнопки.
-    kb.button(text="❓ FAQ", callback_data="faq")
+    # Нижний блок: справочные кнопки (документы — ссылки на telegra.ph).
+    _doc_button(kb, "❓ FAQ", FAQ_URL, "faq")
     kb.button(text="📞 Контакты", callback_data="contacts")
-    kb.button(text="📄 Пользовательское соглашение", callback_data="terms")
-    kb.button(text="🔒 Политика конфиденциальности", callback_data="privacy")
-    # 1 кнопка в ряд для основных, FAQ и Контакты — в один ряд.
+    _doc_button(kb, "📄 Пользовательское соглашение", TERMS_URL, "terms")
+    _doc_button(kb, "🔒 Политика конфиденциальности", PRIVACY_URL, "privacy")
     kb.adjust(1, 1, 1, 1, 1, 2, 1, 1)
     return kb.as_markup()
 
