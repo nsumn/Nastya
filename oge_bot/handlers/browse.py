@@ -17,7 +17,10 @@ router = Router()
 async def cmd_start(message: Message, db: Database) -> None:
     await db.ensure_user(message.chat.id)
     subscribed = await db.is_subscribed(message.chat.id)
-    await message.answer(texts.WELCOME, reply_markup=keyboards.main_menu(subscribed))
+    # Первое сообщение задаёт постоянную нижнюю клавиатуру (помощь/контакты/политика).
+    await message.answer(texts.WELCOME, reply_markup=keyboards.bottom_menu())
+    # Второе — главное меню с инлайн-кнопками.
+    await message.answer(texts.MENU_PROMPT, reply_markup=keyboards.main_menu(subscribed))
 
 
 @router.message(Command("help"))
@@ -40,7 +43,7 @@ async def cmd_today(message: Message, db: Database) -> None:
 async def cb_home(callback: CallbackQuery, db: Database) -> None:
     subscribed = await db.is_subscribed(callback.message.chat.id)
     await callback.message.edit_text(
-        texts.WELCOME, reply_markup=keyboards.main_menu(subscribed)
+        texts.MENU_PROMPT, reply_markup=keyboards.main_menu(subscribed)
     )
     await callback.answer()
 

@@ -1,16 +1,35 @@
 """Инлайн-клавиатуры. Callback-данные строятся из id предметов/тем/материалов."""
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           KeyboardButton, ReplyKeyboardMarkup)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .content import SUBJECTS, Subject, Topic
 from .legal import CONTACT_URL, FAQ_URL, PRIVACY_URL, TERMS_URL
 from .shop import COLLECTIONS, CURRENCY, Collection
 
+# Подписи кнопок нижней (постоянной) клавиатуры. Используются и при отрисовке,
+# и в хендлерах (сверка по тексту), поэтому вынесены в константы.
+BTN_HELP = "ℹ️ Помощь"
+BTN_CONTACTS = "📞 Контакты"
+BTN_PRIVACY = "🔒 Политика конфиденциальности"
+
+
+def bottom_menu() -> ReplyKeyboardMarkup:
+    """Постоянная клавиатура внизу бота: помощь, контакты, политика."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=BTN_HELP)],
+            [KeyboardButton(text=BTN_CONTACTS), KeyboardButton(text=BTN_PRIVACY)],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
 
 def _doc_button(kb: InlineKeyboardBuilder, text: str, url: str | None, cb: str) -> None:
-    """Кнопка-ссылка на telegra.ph, либо текст внутри бота, если URL не задан."""
+    """Кнопка-ссылка на внешнюю страницу, либо текст внутри бота, если URL не задан."""
     if url:
         kb.button(text=text, url=url)
     else:
@@ -26,13 +45,9 @@ def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
         kb.button(text="🔕 Отписаться от рассылки", callback_data="unsub")
     else:
         kb.button(text="🔔 Подписаться на рассылку", callback_data="sub")
-    kb.button(text="ℹ️ Помощь", callback_data="help")
-    # Нижний блок: справочные кнопки (документы — ссылки на telegra.ph).
     _doc_button(kb, "❓ FAQ", FAQ_URL, "faq")
-    kb.button(text="📞 Контакты", callback_data="contacts")
     _doc_button(kb, "📄 Пользовательское соглашение", TERMS_URL, "terms")
-    _doc_button(kb, "🔒 Политика конфиденциальности", PRIVACY_URL, "privacy")
-    kb.adjust(1, 1, 1, 1, 1, 2, 1, 1)
+    kb.adjust(1)
     return kb.as_markup()
 
 

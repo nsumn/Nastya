@@ -24,20 +24,11 @@ def _shop_admin(config: Config) -> int | None:
 
 @router.message(Command("shop"))
 async def cmd_shop(message: Message) -> None:
-    if not SALES_OPEN:
-        await message.answer(texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb())
-        return
     await message.answer(texts.SHOP_INTRO, reply_markup=keyboards.shop_menu())
 
 
 @router.callback_query(F.data == "shop")
 async def cb_shop(callback: CallbackQuery) -> None:
-    if not SALES_OPEN:
-        await callback.message.edit_text(
-            texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb()
-        )
-        await callback.answer()
-        return
     await callback.message.edit_text(
         texts.SHOP_INTRO, reply_markup=keyboards.shop_menu()
     )

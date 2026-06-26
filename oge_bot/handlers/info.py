@@ -5,7 +5,8 @@ from aiogram.filters import Command
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
-from .. import keyboards, legal
+from .. import keyboards, legal, texts
+from ..keyboards import BTN_CONTACTS, BTN_HELP, BTN_PRIVACY
 
 router = Router()
 
@@ -62,6 +63,22 @@ async def cmd_terms(message: Message) -> None:
 
 @router.message(Command("privacy"))
 async def cmd_privacy(message: Message) -> None:
+    await _send_doc(message, legal.PRIVACY, keyboards.back_home_kb())
+
+
+# ------------------- Нижняя постоянная клавиатура --------------------------- #
+@router.message(F.text == BTN_HELP)
+async def kb_help(message: Message) -> None:
+    await message.answer(texts.HELP)
+
+
+@router.message(F.text == BTN_CONTACTS)
+async def kb_contacts(message: Message) -> None:
+    await _send_doc(message, legal.CONTACTS, keyboards.contacts_kb())
+
+
+@router.message(F.text == BTN_PRIVACY)
+async def kb_privacy(message: Message) -> None:
     await _send_doc(message, legal.PRIVACY, keyboards.back_home_kb())
 
 
