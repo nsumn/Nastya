@@ -6,7 +6,8 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 from .. import keyboards, legal, texts
-from ..keyboards import BTN_CONTACTS, BTN_HELP, BTN_PRIVACY
+from ..keyboards import (BTN_CONTACTS, BTN_FAQ, BTN_HELP, BTN_PRIVACY,
+                         BTN_TERMS)
 
 router = Router()
 
@@ -72,9 +73,19 @@ async def kb_help(message: Message) -> None:
     await message.answer(texts.HELP)
 
 
+@router.message(F.text == BTN_FAQ)
+async def kb_faq(message: Message) -> None:
+    await _send_doc(message, legal.FAQ, keyboards.back_home_kb())
+
+
 @router.message(F.text == BTN_CONTACTS)
 async def kb_contacts(message: Message) -> None:
     await _send_doc(message, legal.CONTACTS, keyboards.contacts_kb())
+
+
+@router.message(F.text == BTN_TERMS)
+async def kb_terms(message: Message) -> None:
+    await _send_doc(message, legal.TERMS, keyboards.back_home_kb())
 
 
 @router.message(F.text == BTN_PRIVACY)

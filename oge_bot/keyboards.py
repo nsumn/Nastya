@@ -6,34 +6,30 @@ from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .content import SUBJECTS, Subject, Topic
-from .legal import CONTACT_URL, FAQ_URL, PRIVACY_URL, TERMS_URL
+from .legal import CONTACT_URL
 from .shop import COLLECTIONS, CURRENCY, Collection
 
 # Подписи кнопок нижней (постоянной) клавиатуры. Используются и при отрисовке,
 # и в хендлерах (сверка по тексту), поэтому вынесены в константы.
 BTN_HELP = "ℹ️ Помощь"
+BTN_FAQ = "❓ FAQ"
 BTN_CONTACTS = "📞 Контакты"
+BTN_TERMS = "📄 Пользовательское соглашение"
 BTN_PRIVACY = "🔒 Политика конфиденциальности"
 
 
 def bottom_menu() -> ReplyKeyboardMarkup:
-    """Постоянная клавиатура внизу бота: помощь, контакты, политика."""
+    """Постоянная клавиатура внизу бота: помощь, FAQ, контакты, документы."""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=BTN_HELP)],
-            [KeyboardButton(text=BTN_CONTACTS), KeyboardButton(text=BTN_PRIVACY)],
+            [KeyboardButton(text=BTN_HELP), KeyboardButton(text=BTN_FAQ)],
+            [KeyboardButton(text=BTN_CONTACTS)],
+            [KeyboardButton(text=BTN_TERMS)],
+            [KeyboardButton(text=BTN_PRIVACY)],
         ],
         resize_keyboard=True,
         is_persistent=True,
     )
-
-
-def _doc_button(kb: InlineKeyboardBuilder, text: str, url: str | None, cb: str) -> None:
-    """Кнопка-ссылка на внешнюю страницу, либо текст внутри бота, если URL не задан."""
-    if url:
-        kb.button(text=text, url=url)
-    else:
-        kb.button(text=text, callback_data=cb)
 
 
 def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
@@ -45,8 +41,6 @@ def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
         kb.button(text="🔕 Отписаться от рассылки", callback_data="unsub")
     else:
         kb.button(text="🔔 Подписаться на рассылку", callback_data="sub")
-    _doc_button(kb, "❓ FAQ", FAQ_URL, "faq")
-    _doc_button(kb, "📄 Пользовательское соглашение", TERMS_URL, "terms")
     kb.adjust(1)
     return kb.as_markup()
 
