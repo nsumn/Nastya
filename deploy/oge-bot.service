@@ -1,0 +1,18 @@
+[Unit]
+Description=OGE prep Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Папка с проектом (где лежит .env). Поменяй, если проект в другом месте.
+WorkingDirectory=/root/Nastya
+# Запуск через python из виртуального окружения проекта.
+ExecStart=/root/Nastya/.venv/bin/python -m oge_bot.main
+# Перезапускать всегда: после краша и после перезагрузки сервера.
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
