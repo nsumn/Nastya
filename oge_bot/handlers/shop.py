@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 
 from .. import keyboards, texts
 from ..config import Config
-from ..shop import CURRENCY, get_collection
+from ..shop import CURRENCY, SALES_OPEN, get_collection
 
 router = Router()
 
@@ -22,17 +22,22 @@ def _shop_admin(config: Config) -> int | None:
     return config.shop_admin_chat_id or config.admin_chat_id
 
 
-async def _show_shop(message: Message) -> None:
-    await message.answer(texts.SHOP_INTRO, reply_markup=keyboards.shop_menu())
-
-
 @router.message(Command("shop"))
 async def cmd_shop(message: Message) -> None:
-    await _show_shop(message)
+    if not SALES_OPEN:
+        await message.answer(texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb())
+        return
+    await message.answer(texts.SHOP_INTRO, reply_markup=keyboards.shop_menu())
 
 
 @router.callback_query(F.data == "shop")
 async def cb_shop(callback: CallbackQuery) -> None:
+    if not SALES_OPEN:
+        await callback.message.edit_text(
+            texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb()
+        )
+        await callback.answer()
+        return
     await callback.message.edit_text(
         texts.SHOP_INTRO, reply_markup=keyboards.shop_menu()
     )
@@ -41,6 +46,12 @@ async def cb_shop(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data.startswith("buy:"))
 async def cb_buy(callback: CallbackQuery, config: Config) -> None:
+    if not SALES_OPEN:
+        await callback.message.edit_text(
+            texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb()
+        )
+        await callback.answer()
+        return
     collection = get_collection(callback.data.split(":", 1)[1])
     if collection is None:
         await callback.answer("Сборник не найден", show_alert=True)
@@ -57,6 +68,12 @@ async def cb_buy(callback: CallbackQuery, config: Config) -> None:
 
 @router.callback_query(F.data.startswith("receipt:"))
 async def cb_receipt(callback: CallbackQuery, config: Config) -> None:
+    if not SALES_OPEN:
+        await callback.message.edit_text(
+            texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb()
+        )
+        await callback.answer()
+        return
     collection = get_collection(callback.data.split(":", 1)[1])
     if collection is None:
         await callback.answer("Сборник не найден", show_alert=True)
