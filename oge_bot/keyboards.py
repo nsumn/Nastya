@@ -12,24 +12,26 @@ from .shop import COLLECTIONS, CURRENCY, Collection
 # Подписи кнопок нижней (постоянной) клавиатуры. Используются и при отрисовке,
 # и в хендлерах (сверка по тексту), поэтому вынесены в константы.
 BTN_HELP = "ℹ️ Помощь"
-BTN_FAQ = "❓ FAQ"
-BTN_CONTACTS = "📞 Контакты"
-BTN_TERMS = "📄 Пользовательское соглашение"
-BTN_PRIVACY = "🔒 Политика конфиденциальности"
+BTN_INFO = "❓ FAQ / Контакты"
 
 
 def bottom_menu() -> ReplyKeyboardMarkup:
-    """Постоянная клавиатура внизу бота: помощь, FAQ, контакты, документы."""
+    """Постоянная клавиатура внизу бота: помощь и единая кнопка FAQ/Контакты."""
     return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=BTN_HELP), KeyboardButton(text=BTN_FAQ)],
-            [KeyboardButton(text=BTN_CONTACTS)],
-            [KeyboardButton(text=BTN_TERMS)],
-            [KeyboardButton(text=BTN_PRIVACY)],
-        ],
+        keyboard=[[KeyboardButton(text=BTN_HELP), KeyboardButton(text=BTN_INFO)]],
         resize_keyboard=True,
         is_persistent=True,
     )
+
+
+def info_kb() -> InlineKeyboardMarkup:
+    """Кнопки под сообщением FAQ/Контакты: документы и связь."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📄 Пользовательское соглашение", callback_data="terms")
+    kb.button(text="🔒 Политика конфиденциальности", callback_data="privacy")
+    kb.button(text="✍️ Написать в поддержку", url=CONTACT_URL)
+    kb.adjust(1)
+    return kb.as_markup()
 
 
 def main_menu(subscribed: bool) -> InlineKeyboardMarkup:

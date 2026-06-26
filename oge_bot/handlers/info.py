@@ -6,8 +6,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 from .. import keyboards, legal, texts
-from ..keyboards import (BTN_CONTACTS, BTN_FAQ, BTN_HELP, BTN_PRIVACY,
-                         BTN_TERMS)
+from ..keyboards import BTN_HELP, BTN_INFO
 
 router = Router()
 
@@ -73,24 +72,10 @@ async def kb_help(message: Message) -> None:
     await message.answer(texts.HELP)
 
 
-@router.message(F.text == BTN_FAQ)
-async def kb_faq(message: Message) -> None:
-    await _send_doc(message, legal.FAQ, keyboards.back_home_kb())
-
-
-@router.message(F.text == BTN_CONTACTS)
-async def kb_contacts(message: Message) -> None:
-    await _send_doc(message, legal.CONTACTS, keyboards.contacts_kb())
-
-
-@router.message(F.text == BTN_TERMS)
-async def kb_terms(message: Message) -> None:
-    await _send_doc(message, legal.TERMS, keyboards.back_home_kb())
-
-
-@router.message(F.text == BTN_PRIVACY)
-async def kb_privacy(message: Message) -> None:
-    await _send_doc(message, legal.PRIVACY, keyboards.back_home_kb())
+@router.message(F.text == BTN_INFO)
+async def kb_info(message: Message) -> None:
+    # Единая кнопка: FAQ в тексте + кнопки на соглашение, политику и связь.
+    await _send_doc(message, legal.FAQ, keyboards.info_kb())
 
 
 # ------------------------------- Кнопки ------------------------------------ #
