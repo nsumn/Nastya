@@ -14,7 +14,7 @@ from dataclasses import dataclass
 CURRENCY = "₽"
 
 # Цена сборника по умолчанию (рубли). Можно задать индивидуально у каждого.
-DEFAULT_PRICE = 249
+DEFAULT_PRICE = 1190
 
 
 @dataclass(frozen=True)
