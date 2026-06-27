@@ -18,7 +18,7 @@ from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
 from .. import keyboards as kb
-from .. import services, settings_store
+from .. import services, settings_store, texts
 from ..config import Config
 
 router = Router(name="admin")
@@ -369,7 +369,8 @@ async def adm_makeinvite(call: CallbackQuery, config: Config) -> None:
         call.bot, tariff.channel_id, tariff.channel_link)
     label = "канал пересдачи" if "peresdacha" in tid else "VIP-канал"
     await call.message.answer(
-        f"Увидели оплату!\n\nСсылка для вступления в {label}:\n{link}")
+        f"Увидели оплату!\n\nСсылка для вступления в {label}:\n{link}\n\n"
+        f"{texts.LINK_NOTE}")
 
 
 # ---------- способы оплаты ----------
