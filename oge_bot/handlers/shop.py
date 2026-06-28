@@ -9,7 +9,8 @@ from aiogram.types import CallbackQuery, Message
 
 from .. import keyboards, texts
 from ..config import Config
-from ..shop import CURRENCY, SALES_OPEN, get_collection
+from ..settings import settings
+from ..shop import CURRENCY, get_collection
 
 router = Router()
 
@@ -41,18 +42,19 @@ async def cb_buy(callback: CallbackQuery, config: Config) -> None:
     if collection is None:
         await callback.answer("Сборник не найден", show_alert=True)
         return
+    price = settings.price_of(collection)
     # Продажи остановлены — показываем карточку как обычно, но вместо реквизитов
     # карты выводим сообщение об остановке продаж.
-    if not SALES_OPEN:
+    if not settings.sales_open:
         await callback.message.edit_text(
-            texts.collection_card_closed(collection.title, collection.price, CURRENCY),
+            texts.collection_card_closed(collection.title, price, CURRENCY),
             reply_markup=keyboards.closed_card_kb(),
         )
         await callback.answer()
         return
     await callback.message.edit_text(
         texts.collection_card(
-            collection.title, collection.price, CURRENCY, config.card_details
+            collection.title, price, CURRENCY, settings.card_details
         ),
         reply_markup=keyboards.collection_card_kb(collection),
         disable_web_page_preview=True,
@@ -62,7 +64,7 @@ async def cb_buy(callback: CallbackQuery, config: Config) -> None:
 
 @router.callback_query(F.data.startswith("receipt:"))
 async def cb_receipt(callback: CallbackQuery, config: Config) -> None:
-    if not SALES_OPEN:
+    if not settings.sales_open:
         await callback.message.edit_text(
             texts.SHOP_CLOSED, reply_markup=keyboards.contacts_kb()
         )
@@ -88,7 +90,7 @@ async def cb_receipt(callback: CallbackQuery, config: Config) -> None:
     await callback.bot.send_message(
         admin,
         f"🛒 Покупатель ожидает проверки оплаты\n"
-        f"Сборник: {html.escape(collection.title)} — {collection.price} {CURRENCY}\n"
+        f"Сборник: {html.escape(collection.title)} — {settings.price_of(collection)} {CURRENCY}\n"
         f"От: <a href=\"tg://user?id={u.id}\">{name}</a>\n"
         f"ID: <code>{u.id}</code>\n\n"
         f"Сейчас он пришлёт чек. Ответь reply на его сообщение, чтобы написать "

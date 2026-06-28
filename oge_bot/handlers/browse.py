@@ -6,6 +6,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, Message
 
 from .. import keyboards, services, texts
+from ..config import Config
 from ..content import all_materials, get_subject, get_topic
 from ..database import Database
 
@@ -14,13 +15,20 @@ router = Router()
 
 # --------------------------- Команды --------------------------------------- #
 @router.message(CommandStart())
-async def cmd_start(message: Message, db: Database) -> None:
+async def cmd_start(message: Message, db: Database, config: Config) -> None:
     await db.ensure_user(message.chat.id)
     subscribed = await db.is_subscribed(message.chat.id)
     # Первое сообщение задаёт постоянную нижнюю клавиатуру (помощь/контакты/политика).
     await message.answer(texts.WELCOME, reply_markup=keyboards.bottom_menu())
     # Второе — главное меню с инлайн-кнопками.
     await message.answer(texts.MENU_PROMPT, reply_markup=keyboards.main_menu(subscribed))
+    # Администратору дополнительно показываем вход в админ-панель.
+    if config.is_admin(message.chat.id):
+        from ..settings import settings
+        await message.answer(
+            "⚙️ <b>Админ-панель</b> — управление картой, ценами и продажами.",
+            reply_markup=keyboards.admin_menu(settings.sales_open),
+        )
 
 
 @router.message(Command("help"))

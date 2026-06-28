@@ -34,6 +34,11 @@ class Config:
     # Реквизиты для оплаты картой РФ (показываются покупателю).
     card_details: str
 
+    def is_admin(self, chat_id: int | None) -> bool:
+        """Админ — это ADMIN_CHAT_ID или SHOP_ADMIN_CHAT_ID."""
+        admins = {a for a in (self.admin_chat_id, self.shop_admin_chat_id) if a is not None}
+        return chat_id is not None and chat_id in admins
+
 
 def load_config() -> Config:
     token = os.getenv("BOT_TOKEN", "").strip()

@@ -38,6 +38,28 @@ class Database:
                 )
                 """
             )
+            # Настройки, меняемые из админ-панели (карта, цены, статус продаж).
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS settings (
+                    key   TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+                """
+            )
+            await db.commit()
+
+    async def get_all_settings(self) -> dict[str, str]:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute("SELECT key, value FROM settings") as cur:
+                return {row[0]: row[1] for row in await cur.fetchall()}
+
+    async def set_setting(self, key: str, value: str) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                (key, value),
+            )
             await db.commit()
 
     async def save_relay(self, admin_msg_id: int, user_id: int) -> None:

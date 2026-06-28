@@ -13,6 +13,8 @@ from .config import load_config
 from .database import Database
 from .handlers import setup_routers
 from .scheduler import run_daily_scheduler
+from .settings import settings
+from .shop import SALES_OPEN
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,6 +37,7 @@ async def _set_commands(bot: Bot) -> None:
             BotCommand(command="terms", description="Пользовательское соглашение"),
             BotCommand(command="privacy", description="Политика конфиденциальности"),
             BotCommand(command="help", description="Помощь"),
+            BotCommand(command="admin", description="Админ-панель"),
         ]
     )
 
@@ -44,6 +47,9 @@ async def main() -> None:
 
     db = Database(config.db_path)
     await db.init()
+
+    # Настройки админ-панели (карта, цены, статус продаж): из БД, иначе дефолты.
+    await settings.load(db, default_card=config.card_details, default_sales_open=SALES_OPEN)
 
     bot = Bot(
         token=config.bot_token,

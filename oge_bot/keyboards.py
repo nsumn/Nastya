@@ -62,13 +62,40 @@ def contacts_kb() -> InlineKeyboardMarkup:
 
 
 def shop_menu() -> InlineKeyboardMarkup:
+    from .settings import settings
     kb = InlineKeyboardBuilder()
     for c in COLLECTIONS:
         kb.button(
-            text=f"{c.emoji} {c.title} — {c.price} {CURRENCY}",
+            text=f"{c.emoji} {c.title} — {settings.price_of(c)} {CURRENCY}",
             callback_data=f"buy:{c.id}",
         )
     kb.button(text="⬅️ В меню", callback_data="home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def admin_menu(sales_open: bool) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="💳 Изменить карту", callback_data="adm_card")
+    kb.button(text="💰 Изменить цены", callback_data="adm_prices")
+    if sales_open:
+        kb.button(text="🔴 Остановить продажи", callback_data="adm_sales_off")
+    else:
+        kb.button(text="🟢 Открыть продажи", callback_data="adm_sales_on")
+    kb.button(text="🛍 Открыть как пользователь", callback_data="home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def admin_prices_menu() -> InlineKeyboardMarkup:
+    from .settings import settings
+    kb = InlineKeyboardBuilder()
+    for c in COLLECTIONS:
+        kb.button(
+            text=f"{c.emoji} {c.title} — {settings.price_of(c)} {CURRENCY}",
+            callback_data=f"adm_price:{c.id}",
+        )
+    kb.button(text="⬅️ Назад", callback_data="adm_back")
     kb.adjust(1)
     return kb.as_markup()
 
