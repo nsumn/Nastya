@@ -383,7 +383,7 @@ INFORMATICS = Subject(
     topics=[
         Topic(
             id="inf_number",
-            title="Системы счисления",
+            title="Системы счисления (задания 2, 10)",
             materials=[
                 Material(
                     id="inf_number_1",
@@ -400,7 +400,7 @@ INFORMATICS = Subject(
         ),
         Topic(
             id="inf_logic",
-            title="Логика",
+            title="Логика (задание 3)",
             materials=[
                 Material(
                     id="inf_logic_1",
@@ -418,7 +418,7 @@ INFORMATICS = Subject(
         ),
         Topic(
             id="inf_units",
-            title="Измерение информации",
+            title="Измерение информации (задание 1)",
             materials=[
                 Material(
                     id="inf_units_1",
@@ -435,7 +435,7 @@ INFORMATICS = Subject(
         ),
         Topic(
             id="inf_algo",
-            title="Алгоритмы и программирование",
+            title="Алгоритмы и программирование (задания 6, 15)",
             materials=[
                 Material(
                     id="inf_algo_1",
@@ -454,7 +454,7 @@ INFORMATICS = Subject(
         ),
         Topic(
             id="inf_table",
-            title="Электронные таблицы",
+            title="Электронные таблицы (задание 14)",
             materials=[
                 Material(
                     id="inf_table_1",
