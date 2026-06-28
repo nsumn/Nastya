@@ -37,6 +37,7 @@ def info_kb() -> InlineKeyboardMarkup:
 def main_menu(subscribed: bool) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="📚 Материалы", callback_data="subjects")
+    kb.button(text="🧠 Тренировка", callback_data="quiz")
     kb.button(text="🛒 Купить сборник", callback_data="shop")
     kb.button(text="🎲 Материал дня", callback_data="today")
     if subscribed:

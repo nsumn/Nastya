@@ -1,6 +1,6 @@
 from aiogram import Router
 
-from . import admin, browse, info, relay, shop, subscription
+from . import admin, browse, info, quiz, relay, shop, subscription
 
 
 def setup_routers() -> Router:
@@ -8,6 +8,7 @@ def setup_routers() -> Router:
     router.include_router(browse.router)
     router.include_router(subscription.router)
     router.include_router(shop.router)
+    router.include_router(quiz.router)
     router.include_router(info.router)
     # admin — до relay: ввод новых значений (карта/цена) идёт через FSM-состояния,
     # чтобы обычные сообщения админа (ответы покупателям) ловил relay.
