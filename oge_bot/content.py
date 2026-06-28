@@ -62,7 +62,7 @@ MATH = Subject(
     topics=[
         Topic(
             id="math_numbers",
-            title="Числа и вычисления",
+            title="Числа и вычисления (задания 6–8)",
             materials=[
                 Material(
                     id="math_numbers_1",
@@ -108,7 +108,7 @@ MATH = Subject(
         ),
         Topic(
             id="math_algebra",
-            title="Алгебра: уравнения и выражения",
+            title="Алгебра: уравнения и неравенства (задания 8–9, 13)",
             materials=[
                 Material(
                     id="math_algebra_1",
@@ -148,7 +148,7 @@ MATH = Subject(
         ),
         Topic(
             id="math_geometry",
-            title="Геометрия",
+            title="Геометрия (задания 15–19, 23–25)",
             materials=[
                 Material(
                     id="math_geometry_1",
@@ -179,7 +179,7 @@ MATH = Subject(
         ),
         Topic(
             id="math_func",
-            title="Функции и графики",
+            title="Графики функций (задание 11)",
             materials=[
                 Material(
                     id="math_func_1",
@@ -190,7 +190,7 @@ MATH = Subject(
         ),
         Topic(
             id="math_prob",
-            title="Вероятность и статистика",
+            title="Вероятность и статистика (задание 10)",
             materials=[
                 Material(
                     id="math_prob_1",
