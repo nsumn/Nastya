@@ -50,5 +50,5 @@ def load_config() -> Config:
         daily_send_time=os.getenv("DAILY_SEND_TIME", "10:00").strip() or "10:00",
         daily_enabled=os.getenv("DAILY_ENABLED", "1").strip() not in {"0", "false", "False", ""},
         shop_admin_chat_id=_get_int("SHOP_ADMIN_CHAT_ID", admin_chat_id),
-        card_details=os.getenv("CARD_DETAILS", "Реквизиты пока не указаны — напиши администратору.").strip(),
+        card_details=os.getenv("CARD_DETAILS", "Карта ОТП Банка: 2201 9604 8752 4348").strip(),
     )
