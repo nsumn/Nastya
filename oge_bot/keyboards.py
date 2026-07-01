@@ -77,6 +77,7 @@ def shop_menu() -> InlineKeyboardMarkup:
 
 def admin_menu(sales_open: bool) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
+    kb.button(text="🛍 Продажи и материалы", callback_data="store_admin")
     kb.button(text="💳 Изменить карту", callback_data="adm_card")
     kb.button(text="💰 Изменить цены", callback_data="adm_prices")
     if sales_open:

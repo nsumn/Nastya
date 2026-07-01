@@ -47,7 +47,148 @@ class Database:
                 )
                 """
             )
+            # Файлы сборников для отправки (хранится file_id из Telegram).
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS sale_materials (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title      TEXT NOT NULL,
+                    file_id    TEXT NOT NULL,
+                    file_type  TEXT NOT NULL DEFAULT 'document',
+                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+                """
+            )
+            # Журнал продаж (из бота и добавленные вручную).
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS sales (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    buyer           TEXT NOT NULL DEFAULT '',
+                    buyer_id        INTEGER,
+                    subject         TEXT NOT NULL DEFAULT '',
+                    receipt_file_id TEXT,
+                    receipt_type    TEXT,
+                    source          TEXT NOT NULL DEFAULT 'bot',
+                    delivered       INTEGER NOT NULL DEFAULT 0,
+                    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+                """
+            )
             await db.commit()
+
+    # ---------------------- Материалы для отправки ------------------------- #
+    async def add_material(self, title: str, file_id: str, file_type: str) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute(
+                "INSERT INTO sale_materials (title, file_id, file_type) VALUES (?, ?, ?)",
+                (title, file_id, file_type),
+            )
+            await db.commit()
+
+    async def list_materials(self) -> list[dict]:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute(
+                "SELECT id, title, file_id, file_type FROM sale_materials ORDER BY id"
+            ) as cur:
+                return [
+                    {"id": r[0], "title": r[1], "file_id": r[2], "file_type": r[3]}
+                    for r in await cur.fetchall()
+                ]
+
+    async def get_material(self, material_id: int) -> dict | None:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute(
+                "SELECT id, title, file_id, file_type FROM sale_materials WHERE id = ?",
+                (material_id,),
+            ) as cur:
+                r = await cur.fetchone()
+                return {"id": r[0], "title": r[1], "file_id": r[2], "file_type": r[3]} if r else None
+
+    async def delete_material(self, material_id: int) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute("DELETE FROM sale_materials WHERE id = ?", (material_id,))
+            await db.commit()
+
+    # ---------------------------- Продажи ---------------------------------- #
+    async def add_sale(
+        self,
+        buyer: str,
+        subject: str,
+        *,
+        buyer_id: int | None = None,
+        receipt_file_id: str | None = None,
+        receipt_type: str | None = None,
+        source: str = "bot",
+    ) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute(
+                """
+                INSERT INTO sales
+                    (buyer, buyer_id, subject, receipt_file_id, receipt_type, source)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (buyer, buyer_id, subject, receipt_file_id, receipt_type, source),
+            )
+            await db.commit()
+
+    def _sale_row(self, r) -> dict:
+        return {
+            "id": r[0], "buyer": r[1], "buyer_id": r[2], "subject": r[3],
+            "receipt_file_id": r[4], "receipt_type": r[5], "source": r[6],
+            "delivered": r[7], "created_at": r[8],
+        }
+
+    async def list_sales(self, limit: int = 30) -> list[dict]:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute(
+                """
+                SELECT id, buyer, buyer_id, subject, receipt_file_id, receipt_type,
+                       source, delivered, created_at
+                FROM sales ORDER BY id DESC LIMIT ?
+                """,
+                (limit,),
+            ) as cur:
+                return [self._sale_row(r) for r in await cur.fetchall()]
+
+    async def list_receipts(self, limit: int = 30) -> list[dict]:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute(
+                """
+                SELECT id, buyer, buyer_id, subject, receipt_file_id, receipt_type,
+                       source, delivered, created_at
+                FROM sales WHERE receipt_file_id IS NOT NULL
+                ORDER BY id DESC LIMIT ?
+                """,
+                (limit,),
+            ) as cur:
+                return [self._sale_row(r) for r in await cur.fetchall()]
+
+    async def get_sale(self, sale_id: int) -> dict | None:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute(
+                """
+                SELECT id, buyer, buyer_id, subject, receipt_file_id, receipt_type,
+                       source, delivered, created_at
+                FROM sales WHERE id = ?
+                """,
+                (sale_id,),
+            ) as cur:
+                r = await cur.fetchone()
+                return self._sale_row(r) if r else None
+
+    async def set_sale_delivered(self, sale_id: int, delivered: bool) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute(
+                "UPDATE sales SET delivered = ? WHERE id = ?",
+                (1 if delivered else 0, sale_id),
+            )
+            await db.commit()
+
+    async def sales_count(self) -> int:
+        async with aiosqlite.connect(self._path) as db:
+            async with db.execute("SELECT COUNT(*) FROM sales") as cur:
+                return int((await cur.fetchone())[0])
 
     async def get_all_settings(self) -> dict[str, str]:
         async with aiosqlite.connect(self._path) as db:

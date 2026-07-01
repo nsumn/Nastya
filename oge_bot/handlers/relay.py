@@ -97,5 +97,21 @@ async def relay(message: Message, config: Config, db: Database) -> None:
         logger.exception("relay user->admin failed: %s", exc)
         return
 
+    # Чек об оплате — записываем продажу в журнал (с файлом чека, если он есть).
+    if collection_title:
+        buyer = f"@{u.username}" if u.username else (u.full_name or "пользователь")
+        receipt_id, receipt_type = None, None
+        if message.document:
+            receipt_id, receipt_type = message.document.file_id, "document"
+        elif message.photo:
+            receipt_id, receipt_type = message.photo[-1].file_id, "photo"
+        try:
+            await db.add_sale(
+                buyer, collection_title, buyer_id=u.id,
+                receipt_file_id=receipt_id, receipt_type=receipt_type, source="bot",
+            )
+        except Exception:  # noqa: BLE001 — журнал не должен ломать relay
+            logger.exception("не удалось записать продажу в журнал")
+
     if collection_title:
         await message.answer(texts.RECEIPT_SENT)
