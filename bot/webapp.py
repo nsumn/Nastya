@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
 import time
 from collections import deque
@@ -15,6 +16,7 @@ from urllib.parse import parse_qsl
 
 from aiohttp import web
 
+from . import sponsors
 from .roblox import BadUsername, RobloxError, UserNotFound
 
 log = logging.getLogger(__name__)
@@ -56,6 +58,16 @@ def verify_init_data(init_data: str, bot_token: str) -> dict | None:
     if auth_date and time.time() - auth_date > INIT_DATA_MAX_AGE:
         return None
     return pairs
+
+
+def init_data_user_id(parsed: dict | None) -> int:
+    """id пользователя Telegram из проверенных данных initData."""
+    if not parsed:
+        return 0
+    try:
+        return int(json.loads(parsed.get("user", "{}")).get("id", 0))
+    except (ValueError, TypeError):
+        return 0
 
 
 def _rate_limited(app: web.Application, key: str) -> bool:
@@ -101,6 +113,17 @@ async def roblox_user(request: web.Request) -> web.Response:
     if _rate_limited(request.app, rl_key):
         return web.json_response(
             {"error": "Слишком много запросов. Подожди минуту."}, status=429)
+
+    # Обязательная подписка на спонсоров.
+    user_id = init_data_user_id(parsed)
+    bot = request.app.get("bot")
+    if user_id and bot is not None:
+        missing = await sponsors.unsubscribed(bot, user_id)
+        if missing:
+            return web.json_response(
+                {"error": "Подпишись на спонсоров, чтобы пользоваться ботом.",
+                 "need_subscribe": [s.as_dict() for s in missing]},
+                status=403)
 
     username = request.query.get("username", "")
     try:

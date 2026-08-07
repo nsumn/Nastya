@@ -65,6 +65,43 @@ async def init_db(path: str) -> None:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sponsors (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat     TEXT NOT NULL UNIQUE,
+                title    TEXT NOT NULL,
+                url      TEXT NOT NULL DEFAULT '',
+                added_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+            """
+        )
+        await db.commit()
+
+
+# ---------- sponsors (обязательная подписка) ----------
+
+async def list_sponsors() -> list[dict]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM sponsors ORDER BY id") as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def add_sponsor(chat: str, title: str, url: str) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO sponsors (chat, title, url) VALUES (?, ?, ?) "
+            "ON CONFLICT(chat) DO UPDATE SET title = excluded.title, "
+            "url = excluded.url",
+            (str(chat), title, url),
+        )
+        await db.commit()
+
+
+async def delete_sponsor(sponsor_id: int) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute("DELETE FROM sponsors WHERE id = ?", (sponsor_id,))
         await db.commit()
 
 

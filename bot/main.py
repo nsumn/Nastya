@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 
 from . import database as db
-from . import services, settings_store
+from . import services, settings_store, sponsors
 from .config import load_config
 from .handlers import admin, payment, relay, roblox, start
 from .platega import PlategaClient
@@ -38,6 +38,7 @@ async def main() -> None:
 
     await db.init_db(config.db_path)
     await settings_store.load_overrides(config)  # цены/способы из БД
+    await sponsors.seed_from_env(config.sponsor_channels)
 
     bot = Bot(config.bot_token,
               default=DefaultBotProperties(parse_mode="HTML",

@@ -27,6 +27,36 @@ def main_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
+def subscribe_kb(sponsors, retry: str = "") -> InlineKeyboardMarkup:
+    """Каналы-спонсоры + кнопка «Я подписался».
+
+    В `retry` кладём ник, который человек искал: после проверки подписки
+    бот сам покажет результат, не заставляя вводить заново.
+    """
+    b = InlineKeyboardBuilder()
+    for s in sponsors:
+        if s.link:
+            b.row(InlineKeyboardButton(text=f"📢 {s.title}", url=s.link))
+    payload = retry[:40] if retry else ""
+    b.row(InlineKeyboardButton(text="✅ Я подписался",
+                               callback_data=f"sub:check:{payload}"))
+    return b.as_markup()
+
+
+def admin_sponsors_kb(sponsors, is_on: bool) -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(
+        text=f"Обязательная подписка: {'✅ вкл' if is_on else '❌ выкл'}",
+        callback_data="adm:sptoggle"))
+    for s in sponsors:
+        b.row(InlineKeyboardButton(text=f"🗑 {s.title}",
+                                   callback_data=f"adm:spdel:{s.id}"))
+    b.row(InlineKeyboardButton(text="➕ Добавить канал",
+                               callback_data="adm:spadd"))
+    b.row(InlineKeyboardButton(text="⬅️ В меню", callback_data="adm:menu"))
+    return b.as_markup()
+
+
 def roblox_app_kb(config: Config) -> InlineKeyboardMarkup | None:
     """Инлайн-кнопка запуска мини-приложения (если задан https-адрес)."""
     if not config.miniapp_url:
@@ -45,6 +75,7 @@ ADM_BTN_DESC = "📝 Описание"
 ADM_BTN_CARD = "💳 Карта"
 ADM_BTN_METHODS = "🔧 Способы оплаты"
 ADM_BTN_PAYERS = "📋 Кто оплатил"
+ADM_BTN_SPONSORS = "📢 Спонсоры (ОП)"
 
 
 def admin_reply_kb() -> ReplyKeyboardMarkup:
@@ -58,6 +89,7 @@ def admin_reply_kb() -> ReplyKeyboardMarkup:
              KeyboardButton(text=ADM_BTN_CARD)],
             [KeyboardButton(text=ADM_BTN_METHODS),
              KeyboardButton(text=ADM_BTN_PAYERS)],
+            [KeyboardButton(text=ADM_BTN_SPONSORS)],
         ],
         resize_keyboard=True,
     )
@@ -154,6 +186,8 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
                                callback_data="adm:methods"))
     b.row(InlineKeyboardButton(text="📋 Кто оплатил",
                                callback_data="adm:payers"))
+    b.row(InlineKeyboardButton(text="📢 Спонсоры (обязательная подписка)",
+                               callback_data="adm:sponsors"))
     return b.as_markup()
 
 

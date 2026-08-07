@@ -67,6 +67,13 @@
   .link{display:block; text-align:center; margin-top:14px; font-size:14px}
   .skel{opacity:.6; animation:pulse 1.1s ease-in-out infinite}
   @keyframes pulse{50%{opacity:.25}}
+  .gate{margin-top:16px; background:var(--sec); border-radius:18px; padding:18px;
+        text-align:center}
+  .gate h2{font-size:17px; margin:0 0 6px}
+  .gate p{color:var(--hint); font-size:14px; margin:0 0 14px}
+  .chan{display:block; padding:13px 14px; margin-bottom:8px; border-radius:var(--radius);
+        background:var(--bg); color:var(--text); font-size:15px; font-weight:500}
+  .check{width:100%; margin-top:6px}
 </style>
 </head>
 <body>
@@ -160,6 +167,39 @@
     haptic('success');
   }
 
+  // Обязательная подписка: показываем каналы и кнопку перепроверки.
+  function gate(channels) {
+    var list = channels.map(function (c) {
+      return c.url
+        ? '<a class="chan" href="' + esc(c.url) + '" data-url="' + esc(c.url) +
+          '">📢 ' + esc(c.title) + '</a>'
+        : '<div class="chan">📢 ' + esc(c.title) + '</div>';
+    }).join('');
+    out.innerHTML =
+      '<div class="gate">' +
+        '<h2>🔒 Сначала подпишись на спонсоров</h2>' +
+        '<p>Это открывает доступ к проверке аккаунтов Roblox.</p>' +
+        list +
+        '<button class="check" id="recheck">✅ Я подписался</button>' +
+      '</div>';
+
+    Array.prototype.forEach.call(out.querySelectorAll('.chan[data-url]'),
+      function (a) {
+        a.addEventListener('click', function (e) {
+          if (tg && tg.openTelegramLink) {
+            e.preventDefault();
+            tg.openTelegramLink(a.getAttribute('data-url'));
+          }
+        });
+      });
+    document.getElementById('recheck').addEventListener('click', function () {
+      if (input.value.trim()) { search(); return; }
+      out.innerHTML = '<div class="msg skel">Проверяем подписку…</div>';
+      probe(true);
+    });
+    haptic('warning');
+  }
+
   function row(k, v) {
     return '<div class="row"><div class="k">' + esc(k) +
            '</div><div class="v">' + v + '</div></div>';
@@ -178,7 +218,9 @@
         headers: tg && tg.initData ? { 'X-Telegram-Init-Data': tg.initData } : {}
       });
       var data = await res.json();
-      if (!res.ok || data.error) {
+      if (data.need_subscribe && data.need_subscribe.length) {
+        gate(data.need_subscribe);
+      } else if (!res.ok || data.error) {
         haptic('error');
         info(data.error || 'Что-то пошло не так. Попробуй ещё раз.', true);
       } else {
@@ -205,7 +247,27 @@
   var preset = new URLSearchParams(location.search).get('username') ||
     (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
   if (preset) { input.value = preset; search(); }
-  else { input.focus(); }
+  else { input.focus(); probe(); }
+
+  // Тихая проверка подписки при открытии: пустой ник до неё не доходит,
+  // поэтому ответ 403 означает именно «сначала подпишись».
+  async function probe(loud) {
+    try {
+      var res = await fetch('/api/roblox/user?username=', {
+        headers: tg && tg.initData ? { 'X-Telegram-Init-Data': tg.initData } : {}
+      });
+      var data = await res.json();
+      if (data.need_subscribe && data.need_subscribe.length) {
+        gate(data.need_subscribe);
+      } else if (loud) {
+        haptic('success');
+        info('Доступ открыт ✅ Введи ник Roblox и нажми «Найти».');
+        input.focus();
+      }
+    } catch (e) {
+      if (loud) info('Нет связи с сервером. Попробуй ещё раз.', true);
+    }
+  }
 })();
 </script>
 </body>
