@@ -59,6 +59,10 @@ class Config:
     test_user_id: int = 0       # для этого id особая цена в звёздах (тест)
     test_stars_price: int = 1   # тестовая цена в звёздах
 
+    # Мини-приложение «Возраст аккаунта Roblox»
+    miniapp_url: str = ""            # https-адрес страницы мини-аппа
+    miniapp_allow_anon: bool = False  # пускать в API без подписи Telegram (dev)
+
     tariffs: dict[str, Tariff] = field(default_factory=dict)
     # Включённые способы оплаты (меняются админом на лету).
     methods_enabled: dict = field(
@@ -145,6 +149,14 @@ def load_config() -> Config:
 
     admin_chat_id = int(_get("ADMIN_CHAT_ID", "0") or "0")
 
+    # Мини-приложение живёт на том же сервере: PUBLIC_BASE_URL + /app.
+    # Telegram открывает WebApp только по https, поэтому http-адрес не берём.
+    public_base_url = _get("PUBLIC_BASE_URL")
+    miniapp_url = _get("MINIAPP_URL") or (
+        public_base_url.rstrip("/") + "/app" if public_base_url else "")
+    if not miniapp_url.startswith("https://"):
+        miniapp_url = ""
+
     return Config(
         bot_token=_get("BOT_TOKEN"),
         admin_chat_id=admin_chat_id,
@@ -152,7 +164,7 @@ def load_config() -> Config:
         platega_secret=_get("PLATEGA_SECRET"),
         platega_base_url=_get("PLATEGA_BASE_URL", "https://app.platega.io"),
         platega_sbp_method=int(_get("PLATEGA_SBP_METHOD", "2") or "2"),
-        public_base_url=_get("PUBLIC_BASE_URL"),
+        public_base_url=public_base_url,
         return_url=_get("RETURN_URL", "https://t.me"),
         failed_url=_get("FAILED_URL", "https://t.me"),
         port=int(_get("PORT", "8080") or "8080"),
@@ -171,5 +183,7 @@ def load_config() -> Config:
                             "https://buyns.t.me/?start=ref-9ahrunie2par"),
         test_user_id=int(_get("TEST_USER_ID", "0") or "0"),
         test_stars_price=int(_get("TEST_STARS_PRICE", "1") or "1"),
+        miniapp_url=miniapp_url,
+        miniapp_allow_anon=_get("MINIAPP_ALLOW_ANON", "0") in ("1", "true", "yes"),
         tariffs=tariffs,
     )

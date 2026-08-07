@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
-                           KeyboardButton, ReplyKeyboardMarkup)
+                           KeyboardButton, ReplyKeyboardMarkup, WebAppInfo)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .config import Config, Tariff
@@ -11,17 +11,30 @@ from .config import Config, Tariff
 BTN_TARIFFS = "🧾 Тарифы"
 BTN_PROFILE = "👤 Мой профиль"
 BTN_CONTACTS = "❗️ Контакты/FAQ"
+BTN_ROBLOX = "🎮 Возраст Roblox"
 
 
-def main_reply_kb() -> ReplyKeyboardMarkup:
+def main_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     """Постоянное меню снизу, у поля ввода."""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
-            [KeyboardButton(text=BTN_CONTACTS)],
-        ],
-        resize_keyboard=True,
-    )
+    rows = [
+        [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
+        [KeyboardButton(text=BTN_CONTACTS)],
+    ]
+    # Если мини-апп настроен — кнопка открывает его сразу, без лишнего шага.
+    url = getattr(config, "miniapp_url", "") if config else ""
+    rows.append([KeyboardButton(text=BTN_ROBLOX,
+                                web_app=WebAppInfo(url=url) if url else None)])
+    return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
+
+
+def roblox_app_kb(config: Config) -> InlineKeyboardMarkup | None:
+    """Инлайн-кнопка запуска мини-приложения (если задан https-адрес)."""
+    if not config.miniapp_url:
+        return None
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="🎮 Открыть мини-приложение",
+                               web_app=WebAppInfo(url=config.miniapp_url)))
+    return b.as_markup()
 
 
 # Нижние кнопки администратора (вместо тарифов/профиля/контактов)

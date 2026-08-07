@@ -7,6 +7,7 @@ from aiohttp import web
 
 from . import services
 from .platega import STATUS_CONFIRMED, STATUS_CANCELED
+from .webapp import setup_miniapp
 
 log = logging.getLogger(__name__)
 
@@ -48,11 +49,13 @@ async def platega_callback(request: web.Request) -> web.Response:
     return web.Response(text="ok")
 
 
-def build_app(bot, config, platega) -> web.Application:
+def build_app(bot, config, platega, roblox=None) -> web.Application:
     app = web.Application()
     app["bot"] = bot
     app["config"] = config
     app["platega"] = platega
+    app["roblox"] = roblox
     app.router.add_get("/health", health)
     app.router.add_post(config.callback_path, platega_callback)
+    setup_miniapp(app)   # /app и /api/roblox/user
     return app

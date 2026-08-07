@@ -12,8 +12,9 @@ from aiohttp import web
 from . import database as db
 from . import services, settings_store
 from .config import load_config
-from .handlers import admin, payment, relay, start
+from .handlers import admin, payment, relay, roblox, start
 from .platega import PlategaClient
+from .roblox import RobloxClient
 from .webhook import build_app
 
 logging.basicConfig(
@@ -47,14 +48,17 @@ async def main() -> None:
         base_url=config.platega_base_url,
     )
 
+    roblox_client = RobloxClient()
+
     dp = Dispatcher()
     dp.include_router(admin.router)    # админ-команды и FSM — раньше relay
+    dp.include_router(roblox.router)
     dp.include_router(start.router)
     dp.include_router(payment.router)
     dp.include_router(relay.router)    # подключаем последним
 
     # веб-сервер для вебхуков Platega
-    app = build_app(bot, config, platega)
+    app = build_app(bot, config, platega, roblox_client)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", config.port)
@@ -67,10 +71,12 @@ async def main() -> None:
     try:
         await bot.delete_webhook(drop_pending_updates=True)
         log.info("Bot polling started")
-        await dp.start_polling(bot, config=config, platega=platega)
+        await dp.start_polling(bot, config=config, platega=platega,
+                               roblox=roblox_client)
     finally:
         await runner.cleanup()
         await platega.close()
+        await roblox_client.close()
         await bot.session.close()
 
 

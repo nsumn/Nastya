@@ -80,15 +80,52 @@ bot/
   platega.py     — клиент Platega.io API
   services.py    — выдача доступа и опрос статуса
   webhook.py     — приём вебхуков Platega (aiohttp)
+  roblox.py      — клиент публичного API Roblox (возраст аккаунта)
+  webapp.py      — HTTP мини-приложения: /app и /api/roblox/user
+  miniapp/
+    index.html   — сама страница мини-аппа (Telegram WebApp)
   handlers/
     start.py     — /start и навигация по тарифам
     payment.py   — способы оплаты (СБП / карта / stars)
+    roblox.py    — /roblox <ник> и кнопка запуска мини-аппа
     relay.py     — двусторонний чат покупатель ⇄ администратор
   main.py        — точка входа
 ```
+
+## Мини-приложение «Возраст аккаунта Roblox»
+
+Пользователь вводит ник Roblox — бот показывает дату регистрации, возраст
+аккаунта (годы/месяцы/дни), аватар, ID, число подписчиков и метки
+verified / бан. Данные берутся из **публичного API Roblox** (ключи не нужны).
+
+Два способа использования:
+
+| Где | Как включить |
+|-----|--------------|
+| **Мини-приложение (WebApp)** | Нужен https-адрес: задай `PUBLIC_BASE_URL=https://твой-домен` (или отдельно `MINIAPP_URL`). Страница отдаётся ботом по `/app`, кнопка «🎮 Возраст Roblox» появляется в нижнем меню и открывает её внутри Telegram. |
+| **Команда в чате** | `/roblox builderman` — работает всегда, https не нужен. |
+
+Принимается ник, `@ник`, числовой ID или ссылка вида
+`https://www.roblox.com/users/156/profile`.
+
+Как это устроено:
+
+1. `POST users.roblox.com/v1/usernames/users` — ник → `userId`.
+2. `GET users.roblox.com/v1/users/{id}` — поле `created` (дата регистрации).
+3. `thumbnails` / `friends` — аватар и счётчики.
+
+Запросы идут через сервер бота (не из браузера), ответы кэшируются на 5 минут,
+на пользователя действует лимит 20 запросов в минуту. API мини-аппа проверяет
+подпись Telegram `initData` (HMAC от токена бота) — со стороннего сайта
+дёрнуть его не выйдет. Для отладки в обычном браузере поставь
+`MINIAPP_ALLOW_ANON=1`.
+
+Чтобы мини-апп открывался ещё и кнопкой рядом с полем ввода: BotFather →
+`/mybots` → бот → *Bot Settings* → *Menu Button* → указать `https://твой-домен/app`.
 
 ## Технологии
 
 - [aiogram 3](https://docs.aiogram.dev/) — Telegram Bot API
 - aiohttp — приём вебхуков
 - aiosqlite — хранилище заказов и переписки
+- Telegram Mini Apps (WebApp) + публичный API Roblox

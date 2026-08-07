@@ -17,7 +17,7 @@ router = Router(name="start")
 async def cmd_start(message: Message, config: Config) -> None:
     # У администратора снизу — кнопки управления, у покупателей — обычное меню.
     is_admin = config.admin_chat_id and message.from_user.id == config.admin_chat_id
-    bottom = kb.admin_reply_kb() if is_admin else kb.main_reply_kb()
+    bottom = kb.admin_reply_kb() if is_admin else kb.main_reply_kb(config)
     # Приветствие (с кликабельными ссылками) + меню снизу — без «пальца».
     await message.answer(texts.welcome(config), reply_markup=bottom)
     # Карточка выбора тарифа: стрелка указывает на кнопку тарифа ниже.
