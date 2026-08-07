@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import html
+import logging
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
@@ -24,6 +25,7 @@ from .. import keyboards as kb
 from .. import op
 from ..config import Config
 
+log = logging.getLogger(__name__)
 router = Router(name="op_admin")
 
 MIN_LINKS = 3          # столько ссылок в сообщении = это дневной список
@@ -87,6 +89,8 @@ async def catch_forward(message: Message, config: Config, origin) -> None:
     if not _is_admin(message.from_user.id, config):
         return
     chat = getattr(origin, "chat", None)
+    log.info("Пересланное сообщение от админа, источник: %s",
+             getattr(chat, "title", None) or type(origin).__name__)
     if chat is None or chat.type != "channel":
         # Возможно, переслали список ссылок из чата — попробуем разобрать.
         await _maybe_list(message)
@@ -115,9 +119,13 @@ async def catch_admin_message(message: Message, config: Config) -> None:
         return
     if message.reply_to_message:
         return                      # это ответ покупателю — не наше дело
+    log.info("Сообщение админа: %d симв., ссылок: %d",
+             len(_text(message)), len(_entities(message)))
     if await _maybe_list(message):
         return
-    await _maybe_check_link(message)
+    if await _maybe_check_link(message):
+        return
+    log.info("Не список и не ссылка — оставил без действия")
 
 
 async def _maybe_list(message: Message) -> bool:
