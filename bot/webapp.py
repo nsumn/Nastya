@@ -16,7 +16,7 @@ from urllib.parse import parse_qsl
 
 from aiohttp import web
 
-from . import sponsors
+from . import op
 from .roblox import BadUsername, RobloxError, UserNotFound
 
 log = logging.getLogger(__name__)
@@ -117,13 +117,12 @@ async def roblox_user(request: web.Request) -> web.Response:
     # Обязательная подписка на спонсоров.
     user_id = init_data_user_id(parsed)
     bot = request.app.get("bot")
-    if user_id and bot is not None:
-        missing = await sponsors.unsubscribed(bot, user_id)
-        if missing:
-            return web.json_response(
-                {"error": "Подпишись на спонсоров, чтобы пользоваться ботом.",
-                 "need_subscribe": [s.as_dict() for s in missing]},
-                status=403)
+    if user_id and bot is not None and not await op.is_subscribed(bot, user_id):
+        links = await op.visible_links(bot)
+        return web.json_response(
+            {"error": "Подпишись на спонсоров, чтобы пользоваться ботом.",
+             "need_subscribe": [x.as_dict() for x in links]},
+            status=403)
 
     username = request.query.get("username", "")
     try:

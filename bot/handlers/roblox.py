@@ -1,36 +1,36 @@
 """Мини-приложение «Возраст аккаунта Roblox»: кнопка запуска и команда
 `/roblox <ник>` — то же самое, но прямо в чате (работает и без https-хоста).
 
-Перед выдачей результата проверяется подписка на каналы-спонсоры (см.
-`bot/sponsors.py`): не подписан — вместо ответа список каналов и кнопка
-«✅ Я подписался»."""
+Перед выдачей результата проверяется подписка (см. `bot/op.py`): не подписан
+— вместо ответа список каналов-спонсоров и кнопка «✅ Я подписался»."""
 from __future__ import annotations
 
 import html
 
 from aiogram import F, Router
-from aiogram.filters import Command, CommandObject
+from aiogram.filters import Command, CommandObject, StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from .. import keyboards as kb
-from .. import sponsors
+from .. import op
 from ..config import Config
 from ..roblox import BadUsername, RobloxClient, RobloxError, UserNotFound
 
 router = Router(name="roblox")
 
+
+class RobloxSG(StatesGroup):
+    nick = State()
+
 ASK = ("🎮 Пришли ник Roblox — покажу, сколько существует аккаунт.\n\n"
        "Например: <code>/roblox builderman</code>")
 
-NO_URL = ("Мини-приложение пока не настроено (нужен https-адрес в "
-          "<code>PUBLIC_BASE_URL</code> или <code>MINIAPP_URL</code>).\n\n"
-          "Но проверить ник можно прямо здесь: <code>/roblox ник</code>")
+ASK_NICK = ("🎮 Пришли ник Roblox одним сообщением — покажу, "
+            "сколько существует аккаунт.")
 
-SUB_REQUIRED = ("🔒 Чтобы пользоваться проверкой аккаунтов Roblox, "
-                "подпишись на наших спонсоров 👇\n\n"
-                "После подписки нажми «✅ Я подписался».")
-
-SUB_STILL_MISSING = "Ты подписан ещё не на все каналы 😉"
+SUB_STILL_MISSING = "Ты ещё не подписался на канал 😉"
 
 
 def _card(u: dict) -> str:
@@ -57,11 +57,10 @@ def _card(u: dict) -> str:
 
 async def _blocked(message: Message, query: str = "") -> bool:
     """Показывает список спонсоров, если пользователь не подписан."""
-    missing = await sponsors.unsubscribed(message.bot, message.from_user.id)
-    if not missing:
+    if await op.is_subscribed(message.bot, message.from_user.id):
         return False
-    await message.answer(SUB_REQUIRED,
-                         reply_markup=kb.subscribe_kb(missing, query))
+    await message.answer(await op.gate_text(message.bot),
+                         reply_markup=kb.subscribe_kb(query))
     return True
 
 
@@ -78,15 +77,27 @@ async def cmd_roblox(message: Message, command: CommandObject,
 
 
 @router.message(F.text == kb.BTN_ROBLOX)
-async def btn_roblox(message: Message, config: Config) -> None:
-    """Нижняя кнопка: открываем мини-апп, если он настроен."""
+async def btn_roblox(message: Message, config: Config,
+                     state: FSMContext) -> None:
+    """Нижняя кнопка: мини-апп, если он настроен, иначе спрашиваем ник."""
     if await _blocked(message):
         return
     if config.miniapp_url:
         await message.answer("Открывай мини-приложение 👇",
                              reply_markup=kb.roblox_app_kb(config))
-    else:
-        await message.answer(NO_URL)
+        return
+    await state.set_state(RobloxSG.nick)
+    await message.answer(ASK_NICK)
+
+
+@router.message(StateFilter(RobloxSG.nick), F.text, ~F.text.startswith("/"))
+async def nick_typed(message: Message, state: FSMContext,
+                     roblox: RobloxClient) -> None:
+    """Ник, присланный после нажатия кнопки."""
+    if await _blocked(message, message.text.strip()):
+        return
+    await state.clear()
+    await _reply_lookup(message, message.text.strip(), roblox)
 
 
 @router.callback_query(F.data.startswith("sub:check"))
@@ -96,15 +107,9 @@ async def check_subscription(call: CallbackQuery, config: Config,
     parts = call.data.split(":", 2)
     query = parts[2] if len(parts) > 2 else ""
 
-    sponsors.forget(call.from_user.id)
-    missing = await sponsors.unsubscribed(call.bot, call.from_user.id)
-    if missing:
+    op.forget(call.from_user.id)
+    if not await op.is_subscribed(call.bot, call.from_user.id):
         await call.answer(SUB_STILL_MISSING, show_alert=True)
-        try:
-            await call.message.edit_reply_markup(
-                reply_markup=kb.subscribe_kb(missing, query))
-        except Exception:  # noqa: BLE001 — разметка не изменилась
-            pass
         return
 
     await call.answer("Спасибо! Доступ открыт ✅")

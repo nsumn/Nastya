@@ -27,33 +27,30 @@ def main_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
-def subscribe_kb(sponsors, retry: str = "") -> InlineKeyboardMarkup:
-    """Каналы-спонсоры + кнопка «Я подписался».
+def subscribe_kb(retry: str = "") -> InlineKeyboardMarkup:
+    """Кнопка «Я подписался» под списком каналов.
 
     В `retry` кладём ник, который человек искал: после проверки подписки
     бот сам покажет результат, не заставляя вводить заново.
     """
     b = InlineKeyboardBuilder()
-    for s in sponsors:
-        if s.link:
-            b.row(InlineKeyboardButton(text=f"📢 {s.title}", url=s.link))
-    payload = retry[:40] if retry else ""
     b.row(InlineKeyboardButton(text="✅ Я подписался",
-                               callback_data=f"sub:check:{payload}"))
+                               callback_data=f"sub:check:{retry[:40]}"))
     return b.as_markup()
 
 
-def admin_sponsors_kb(sponsors, is_on: bool) -> InlineKeyboardMarkup:
+def op_check_kb() -> InlineKeyboardMarkup:
+    """Такая же кнопка для предпросмотра у администратора."""
+    return subscribe_kb()
+
+
+def op_admin_kb(is_on: bool) -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
     b.row(InlineKeyboardButton(
-        text=f"Обязательная подписка: {'✅ вкл' if is_on else '❌ выкл'}",
-        callback_data="adm:sptoggle"))
-    for s in sponsors:
-        b.row(InlineKeyboardButton(text=f"🗑 {s.title}",
-                                   callback_data=f"adm:spdel:{s.id}"))
-    b.row(InlineKeyboardButton(text="➕ Добавить канал",
-                               callback_data="adm:spadd"))
-    b.row(InlineKeyboardButton(text="⬅️ В меню", callback_data="adm:menu"))
+        text=f"Проверка подписки: {'✅ вкл' if is_on else '❌ выкл'}",
+        callback_data="op:toggle"))
+    b.row(InlineKeyboardButton(text="👀 Показать как видят люди",
+                               callback_data="op:preview"))
     return b.as_markup()
 
 
@@ -75,7 +72,7 @@ ADM_BTN_DESC = "📝 Описание"
 ADM_BTN_CARD = "💳 Карта"
 ADM_BTN_METHODS = "🔧 Способы оплаты"
 ADM_BTN_PAYERS = "📋 Кто оплатил"
-ADM_BTN_SPONSORS = "📢 Спонсоры (ОП)"
+ADM_BTN_SPONSORS = "📢 Спонсоры (ОП)"  # обрабатывается в op_admin
 
 
 def admin_reply_kb() -> ReplyKeyboardMarkup:
@@ -187,7 +184,7 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
     b.row(InlineKeyboardButton(text="📋 Кто оплатил",
                                callback_data="adm:payers"))
     b.row(InlineKeyboardButton(text="📢 Спонсоры (обязательная подписка)",
-                               callback_data="adm:sponsors"))
+                               callback_data="op:show"))
     return b.as_markup()
 
 

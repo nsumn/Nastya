@@ -62,7 +62,6 @@ class Config:
     # Мини-приложение «Возраст аккаунта Roblox»
     miniapp_url: str = ""            # https-адрес страницы мини-аппа
     miniapp_allow_anon: bool = False  # пускать в API без подписи Telegram (dev)
-    sponsor_channels: str = ""        # первичный список каналов ОП из .env
 
     tariffs: dict[str, Tariff] = field(default_factory=dict)
     # Включённые способы оплаты (меняются админом на лету).
@@ -186,6 +185,5 @@ def load_config() -> Config:
         test_stars_price=int(_get("TEST_STARS_PRICE", "1") or "1"),
         miniapp_url=miniapp_url,
         miniapp_allow_anon=_get("MINIAPP_ALLOW_ANON", "0") in ("1", "true", "yes"),
-        sponsor_channels=_get("SPONSOR_CHANNELS"),
         tariffs=tariffs,
     )

@@ -5,7 +5,6 @@
   ⭐ Изменить цену (звёзды)    — цена в звёздах для всех
   🔧 Способы оплаты           — вкл/выкл карта/СБП/звёзды
   📋 Кто оплатил              — журнал оплат со временем
-  📢 Спонсоры (ОП)            — каналы обязательной подписки
 """
 from __future__ import annotations
 
@@ -21,7 +20,7 @@ from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
 from .. import keyboards as kb
-from .. import services, settings_store, sponsors, texts
+from .. import services, settings_store, texts
 from ..config import Config
 
 log = logging.getLogger(__name__)
@@ -33,7 +32,6 @@ class AdminSG(StatesGroup):
     stars_price = State()
     description = State()
     card = State()
-    sponsor = State()
 
 
 def _is_admin(user_id: int, config: Config) -> bool:
@@ -72,29 +70,6 @@ async def _payers_text() -> str:
             f"• {p['created_at']} — {p['method']} {p['amount']} {p['currency']}\n"
             f"  {name} ({uname}, id {p['user_id']})")
     return "\n".join(lines)
-
-
-SPONSOR_HELP = (
-    "📢 <b>Обязательная подписка</b>\n\n"
-    "Пока человек не подписан на все каналы из списка, проверка ников "
-    "Roblox (мини-приложение и команда /roblox) ему не отвечает.\n\n"
-    "Чтобы бот мог проверять подписку, <b>добавь его администратором</b> "
-    "в каждый канал-спонсор."
-)
-
-
-async def _sponsors_view() -> tuple[str, object]:
-    items = await sponsors.all_sponsors()
-    is_on = await sponsors.enabled()
-    if items:
-        lines = [SPONSOR_HELP, "", "Каналы:"]
-        lines += [f"{i}. {html.escape(s.title)} — <code>{s.chat}</code>"
-                  for i, s in enumerate(items, 1)]
-        text = "\n".join(lines)
-    else:
-        text = SPONSOR_HELP + "\n\n<i>Список пуст — подписка ни у кого "
-        text += "не спрашивается.</i>"
-    return text, kb.admin_sponsors_kb(items, is_on)
 
 
 # ---------- нижние кнопки администратора ----------
@@ -170,16 +145,6 @@ async def btn_payers(message: Message, config: Config,
         return
     await state.clear()
     await message.answer(await _payers_text(), reply_markup=kb.admin_back_kb())
-
-
-@router.message(F.text == kb.ADM_BTN_SPONSORS)
-async def btn_sponsors(message: Message, config: Config,
-                       state: FSMContext) -> None:
-    if not _is_admin(message.from_user.id, config):
-        return
-    await state.clear()
-    text, markup = await _sponsors_view()
-    await message.answer(text, reply_markup=markup)
 
 
 # ---------- цена в рублях ----------
@@ -446,133 +411,3 @@ async def adm_payers(call: CallbackQuery, config: Config) -> None:
     await call.message.edit_text(await _payers_text(),
                                  reply_markup=kb.admin_back_kb())
     await call.answer()
-
-
-# ---------- спонсоры (обязательная подписка) ----------
-
-@router.callback_query(F.data == "adm:sponsors")
-async def adm_sponsors(call: CallbackQuery, config: Config,
-                       state: FSMContext) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
-    await state.clear()
-    text, markup = await _sponsors_view()
-    await call.message.edit_text(text, reply_markup=markup)
-    await call.answer()
-
-
-@router.callback_query(F.data == "adm:sptoggle")
-async def adm_sponsors_toggle(call: CallbackQuery, config: Config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
-    new_val = not await sponsors.enabled()
-    await sponsors.set_enabled(new_val)
-    text, markup = await _sponsors_view()
-    await call.message.edit_text(text, reply_markup=markup)
-    await call.answer("Подписка включена ✅" if new_val
-                      else "Подписка выключена ❌")
-
-
-@router.callback_query(F.data.startswith("adm:spdel:"))
-async def adm_sponsor_delete(call: CallbackQuery, config: Config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
-    await db.delete_sponsor(int(call.data.split(":")[2]))
-    text, markup = await _sponsors_view()
-    await call.message.edit_text(text, reply_markup=markup)
-    await call.answer("Канал убран 🗑")
-
-
-@router.callback_query(F.data == "adm:spadd")
-async def adm_sponsor_add(call: CallbackQuery, config: Config,
-                          state: FSMContext) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
-    await state.set_state(AdminSG.sponsor)
-    await call.message.edit_text(
-        "➕ Пришли канал одним сообщением:\n\n"
-        "• <code>@username</code> или ссылку <code>https://t.me/username</code> "
-        "— для публичного канала;\n"
-        "• <b>перешли любой пост</b> из канала — для закрытого.\n\n"
-        "Бот уже должен быть администратором этого канала.",
-        reply_markup=kb.admin_back_kb())
-    await call.answer()
-
-
-def _chat_ref(message: Message) -> str | None:
-    """Достаёт ссылку на канал из пересланного поста или из текста."""
-    origin = message.forward_origin
-    chat = getattr(origin, "chat", None) if origin else None
-    if chat is not None:
-        return str(chat.id)
-    text = (message.text or "").strip()
-    if not text:
-        return None
-    if "t.me/" in text:
-        text = text.split("t.me/", 1)[1].split("?")[0].strip("/")
-    text = text.lstrip("@")
-    if not text or text.startswith("+") or text.startswith("joinchat"):
-        return None       # приватная ссылка — по ней подписку не проверить
-    if text.lstrip("-").isdigit():
-        return text
-    return "@" + text
-
-
-@router.message(StateFilter(AdminSG.sponsor))
-async def adm_sponsor_save(message: Message, config: Config,
-                           state: FSMContext) -> None:
-    if not _is_admin(message.from_user.id, config):
-        return
-    ref = _chat_ref(message)
-    if ref is None:
-        await message.answer(
-            "Не понял канал. Пришли <code>@username</code> или перешли "
-            "пост из канала (для закрытого канала — только пересылка).")
-        return
-
-    try:
-        chat = await message.bot.get_chat(ref)
-    except TelegramAPIError as exc:
-        await message.answer(
-            f"❌ Не получилось открыть канал: <code>{html.escape(str(exc))}</code>\n\n"
-            "Проверь, что бот добавлен в канал администратором.")
-        return
-
-    # Ссылка для кнопки: у публичного канала — @username, у закрытого —
-    # многоразовое приглашение (бот должен быть админом с правом приглашать).
-    url = f"https://t.me/{chat.username}" if chat.username else ""
-    if not url:
-        url = chat.invite_link or ""
-    if not url:
-        try:
-            invite = await message.bot.create_chat_invite_link(
-                chat.id, name="Спонсор")
-            url = invite.invite_link
-        except TelegramAPIError as exc:
-            log.warning("Не смог создать ссылку для спонсора %s: %s",
-                        chat.id, exc)
-
-    warn = "" if url else ("\n\n⚠️ Не удалось получить ссылку на канал — "
-                           "кнопки для подписки не будет. Дай боту право "
-                           "«Пригласительные ссылки».")
-    try:
-        me = await message.bot.get_me()
-        member = await message.bot.get_chat_member(chat.id, me.id)
-        status = getattr(member.status, "value", member.status)
-        if status not in ("administrator", "creator"):
-            warn += ("\n\n⚠️ Бот не администратор этого канала — проверить "
-                     "подписку он не сможет. Добавь его админом.")
-    except TelegramAPIError:
-        warn += ("\n\n⚠️ Не удалось проверить права бота в канале. "
-                 "Убедись, что он администратор.")
-
-    await db.add_sponsor(str(chat.id), chat.title or ref, url)
-    await state.clear()
-    text, markup = await _sponsors_view()
-    await message.answer(
-        f"✅ Канал «{html.escape(chat.title or ref)}» добавлен в спонсоры." + warn)
-    await message.answer(text, reply_markup=markup)

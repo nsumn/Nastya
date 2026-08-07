@@ -10,9 +10,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 
 from . import database as db
-from . import services, settings_store, sponsors
+from . import services, settings_store
 from .config import load_config
-from .handlers import admin, payment, relay, roblox, start
+from .handlers import admin, op_admin, payment, relay, roblox, start
 from .platega import PlategaClient
 from .roblox import RobloxClient
 from .webhook import build_app
@@ -38,7 +38,6 @@ async def main() -> None:
 
     await db.init_db(config.db_path)
     await settings_store.load_overrides(config)  # цены/способы из БД
-    await sponsors.seed_from_env(config.sponsor_channels)
 
     bot = Bot(config.bot_token,
               default=DefaultBotProperties(parse_mode="HTML",
@@ -54,6 +53,7 @@ async def main() -> None:
     dp = Dispatcher()
     dp.include_router(admin.router)    # админ-команды и FSM — раньше relay
     dp.include_router(roblox.router)
+    dp.include_router(op_admin.router)
     dp.include_router(start.router)
     dp.include_router(payment.router)
     dp.include_router(relay.router)    # подключаем последним
