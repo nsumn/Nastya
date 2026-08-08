@@ -23,6 +23,7 @@ from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import BaseFilter, Command
 from aiogram.types import CallbackQuery, ChatMemberUpdated, Message
 
+from .. import database as db
 from .. import keyboards as kb
 from .. import op
 from ..config import Config
@@ -103,6 +104,33 @@ async def set_reward(message: Message, command) -> None:
         return
     await op.set_reward_text(text)
     await message.answer(f"✅ Готово:\n\n<i>{html.escape(text)}</i>")
+
+
+async def stats_text() -> str:
+    st = await db.user_stats()
+    active = st["total"] - st["blocked"]
+    def part(n: int) -> str:
+        return f" ({round(n / st['total'] * 100)}%)" if st["total"] else ""
+    return "\n".join([
+        "📊 <b>Статистика</b>",
+        "",
+        f"👥 Всего людей в боте: <b>{st['total']}</b>",
+        f"✅ Осталось: <b>{active}</b>{part(active)}",
+        f"🚫 Заблокировали бота: <b>{st['blocked']}</b>{part(st['blocked'])}",
+        "",
+        f"📱 Открывали мини-приложение: <b>{st['opened_app']}</b>{part(st['opened_app'])}",
+        f"🔎 Искали ник: <b>{st['searched']}</b>{part(st['searched'])}",
+        f"🔁 Всего поисков: <b>{st['searches_total']}</b>",
+        f"🔓 Прошли проверку подписки: <b>{st['op_passed']}</b>{part(st['op_passed'])}",
+        "",
+        f"🆕 Пришли сегодня: <b>{st['today']}</b>",
+        f"📅 За неделю: <b>{st['week']}</b>",
+    ])
+
+
+@router.message(Command("stats"))
+async def show_stats(message: Message) -> None:
+    await message.answer(await stats_text())
 
 
 @router.message(Command("bonus"))
@@ -273,11 +301,11 @@ async def _maybe_check_link(message: Message) -> bool:
 
 # ---------- бота сделали админом канала ----------
 
-@router.my_chat_member()
+@router.my_chat_member(F.chat.type == "channel")
 async def bot_promoted(event: ChatMemberUpdated, config: Config) -> None:
     status = getattr(event.new_chat_member.status,
                      "value", event.new_chat_member.status)
-    if event.chat.type != "channel" or status not in ("administrator", "creator"):
+    if status not in ("administrator", "creator"):
         return
     if await op.check_chat():
         return                      # проверочный канал уже выбран

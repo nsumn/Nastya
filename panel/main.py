@@ -26,6 +26,7 @@ from aiogram.types import (CallbackQuery, InlineKeyboardButton,
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
 
+from bot import database as db
 from bot import op, op_store
 
 load_dotenv()
@@ -40,6 +41,7 @@ BTN_CHANGE = "🔄 Поменять все ссылки"
 BTN_BOTS = "🤖 Мои боты"
 BTN_PREVIEW = "👀 Как видят люди"
 BTN_REWARD = "✏️ Финальный экран"
+BTN_STATS = "📊 Статистика"
 
 MIN_LINKS = 3
 
@@ -68,7 +70,8 @@ def menu_kb() -> ReplyKeyboardMarkup:
         keyboard=[[KeyboardButton(text=BTN_CHANGE)],
                   [KeyboardButton(text=BTN_BOTS),
                    KeyboardButton(text=BTN_PREVIEW)],
-                  [KeyboardButton(text=BTN_REWARD)]],
+                  [KeyboardButton(text=BTN_REWARD),
+                   KeyboardButton(text=BTN_STATS)]],
         resize_keyboard=True,
     )
 
@@ -153,6 +156,12 @@ async def show_bots(message: Message) -> None:
     lines += ["", "⚠️ — бот не админ в проверочном канале, подписку "
                   "проверить не сможет."]
     await message.answer("\n".join(lines))
+
+
+@router.message(F.text == BTN_STATS)
+async def show_stats(message: Message) -> None:
+    from bot.handlers.op_admin import stats_text
+    await message.answer(await stats_text())
 
 
 @router.message(F.text == BTN_REWARD)
@@ -268,6 +277,7 @@ async def main() -> None:
         raise RuntimeError("PANEL_ADMIN_ID (или ADMIN_CHAT_ID) не задан.")
 
     op_store.configure(os.getenv("OP_STATE_FILE", "op_state.json"))
+    db.configure(os.getenv("DB_PATH", "bot.db"))   # та же база, что у бота
 
     bot = Bot(token, default=DefaultBotProperties(
         parse_mode="HTML", link_preview_is_disabled=True))

@@ -16,6 +16,7 @@ from urllib.parse import parse_qsl, unquote
 
 from aiohttp import web
 
+from . import database as db
 from . import op
 from .roblox import BadUsername, RobloxError, UserNotFound
 
@@ -180,6 +181,9 @@ async def roblox_user(request: web.Request) -> web.Response:
             {"error": "Слишком много запросов. Подожди минуту."}, status=429)
 
     username = request.query.get("username", "")
+    user_id = init_data_user_id(parsed)
+    if user_id:
+        await db.bump_counter(user_id, "searches")
     try:
         data = await client.lookup(username)
     except BadUsername:
@@ -210,8 +214,12 @@ async def op_status(request: web.Request) -> web.Response:
     user_id = init_data_user_id(parsed)
     links = [x.as_dict() for x in await op.visible_links(bot)]
     subscribed = True
+    if user_id:
+        await db.bump_counter(user_id, "app_opens")
     if user_id and bot is not None:
         subscribed = await op.is_subscribed(bot, user_id)
+        if subscribed:
+            await db.bump_counter(user_id, "op_passed")
     return web.json_response({
         "subscribed": bool(subscribed),
         "links": links,

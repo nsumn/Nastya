@@ -65,10 +65,88 @@ async def init_db(path: str) -> None:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                user_id    INTEGER PRIMARY KEY,
+                username   TEXT,
+                full_name  TEXT,
+                first_seen TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
+                last_seen  TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
+                blocked    INTEGER NOT NULL DEFAULT 0,
+                app_opens  INTEGER NOT NULL DEFAULT 0,
+                searches   INTEGER NOT NULL DEFAULT 0,
+                op_passed  INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
         await db.commit()
 
 
-# ---------- settings (key-value) ----------
+# ---------- users (кто пользуется ботом) ----------
+
+async def track_user(user_id: int, username: Optional[str] = None,
+                     full_name: Optional[str] = None) -> None:
+    """Отмечает пользователя: первый раз — заводит, дальше обновляет визит."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO users (user_id, username, full_name) VALUES (?, ?, ?) "
+            "ON CONFLICT(user_id) DO UPDATE SET "
+            "  username = COALESCE(excluded.username, users.username), "
+            "  full_name = COALESCE(excluded.full_name, users.full_name), "
+            "  last_seen = datetime('now', '+3 hours'), "
+            "  blocked = 0",
+            (user_id, username, full_name),
+        )
+        await db.commit()
+
+
+async def set_blocked(user_id: int, blocked: bool) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO users (user_id, blocked) VALUES (?, ?) "
+            "ON CONFLICT(user_id) DO UPDATE SET blocked = excluded.blocked, "
+            "last_seen = datetime('now', '+3 hours')",
+            (user_id, 1 if blocked else 0),
+        )
+        await db.commit()
+
+
+async def bump_counter(user_id: int, field: str) -> None:
+    """Увеличивает счётчик: app_opens, searches или op_passed."""
+    if field not in ("app_opens", "searches", "op_passed"):
+        return
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            f"INSERT INTO users (user_id, {field}) VALUES (?, 1) "
+            f"ON CONFLICT(user_id) DO UPDATE SET {field} = users.{field} + 1, "
+            "last_seen = datetime('now', '+3 hours')",
+            (user_id,),
+        )
+        await db.commit()
+
+
+async def user_stats() -> dict:
+    """Сводка для админ-панели."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            """
+            SELECT
+              COUNT(*),
+              SUM(blocked = 1),
+              SUM(app_opens > 0),
+              SUM(searches > 0),
+              SUM(searches),
+              SUM(op_passed > 0),
+              SUM(date(first_seen) = date('now', '+3 hours')),
+              SUM(first_seen >= datetime('now', '+3 hours', '-7 days'))
+            FROM users
+            """
+        ) as cur:
+            row = await cur.fetchone() or ()
+    keys = ("total", "blocked", "opened_app", "searched", "searches_total",
+            "op_passed", "today", "week")
+    return {k: (v or 0) for k, v in zip(keys, row)}
 
 async def get_setting(key: str) -> Optional[str]:
     async with aiosqlite.connect(_DB_PATH) as db:

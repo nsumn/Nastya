@@ -11,8 +11,9 @@ from aiogram import F, Router
 from aiogram.filters import BaseFilter, Command, CommandObject, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, ChatMemberUpdated, Message
 
+from .. import database as db
 from .. import keyboards as kb
 from .. import op
 from ..config import Config
@@ -155,3 +156,11 @@ async def any_text_is_nick(message: Message, roblox: RobloxClient) -> None:
     if await _blocked(message, nick):
         return
     await _reply_lookup(message, nick, roblox)
+
+
+@router.my_chat_member(F.chat.type == "private")
+async def user_blocked_or_returned(event: ChatMemberUpdated) -> None:
+    """Человек заблокировал бота или разблокировал — отмечаем в статистике."""
+    status = getattr(event.new_chat_member.status,
+                     "value", event.new_chat_member.status)
+    await db.set_blocked(event.from_user.id, status == "kicked")
