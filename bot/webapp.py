@@ -29,33 +29,63 @@ RATE_LIMIT = 20                   # запросов
 RATE_WINDOW = 60                  # за столько секунд
 
 
+def _hmac_hash(pairs: dict, bot_token: str) -> str:
+    check_string = "\n".join(f"{k}={pairs[k]}" for k in sorted(pairs))
+    secret = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
+    return hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
+
+
 def verify_init_data(init_data: str, bot_token: str) -> dict | None:
     """Проверяет подпись Telegram WebApp initData.
 
     Возвращает разобранные поля или ``None``, если подпись/срок не сходятся.
     """
-    if not init_data or not bot_token:
+    if not init_data:
+        log.warning("initData пустой — страница открыта не из Telegram "
+                    "или Telegram не передал данные")
+        return None
+    if not bot_token:
+        log.warning("BOT_TOKEN не задан — проверить подпись нечем")
         return None
     try:
         pairs = dict(parse_qsl(init_data, keep_blank_values=True))
     except Exception:  # noqa: BLE001
+        log.warning("initData не разбирается как строка запроса")
         return None
 
     received_hash = pairs.pop("hash", "")
     if not received_hash:
+        log.warning("В initData нет поля hash. Поля: %s", sorted(pairs))
         return None
 
-    check_string = "\n".join(f"{k}={pairs[k]}" for k in sorted(pairs))
-    secret = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
-    calculated = hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
+    calculated = _hmac_hash(pairs, bot_token)
     if not hmac.compare_digest(calculated, received_hash):
-        return None
+        # Некоторые клиенты добавляют поле signature (Ed25519 для сторонней
+        # проверки) — пробуем ещё раз без него.
+        if "signature" in pairs:
+            without_sig = {k: v for k, v in pairs.items() if k != "signature"}
+            if hmac.compare_digest(_hmac_hash(without_sig, bot_token),
+                                   received_hash):
+                pairs = without_sig
+            else:
+                log.warning("Подпись initData не сходится. Поля: %s | "
+                            "ожидалось %s…, пришло %s…",
+                            sorted(pairs), calculated[:12], received_hash[:12])
+                return None
+        else:
+            log.warning("Подпись initData не сходится. Поля: %s | "
+                        "ожидалось %s…, пришло %s…",
+                        sorted(pairs), calculated[:12], received_hash[:12])
+            return None
 
     try:
         auth_date = int(pairs.get("auth_date", "0"))
     except ValueError:
+        log.warning("auth_date не число: %r", pairs.get("auth_date"))
         return None
     if auth_date and time.time() - auth_date > INIT_DATA_MAX_AGE:
+        log.warning("initData просрочен: auth_date %s, сейчас %s",
+                    auth_date, int(time.time()))
         return None
     return pairs
 
@@ -102,6 +132,12 @@ async def roblox_user(request: web.Request) -> web.Response:
     init_data = (request.headers.get("X-Telegram-Init-Data")
                  or request.query.get("initData", ""))
     parsed = verify_init_data(init_data, config.bot_token)
+    if parsed is None:
+        log.warning("Запрос без подтверждённых данных Telegram: %s "
+                    "(заголовок %s, длина initData %d)",
+                    request.path,
+                    "есть" if request.headers.get("X-Telegram-Init-Data") else "нет",
+                    len(init_data))
     if parsed is None:
         if not config.miniapp_allow_anon:
             return web.json_response(
