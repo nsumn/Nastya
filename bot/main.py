@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 
 from . import database as db
-from . import services, settings_store
+from . import op, op_store, services, settings_store
 from .config import load_config
 from .handlers import admin, op_admin, payment, relay, roblox, start
 from .platega import PlategaClient
@@ -31,6 +31,21 @@ async def _resume_pending(bot: Bot, config, platega: PlategaClient) -> None:
             services.poll_order(bot, config, platega, order["tx_id"]))
 
 
+async def _set_commands(bot: Bot, config) -> None:
+    """Подсказки команд в меню Telegram — свои для каждого режима."""
+    from aiogram.types import BotCommand
+    if config.bot_mode == "roblox":
+        commands = [BotCommand(command="start", description="Начать"),
+                    BotCommand(command="roblox",
+                               description="Возраст аккаунта Roblox")]
+    else:
+        commands = [BotCommand(command="start", description="Начать")]
+    try:
+        await bot.set_my_commands(commands)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Не смог задать команды: %s", exc)
+
+
 async def main() -> None:
     config = load_config()
     if not config.bot_token:
@@ -38,6 +53,8 @@ async def main() -> None:
 
     await db.init_db(config.db_path)
     await settings_store.load_overrides(config)  # цены/способы из БД
+    op_store.configure(config.op_state_file)     # общий список ОП на все боты
+    await op.migrate_from_db()
 
     bot = Bot(config.bot_token,
               default=DefaultBotProperties(parse_mode="HTML",
@@ -51,12 +68,18 @@ async def main() -> None:
     roblox_client = RobloxClient()
 
     dp = Dispatcher()
-    dp.include_router(admin.router)    # админ-команды и FSM — раньше relay
-    dp.include_router(roblox.router)
-    dp.include_router(op_admin.router)
-    dp.include_router(start.router)
-    dp.include_router(payment.router)
-    dp.include_router(relay.router)    # подключаем последним
+    if config.bot_mode == "roblox":
+        # Бот-проверялка: только возраст аккаунта и обязательная подписка.
+        dp.include_router(op_admin.router)   # списки ОП от админа — раньше всех
+        dp.include_router(roblox.router)
+        dp.include_router(start.router)
+    else:
+        dp.include_router(admin.router)  # админ-команды и FSM — раньше relay
+        dp.include_router(roblox.router)
+        dp.include_router(op_admin.router)
+        dp.include_router(start.router)
+        dp.include_router(payment.router)
+        dp.include_router(relay.router)  # подключаем последним
 
     # веб-сервер для вебхуков Platega
     app = build_app(bot, config, platega, roblox_client)
@@ -68,6 +91,8 @@ async def main() -> None:
              config.port, config.callback_url or "<polling only>")
 
     await _resume_pending(bot, config, platega)
+    await op.announce(bot)          # отметиться в общем состоянии ОП
+    await _set_commands(bot, config)
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)

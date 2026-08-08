@@ -62,6 +62,10 @@ class Config:
     # Мини-приложение «Возраст аккаунта Roblox»
     miniapp_url: str = ""            # https-адрес страницы мини-аппа
     miniapp_allow_anon: bool = False  # пускать в API без подписи Telegram (dev)
+    op_state_file: str = "op_state.json"  # общий файл ОП для всех ботов
+    # Что это за бот: "payments" — продажа тарифов (ОГЭ), "roblox" — только
+    # проверка возраста аккаунта Roblox с обязательной подпиской.
+    bot_mode: str = "payments"
 
     tariffs: dict[str, Tariff] = field(default_factory=dict)
     # Включённые способы оплаты (меняются админом на лету).
@@ -185,5 +189,8 @@ def load_config() -> Config:
         test_stars_price=int(_get("TEST_STARS_PRICE", "1") or "1"),
         miniapp_url=miniapp_url,
         miniapp_allow_anon=_get("MINIAPP_ALLOW_ANON", "0") in ("1", "true", "yes"),
+        op_state_file=_get("OP_STATE_FILE", "op_state.json"),
+        bot_mode=("roblox" if _get("BOT_MODE", "payments").lower().startswith("rob")
+                  else "payments"),
         tariffs=tariffs,
     )

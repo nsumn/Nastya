@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import html
 import logging
+import time
 
 from aiogram import F, Router
+from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.exceptions import TelegramAPIError
-from aiogram.filters import Command
+from aiogram.filters import BaseFilter, Command
 from aiogram.types import CallbackQuery, ChatMemberUpdated, Message
 
 from .. import keyboards as kb
@@ -28,12 +30,29 @@ from ..config import Config
 log = logging.getLogger(__name__)
 router = Router(name="op_admin")
 
+
+class IsAdmin(BaseFilter):
+    """Пускаем в этот роутер только администратора.
+
+    Важно, что это фильтр, а не проверка внутри обработчика: иначе сообщения
+    обычных пользователей «съедались» бы здесь и не доходили до остальных
+    роутеров.
+    """
+
+    async def __call__(self, event, config: Config) -> bool:
+        user = getattr(event, "from_user", None)
+        return bool(config.admin_chat_id and user
+                    and user.id == config.admin_chat_id)
+
+
+router.message.filter(IsAdmin())
+router.callback_query.filter(IsAdmin())
+
+# Пересланные альбомы приходят несколькими сообщениями — отвечаем один раз.
+_seen_albums: dict[str, float] = {}
+
 MIN_LINKS = 3          # столько ссылок в сообщении = это дневной список
 MAX_LINK_MSG = 300     # длиннее — это уже не «просто ссылка»
-
-
-def _is_admin(user_id: int, config: Config) -> bool:
-    return bool(config.admin_chat_id) and user_id == config.admin_chat_id
 
 
 def _entities(message: Message):
@@ -67,16 +86,12 @@ async def status_text() -> str:
 
 @router.message(Command("op"))
 async def op_status(message: Message, config: Config) -> None:
-    if not _is_admin(message.from_user.id, config):
-        return
     await message.answer(await status_text(), reply_markup=kb.op_admin_kb(
         await op.enabled()))
 
 
 @router.message(F.text == kb.ADM_BTN_SPONSORS)
 async def btn_op(message: Message, config: Config) -> None:
-    if not _is_admin(message.from_user.id, config):
-        return
     await message.answer(await status_text(), reply_markup=kb.op_admin_kb(
         await op.enabled()))
 
@@ -86,8 +101,15 @@ async def btn_op(message: Message, config: Config) -> None:
 @router.message(F.chat.type == "private", F.forward_origin.as_("origin"))
 async def catch_forward(message: Message, config: Config, origin) -> None:
     """Пересланный пост из канала = «вот мой проверочный канал»."""
-    if not _is_admin(message.from_user.id, config):
-        return
+    album = message.media_group_id
+    if album:
+        now = time.monotonic()
+        for key in [k for k, ts in _seen_albums.items() if now - ts > 60]:
+            _seen_albums.pop(key, None)
+        if album in _seen_albums:
+            return                  # это ещё одно фото того же поста
+        _seen_albums[album] = now
+
     chat = getattr(origin, "chat", None)
     log.info("Пересланное сообщение от админа, источник: %s",
              getattr(chat, "title", None) or type(origin).__name__)
@@ -115,17 +137,16 @@ async def catch_forward(message: Message, config: Config, origin) -> None:
 @router.message(F.chat.type == "private", ~F.text.startswith("/"))
 async def catch_admin_message(message: Message, config: Config) -> None:
     """Список ссылок или новая проверочная ссылка — определяем сами."""
-    if not _is_admin(message.from_user.id, config):
-        return
     if message.reply_to_message:
-        return                      # это ответ покупателю — не наше дело
+        raise SkipHandler           # это ответ покупателю — не наше дело
     log.info("Сообщение админа: %d симв., ссылок: %d",
              len(_text(message)), len(_entities(message)))
     if await _maybe_list(message):
         return
     if await _maybe_check_link(message):
         return
-    log.info("Не список и не ссылка — оставил без действия")
+    log.info("Не список и не ссылка — передаю дальше")
+    raise SkipHandler
 
 
 async def _maybe_list(message: Message) -> bool:
@@ -209,9 +230,6 @@ async def bot_promoted(event: ChatMemberUpdated, config: Config) -> None:
 
 @router.callback_query(F.data == "op:show")
 async def op_show(call: CallbackQuery, config: Config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
     await call.message.edit_text(await status_text(),
                                  reply_markup=kb.op_admin_kb(await op.enabled()))
     await call.answer()
@@ -219,9 +237,6 @@ async def op_show(call: CallbackQuery, config: Config) -> None:
 
 @router.callback_query(F.data == "op:toggle")
 async def op_toggle(call: CallbackQuery, config: Config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
     new_val = not await op.enabled()
     await op.set_enabled(new_val)
     await call.message.edit_text(await status_text(),
@@ -232,9 +247,6 @@ async def op_toggle(call: CallbackQuery, config: Config) -> None:
 
 @router.callback_query(F.data == "op:preview")
 async def op_preview(call: CallbackQuery, config: Config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer()
-        return
     links = await op.visible_links(call.bot)
     if not links:
         await call.answer("Список пуст — пришли дневное сообщение со ссылками.",

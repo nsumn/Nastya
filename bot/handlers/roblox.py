@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 
 from aiogram import F, Router
-from aiogram.filters import Command, CommandObject, StateFilter
+from aiogram.filters import BaseFilter, Command, CommandObject, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -23,6 +23,13 @@ router = Router(name="roblox")
 
 class RobloxSG(StatesGroup):
     nick = State()
+
+
+class RobloxBot(BaseFilter):
+    """Только для бота-проверялки: там любое сообщение — это ник."""
+
+    async def __call__(self, message: Message, config: Config) -> bool:
+        return config.bot_mode == "roblox"
 
 ASK = ("🎮 Пришли ник Roblox — покажу, сколько существует аккаунт.\n\n"
        "Например: <code>/roblox builderman</code>")
@@ -137,3 +144,13 @@ async def _reply_lookup(message: Message, query: str,
         await message.answer(f"⚠️ {html.escape(str(exc))}")
     else:
         await message.answer(_card(data))
+
+
+@router.message(RobloxBot(), F.chat.type == "private", F.text,
+                ~F.text.startswith("/"))
+async def any_text_is_nick(message: Message, roblox: RobloxClient) -> None:
+    """В Roblox-боте достаточно прислать ник сообщением."""
+    nick = message.text.strip()
+    if await _blocked(message, nick):
+        return
+    await _reply_lookup(message, nick, roblox)

@@ -11,8 +11,9 @@
 3. Пользователю бот показывает этот список. Подписка проверяется по одному
    каналу — проверочному (в нём бот должен быть администратором).
 
-Всё хранится в таблице настроек (`settings`), поэтому список переживает
-перезапуск бота.
+Состояние хранится в общем JSON-файле (см. `bot/op_store.py`), поэтому список
+переживает перезапуск и — если несколько ботов смотрят в один файл — меняется
+сразу во всех них.
 """
 from __future__ import annotations
 
@@ -22,12 +23,12 @@ import logging
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 
 from . import database as db
+from . import op_store
 
 log = logging.getLogger(__name__)
 
@@ -41,8 +42,8 @@ K_ENABLED = "op:enabled"
 
 OK_TTL = 600          # столько секунд помним, что человек подписан
 MEMBER_STATUSES = {"creator", "administrator", "member"}
-CHECK_MARK = "проверочн"      # по этому слову ищем строку под проверочную ссылку
-MSK = timezone(timedelta(hours=3))
+CHECK_MARK = "проверочн"   # по этому слову ищем строку под проверочную ссылку
+CHECK_LINE_MAX = 45        # длиннее — это уже абзац инструкции, а не строка списка
 
 _ok_cache: dict[int, float] = {}
 
@@ -80,10 +81,21 @@ def _clean_title(line: str) -> str:
     return title.strip()
 
 
+def _is_check_line(title: str) -> bool:
+    """Строка-место под проверочную ссылку.
+
+    Именно короткая строка вида «🔥 Твоя проверочная ссылка», а не абзац
+    инструкции, где это словосочетание тоже встречается.
+    """
+    return CHECK_MARK in title.lower() and len(title) <= CHECK_LINE_MAX
+
+
 def parse_links(text: str, entities) -> tuple[list[Link], str]:
     """Из сообщения со списком достаёт ссылки в исходном порядке.
 
-    Возвращает (список ссылок, отметка вида «7 августа»).
+    Служебные абзацы (приветствие, инструкции, «график оплат») отбрасываются:
+    берём только блоки, где ссылок минимум две, — именно так координатор
+    группирует спонсоров. Возвращает (список ссылок, отметку вида «7 августа»).
     """
     if not text:
         return [], ""
@@ -109,19 +121,30 @@ def parse_links(text: str, entities) -> tuple[list[Link], str]:
                     line[3] = url
                 break
 
-    items: list[Link] = []
+    # Разбиваем на блоки по пустым строкам.
+    blocks: list[list[tuple[str, str]]] = [[]]
     for _, _, raw_line, url in lines:
         title = _clean_title(raw_line)
         if not title:
+            blocks.append([])
             continue
-        if CHECK_MARK in title.lower():
-            items.append(Link(title=title, url="", is_check=True))
-            continue
-        if not url:
-            continue
-        if title.lower().startswith(("http://", "https://", "t.me/")):
-            title = "Канал"
-        items.append(Link(title=title, url=url))
+        blocks[-1].append((title, url))
+
+    items: list[Link] = []
+    for block in blocks:
+        links_in_block = sum(1 for _, url in block if url)
+        has_slot = any(_is_check_line(t) for t, _ in block)
+        if links_in_block < 2 and not has_slot:
+            continue               # приветствие, инструкции, график оплат
+        for title, url in block:
+            if _is_check_line(title):
+                items.append(Link(title=title, url="", is_check=True))
+                continue
+            if not url:
+                continue
+            if title.lower().startswith(("http://", "https://", "t.me/")):
+                title = "Канал"
+            items.append(Link(title=title, url=url))
 
     label = ""
     m = re.search(r"[Сс]сылки\s+на\s+(.{1,40}?)\s+на\s+ОП", text)
@@ -142,65 +165,102 @@ def extract_link(text: str, entities) -> str:
     return m.group(0) if m else ""
 
 
-# ---------- хранилище ----------
+# ---------- хранилище (общий файл на все боты) ----------
 
 async def get_items() -> list[Link]:
-    raw = await db.get_setting(K_ITEMS)
-    if not raw:
-        return []
-    try:
-        data = json.loads(raw)
-    except ValueError:
-        return []
     return [Link(title=d.get("title", ""), url=d.get("url", ""),
-                 is_check=bool(d.get("check"))) for d in data]
+                 is_check=bool(d.get("check")))
+            for d in op_store.read().get("items") or []]
 
 
 async def save_items(items: list[Link], label: str = "") -> None:
-    await db.set_setting(K_ITEMS, json.dumps([i.as_dict() for i in items],
-                                             ensure_ascii=False))
-    await db.set_setting(K_UPDATED,
-                         datetime.now(MSK).strftime("%d.%m.%Y %H:%M"))
+    changes = {"items": [i.as_dict() for i in items],
+               "updated": op_store.now_msk()}
     if label:
-        await db.set_setting(K_LABEL, label)
+        changes["label"] = label
+    op_store.update(**changes)
 
 
 async def check_url() -> str:
-    return await db.get_setting(K_CHECK_URL) or ""
+    return op_store.read().get("check_url") or ""
 
 
 async def set_check_url(url: str) -> None:
-    await db.set_setting(K_CHECK_URL, url)
+    op_store.update(check_url=url)
 
 
 async def check_chat() -> str:
-    return await db.get_setting(K_CHECK_CHAT) or ""
+    return str(op_store.read().get("check_chat") or "")
 
 
 async def check_title() -> str:
-    return await db.get_setting(K_CHECK_TITLE) or ""
+    return op_store.read().get("check_title") or ""
 
 
 async def set_check_chat(chat_id: int | str, title: str) -> None:
-    await db.set_setting(K_CHECK_CHAT, str(chat_id))
-    await db.set_setting(K_CHECK_TITLE, title)
+    op_store.update(check_chat=str(chat_id), check_title=title)
     _ok_cache.clear()
 
 
 async def label() -> str:
-    return await db.get_setting(K_LABEL) or ""
+    return op_store.read().get("label") or ""
 
 
 async def updated_at() -> str:
-    return await db.get_setting(K_UPDATED) or ""
+    return op_store.read().get("updated") or ""
 
 
 async def enabled() -> bool:
-    return (await db.get_setting(K_ENABLED) or "1") == "1"
+    return bool(op_store.read().get("enabled", True))
 
 
 async def set_enabled(value: bool) -> None:
-    await db.set_setting(K_ENABLED, "1" if value else "0")
+    op_store.update(enabled=bool(value))
+
+
+async def migrate_from_db() -> None:
+    """Разовый перенос настроек ОП из старой БД в общий файл."""
+    state = op_store.read()
+    if state.get("items") or state.get("check_chat"):
+        return
+    raw = await db.get_setting(K_ITEMS)
+    old_chat = await db.get_setting(K_CHECK_CHAT)
+    if not raw and not old_chat:
+        return
+    try:
+        items = json.loads(raw) if raw else []
+    except ValueError:
+        items = []
+    op_store.update(
+        items=items,
+        label=await db.get_setting(K_LABEL) or "",
+        updated=await db.get_setting(K_UPDATED) or "",
+        check_url=await db.get_setting(K_CHECK_URL) or "",
+        check_chat=await db.get_setting(K_CHECK_CHAT) or "",
+        check_title=await db.get_setting(K_CHECK_TITLE) or "",
+        enabled=(await db.get_setting(K_ENABLED) or "1") == "1",
+    )
+    log.info("Настройки ОП перенесены из БД в %s", op_store.path())
+
+
+async def announce(bot: Bot) -> None:
+    """Отметиться в общем состоянии и проверить свои права в канале."""
+    try:
+        me = await bot.get_me()
+    except TelegramAPIError as exc:
+        log.warning("Не смог представиться: %s", exc)
+        return
+    can_check = None
+    chat = await check_chat()
+    if chat:
+        try:
+            member = await bot.get_chat_member(chat, me.id)
+            status = getattr(member.status, "value", member.status)
+            can_check = status in ("administrator", "creator")
+        except TelegramAPIError:
+            can_check = False
+    op_store.register_bot(me.username or str(me.id),
+                          me.first_name or "", me.id, can_check)
 
 
 # ---------- показ пользователю ----------

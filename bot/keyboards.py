@@ -14,16 +14,23 @@ BTN_CONTACTS = "❗️ Контакты/FAQ"
 BTN_ROBLOX = "🎮 Возраст Roblox"
 
 
+def _roblox_button(config: Config | None) -> KeyboardButton:
+    """Кнопка проверки: с мини-аппом, если задан https-адрес."""
+    url = getattr(config, "miniapp_url", "") if config else ""
+    return KeyboardButton(text=BTN_ROBLOX,
+                          web_app=WebAppInfo(url=url) if url else None)
+
+
 def main_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     """Постоянное меню снизу, у поля ввода."""
-    rows = [
-        [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
-        [KeyboardButton(text=BTN_CONTACTS)],
-    ]
-    # Если мини-апп настроен — кнопка открывает его сразу, без лишнего шага.
-    url = getattr(config, "miniapp_url", "") if config else ""
-    rows.append([KeyboardButton(text=BTN_ROBLOX,
-                                web_app=WebAppInfo(url=url) if url else None)])
+    if getattr(config, "bot_mode", "payments") == "roblox":
+        rows = [[_roblox_button(config)]]
+    else:
+        rows = [
+            [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
+            [KeyboardButton(text=BTN_CONTACTS)],
+            [_roblox_button(config)],
+        ]
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
@@ -75,8 +82,13 @@ ADM_BTN_PAYERS = "📋 Кто оплатил"
 ADM_BTN_SPONSORS = "📢 Спонсоры (ОП)"  # обрабатывается в op_admin
 
 
-def admin_reply_kb() -> ReplyKeyboardMarkup:
+def admin_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     """Нижнее меню администратора."""
+    if getattr(config, "bot_mode", "payments") == "roblox":
+        # В Roblox-боте продавать нечего — только обязательная подписка.
+        return ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text=ADM_BTN_SPONSORS)]],
+            resize_keyboard=True)
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=ADM_BTN_INVITE)],
