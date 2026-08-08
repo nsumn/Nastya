@@ -186,7 +186,9 @@
                     <div class="flex flex-col items-center mb-4 pb-4 border-b border-gray-300">
                         <!-- Имитация аватарки Roblox -->
                         <div class="w-24 h-24 bg-white rounded-full overflow-hidden border-2 border-gray-300 mb-3 flex items-center justify-center">
-                            <i class="fa-solid fa-user text-4xl text-gray-400"></i>
+                            <img id="display-avatar" alt="" class="w-full h-full object-cover hidden"
+                                 onerror="avatarFallback()">
+                            <i id="avatar-placeholder" class="fa-solid fa-user text-4xl text-gray-400"></i>
                         </div>
                         <h3 id="display-nick" class="text-xl font-extrabold text-black truncate max-w-full">@Nickname</h3>
                         <a href="#" id="profile-link" onclick="openProfile(); return false;"
@@ -361,6 +363,7 @@
 
                 currentUserNick = data.username;
                 profileUrl = data.profile_url || "";
+                setAvatar(data.avatar_url);
                 document.getElementById('display-nick').innerText = "@" + data.username;
                 const created = new Date(data.created);
                 document.getElementById('display-created').innerText =
@@ -377,6 +380,23 @@
                 errorText.classList.remove('hidden');
                 showScreen('input-nick');
             }
+        }
+
+        // Аватарка из профиля Roblox; если картинка не загрузилась — значок
+        function avatarFallback() {
+            document.getElementById('display-avatar').classList.add('hidden');
+            document.getElementById('avatar-placeholder').classList.remove('hidden');
+        }
+
+        function setAvatar(url) {
+            const img = document.getElementById('display-avatar');
+            const icon = document.getElementById('avatar-placeholder');
+            if (!url) { avatarFallback(); return; }
+            img.onload = () => {
+                img.classList.remove('hidden');
+                icon.classList.add('hidden');
+            };
+            img.src = url;
         }
 
         // Ссылка на профиль Roblox — открываем во внешнем браузере
