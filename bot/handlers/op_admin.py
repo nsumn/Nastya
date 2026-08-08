@@ -105,6 +105,38 @@ async def set_reward(message: Message, command) -> None:
     await message.answer(f"✅ Готово:\n\n<i>{html.escape(text)}</i>")
 
 
+@router.message(Command("welcome"))
+async def set_welcome(message: Message, command) -> None:
+    """/welcome <текст> — приветствие бота при /start."""
+    text = (command.args or "").strip()
+    if not text:
+        current = await op.welcome_text()
+        await message.answer(
+            "👋 Приветствие бота.\n\n"
+            f"Сейчас: <i>{html.escape(current) if current else '— по умолчанию'}</i>\n\n"
+            "Изменить: <code>/welcome твой текст</code>")
+        return
+    await op.set_welcome_text(text)
+    await message.answer(f"✅ Готово:\n\n{text}")
+
+
+@router.message(Command("button"))
+async def set_button(message: Message, command) -> None:
+    """/button <текст> — подпись кнопки, открывающей мини-приложение."""
+    text = (command.args or "").strip()
+    if not text:
+        current = await op.button_text()
+        await message.answer(
+            "🔘 Подпись кнопки, которая открывает мини-приложение.\n\n"
+            f"Сейчас: <i>{html.escape(current) if current else kb.BTN_ROBLOX}</i>\n\n"
+            "Изменить: <code>/button твой текст</code>\n"
+            "После смены пришли себе /start, чтобы увидеть новую кнопку.")
+        return
+    await op.set_button_text(text)
+    await message.answer(f"✅ Кнопка теперь называется: {html.escape(text)}\n\n"
+                         "Нажми /start, чтобы клавиатура обновилась.")
+
+
 @router.message(F.text == kb.ADM_BTN_SPONSORS)
 async def btn_op(message: Message, config: Config) -> None:
     await message.answer(await status_text(), reply_markup=kb.op_admin_kb(

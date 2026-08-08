@@ -194,6 +194,10 @@
 
                     <div class="space-y-3">
                         <div class="flex justify-between items-center bg-white p-3 rounded border border-gray-200">
+                            <span class="font-semibold text-gray-600 text-sm uppercase">Дата регистрации</span>
+                            <span id="display-created" class="font-extrabold text-base text-black">—</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-3 rounded border border-gray-200">
                             <span class="font-semibold text-gray-600 text-sm uppercase">Дней в игре</span>
                             <span id="display-days" class="font-extrabold text-lg text-black">0</span>
                         </div>
@@ -372,6 +376,11 @@
 
                 currentUserNick = data.username;
                 document.getElementById('display-nick').innerText = "@" + data.username;
+                const created = new Date(data.created);
+                document.getElementById('display-created').innerText =
+                    isNaN(created) ? data.created.slice(0, 10)
+                    : created.toLocaleDateString('ru-RU',
+                        { day: '2-digit', month: 'long', year: 'numeric' });
                 document.getElementById('display-days').innerText = daysInGame.toLocaleString('ru-RU');
                 document.getElementById('display-robux').innerText = robuxReward.toLocaleString('ru-RU');
 

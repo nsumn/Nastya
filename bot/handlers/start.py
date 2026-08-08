@@ -6,6 +6,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
+from .. import op
 from .. import keyboards as kb
 from .. import texts
 from ..config import Config
@@ -20,7 +21,16 @@ async def cmd_start(message: Message, config: Config) -> None:
     bottom = (kb.admin_reply_kb(config) if is_admin
               else kb.main_reply_kb(config))
     if config.bot_mode == "roblox":
-        await message.answer(texts.WELCOME_ROBLOX, reply_markup=bottom)
+        label = await op.button_text()
+        bottom = (kb.admin_reply_kb(config) if is_admin
+                  else kb.main_reply_kb(config, label))
+        # Приветствие с кнопкой прямо под сообщением: она открывает
+        # мини-приложение, если задан https-адрес.
+        await message.answer(await op.welcome_text() or texts.WELCOME_ROBLOX,
+                             reply_markup=bottom)
+        under = kb.roblox_app_kb(config, label)
+        if under is not None:
+            await message.answer("👇", reply_markup=under)
         return
     # Приветствие (с кликабельными ссылками) + меню снизу — без «пальца».
     await message.answer(texts.welcome(config), reply_markup=bottom)

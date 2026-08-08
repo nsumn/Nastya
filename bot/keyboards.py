@@ -14,22 +14,23 @@ BTN_CONTACTS = "❗️ Контакты/FAQ"
 BTN_ROBLOX = "🎮 Возраст Roblox"
 
 
-def _roblox_button(config: Config | None) -> KeyboardButton:
+def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
     """Кнопка проверки: с мини-аппом, если задан https-адрес."""
     url = getattr(config, "miniapp_url", "") if config else ""
-    return KeyboardButton(text=BTN_ROBLOX,
+    return KeyboardButton(text=label or BTN_ROBLOX,
                           web_app=WebAppInfo(url=url) if url else None)
 
 
-def main_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
+def main_reply_kb(config: Config | None = None,
+                  label: str = "") -> ReplyKeyboardMarkup:
     """Постоянное меню снизу, у поля ввода."""
     if getattr(config, "bot_mode", "payments") == "roblox":
-        rows = [[_roblox_button(config)]]
+        rows = [[_roblox_button(config, label)]]
     else:
         rows = [
             [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
             [KeyboardButton(text=BTN_CONTACTS)],
-            [_roblox_button(config)],
+            [_roblox_button(config, label)],
         ]
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
@@ -61,12 +62,12 @@ def op_admin_kb(is_on: bool) -> InlineKeyboardMarkup:
     return b.as_markup()
 
 
-def roblox_app_kb(config: Config) -> InlineKeyboardMarkup | None:
+def roblox_app_kb(config: Config, label: str = "") -> InlineKeyboardMarkup | None:
     """Инлайн-кнопка запуска мини-приложения (если задан https-адрес)."""
     if not config.miniapp_url:
         return None
     b = InlineKeyboardBuilder()
-    b.row(InlineKeyboardButton(text="🎮 Открыть мини-приложение",
+    b.row(InlineKeyboardButton(text=label or "🎮 Открыть мини-приложение",
                                web_app=WebAppInfo(url=config.miniapp_url)))
     return b.as_markup()
 

@@ -219,6 +219,24 @@ async def set_reward_text(text: str) -> None:
     op_store.update(reward_text=text)
 
 
+async def welcome_text() -> str:
+    """Приветствие бота (задаётся владельцем командой /welcome)."""
+    return op_store.read().get("welcome_text") or ""
+
+
+async def set_welcome_text(text: str) -> None:
+    op_store.update(welcome_text=text)
+
+
+async def button_text() -> str:
+    """Подпись нижней кнопки, открывающей мини-приложение."""
+    return op_store.read().get("button_text") or ""
+
+
+async def set_button_text(text: str) -> None:
+    op_store.update(button_text=text)
+
+
 async def enabled() -> bool:
     return bool(op_store.read().get("enabled", True))
 
