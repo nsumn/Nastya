@@ -2,434 +2,407 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Сколько ты в Roblox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>RB DAYS</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+  /* Светлый «игровой» стиль: серый фон в точку, белые карточки,
+     зелёные кнопки. Всё внутри файла — внешние ссылки в Telegram не грузятся. */
   :root{
-    --bg:#0d0a18;
-    --card:#181231;
-    --card-2:#211a3d;
-    --text:#ffffff;
-    --hint:#9d95bd;
-    --p1:#8b5cff;
-    --p2:#d946ef;
-    --ok:#2ee6a8;
-    --r:18px;
+    --bg:#f2f4f5;
+    --ink:#393b3d;
+    --black:#232527;
+    --line:#e2e8f0;
+    --grey:#b8b8b8;
+    --green:#00b06f;
+    --green-d:#00965f;
+    --gold:#f6c13b;
+    --red:#d64545;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
-    margin:0; background:var(--bg); color:var(--text); overflow-x:hidden;
-    font:16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin:0; padding:16px; color:var(--ink); background-color:var(--bg);
+    background-image:radial-gradient(#d1d5db 1px, transparent 1px);
+    background-size:20px 20px;
+    font:16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif;
+    display:flex; align-items:flex-start; justify-content:center;
   }
-  /* мягкое свечение на фоне */
-  body::before,body::after{
-    content:""; position:fixed; width:340px; height:340px; border-radius:50%;
-    filter:blur(90px); opacity:.5; z-index:0; pointer-events:none;
+  .card{
+    width:100%; max-width:430px; background:#fff; border:1px solid var(--line);
+    border-radius:10px; box-shadow:0 4px 6px -1px rgba(0,0,0,.1);
+    overflow:hidden; position:relative;
   }
-  body::before{background:#6d28d9; top:-140px; left:-120px}
-  body::after{background:#c026d3; bottom:-160px; right:-130px; opacity:.35}
-
-  .screen{display:none; position:relative; z-index:1; padding:26px 16px 30px; min-height:100%}
-  .screen.on{display:block; animation:in .32s cubic-bezier(.2,.8,.3,1)}
-  @keyframes in{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
-
-  h1{font-size:25px; line-height:1.2; margin:0 0 8px; text-align:center; letter-spacing:-.4px}
-  .lead{color:var(--hint); font-size:14px; text-align:center; margin:0 0 22px}
-  .grad{background:linear-gradient(100deg,#c4b5fd,#f0abfc);
-        -webkit-background-clip:text; background-clip:text; color:transparent}
-
-  .hero{
-    width:104px; height:104px; margin:6px auto 18px; border-radius:32px;
-    display:flex; align-items:center; justify-content:center; font-size:52px;
-    background:linear-gradient(140deg,var(--p1),var(--p2));
-    box-shadow:0 18px 44px rgba(139,92,255,.45);
-    animation:float 3.4s ease-in-out infinite;
+  .bar{
+    height:50px; background:var(--black); color:#fff; display:flex;
+    align-items:center; justify-content:center; font-size:19px;
+    font-weight:800; letter-spacing:1.4px;
   }
-  @keyframes float{50%{transform:translateY(-8px)}}
+  .body{padding:22px 18px 24px}
+  .screen{display:none}
+  .screen.on{display:block; animation:fade .28s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
 
-  .field{position:relative; margin-bottom:12px}
-  .field span{position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:18px}
+  h1{font-size:23px; font-weight:800; color:#000; margin:0 0 12px; text-align:center}
+  h2{font-size:19px; font-weight:800; color:#000; margin:0 0 6px; text-align:center}
+  .lead{font-size:14.5px; text-align:center; margin:0 0 22px; font-weight:500}
+  .muted{color:#8b8f93; font-size:12.5px; text-align:center; margin-top:10px}
+
+  .logo{
+    width:82px; height:82px; margin:6px auto 18px; border-radius:16px;
+    background:var(--black); display:flex; align-items:center; justify-content:center;
+  }
+  .logo i{width:34px; height:34px; background:#fff; border-radius:4px;
+          display:block; transform:rotate(45deg)}
+
+  label{display:block; font-size:13px; font-weight:700; margin-bottom:7px}
   input{
-    width:100%; padding:17px 16px 17px 46px; font-size:16px; color:var(--text);
-    background:var(--card); border:1.5px solid rgba(255,255,255,.07);
-    border-radius:var(--r); outline:none;
+    width:100%; padding:14px; font-size:16px; font-weight:500; color:var(--ink);
+    background:#fff; border:1px solid var(--grey); border-radius:5px; outline:none;
   }
-  input:focus{border-color:var(--p1); box-shadow:0 0 0 4px rgba(139,92,255,.16)}
-  input::placeholder{color:#6f6790}
+  input:focus{border-color:#000}
+  input.bad{border-color:var(--red)}
 
   .btn{
-    width:100%; padding:17px; font-size:16.5px; font-weight:700; color:#fff;
-    border:0; border-radius:var(--r); cursor:pointer; position:relative; overflow:hidden;
-    background:linear-gradient(100deg,var(--p1),var(--p2));
-    box-shadow:0 12px 28px rgba(168,60,220,.36);
+    width:100%; padding:14px; font-size:15px; border:0; border-radius:5px;
+    cursor:pointer; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+    background:var(--green); color:#fff; box-shadow:0 2px 4px rgba(0,0,0,.12);
   }
   .btn:active{transform:scale(.985)}
   .btn:disabled{opacity:.6}
-  .btn.ghost{background:var(--card); color:var(--hint); box-shadow:none; font-weight:600}
+  .btn.sec{
+    background:#fff; color:var(--ink); border:1px solid var(--grey);
+    font-weight:700; text-transform:none; letter-spacing:0; box-shadow:none;
+  }
   .btn + .btn{margin-top:10px}
-  .btn::after{                       /* блик */
-    content:""; position:absolute; inset:0; transform:translateX(-120%);
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.32),transparent);
-    animation:shine 3.6s ease-in-out infinite;
+
+  .err{
+    display:none; margin:0 0 14px; padding:11px; border-radius:5px; font-size:13.5px;
+    font-weight:600; text-align:center; color:#a33; background:#fdecec;
+    border:1px solid #f5b5b5;
   }
-  .btn.ghost::after{display:none}
-  @keyframes shine{0%,60%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+  .err.on{display:block}
 
-  .plate{margin-top:14px; padding:14px; border-radius:var(--r); font-size:14px;
-         text-align:center; background:var(--card); color:var(--hint)}
-  .plate.err{color:#ff8a8a; background:rgba(255,90,90,.13); animation:shake .4s}
-  .plate.ok{color:var(--ok); background:rgba(46,230,168,.13)}
-  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  /* профиль */
+  .panel{background:var(--bg); border:1px solid var(--line); border-radius:8px;
+         padding:16px; margin-bottom:18px}
+  .top{display:flex; flex-direction:column; align-items:center;
+       padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid #d8dcdf}
+  .ava{width:92px; height:92px; border-radius:50%; background:#fff; overflow:hidden;
+       border:2px solid #d8dcdf; margin-bottom:10px}
+  .ava img{width:100%; height:100%; display:block; object-fit:cover}
+  .nick{font-size:19px; font-weight:800; color:#000; max-width:100%;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .chip{margin-top:7px; font-size:11px; font-weight:800; padding:4px 9px;
+        border-radius:4px; background:#e3e6e8; color:#5b6167; text-transform:uppercase}
+  .chip.ban{background:#fdecec; color:#a33}
+  .line{display:flex; justify-content:space-between; align-items:center; gap:10px;
+        background:#fff; border:1px solid var(--line); border-radius:5px;
+        padding:12px 13px; margin-bottom:9px}
+  .line:last-child{margin-bottom:0}
+  .line .k{font-size:11.5px; font-weight:700; color:#6b7075; text-transform:uppercase;
+           letter-spacing:.3px; flex:none}
+  .line .v{font-size:15.5px; font-weight:800; color:#000; text-align:right;
+           font-variant-numeric:tabular-nums}
+  .line.big .v{font-size:20px}
 
-  /* ---------- профиль ---------- */
-  .prof{display:flex; align-items:center; gap:14px; padding:14px;
-        background:var(--card); border-radius:var(--r); margin-bottom:14px}
-  .ava{width:58px; height:58px; border-radius:50%; flex:none; background:var(--card-2);
-       padding:2px; background-image:linear-gradient(140deg,var(--p1),var(--p2))}
-  .ava img{width:100%; height:100%; border-radius:50%; display:block; background:var(--card-2)}
-  .prof .nm{font-size:17px; font-weight:700; line-height:1.2}
-  .prof .un{color:var(--hint); font-size:13.5px}
-  .tag{display:inline-block; margin-top:5px; font-size:11px; font-weight:600;
-       padding:3px 8px; border-radius:999px; background:rgba(46,230,168,.16); color:var(--ok)}
-  .tag.ban{background:rgba(255,90,90,.16); color:#ff8a8a}
-
-  /* ---------- рулетка ---------- */
-  .odo-wrap{
-    text-align:center; padding:24px 14px 20px; border-radius:26px; margin-bottom:14px;
-    background:linear-gradient(150deg,rgba(139,92,255,.28),rgba(217,70,239,.2));
-    border:1px solid rgba(217,70,239,.34);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
-  }
-  .odo{display:flex; justify-content:center; gap:3px; height:62px; overflow:hidden}
-  .dig{
-    width:40px; height:62px; overflow:hidden; border-radius:12px;
-    background:rgba(0,0,0,.28); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-  }
-  .dig .col{
-    display:flex; flex-direction:column; transform:translateY(0);
-    font-size:44px; font-weight:800; line-height:62px; font-variant-numeric:tabular-nums;
-  }
-  .dig .col i{height:62px; font-style:normal}
-  .sep{width:12px; height:62px}
-  .odo-cap{color:#e9d8ff; font-size:14px; margin-top:12px; font-weight:600}
-  .odo-sub{color:var(--hint); font-size:12.5px; margin-top:2px}
-
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:16px}
-  .cell{background:var(--card); border-radius:15px; padding:13px 14px}
-  .cell .k{color:var(--hint); font-size:12px; margin-bottom:3px}
-  .cell .v{font-size:15px; font-weight:700}
-  .cell.wide{grid-column:1 / -1}
-
-  /* ---------- спонсоры ---------- */
-  .bar{height:6px; border-radius:99px; background:var(--card); margin:0 0 16px; overflow:hidden}
-  .bar i{display:block; height:100%; width:0; border-radius:99px;
-         background:linear-gradient(90deg,var(--p1),var(--p2)); transition:width .35s ease}
-  .sp{display:flex; align-items:center; gap:11px; padding:10px 12px; margin-bottom:8px;
-      background:var(--card); border-radius:15px}
-  .sp .ic{width:38px; height:38px; flex:none; border-radius:12px; font-size:19px;
-          display:flex; align-items:center; justify-content:center; background:var(--card-2)}
-  .sp .t{flex:1; min-width:0; font-size:14.5px; font-weight:600;
+  /* спонсоры */
+  .lock{width:52px; height:52px; margin:0 auto 12px; border-radius:50%;
+        background:#e3e6e8; display:flex; align-items:center; justify-content:center;
+        font-size:24px}
+  .sp{display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+      background:#fff; border:2px solid var(--line); border-radius:6px;
+      padding:11px 12px; margin-bottom:9px; cursor:pointer; font:inherit}
+  .sp.done{border-color:var(--green); background:#f1fbf6}
+  .sp .ic{width:38px; height:38px; flex:none; border-radius:5px; background:#e8f2ff;
+          display:flex; align-items:center; justify-content:center; font-size:19px}
+  .sp .t{flex:1; min-width:0; font-weight:700; font-size:14.5px; color:var(--ink);
          overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .sp button{
-    flex:none; min-width:104px; padding:10px 14px; font-size:13.5px; font-weight:700;
-    color:#fff; border:0; border-radius:12px; cursor:pointer;
-    background:linear-gradient(100deg,var(--p1),var(--p2));
-  }
-  .sp button:active{transform:scale(.96)}
-  .sp button.done{background:var(--card-2); color:#6f6790; box-shadow:none}
-  .sticky{position:sticky; bottom:0; padding:14px 0 0; margin-top:4px;
-          background:linear-gradient(to top,var(--bg) 62%,transparent)}
+  .sp .mark{width:24px; height:24px; flex:none; border-radius:50%; border:2px solid #cfd4d8;
+            display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:13px; font-weight:800}
+  .sp.done .mark{border-color:var(--green); background:var(--green)}
 
-  /* ---------- финал ---------- */
-  .check{
-    width:104px; height:104px; margin:20px auto 20px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; font-size:52px;
-    background:linear-gradient(140deg,#22c55e,var(--ok));
-    box-shadow:0 16px 44px rgba(46,230,168,.36); animation:pop .5s cubic-bezier(.2,1.5,.4,1);
-  }
-  @keyframes pop{from{transform:scale(.3); opacity:0}to{transform:none; opacity:1}}
-  .done-box{background:var(--card); border-radius:var(--r); padding:16px;
-            text-align:center; font-size:15px; margin-bottom:16px}
+  /* загрузка и успех */
+  .load{text-align:center; padding:44px 0}
+  .spin{width:40px; height:40px; margin:0 auto 18px; border-radius:50%;
+        border:4px solid #eceff1; border-top-color:var(--ink);
+        animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ok{width:82px; height:82px; margin:8px auto 16px; border-radius:50%;
+      background:#e7f8f0; color:var(--green); font-size:38px; font-weight:800;
+      display:flex; align-items:center; justify-content:center;
+      animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes pop{from{transform:scale(.4); opacity:0}to{transform:none; opacity:1}}
+  .note{background:var(--bg); border:1px solid var(--line); border-radius:6px;
+        padding:16px; font-size:14.5px; font-weight:500; line-height:1.5}
 </style>
 </head>
 <body>
+<div class="card">
+  <div class="bar">RB DAYS</div>
+  <div class="body">
 
-<!-- 1 -->
-<section id="s-start" class="screen on">
-  <div class="hero">🎮</div>
-  <h1>Сколько дней ты <span class="grad">в Roblox</span>?</h1>
-  <p class="lead">Введи свой ник — найдём аккаунт и посчитаем всё до дня</p>
-  <div class="field">
-    <span>🔎</span>
-    <input id="nick" placeholder="Твой ник в Roblox" maxlength="60"
-           autocapitalize="off" autocorrect="off" spellcheck="false">
-  </div>
-  <button class="btn" id="go">Найти аккаунт</button>
-  <div id="start-msg"></div>
-</section>
+    <!-- 1. приветствие -->
+    <section id="s-welcome" class="screen on">
+      <div class="logo"><i></i></div>
+      <h1>Привет!</h1>
+      <p class="lead">Здесь ты узнаешь, сколько дней твоему аккаунту Roblox —
+        с точной датой регистрации и статистикой профиля.</p>
+      <button class="btn" id="b-start">Начать</button>
+    </section>
 
-<!-- 2 -->
-<section id="s-result" class="screen">
-  <div class="prof">
-    <div class="ava"><img id="r-ava" alt=""></div>
-    <div style="min-width:0">
-      <div class="nm" id="r-name"></div>
-      <div class="un" id="r-nick"></div>
-      <div id="r-tag"></div>
-    </div>
-  </div>
-  <div class="odo-wrap">
-    <div class="odo" id="r-odo"></div>
-    <div class="odo-cap" id="r-cap">дней в Roblox</div>
-    <div class="odo-sub" id="r-sub"></div>
-  </div>
-  <div class="grid" id="r-grid"></div>
-  <button class="btn" id="get">Получить 🎁</button>
-  <button class="btn ghost" id="again">Другой ник</button>
-</section>
+    <!-- 2. ввод ника -->
+    <section id="s-nick" class="screen">
+      <h2>Твой профиль</h2>
+      <p class="lead">Введи никнейм Roblox — найдём аккаунт.</p>
+      <div id="nick-err" class="err"></div>
+      <label for="nick">Username</label>
+      <input id="nick" placeholder="Player123" maxlength="60"
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div style="height:16px"></div>
+      <button class="btn sec" id="b-search">Найти профиль</button>
+      <p class="muted">Мы никогда не просим пароль от аккаунта.</p>
+    </section>
 
-<!-- 3 -->
-<section id="s-sponsors" class="screen">
-  <h1>Остался <span class="grad">один шаг</span></h1>
-  <p class="lead" id="sp-lead">Подпишись на каналы ниже</p>
-  <div class="bar"><i id="sp-bar"></i></div>
-  <div id="sp-list"></div>
-  <div class="sticky">
-    <button class="btn" id="check">Проверить подписку</button>
-    <div id="sp-msg"></div>
-  </div>
-</section>
+    <!-- 3. загрузка -->
+    <section id="s-load" class="screen">
+      <div class="load">
+        <div class="spin"></div>
+        <h2 id="load-text">Поиск профиля…</h2>
+      </div>
+    </section>
 
-<!-- 4 -->
-<section id="s-done" class="screen">
-  <div class="check">✓</div>
-  <h1>Готово!</h1>
-  <p class="lead">Подписка подтверждена</p>
-  <div class="done-box" id="done-text">Спасибо, что подписался на наши каналы.</div>
-  <button class="btn ghost" id="done-again">Проверить другой ник</button>
-</section>
+    <!-- 4. профиль -->
+    <section id="s-profile" class="screen">
+      <div class="panel">
+        <div class="top">
+          <div class="ava"><img id="p-ava" alt=""></div>
+          <div class="nick" id="p-nick">@nickname</div>
+          <div id="p-chip"></div>
+        </div>
+        <div id="p-lines"></div>
+      </div>
+      <button class="btn" id="b-get">Получить</button>
+      <button class="btn sec" id="b-other">Другой ник</button>
+    </section>
+
+    <!-- 5. спонсоры -->
+    <section id="s-sponsors" class="screen">
+      <div class="lock">🔒</div>
+      <h2>Верификация</h2>
+      <p class="lead" id="sp-lead">Подпишись, пожалуйста, на наших спонсоров.</p>
+      <div id="sp-err" class="err"></div>
+      <div id="sp-list"></div>
+      <div style="height:6px"></div>
+      <button class="btn" id="b-check">Проверить подписку</button>
+    </section>
+
+    <!-- 6. успех -->
+    <section id="s-done" class="screen">
+      <div class="ok">✓</div>
+      <h1>Успешно!</h1>
+      <div class="note" id="done-text">Подписка подтверждена. Спасибо!</div>
+      <div style="height:16px"></div>
+      <button class="btn sec" id="b-home">Вернуться на главную</button>
+    </section>
+
+  </div>
+</div>
 
 <script>
 (function () {
   var tg = window.Telegram && window.Telegram.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
-  var SCREENS = ['s-start', 's-result', 's-sponsors', 's-done'];
+  var SCREENS = ['s-welcome','s-nick','s-load','s-profile','s-sponsors','s-done'];
   var el = function (id) { return document.getElementById(id); };
-  var state = { user: null, links: [], clicked: {}, reward: '' };
+  var state = { user:null, links:[], clicked:{}, reward:'' };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
   }
-  function haptic(kind) {
-    if (tg && tg.HapticFeedback) {
-      try { tg.HapticFeedback.notificationOccurred(kind); } catch (e) {}
-    }
+  function haptic(k){ if(tg&&tg.HapticFeedback){try{tg.HapticFeedback.notificationOccurred(k);}catch(e){}} }
+  function tap(){ if(tg&&tg.HapticFeedback){try{tg.HapticFeedback.impactOccurred('light');}catch(e){}} }
+  function show(id){
+    SCREENS.forEach(function(s){ el(s).classList.toggle('on', s === id); });
+    window.scrollTo(0,0);
   }
-  function tap() {
-    if (tg && tg.HapticFeedback) {
-      try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
-    }
+  function err(box, text){
+    var n = el(box);
+    n.textContent = text || '';
+    n.classList.toggle('on', !!text);
   }
-  function show(id) {
-    SCREENS.forEach(function (s) { el(s).classList.toggle('on', s === id); });
-    window.scrollTo(0, 0);
-  }
-  function plate(box, text, kind) {
-    el(box).innerHTML = text
-      ? '<div class="plate ' + (kind || '') + '">' + esc(text) + '</div>' : '';
-  }
-  async function api(url) {
-    var headers = tg && tg.initData ? { 'X-Telegram-Init-Data': tg.initData } : {};
-    var res = await fetch(url, { headers: headers });
-    var data = await res.json().catch(function () { return {}; });
+  async function api(url){
+    var h = tg && tg.initData ? { 'X-Telegram-Init-Data': tg.initData } : {};
+    var res = await fetch(url, { headers: h });
+    var data = await res.json().catch(function(){ return {}; });
     return { status: res.status, data: data };
   }
-  function fmt(n) { return (n == null) ? '—' : n.toLocaleString('ru-RU'); }
-  function fmtDate(iso) {
+  function num(n){ return (n == null) ? '—' : n.toLocaleString('ru-RU'); }
+  function date(iso){
     var d = new Date(iso);
     return isNaN(d) ? iso : d.toLocaleDateString('ru-RU',
-      { day: '2-digit', month: 'long', year: 'numeric' });
+      { day:'2-digit', month:'long', year:'numeric' });
+  }
+  // число набегает от нуля
+  function countUp(node, target){
+    var t0 = performance.now(), ms = 1400;
+    (function step(now){
+      var p = Math.min(1, (now - t0) / ms);
+      node.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString('ru-RU');
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
   }
 
-  // ---------- рулетка: каждая цифра крутится в своём окошке ----------
-  function odometer(box, value) {
-    var text = String(value), html = '';
-    for (var i = 0; i < text.length; i++) {
-      // разряды по три — чтобы 7457 читалось как 7 457
-      if (i && (text.length - i) % 3 === 0) html += '<div class="sep"></div>';
-      html += '<div class="dig"><div class="col">';
-      for (var k = 0; k < 30; k++) html += '<i>' + (k % 10) + '</i>';
-      html += '</div></div>';
-    }
-    box.innerHTML = html;
-
-    var cols = box.querySelectorAll('.col');
-    for (var j = 0; j < cols.length; j++) {
-      (function (col, digit, idx) {
-        var stop = 20 + digit;                 // два полных оборота и нужная цифра
-        col.style.transform = 'translateY(0)';
-        col.style.transition = 'none';
-        requestAnimationFrame(function () {
-          col.style.transition = 'transform ' + (1.1 + idx * 0.18) +
-                                 's cubic-bezier(.16,.84,.24,1)';
-          col.style.transform = 'translateY(-' + (stop * 62) + 'px)';
-        });
-      })(cols[j], +text[j], j);   // окошки идут по порядку цифр, разделители — не .col
-    }
-    setTimeout(function () { haptic('success'); }, 1400);
-  }
-
-  // ---------- 1. поиск ----------
+  // ---- поиск ----
   var busy = false;
-  async function search() {
+  async function search(){
     var nick = el('nick').value.trim();
-    if (!nick || busy) return;
-    busy = true; el('go').disabled = true;
-    plate('start-msg', 'Ищем аккаунт…');
-    try {
+    if (!nick){
+      err('nick-err', 'Пожалуйста, введи никнейм!');
+      el('nick').classList.add('bad');
+      return;
+    }
+    if (busy) return;
+    busy = true;
+    err('nick-err', '');
+    el('nick').classList.remove('bad');
+    el('load-text').textContent = 'Поиск профиля…';
+    show('s-load');
+    try{
       var r = await api('/api/roblox/user?username=' + encodeURIComponent(nick));
-      if (r.status >= 400) {
+      if (r.status >= 400){
         haptic('error');
-        plate('start-msg', r.data.error || 'Не получилось. Попробуй ещё раз.', 'err');
+        err('nick-err', r.data.error || 'Не получилось. Попробуй ещё раз.');
+        show('s-nick');
       } else {
-        plate('start-msg', '');
         state.user = r.data;
-        renderResult(r.data);
-        show('s-result');
+        renderProfile(r.data);
+        show('s-profile');
+        haptic('success');
       }
-    } catch (e) {
-      plate('start-msg', 'Нет связи с сервером.', 'err');
-    } finally { busy = false; el('go').disabled = false; }
+    } catch(e){
+      err('nick-err', 'Нет связи с сервером.');
+      show('s-nick');
+    } finally { busy = false; }
   }
 
-  // ---------- 2. результат ----------
-  function renderResult(u) {
-    el('r-ava').src = u.avatar_url || '';
-    el('r-name').textContent = u.display_name || u.username;
-    el('r-nick').textContent = '@' + u.username;
-    el('r-tag').innerHTML = u.is_banned
-      ? '<span class="tag ban">аккаунт забанен</span>'
-      : (u.has_verified_badge ? '<span class="tag">✓ verified</span>' : '');
+  // ---- профиль ----
+  function renderProfile(u){
+    var img = el('p-ava');
+    if (u.avatar_url) { img.src = u.avatar_url; img.style.display = 'block'; }
+    else { img.removeAttribute('src'); img.style.display = 'none'; }
+    el('p-nick').textContent = '@' + u.username;
+    el('p-chip').innerHTML = u.is_banned
+      ? '<span class="chip ban">аккаунт забанен</span>'
+      : (u.has_verified_badge ? '<span class="chip">verified</span>' : '');
 
-    el('r-cap').textContent = 'дней в Roblox';
-    el('r-sub').textContent = 'это ' + u.age_text;
-
-    var cells = [
-      ['Дата регистрации', fmtDate(u.created), true],
-      ['Подписчики', fmt(u.followers)],
-      ['Друзья', fmt(u.friends)],
-      ['User ID', fmt(u.id)],
-      ['Возраст', u.age.years + ' г.']
+    var lines = [
+      ['Дней в игре', '<span id="p-days">0</span>', true],
+      ['Возраст', esc(u.age_text)],
+      ['Регистрация', esc(date(u.created))]
     ];
-    el('r-grid').innerHTML = cells.map(function (c) {
-      return '<div class="cell' + (c[2] ? ' wide' : '') + '">' +
-        '<div class="k">' + esc(c[0]) + '</div>' +
-        '<div class="v">' + esc(c[1]) + '</div></div>';
-    }).join('');
+    if (u.followers != null) lines.push(['Подписчики', num(u.followers)]);
+    lines.push(['User ID', num(u.id)]);
 
-    odometer(el('r-odo'), u.age.total_days);
+    el('p-lines').innerHTML = lines.map(function(l){
+      return '<div class="line' + (l[2] ? ' big' : '') + '"><span class="k">' +
+             esc(l[0]) + '</span><span class="v">' + l[1] + '</span></div>';
+    }).join('');
+    countUp(el('p-days'), u.age.total_days);
   }
 
-  // ---------- 3. спонсоры ----------
-  async function openSponsors() {
+  // ---- спонсоры ----
+  async function toSponsors(){
     tap();
-    el('get').disabled = true;
-    try {
+    el('load-text').textContent = 'Подготовка…';
+    show('s-load');
+    try{
       var r = await api('/api/op/status');
       state.links = r.data.links || [];
       state.reward = r.data.reward_text || '';
       if (r.data.subscribed) { finish(); return; }
       renderSponsors();
       show('s-sponsors');
-    } catch (e) {
-      plate('start-msg', 'Нет связи с сервером.', 'err');
-    } finally { el('get').disabled = false; }
+    } catch(e){
+      err('nick-err', 'Нет связи с сервером.');
+      show('s-nick');
+    }
   }
 
-  function progress() {
-    var total = state.links.length || 1;
-    var done = Object.keys(state.clicked).length;
-    el('sp-bar').style.width = Math.round(done / total * 100) + '%';
-    el('sp-lead').textContent = done
-      ? 'Отмечено ' + done + ' из ' + state.links.length
-      : 'Подпишись на каналы ниже';
-  }
-
-  function renderSponsors() {
-    el('sp-list').innerHTML = state.links.map(function (c, i) {
-      var done = state.clicked[i];
+  function renderSponsors(){
+    el('sp-list').innerHTML = state.links.map(function(c, i){
       var m = String(c.title).match(/^\s*(\p{Extended_Pictographic}️?|\d️?⃣)/u);
-      var icon = m ? m[1] : '📢';
+      var icon = m ? m[1] : '✈️';
       var name = m ? c.title.slice(m[0].length).trim() : c.title;
-      return '<div class="sp">' +
-        '<div class="ic">' + esc(icon) + '</div>' +
-        '<div class="t">' + esc(name) + '</div>' +
-        '<button data-i="' + i + '" class="' + (done ? 'done' : '') + '">' +
-          (done ? 'Готово ✓' : 'Подписаться') + '</button></div>';
+      var done = state.clicked[i] ? ' done' : '';
+      return '<button class="sp' + done + '" data-i="' + i + '">' +
+        '<span class="ic">' + esc(icon) + '</span>' +
+        '<span class="t">' + esc(name) + '</span>' +
+        '<span class="mark">' + (state.clicked[i] ? '✓' : '') + '</span></button>';
     }).join('');
 
-    Array.prototype.forEach.call(el('sp-list').querySelectorAll('button'),
-      function (b) {
-        b.addEventListener('click', function () {
-          var i = +b.dataset.i, link = state.links[i];
-          state.clicked[i] = true;
-          b.classList.add('done');
-          b.textContent = 'Готово ✓';
-          tap(); progress();
-          if (!link || !link.url) return;
-          if (tg && tg.openTelegramLink && link.url.indexOf('https://t.me/') === 0) {
-            tg.openTelegramLink(link.url);
-          } else if (tg && tg.openLink) { tg.openLink(link.url); }
-          else { window.open(link.url, '_blank'); }
-        });
+    Array.prototype.forEach.call(el('sp-list').querySelectorAll('.sp'), function(b){
+      b.addEventListener('click', function(){
+        var i = +b.dataset.i, link = state.links[i];
+        state.clicked[i] = true;
+        b.classList.add('done');
+        b.querySelector('.mark').textContent = '✓';
+        err('sp-err', '');
+        tap();
+        if (!link || !link.url) return;
+        if (tg && tg.openTelegramLink && link.url.indexOf('https://t.me/') === 0) {
+          tg.openTelegramLink(link.url);
+        } else if (tg && tg.openLink) { tg.openLink(link.url); }
+        else { window.open(link.url, '_blank'); }
       });
-    progress();
+    });
   }
 
-  async function checkSubscription() {
-    el('check').disabled = true;
-    plate('sp-msg', 'Проверяем…');
-    try {
+  async function check(){
+    el('b-check').disabled = true;
+    err('sp-err', '');
+    try{
       var r = await api('/api/op/status');
       state.links = r.data.links || state.links;
       state.reward = r.data.reward_text || state.reward;
-      if (r.data.subscribed) { haptic('success'); plate('sp-msg', ''); finish(); }
+      if (r.data.subscribed){ haptic('success'); finish(); }
       else {
         haptic('error');
-        plate('sp-msg', 'Подпишись, пожалуйста, на всех спонсоров 🙏', 'err');
+        err('sp-err', 'Подпишись, пожалуйста, на всех спонсоров.');
       }
-    } catch (e) {
-      plate('sp-msg', 'Нет связи с сервером.', 'err');
-    } finally { el('check').disabled = false; }
+    } catch(e){
+      err('sp-err', 'Нет связи с сервером.');
+    } finally { el('b-check').disabled = false; }
   }
 
-  // ---------- 4. финал ----------
-  function finish() {
+  function finish(){
     if (state.reward) el('done-text').textContent = state.reward;
     show('s-done');
   }
 
-  el('go').addEventListener('click', search);
-  el('nick').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') search();
-  });
-  el('get').addEventListener('click', openSponsors);
-  el('check').addEventListener('click', checkSubscription);
-  function restart() {
-    el('nick').value = ''; plate('start-msg', ''); show('s-start'); el('nick').focus();
+  function home(){
+    el('nick').value = '';
+    state.clicked = {};
+    err('nick-err', '');
+    show('s-welcome');
   }
-  el('again').addEventListener('click', restart);
-  el('done-again').addEventListener('click', restart);
+
+  el('b-start').addEventListener('click', function(){ tap(); show('s-nick'); el('nick').focus(); });
+  el('b-search').addEventListener('click', search);
+  el('nick').addEventListener('keydown', function(e){ if (e.key === 'Enter') search(); });
+  el('b-get').addEventListener('click', toSponsors);
+  el('b-other').addEventListener('click', function(){ tap(); el('nick').value=''; show('s-nick'); el('nick').focus(); });
+  el('b-check').addEventListener('click', check);
+  el('b-home').addEventListener('click', home);
 
   var preset = new URLSearchParams(location.search).get('username') ||
     (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
-  if (preset) { el('nick').value = preset; search(); }
-  else { el('nick').focus(); }
+  if (preset){ el('nick').value = preset; show('s-nick'); search(); }
 })();
 </script>
 </body>
