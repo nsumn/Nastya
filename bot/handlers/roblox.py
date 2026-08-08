@@ -91,7 +91,8 @@ async def btn_roblox(message: Message, config: Config,
         return
     if config.miniapp_url:
         await message.answer("Открывай мини-приложение 👇",
-                             reply_markup=kb.roblox_app_kb(config))
+                             reply_markup=kb.roblox_app_kb(
+                                 config, await op.button_text()))
         return
     await state.set_state(RobloxSG.nick)
     await message.answer(ASK_NICK)

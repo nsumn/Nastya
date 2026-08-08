@@ -15,10 +15,14 @@ BTN_ROBLOX = "🎮 Возраст Roblox"
 
 
 def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
-    """Кнопка проверки: с мини-аппом, если задан https-адрес."""
-    url = getattr(config, "miniapp_url", "") if config else ""
-    return KeyboardButton(text=label or BTN_ROBLOX,
-                          web_app=WebAppInfo(url=url) if url else None)
+    """Обычная нижняя кнопка.
+
+    Мини-приложение отсюда не открываем: по документации Telegram запуск
+    с кнопки клавиатуры приходит без данных пользователя, и сервер не может
+    проверить подпись. Мини-апп открывается кнопкой под сообщением и
+    кнопкой-меню у поля ввода.
+    """
+    return KeyboardButton(text=label or BTN_ROBLOX)
 
 
 def main_reply_kb(config: Config | None = None,

@@ -31,6 +31,29 @@ async def _resume_pending(bot: Bot, config, platega: PlategaClient) -> None:
             services.poll_order(bot, config, platega, order["tx_id"]))
 
 
+async def _set_menu_button(bot: Bot, config) -> None:
+    """Кнопка-меню у поля ввода открывает мини-приложение.
+
+    Именно такой запуск (в отличие от кнопки клавиатуры) передаёт данные
+    пользователя, по которым сервер проверяет подпись.
+    """
+    from aiogram.types import (MenuButtonCommands, MenuButtonWebApp,
+                               WebAppInfo)
+    if config.bot_mode != "roblox":
+        return
+    try:
+        if config.miniapp_url:
+            label = await op.button_text() or "Открыть"
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(text=label[:16],
+                                             web_app=WebAppInfo(url=config.miniapp_url)))
+            log.info("Кнопка-меню открывает %s", config.miniapp_url)
+        else:
+            await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Не смог настроить кнопку-меню: %s", exc)
+
+
 async def _set_commands(bot: Bot, config) -> None:
     """Подсказки команд в меню Telegram — свои для каждого режима."""
     from aiogram.types import BotCommand
@@ -93,6 +116,7 @@ async def main() -> None:
     await _resume_pending(bot, config, platega)
     await op.announce(bot)          # отметиться в общем состоянии ОП
     await _set_commands(bot, config)
+    await _set_menu_button(bot, config)
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)

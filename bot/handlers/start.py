@@ -24,13 +24,16 @@ async def cmd_start(message: Message, config: Config) -> None:
         label = await op.button_text()
         bottom = (kb.admin_reply_kb(config) if is_admin
                   else kb.main_reply_kb(config, label))
-        # Приветствие с кнопкой прямо под сообщением: она открывает
-        # мини-приложение, если задан https-адрес.
-        await message.answer(await op.welcome_text() or texts.WELCOME_ROBLOX,
-                             reply_markup=bottom)
+        text = await op.welcome_text() or texts.WELCOME_ROBLOX
         under = kb.roblox_app_kb(config, label)
         if under is not None:
-            await message.answer("👇", reply_markup=under)
+            # Кнопка под сообщением — единственный способ запустить мини-апп
+            # так, чтобы Telegram передал данные пользователя.
+            if is_admin:
+                await message.answer("🔐 Панель ОП снизу", reply_markup=bottom)
+            await message.answer(text, reply_markup=under)
+        else:
+            await message.answer(text, reply_markup=bottom)
         return
     # Приветствие (с кликабельными ссылками) + меню снизу — без «пальца».
     await message.answer(texts.welcome(config), reply_markup=bottom)
