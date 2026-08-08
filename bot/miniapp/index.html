@@ -204,7 +204,7 @@
                             <span id="display-days" class="font-extrabold text-lg text-black">0</span>
                         </div>
                         <div class="bg-white p-3 rounded border border-gray-200">
-                            <div id="bonus-label" class="font-semibold text-gray-600 text-sm uppercase">Бонус</div>
+                            <div id="bonus-label" class="font-semibold text-gray-600 text-sm">Бонус</div>
                             <div class="flex items-center gap-2 mt-2">
                                 <div class="robux-icon robux-icon-gold scale-75"></div>
                                 <span id="display-robux" class="font-extrabold text-2xl text-robux">0</span>
@@ -366,7 +366,8 @@
                 document.getElementById('display-created').innerText =
                     isNaN(created) ? data.created.slice(0, 10)
                     : created.toLocaleDateString('ru-RU',
-                        { day: '2-digit', month: 'long', year: 'numeric' });
+                        { day: '2-digit', month: 'long', year: 'numeric' })
+                        .replace(/\s*г\.$/, '');
                 document.getElementById('display-days').innerText = daysInGame.toLocaleString('ru-RU');
                 document.getElementById('display-robux').innerText = robuxReward.toLocaleString('ru-RU');
 
