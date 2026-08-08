@@ -275,6 +275,28 @@
     </div>
 
     <script>
+        // Данные Telegram: обычно их отдаёт telegram-web-app.js, но если скрипт
+        // не загрузился, забираем их прямо из адреса страницы (#tgWebAppData=…).
+        function getInitData() {
+            const tg = window.Telegram && window.Telegram.WebApp;
+            if (tg && tg.initData) return tg.initData;
+            const src = (location.hash || '') + '&' + (location.search || '');
+            const m = /[#&?]tgWebAppData=([^&]*)/.exec(src);
+            return m ? decodeURIComponent(m[1]) : '';
+        }
+
+        function apiHeaders() {
+            const tg = window.Telegram && window.Telegram.WebApp;
+            const init = getInitData();
+            return {
+                'X-Telegram-Init-Data': init,
+                // подсказка для журнала, если проверка не пройдёт
+                'X-App-Debug': 'sdk=' + (tg ? 1 : 0) +
+                               ';init=' + (init ? init.length : 0) +
+                               ';hash=' + ((location.hash || '').length)
+            };
+        }
+
         // Состояние приложения
         let currentUserNick = "";
         let sponsorsStatus = [false, false];
@@ -328,12 +350,9 @@
             showScreen('loading');
 
             try {
-                const tg = window.Telegram && window.Telegram.WebApp;
-                const headers = tg && tg.initData
-                    ? { 'X-Telegram-Init-Data': tg.initData } : {};
                 const res = await fetch(
                     '/api/roblox/user?username=' + encodeURIComponent(nickInput),
-                    { headers: headers });
+                    { headers: apiHeaders() });
                 const data = await res.json();
 
                 if (!res.ok || data.error) {

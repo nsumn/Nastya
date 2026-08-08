@@ -134,10 +134,11 @@ async def roblox_user(request: web.Request) -> web.Response:
     parsed = verify_init_data(init_data, config.bot_token)
     if parsed is None:
         log.warning("Запрос без подтверждённых данных Telegram: %s "
-                    "(заголовок %s, длина initData %d)",
+                    "(заголовок %s, длина initData %d, страница: %s)",
                     request.path,
                     "есть" if request.headers.get("X-Telegram-Init-Data") else "нет",
-                    len(init_data))
+                    len(init_data),
+                    request.headers.get("X-App-Debug", "нет данных"))
     if parsed is None:
         if not config.miniapp_allow_anon:
             return web.json_response(
