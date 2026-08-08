@@ -1,409 +1,406 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>RB DAYS</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-  /* Светлый «игровой» стиль: серый фон в точку, белые карточки,
-     зелёные кнопки. Всё внутри файла — внешние ссылки в Telegram не грузятся. */
-  :root{
-    --bg:#f2f4f5;
-    --ink:#393b3d;
-    --black:#232527;
-    --line:#e2e8f0;
-    --grey:#b8b8b8;
-    --green:#00b06f;
-    --green-d:#00965f;
-    --gold:#f6c13b;
-    --red:#d64545;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
-  body{
-    margin:0; padding:16px; color:var(--ink); background-color:var(--bg);
-    background-image:radial-gradient(#d1d5db 1px, transparent 1px);
-    background-size:20px 20px;
-    font:16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-         Helvetica, Arial, sans-serif;
-    display:flex; align-items:flex-start; justify-content:center;
-  }
-  .card{
-    width:100%; max-width:430px; background:#fff; border:1px solid var(--line);
-    border-radius:10px; box-shadow:0 4px 6px -1px rgba(0,0,0,.1);
-    overflow:hidden; position:relative;
-  }
-  .bar{
-    height:50px; background:var(--black); color:#fff; display:flex;
-    align-items:center; justify-content:center; font-size:19px;
-    font-weight:800; letter-spacing:1.4px;
-  }
-  .body{padding:22px 18px 24px}
-  .screen{display:none}
-  .screen.on{display:block; animation:fade .28s ease}
-  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Robux Bonus</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
-  h1{font-size:23px; font-weight:800; color:#000; margin:0 0 12px; text-align:center}
-  h2{font-size:19px; font-weight:800; color:#000; margin:0 0 6px; text-align:center}
-  .lead{font-size:14.5px; text-align:center; margin:0 0 22px; font-weight:500}
-  .muted{color:#8b8f93; font-size:12.5px; text-align:center; margin-top:10px}
+        body {
+            /* Характерный для Roblox светлый/серый фон */
+            background-color: #F2F4F5;
+            color: #393b3d;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            /* Паттерн на фоне для красоты */
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
 
-  .logo{
-    width:82px; height:82px; margin:6px auto 18px; border-radius:16px;
-    background:var(--black); display:flex; align-items:center; justify-content:center;
-  }
-  .logo i{width:34px; height:34px; background:#fff; border-radius:4px;
-          display:block; transform:rotate(45deg)}
+        /* Основной контейнер в стиле карточек Roblox */
+        .roblox-card {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
 
-  label{display:block; font-size:13px; font-weight:700; margin-bottom:7px}
-  input{
-    width:100%; padding:14px; font-size:16px; font-weight:500; color:var(--ink);
-    background:#fff; border:1px solid var(--grey); border-radius:5px; outline:none;
-  }
-  input:focus{border-color:#000}
-  input.bad{border-color:var(--red)}
+        /* Кнопки в стиле Roblox */
+        .btn-primary {
+            background-color: #00B06F; /* Зеленый цвет кнопок Roblox (например, Play) */
+            color: white;
+            border-radius: 4px;
+            font-weight: 700;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary:hover {
+            background-color: #00965F;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
 
-  .btn{
-    width:100%; padding:14px; font-size:15px; border:0; border-radius:5px;
-    cursor:pointer; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
-    background:var(--green); color:#fff; box-shadow:0 2px 4px rgba(0,0,0,.12);
-  }
-  .btn:active{transform:scale(.985)}
-  .btn:disabled{opacity:.6}
-  .btn.sec{
-    background:#fff; color:var(--ink); border:1px solid var(--grey);
-    font-weight:700; text-transform:none; letter-spacing:0; box-shadow:none;
-  }
-  .btn + .btn{margin-top:10px}
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: #393b3d;
+            border: 1px solid #B8B8B8;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            border-color: #393b3d;
+        }
 
-  .err{
-    display:none; margin:0 0 14px; padding:11px; border-radius:5px; font-size:13.5px;
-    font-weight:600; text-align:center; color:#a33; background:#fdecec;
-    border:1px solid #f5b5b5;
-  }
-  .err.on{display:block}
+        /* Инпуты */
+        .roblox-input {
+            background-color: #FFFFFF;
+            border: 1px solid #B8B8B8;
+            border-radius: 4px;
+            color: #393b3d;
+            transition: border-color 0.2s;
+        }
+        .roblox-input:focus {
+            outline: none;
+            border-color: #000000;
+        }
 
-  /* профиль */
-  .panel{background:var(--bg); border:1px solid var(--line); border-radius:8px;
-         padding:16px; margin-bottom:18px}
-  .top{display:flex; flex-direction:column; align-items:center;
-       padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid #d8dcdf}
-  .ava{width:92px; height:92px; border-radius:50%; background:#fff; overflow:hidden;
-       border:2px solid #d8dcdf; margin-bottom:10px}
-  .ava img{width:100%; height:100%; display:block; object-fit:cover}
-  .nick{font-size:19px; font-weight:800; color:#000; max-width:100%;
-        overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .chip{margin-top:7px; font-size:11px; font-weight:800; padding:4px 9px;
-        border-radius:4px; background:#e3e6e8; color:#5b6167; text-transform:uppercase}
-  .chip.ban{background:#fdecec; color:#a33}
-  .line{display:flex; justify-content:space-between; align-items:center; gap:10px;
-        background:#fff; border:1px solid var(--line); border-radius:5px;
-        padding:12px 13px; margin-bottom:9px}
-  .line:last-child{margin-bottom:0}
-  .line .k{font-size:11.5px; font-weight:700; color:#6b7075; text-transform:uppercase;
-           letter-spacing:.3px; flex:none}
-  .line .v{font-size:15.5px; font-weight:800; color:#000; text-align:right;
-           font-variant-numeric:tabular-nums}
-  .line.big .v{font-size:20px}
+        /* Золотой цвет для Robux */
+        .text-robux {
+            color: #F6C13B;
+            text-shadow: 0px 1px 2px rgba(0,0,0,0.2);
+        }
 
-  /* спонсоры */
-  .lock{width:52px; height:52px; margin:0 auto 12px; border-radius:50%;
-        background:#e3e6e8; display:flex; align-items:center; justify-content:center;
-        font-size:24px}
-  .sp{display:flex; align-items:center; gap:11px; width:100%; text-align:left;
-      background:#fff; border:2px solid var(--line); border-radius:6px;
-      padding:11px 12px; margin-bottom:9px; cursor:pointer; font:inherit}
-  .sp.done{border-color:var(--green); background:#f1fbf6}
-  .sp .ic{width:38px; height:38px; flex:none; border-radius:5px; background:#e8f2ff;
-          display:flex; align-items:center; justify-content:center; font-size:19px}
-  .sp .t{flex:1; min-width:0; font-weight:700; font-size:14.5px; color:var(--ink);
-         overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .sp .mark{width:24px; height:24px; flex:none; border-radius:50%; border:2px solid #cfd4d8;
-            display:flex; align-items:center; justify-content:center;
-            color:#fff; font-size:13px; font-weight:800}
-  .sp.done .mark{border-color:var(--green); background:var(--green)}
+        .loader {
+            border: 4px solid #f3f4f6;
+            border-radius: 50%;
+            border-top: 4px solid #393b3d;
+            width: 40px;
+            height: 40px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
 
-  /* загрузка и успех */
-  .load{text-align:center; padding:44px 0}
-  .spin{width:40px; height:40px; margin:0 auto 18px; border-radius:50%;
-        border:4px solid #eceff1; border-top-color:var(--ink);
-        animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .ok{width:82px; height:82px; margin:8px auto 16px; border-radius:50%;
-      background:#e7f8f0; color:var(--green); font-size:38px; font-weight:800;
-      display:flex; align-items:center; justify-content:center;
-      animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
-  @keyframes pop{from{transform:scale(.4); opacity:0}to{transform:none; opacity:1}}
-  .note{background:var(--bg); border:1px solid var(--line); border-radius:6px;
-        padding:16px; font-size:14.5px; font-weight:500; line-height:1.5}
-</style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Иконка Робукса (шестиугольник) */
+        .robux-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: #000;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            position: relative;
+        }
+        .robux-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+
+        .robux-icon-gold {
+            background-color: #F6C13B;
+        }
+    </style>
 </head>
-<body>
-<div class="card">
-  <div class="bar">RB DAYS</div>
-  <div class="body">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- 1. приветствие -->
-    <section id="s-welcome" class="screen on">
-      <div class="logo"><i></i></div>
-      <h1>Привет!</h1>
-      <p class="lead">Здесь ты узнаешь, сколько дней твоему аккаунту Roblox —
-        с точной датой регистрации и статистикой профиля.</p>
-      <button class="btn" id="b-start">Начать</button>
-    </section>
+    <!-- Главный контейнер -->
+    <div id="app-container" class="roblox-card w-full max-w-md p-6 relative overflow-hidden min-h-[420px] flex flex-col justify-center">
 
-    <!-- 2. ввод ника -->
-    <section id="s-nick" class="screen">
-      <h2>Твой профиль</h2>
-      <p class="lead">Введи никнейм Roblox — найдём аккаунт.</p>
-      <div id="nick-err" class="err"></div>
-      <label for="nick">Username</label>
-      <input id="nick" placeholder="Player123" maxlength="60"
-             autocapitalize="off" autocorrect="off" spellcheck="false">
-      <div style="height:16px"></div>
-      <button class="btn sec" id="b-search">Найти профиль</button>
-      <p class="muted">Мы никогда не просим пароль от аккаунта.</p>
-    </section>
-
-    <!-- 3. загрузка -->
-    <section id="s-load" class="screen">
-      <div class="load">
-        <div class="spin"></div>
-        <h2 id="load-text">Поиск профиля…</h2>
-      </div>
-    </section>
-
-    <!-- 4. профиль -->
-    <section id="s-profile" class="screen">
-      <div class="panel">
-        <div class="top">
-          <div class="ava"><img id="p-ava" alt=""></div>
-          <div class="nick" id="p-nick">@nickname</div>
-          <div id="p-chip"></div>
+        <!-- Верхняя плашка (как логотип) -->
+        <div class="absolute top-0 left-0 w-full h-12 bg-[#232527] flex items-center justify-center border-b border-[#111214] z-10">
+            <span class="text-white font-bold text-xl tracking-wider">ROBLOX BONUS</span>
         </div>
-        <div id="p-lines"></div>
-      </div>
-      <button class="btn" id="b-get">Получить</button>
-      <button class="btn sec" id="b-other">Другой ник</button>
-    </section>
 
-    <!-- 5. спонсоры -->
-    <section id="s-sponsors" class="screen">
-      <div class="lock">🔒</div>
-      <h2>Верификация</h2>
-      <p class="lead" id="sp-lead">Подпишись, пожалуйста, на наших спонсоров.</p>
-      <div id="sp-err" class="err"></div>
-      <div id="sp-list"></div>
-      <div style="height:6px"></div>
-      <button class="btn" id="b-check">Проверить подписку</button>
-    </section>
+        <!-- Контейнер для контента (отступ сверху для плашки) -->
+        <div class="mt-10">
 
-    <!-- 6. успех -->
-    <section id="s-done" class="screen">
-      <div class="ok">✓</div>
-      <h1>Успешно!</h1>
-      <div class="note" id="done-text">Подписка подтверждена. Спасибо!</div>
-      <div style="height:16px"></div>
-      <button class="btn sec" id="b-home">Вернуться на главную</button>
-    </section>
+            <!-- ЭКРАН 1: Приветствие -->
+            <div id="screen-welcome" class="text-center fade-in">
+                <div class="mb-6 flex justify-center">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" alt="" class="w-20 h-20" onerror="this.src=''; this.className='hidden'; document.getElementById('alt-logo').className='block';">
+                    <div id="alt-logo" class="hidden w-20 h-20 bg-black rounded-lg transform rotate-45 flex items-center justify-center">
+                        <div class="w-10 h-10 bg-white rounded-sm transform -rotate-45"></div>
+                    </div>
+                </div>
+                <h1 class="text-2xl font-extrabold mb-4 text-black">Привет!</h1>
+                <p class="text-[#393b3d] mb-8 font-medium">
+                    Здесь вы можете получить робуксы за количество дней, проведённых в Роблоксе.
+                </p>
+                <button onclick="goToScreen('input-nick')" class="w-full btn-primary py-3 px-4 shadow-md">
+                    Начать
+                </button>
+            </div>
 
-  </div>
-</div>
+            <!-- ЭКРАН 2: Ввод ника -->
+            <div id="screen-input-nick" class="text-center hidden fade-in">
+                <h2 class="text-xl font-bold mb-2 text-black">Ваш профиль</h2>
+                <p class="text-sm text-gray-500 mb-6">Введите свой никнейм Roblox для расчета.</p>
 
-<script>
-(function () {
-  var tg = window.Telegram && window.Telegram.WebApp;
-  if (tg) { tg.ready(); tg.expand(); }
+                <div class="mb-6 text-left">
+                    <label class="block text-sm font-bold text-[#393b3d] mb-2">Username</label>
+                    <input type="text" id="roblox-nick" placeholder="Player123" class="w-full roblox-input py-3 px-4 font-medium text-lg">
+                    <p id="nick-error" class="text-red-500 text-sm mt-2 font-semibold hidden">Пожалуйста, введите никнейм!</p>
+                </div>
 
-  var SCREENS = ['s-welcome','s-nick','s-load','s-profile','s-sponsors','s-done'];
-  var el = function (id) { return document.getElementById(id); };
-  var state = { user:null, links:[], clicked:{}, reward:'' };
+                <button onclick="searchProfile()" class="w-full btn-secondary py-3 px-4 shadow-sm mb-3">
+                    Найти профиль
+                </button>
+                <p class="text-xs text-gray-400 text-center">Мы никогда не просим ваш пароль.</p>
+            </div>
 
-  function esc(s){
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-  }
-  function haptic(k){ if(tg&&tg.HapticFeedback){try{tg.HapticFeedback.notificationOccurred(k);}catch(e){}} }
-  function tap(){ if(tg&&tg.HapticFeedback){try{tg.HapticFeedback.impactOccurred('light');}catch(e){}} }
-  function show(id){
-    SCREENS.forEach(function(s){ el(s).classList.toggle('on', s === id); });
-    window.scrollTo(0,0);
-  }
-  function err(box, text){
-    var n = el(box);
-    n.textContent = text || '';
-    n.classList.toggle('on', !!text);
-  }
-  async function api(url){
-    var h = tg && tg.initData ? { 'X-Telegram-Init-Data': tg.initData } : {};
-    var res = await fetch(url, { headers: h });
-    var data = await res.json().catch(function(){ return {}; });
-    return { status: res.status, data: data };
-  }
-  function num(n){ return (n == null) ? '—' : n.toLocaleString('ru-RU'); }
-  function date(iso){
-    var d = new Date(iso);
-    return isNaN(d) ? iso : d.toLocaleDateString('ru-RU',
-      { day:'2-digit', month:'long', year:'numeric' });
-  }
-  // число набегает от нуля
-  function countUp(node, target){
-    var t0 = performance.now(), ms = 1400;
-    (function step(now){
-      var p = Math.min(1, (now - t0) / ms);
-      node.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString('ru-RU');
-      if (p < 1) requestAnimationFrame(step);
-    })(t0);
-  }
+            <!-- ЭКРАН 3 & 5: Загрузка -->
+            <div id="screen-loading" class="text-center hidden fade-in flex-col items-center justify-center py-10">
+                <div class="loader mx-auto mb-6"></div>
+                <h2 id="loading-text" class="text-lg font-bold text-[#393b3d]">Поиск профиля...</h2>
+            </div>
 
-  // ---- поиск ----
-  var busy = false;
-  async function search(){
-    var nick = el('nick').value.trim();
-    if (!nick){
-      err('nick-err', 'Пожалуйста, введи никнейм!');
-      el('nick').classList.add('bad');
-      return;
-    }
-    if (busy) return;
-    busy = true;
-    err('nick-err', '');
-    el('nick').classList.remove('bad');
-    el('load-text').textContent = 'Поиск профиля…';
-    show('s-load');
-    try{
-      var r = await api('/api/roblox/user?username=' + encodeURIComponent(nick));
-      if (r.status >= 400){
-        haptic('error');
-        err('nick-err', r.data.error || 'Не получилось. Попробуй ещё раз.');
-        show('s-nick');
-      } else {
-        state.user = r.data;
-        renderProfile(r.data);
-        show('s-profile');
-        haptic('success');
-      }
-    } catch(e){
-      err('nick-err', 'Нет связи с сервером.');
-      show('s-nick');
-    } finally { busy = false; }
-  }
+            <!-- ЭКРАН 4: Профиль найден -->
+            <div id="screen-profile" class="hidden fade-in">
+                <div class="bg-[#F2F4F5] rounded-md p-4 mb-6 border border-gray-200">
+                    <div class="flex flex-col items-center mb-4 pb-4 border-b border-gray-300">
+                        <!-- Имитация аватарки Roblox -->
+                        <div class="w-24 h-24 bg-white rounded-full overflow-hidden border-2 border-gray-300 mb-3 flex items-center justify-center">
+                            <i class="fa-solid fa-user text-4xl text-gray-400"></i>
+                        </div>
+                        <h3 id="display-nick" class="text-xl font-extrabold text-black truncate max-w-full">@Nickname</h3>
+                        <span class="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-1 rounded mt-2">Verified</span>
+                    </div>
 
-  // ---- профиль ----
-  function renderProfile(u){
-    var img = el('p-ava');
-    if (u.avatar_url) { img.src = u.avatar_url; img.style.display = 'block'; }
-    else { img.removeAttribute('src'); img.style.display = 'none'; }
-    el('p-nick').textContent = '@' + u.username;
-    el('p-chip').innerHTML = u.is_banned
-      ? '<span class="chip ban">аккаунт забанен</span>'
-      : (u.has_verified_badge ? '<span class="chip">verified</span>' : '');
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-white p-3 rounded border border-gray-200">
+                            <span class="font-semibold text-gray-600 text-sm uppercase">Дней в игре</span>
+                            <span id="display-days" class="font-extrabold text-lg text-black">0</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-3 rounded border border-gray-200">
+                            <span class="font-semibold text-gray-600 text-sm uppercase">Бонус</span>
+                            <div class="flex items-center gap-2">
+                                <div class="robux-icon robux-icon-gold scale-75"></div>
+                                <span id="display-robux" class="font-extrabold text-xl text-robux">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    var lines = [
-      ['Дней в игре', '<span id="p-days">0</span>', true],
-      ['Возраст', esc(u.age_text)],
-      ['Регистрация', esc(date(u.created))]
-    ];
-    if (u.followers != null) lines.push(['Подписчики', num(u.followers)]);
-    lines.push(['User ID', num(u.id)]);
+                <button onclick="initiateRobuxTransfer()" class="w-full btn-primary py-3 px-4 shadow-md flex justify-center items-center gap-2">
+                    Получить робуксы
+                </button>
+            </div>
 
-    el('p-lines').innerHTML = lines.map(function(l){
-      return '<div class="line' + (l[2] ? ' big' : '') + '"><span class="k">' +
-             esc(l[0]) + '</span><span class="v">' + l[1] + '</span></div>';
-    }).join('');
-    countUp(el('p-days'), u.age.total_days);
-  }
+            <!-- ЭКРАН 6: Спонсоры -->
+            <div id="screen-sponsors" class="hidden fade-in">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa-solid fa-lock text-xl text-gray-600"></i>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-black">Верификация</h2>
+                    <p class="text-sm text-gray-600 mt-2 font-medium">Чтобы получить робуксы, подпишитесь, пожалуйста, на наших спонсоров.</p>
+                </div>
 
-  // ---- спонсоры ----
-  async function toSponsors(){
-    tap();
-    el('load-text').textContent = 'Подготовка…';
-    show('s-load');
-    try{
-      var r = await api('/api/op/status');
-      state.links = r.data.links || [];
-      state.reward = r.data.reward_text || '';
-      if (r.data.subscribed) { finish(); return; }
-      renderSponsors();
-      show('s-sponsors');
-    } catch(e){
-      err('nick-err', 'Нет связи с сервером.');
-      show('s-nick');
-    }
-  }
+                <div class="space-y-3 mb-6" id="sponsors-list">
+                    <!-- Спонсор 1 -->
+                    <a href="#" onclick="checkSponsor(0); return false;" id="sponsor-0" class="flex items-center justify-between bg-white p-3 rounded border-2 border-gray-200 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded flex items-center justify-center text-blue-500">
+                                <i class="fa-brands fa-telegram text-2xl"></i>
+                            </div>
+                            <span class="font-bold text-[#393b3d]">Спонсор #1</span>
+                        </div>
+                        <div class="status-icon w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center"></div>
+                    </a>
 
-  function renderSponsors(){
-    el('sp-list').innerHTML = state.links.map(function(c, i){
-      var m = String(c.title).match(/^\s*(\p{Extended_Pictographic}️?|\d️?⃣)/u);
-      var icon = m ? m[1] : '✈️';
-      var name = m ? c.title.slice(m[0].length).trim() : c.title;
-      var done = state.clicked[i] ? ' done' : '';
-      return '<button class="sp' + done + '" data-i="' + i + '">' +
-        '<span class="ic">' + esc(icon) + '</span>' +
-        '<span class="t">' + esc(name) + '</span>' +
-        '<span class="mark">' + (state.clicked[i] ? '✓' : '') + '</span></button>';
-    }).join('');
+                    <!-- Спонсор 2 -->
+                    <a href="#" onclick="checkSponsor(1); return false;" id="sponsor-1" class="flex items-center justify-between bg-white p-3 rounded border-2 border-gray-200 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded flex items-center justify-center text-blue-500">
+                                <i class="fa-brands fa-telegram text-2xl"></i>
+                            </div>
+                            <span class="font-bold text-[#393b3d]">Спонсор #2</span>
+                        </div>
+                        <div class="status-icon w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center"></div>
+                    </a>
+                </div>
 
-    Array.prototype.forEach.call(el('sp-list').querySelectorAll('.sp'), function(b){
-      b.addEventListener('click', function(){
-        var i = +b.dataset.i, link = state.links[i];
-        state.clicked[i] = true;
-        b.classList.add('done');
-        b.querySelector('.mark').textContent = '✓';
-        err('sp-err', '');
-        tap();
-        if (!link || !link.url) return;
-        if (tg && tg.openTelegramLink && link.url.indexOf('https://t.me/') === 0) {
-          tg.openTelegramLink(link.url);
-        } else if (tg && tg.openLink) { tg.openLink(link.url); }
-        else { window.open(link.url, '_blank'); }
-      });
-    });
-  }
+                <div id="sponsor-error" class="bg-red-100 border border-red-400 text-red-700 text-sm p-3 rounded mb-4 text-center font-semibold hidden">
+                    Подпишитесь, пожалуйста.
+                </div>
 
-  async function check(){
-    el('b-check').disabled = true;
-    err('sp-err', '');
-    try{
-      var r = await api('/api/op/status');
-      state.links = r.data.links || state.links;
-      state.reward = r.data.reward_text || state.reward;
-      if (r.data.subscribed){ haptic('success'); finish(); }
-      else {
-        haptic('error');
-        err('sp-err', 'Подпишись, пожалуйста, на всех спонсоров.');
-      }
-    } catch(e){
-      err('sp-err', 'Нет связи с сервером.');
-    } finally { el('b-check').disabled = false; }
-  }
+                <button onclick="verifySubscriptions()" class="w-full btn-secondary py-3 px-4 shadow-sm">
+                    Проверить подписку
+                </button>
+            </div>
 
-  function finish(){
-    if (state.reward) el('done-text').textContent = state.reward;
-    show('s-done');
-  }
+            <!-- ЭКРАН 7: Успех -->
+            <div id="screen-success" class="text-center hidden fade-in py-6">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-check text-4xl text-[#00B06F]"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-black mb-4">Успешно!</h2>
+                <div class="bg-[#F2F4F5] p-5 rounded border border-gray-200 text-left">
+                    <p class="text-[#393b3d] font-medium leading-relaxed">
+                        Спасибо! Робуксы придут на аккаунт <strong class="text-black bg-gray-200 px-1 rounded" id="success-nick"></strong> в течение 24 часов.
+                    </p>
+                </div>
+                <button onclick="showScreen('welcome')" class="w-full btn-secondary py-3 px-4 shadow-sm mt-6">
+                    Вернуться на главную
+                </button>
+            </div>
 
-  function home(){
-    el('nick').value = '';
-    state.clicked = {};
-    err('nick-err', '');
-    show('s-welcome');
-  }
+        </div>
+    </div>
 
-  el('b-start').addEventListener('click', function(){ tap(); show('s-nick'); el('nick').focus(); });
-  el('b-search').addEventListener('click', search);
-  el('nick').addEventListener('keydown', function(e){ if (e.key === 'Enter') search(); });
-  el('b-get').addEventListener('click', toSponsors);
-  el('b-other').addEventListener('click', function(){ tap(); el('nick').value=''; show('s-nick'); el('nick').focus(); });
-  el('b-check').addEventListener('click', check);
-  el('b-home').addEventListener('click', home);
+    <script>
+        // Состояние приложения
+        let currentUserNick = "";
+        let sponsorsStatus = [false, false];
 
-  var preset = new URLSearchParams(location.search).get('username') ||
-    (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
-  if (preset){ el('nick').value = preset; show('s-nick'); search(); }
-})();
-</script>
+        // Функция для переключения экранов
+        function showScreen(screenId) {
+            // Если возвращаемся на главную, сбрасываем статус спонсоров
+            if (screenId === 'welcome') {
+                sponsorsStatus = [false, false];
+                document.getElementById('roblox-nick').value = '';
+
+                // Сброс кнопок спонсоров
+                [0, 1].forEach(index => {
+                    const btn = document.getElementById(`sponsor-${index}`);
+                    btn.className = 'flex items-center justify-between bg-white p-3 rounded border-2 border-gray-200 transition-colors';
+                    const iconBox = btn.querySelector('.status-icon');
+                    iconBox.className = 'status-icon w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center';
+                    iconBox.innerHTML = '';
+                });
+            }
+
+            const screens = ['welcome', 'input-nick', 'loading', 'profile', 'sponsors', 'success'];
+            screens.forEach(id => {
+                document.getElementById(`screen-${id}`).classList.add('hidden');
+            });
+            document.getElementById(`screen-${screenId}`).classList.remove('hidden');
+        }
+
+        function goToScreen(screenId) {
+            showScreen(screenId);
+        }
+
+        // Поиск профиля — настоящий: спрашиваем сервер, тот идёт в API Roblox
+        async function searchProfile() {
+            const nickInput = document.getElementById('roblox-nick').value.trim();
+            const errorText = document.getElementById('nick-error');
+            const inputField = document.getElementById('roblox-nick');
+
+            if (!nickInput) {
+                errorText.innerText = 'Пожалуйста, введите никнейм!';
+                errorText.classList.remove('hidden');
+                inputField.classList.add('border-red-500');
+                return;
+            }
+
+            errorText.classList.add('hidden');
+            inputField.classList.remove('border-red-500');
+            currentUserNick = nickInput;
+
+            document.getElementById('loading-text').innerText = "Поиск профиля...";
+            showScreen('loading');
+
+            try {
+                const tg = window.Telegram && window.Telegram.WebApp;
+                const headers = tg && tg.initData
+                    ? { 'X-Telegram-Init-Data': tg.initData } : {};
+                const res = await fetch(
+                    '/api/roblox/user?username=' + encodeURIComponent(nickInput),
+                    { headers: headers });
+                const data = await res.json();
+
+                if (!res.ok || data.error) {
+                    errorText.innerText = data.error || 'Не удалось найти аккаунт.';
+                    errorText.classList.remove('hidden');
+                    inputField.classList.add('border-red-500');
+                    showScreen('input-nick');
+                    return;
+                }
+
+                // настоящее количество дней от даты регистрации аккаунта
+                const daysInGame = data.age.total_days;
+                const robuxReward = Math.floor(daysInGame * 1.5);
+
+                currentUserNick = data.username;
+                document.getElementById('display-nick').innerText = "@" + data.username;
+                document.getElementById('display-days').innerText = daysInGame.toLocaleString('ru-RU');
+                document.getElementById('display-robux').innerText = robuxReward.toLocaleString('ru-RU');
+
+                showScreen('profile');
+            } catch (e) {
+                errorText.innerText = 'Нет связи с сервером. Попробуйте ещё раз.';
+                errorText.classList.remove('hidden');
+                showScreen('input-nick');
+            }
+        }
+
+        // Нажатие кнопки "Получить робуксы"
+        function initiateRobuxTransfer() {
+            document.getElementById('loading-text').innerText = "Подготовка...";
+            showScreen('loading');
+
+            setTimeout(() => {
+                showScreen('sponsors');
+            }, 1000);
+        }
+
+        // Обработка клика по спонсору
+        function checkSponsor(index) {
+            sponsorsStatus[index] = true;
+
+            const btn = document.getElementById(`sponsor-${index}`);
+            // Меняем стиль рамки на зеленый
+            btn.classList.remove('border-gray-200');
+            btn.classList.add('border-[#00B06F]', 'bg-green-50');
+
+            const iconBox = btn.querySelector('.status-icon');
+            iconBox.classList.remove('border-gray-300');
+            iconBox.classList.add('border-[#00B06F]', 'bg-[#00B06F]');
+            iconBox.innerHTML = '<i class="fa-solid fa-check text-white text-xs"></i>';
+
+            document.getElementById('sponsor-error').classList.add('hidden');
+        }
+
+        // Проверка подписок
+        function verifySubscriptions() {
+            const allSubscribed = sponsorsStatus.every(status => status === true);
+            const errorBox = document.getElementById('sponsor-error');
+
+            if (allSubscribed) {
+                errorBox.classList.add('hidden');
+                document.getElementById('success-nick').innerText = "@" + currentUserNick;
+                showScreen('success');
+            } else {
+                errorBox.classList.remove('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
