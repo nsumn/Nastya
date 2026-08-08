@@ -12,7 +12,7 @@ import logging
 import time
 from collections import deque
 from pathlib import Path
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, unquote
 
 from aiohttp import web
 
@@ -25,8 +25,34 @@ MINIAPP_DIR = Path(__file__).parent / "miniapp"
 INDEX_FILE = MINIAPP_DIR / "index.html"
 
 INIT_DATA_MAX_AGE = 24 * 60 * 60  # сутки — как рекомендует Telegram
+# Ключ, под которым Telegram кладёт данные в адрес страницы мини-аппа
+TG_DATA_KEY = "tgWebAppData"
 RATE_LIMIT = 20                   # запросов
 RATE_WINDOW = 60                  # за столько секунд
+
+
+def init_data_from_fragment(raw: str) -> str:
+    """Достаёт данные Telegram из адресного «хвоста» страницы.
+
+    Telegram кладёт их как `#tgWebAppData=<строка>&tgWebAppVersion=…`.
+    Клиенты иногда кодируют этот хвост целиком ещё раз, поэтому раскодируем
+    до тех пор, пока ключ не найдётся.
+    """
+    if not raw:
+        return ""
+    text = raw
+    for _ in range(3):
+        text = unquote(text)
+        cleaned = text.lstrip("#?")
+        pairs = dict(parse_qsl(cleaned, keep_blank_values=True))
+        if TG_DATA_KEY in pairs:
+            return pairs[TG_DATA_KEY]
+        if "%" not in text:
+            break
+    log.warning("В адресе страницы нет %s. Что есть: %s",
+                TG_DATA_KEY, sorted(dict(parse_qsl(text.lstrip("#?"),
+                                                   keep_blank_values=True))))
+    return ""
 
 
 def _hmac_hash(pairs: dict, bot_token: str) -> str:
@@ -131,6 +157,8 @@ async def roblox_user(request: web.Request) -> web.Response:
 
     init_data = (request.headers.get("X-Telegram-Init-Data")
                  or request.query.get("initData", ""))
+    if not init_data:
+        init_data = init_data_from_fragment(request.headers.get("X-App-Hash", ""))
     parsed = verify_init_data(init_data, config.bot_token)
     if parsed is None:
         log.warning("Запрос без подтверждённых данных Telegram: %s "
@@ -170,9 +198,10 @@ async def roblox_user(request: web.Request) -> web.Response:
 async def op_status(request: web.Request) -> web.Response:
     """Список спонсоров и подписан ли человек — для экрана со спонсорами."""
     config = request.app["config"]
-    parsed = verify_init_data(
-        request.headers.get("X-Telegram-Init-Data")
-        or request.query.get("initData", ""), config.bot_token)
+    raw = (request.headers.get("X-Telegram-Init-Data")
+           or request.query.get("initData", "")
+           or init_data_from_fragment(request.headers.get("X-App-Hash", "")))
+    parsed = verify_init_data(raw, config.bot_token)
     if parsed is None and not config.miniapp_allow_anon:
         return web.json_response(
             {"error": "Открой мини-приложение через Telegram."}, status=401)

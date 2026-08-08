@@ -290,7 +290,10 @@
             const init = getInitData();
             return {
                 'X-Telegram-Init-Data': init,
-                // подсказка для журнала, если проверка не пройдёт
+                // весь адресный «хвост» — сервер сам достанет из него данные,
+                // если Telegram положил их в непривычном виде
+                'X-App-Hash': encodeURIComponent(
+                    (location.hash || '') + (location.search || '')),
                 'X-App-Debug': 'sdk=' + (tg ? 1 : 0) +
                                ';init=' + (init ? init.length : 0) +
                                ';hash=' + ((location.hash || '').length)
