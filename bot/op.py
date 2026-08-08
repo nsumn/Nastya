@@ -292,8 +292,30 @@ async def announce(bot: Bot) -> None:
 
 # ---------- показ пользователю ----------
 
+async def ensure_check_title(bot: Bot | None) -> None:
+    """Подтягивает название проверочного канала, если его ещё нет.
+
+    Нужно, чтобы в списке спонсоров вместо «Твоя проверочная ссылка»
+    стояло настоящее имя канала.
+    """
+    if await check_title() or bot is None:
+        return
+    chat_id = await check_chat()
+    if not chat_id:
+        return
+    try:
+        chat = await bot.get_chat(chat_id)
+    except TelegramAPIError as exc:
+        log.warning("Не смог узнать название проверочного канала: %s", exc)
+        return
+    if chat.title:
+        await set_check_chat(chat_id, chat.title)
+        log.info("Проверочный канал: %s", chat.title)
+
+
 async def visible_links(bot: Bot | None = None) -> list[Link]:
     """Список для пользователя: проверочная строка уже со ссылкой."""
+    await ensure_check_title(bot)
     items = await get_items()
     url = await check_url()
     title = await check_title()

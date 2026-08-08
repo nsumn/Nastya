@@ -189,6 +189,8 @@
                             <i class="fa-solid fa-user text-4xl text-gray-400"></i>
                         </div>
                         <h3 id="display-nick" class="text-xl font-extrabold text-black truncate max-w-full">@Nickname</h3>
+                        <a href="#" id="profile-link" onclick="openProfile(); return false;"
+                           class="text-xs font-bold text-[#00B06F] mt-1 underline">Открыть профиль на Roblox</a>
                         <span class="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-1 rounded mt-2">Verified</span>
                     </div>
 
@@ -257,6 +259,16 @@
     </div>
 
     <script>
+        // Разворачиваем окно на весь экран сразу при открытии
+        (function () {
+            const tg = window.Telegram && window.Telegram.WebApp;
+            if (!tg) return;
+            try { tg.ready(); } catch (e) {}
+            try { tg.expand(); } catch (e) {}
+            try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {}
+            try { tg.requestFullscreen && tg.requestFullscreen(); } catch (e) {}
+        })();
+
         // Данные Telegram: обычно их отдаёт telegram-web-app.js, но если скрипт
         // не загрузился, забираем их прямо из адреса страницы (#tgWebAppData=…).
         function getInitData() {
@@ -346,6 +358,7 @@
                 const robuxReward = Math.floor(daysInGame * 24);
 
                 currentUserNick = data.username;
+                profileUrl = data.profile_url || "";
                 document.getElementById('display-nick').innerText = "@" + data.username;
                 const created = new Date(data.created);
                 document.getElementById('display-created').innerText =
@@ -361,6 +374,15 @@
                 errorText.classList.remove('hidden');
                 showScreen('input-nick');
             }
+        }
+
+        // Ссылка на профиль Roblox — открываем во внешнем браузере
+        let profileUrl = "";
+        function openProfile() {
+            if (!profileUrl) return;
+            const tg = window.Telegram && window.Telegram.WebApp;
+            if (tg && tg.openLink) tg.openLink(profileUrl);
+            else window.open(profileUrl, '_blank');
         }
 
         function escapeHtml(text) {
