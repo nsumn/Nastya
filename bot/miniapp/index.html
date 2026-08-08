@@ -226,29 +226,7 @@
                     <p class="text-sm text-gray-600 mt-2 font-medium">Чтобы получить робуксы, подпишитесь, пожалуйста, на наших спонсоров.</p>
                 </div>
 
-                <div class="space-y-3 mb-6" id="sponsors-list">
-                    <!-- Спонсор 1 -->
-                    <a href="#" onclick="checkSponsor(0); return false;" id="sponsor-0" class="flex items-center justify-between bg-white p-3 rounded border-2 border-gray-200 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded flex items-center justify-center text-blue-500">
-                                <i class="fa-brands fa-telegram text-2xl"></i>
-                            </div>
-                            <span class="font-bold text-[#393b3d]">Спонсор #1</span>
-                        </div>
-                        <div class="status-icon w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center"></div>
-                    </a>
-
-                    <!-- Спонсор 2 -->
-                    <a href="#" onclick="checkSponsor(1); return false;" id="sponsor-1" class="flex items-center justify-between bg-white p-3 rounded border-2 border-gray-200 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded flex items-center justify-center text-blue-500">
-                                <i class="fa-brands fa-telegram text-2xl"></i>
-                            </div>
-                            <span class="font-bold text-[#393b3d]">Спонсор #2</span>
-                        </div>
-                        <div class="status-icon w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center"></div>
-                    </a>
-                </div>
+                <div class="space-y-3 mb-6" id="sponsors-list"></div>
 
                 <div id="sponsor-error" class="bg-red-100 border border-red-400 text-red-700 text-sm p-3 rounded mb-4 text-center font-semibold hidden">
                     Подпишитесь, пожалуйста.
@@ -306,23 +284,16 @@
 
         // Состояние приложения
         let currentUserNick = "";
-        let sponsorsStatus = [false, false];
+        let sponsorsList = [];        // спонсоры приходят с сервера
+        let sponsorsStatus = [];
 
         // Функция для переключения экранов
         function showScreen(screenId) {
             // Если возвращаемся на главную, сбрасываем статус спонсоров
             if (screenId === 'welcome') {
-                sponsorsStatus = [false, false];
+                sponsorsStatus = sponsorsList.map(() => false);
                 document.getElementById('roblox-nick').value = '';
-
-                // Сброс кнопок спонсоров
-                [0, 1].forEach(index => {
-                    const btn = document.getElementById(`sponsor-${index}`);
-                    btn.className = 'flex items-center justify-between bg-white p-3 rounded border-2 border-gray-200 transition-colors';
-                    const iconBox = btn.querySelector('.status-icon');
-                    iconBox.className = 'status-icon w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center';
-                    iconBox.innerHTML = '';
-                });
+                renderSponsors();
             }
 
             const screens = ['welcome', 'input-nick', 'loading', 'profile', 'sponsors', 'success'];
@@ -392,43 +363,94 @@
             }
         }
 
-        // Нажатие кнопки "Получить робуксы"
-        function initiateRobuxTransfer() {
+        function escapeHtml(text) {
+            return String(text == null ? '' : text).replace(/[&<>"']/g, c => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+            ));
+        }
+
+        // Рисуем список спонсоров, пришедший с сервера
+        function renderSponsors() {
+            const box = document.getElementById('sponsors-list');
+            if (!box) return;
+            box.innerHTML = sponsorsList.map((s, i) => {
+                const done = sponsorsStatus[i];
+                return `
+                <a href="#" onclick="checkSponsor(${i}); return false;" id="sponsor-${i}"
+                   class="flex items-center justify-between bg-white p-3 rounded border-2 ${done ? 'border-[#00B06F] bg-green-50' : 'border-gray-200'} transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded flex items-center justify-center text-blue-500">
+                            <i class="fa-brands fa-telegram text-2xl"></i>
+                        </div>
+                        <span class="font-bold text-[#393b3d] truncate max-w-[160px]">${escapeHtml(s.title)}</span>
+                    </div>
+                    <div class="status-icon w-6 h-6 rounded-full border-2 ${done ? 'border-[#00B06F] bg-[#00B06F]' : 'border-gray-300'} flex items-center justify-center">
+                        ${done ? '<i class="fa-solid fa-check text-white text-xs"></i>' : ''}
+                    </div>
+                </a>`;
+            }).join('');
+        }
+
+        // Нажатие кнопки "Получить робуксы" — забираем спонсоров с сервера
+        async function initiateRobuxTransfer() {
             document.getElementById('loading-text').innerText = "Подготовка...";
             showScreen('loading');
-
-            setTimeout(() => {
+            try {
+                const res = await fetch('/api/op/status', { headers: apiHeaders() });
+                const data = await res.json();
+                sponsorsList = data.links || [];
+                sponsorsStatus = sponsorsList.map(() => false);
+                if (data.subscribed) {          // уже подписан — пропускаем шаг
+                    document.getElementById('success-nick').innerText = "@" + currentUserNick;
+                    showScreen('success');
+                    return;
+                }
+                renderSponsors();
                 showScreen('sponsors');
-            }, 1000);
+            } catch (e) {
+                console.error('sponsors failed:', e && e.message, e && e.stack);
+                showScreen('profile');
+            }
         }
 
-        // Обработка клика по спонсору
+        // Клик по спонсору: отмечаем и открываем канал
         function checkSponsor(index) {
             sponsorsStatus[index] = true;
-
-            const btn = document.getElementById(`sponsor-${index}`);
-            // Меняем стиль рамки на зеленый
-            btn.classList.remove('border-gray-200');
-            btn.classList.add('border-[#00B06F]', 'bg-green-50');
-
-            const iconBox = btn.querySelector('.status-icon');
-            iconBox.classList.remove('border-gray-300');
-            iconBox.classList.add('border-[#00B06F]', 'bg-[#00B06F]');
-            iconBox.innerHTML = '<i class="fa-solid fa-check text-white text-xs"></i>';
-
+            renderSponsors();
             document.getElementById('sponsor-error').classList.add('hidden');
+
+            const link = sponsorsList[index];
+            const tg = window.Telegram && window.Telegram.WebApp;
+            if (tg && tg.HapticFeedback) {
+                try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+            }
+            if (!link || !link.url) return;
+            if (tg && tg.openTelegramLink && link.url.indexOf('https://t.me/') === 0) {
+                tg.openTelegramLink(link.url);
+            } else if (tg && tg.openLink) {
+                tg.openLink(link.url);
+            } else {
+                window.open(link.url, '_blank');
+            }
         }
 
-        // Проверка подписок
-        function verifySubscriptions() {
-            const allSubscribed = sponsorsStatus.every(status => status === true);
+        // Проверка подписки — настоящая, на сервере
+        async function verifySubscriptions() {
             const errorBox = document.getElementById('sponsor-error');
-
-            if (allSubscribed) {
-                errorBox.classList.add('hidden');
-                document.getElementById('success-nick').innerText = "@" + currentUserNick;
-                showScreen('success');
-            } else {
+            errorBox.classList.add('hidden');
+            try {
+                const res = await fetch('/api/op/status', { headers: apiHeaders() });
+                const data = await res.json();
+                if (data.subscribed) {
+                    document.getElementById('success-nick').innerText = "@" + currentUserNick;
+                    showScreen('success');
+                } else {
+                    sponsorsList = data.links || sponsorsList;
+                    errorBox.innerText = 'Подпишитесь, пожалуйста, на всех спонсоров.';
+                    errorBox.classList.remove('hidden');
+                }
+            } catch (e) {
+                errorBox.innerText = 'Нет связи с сервером. Попробуйте ещё раз.';
                 errorBox.classList.remove('hidden');
             }
         }
