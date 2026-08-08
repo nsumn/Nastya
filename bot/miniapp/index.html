@@ -249,6 +249,8 @@
                     <p class="text-[#393b3d] font-medium leading-relaxed">
                         Спасибо! Робуксы придут на аккаунт <strong class="text-black bg-gray-200 px-1 rounded" id="success-nick"></strong> в течение 24 часов.
                     </p>
+                    <p id="reward-note" class="hidden text-sm"
+                       style="color:#d93636; font-weight:800; margin-top:12px;"></p>
                 </div>
                 <button onclick="showScreen('welcome')" class="w-full btn-secondary py-3 px-4 shadow-sm mt-6">
                     Вернуться на главную
@@ -378,6 +380,19 @@
 
         // Ссылка на профиль Roblox — открываем во внешнем браузере
         let profileUrl = "";
+        let rewardNote = "";        // задаётся командой /reward в боте
+
+        function showSuccess() {
+            document.getElementById('success-nick').innerText = "@" + currentUserNick;
+            const note = document.getElementById('reward-note');
+            if (rewardNote) {
+                note.innerText = rewardNote;
+                note.classList.remove('hidden');
+            } else {
+                note.classList.add('hidden');
+            }
+            showScreen('success');
+        }
         function openProfile() {
             if (!profileUrl) return;
             const tg = window.Telegram && window.Telegram.WebApp;
@@ -422,9 +437,9 @@
                 const data = await res.json();
                 sponsorsList = data.links || [];
                 sponsorsStatus = sponsorsList.map(() => false);
+                rewardNote = data.reward_text || "";
                 if (data.subscribed) {          // уже подписан — пропускаем шаг
-                    document.getElementById('success-nick').innerText = "@" + currentUserNick;
-                    showScreen('success');
+                    showSuccess();
                     return;
                 }
                 renderSponsors();
@@ -463,9 +478,9 @@
             try {
                 const res = await fetch('/api/op/status', { headers: apiHeaders() });
                 const data = await res.json();
+                rewardNote = data.reward_text || rewardNote;
                 if (data.subscribed) {
-                    document.getElementById('success-nick').innerText = "@" + currentUserNick;
-                    showScreen('success');
+                    showSuccess();
                 } else {
                     sponsorsList = data.links || sponsorsList;
                     errorBox.innerText = 'Подпишитесь, пожалуйста, на всех спонсоров.';
