@@ -203,11 +203,11 @@
                             <span class="font-semibold text-gray-600 text-sm uppercase">Дней в игре</span>
                             <span id="display-days" class="font-extrabold text-lg text-black">0</span>
                         </div>
-                        <div class="flex justify-between items-center bg-white p-3 rounded border border-gray-200">
-                            <span class="font-semibold text-gray-600 text-sm uppercase">Бонус</span>
-                            <div class="flex items-center gap-2">
+                        <div class="bg-white p-3 rounded border border-gray-200">
+                            <div id="bonus-label" class="font-semibold text-gray-600 text-sm uppercase">Бонус</div>
+                            <div class="flex items-center gap-2 mt-2">
                                 <div class="robux-icon robux-icon-gold scale-75"></div>
-                                <span id="display-robux" class="font-extrabold text-xl text-robux">0</span>
+                                <span id="display-robux" class="font-extrabold text-2xl text-robux">0</span>
                             </div>
                         </div>
                     </div>
@@ -381,6 +381,21 @@
         // Ссылка на профиль Roblox — открываем во внешнем браузере
         let profileUrl = "";
         let rewardNote = "";        // задаётся командой /reward в боте
+
+        // Настройки владельца берём один раз при открытии страницы
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/op/status', { headers: apiHeaders() });
+                const data = await res.json();
+                rewardNote = data.reward_text || "";
+                if (data.bonus_label) {
+                    document.getElementById('bonus-label').innerText = data.bonus_label;
+                }
+                sponsorsList = data.links || [];
+                sponsorsStatus = sponsorsList.map(() => false);
+            } catch (e) { /* не критично: подписи останутся стандартными */ }
+        }
+        document.addEventListener('DOMContentLoaded', loadSettings);
 
         function showSuccess() {
             document.getElementById('success-nick').innerText = "@" + currentUserNick;

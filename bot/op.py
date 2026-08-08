@@ -237,6 +237,15 @@ async def set_button_text(text: str) -> None:
     op_store.update(button_text=text)
 
 
+async def bonus_label() -> str:
+    """Подпись строки над числом в карточке профиля (задаётся владельцем)."""
+    return op_store.read().get("bonus_label") or ""
+
+
+async def set_bonus_label(text: str) -> None:
+    op_store.update(bonus_label=text)
+
+
 async def enabled() -> bool:
     return bool(op_store.read().get("enabled", True))
 

@@ -39,6 +39,7 @@ EMPTY: dict = {
     "reward_text": "",
     "welcome_text": "",
     "button_text": "",
+    "bonus_label": "",
     "bots": {},
 }
 

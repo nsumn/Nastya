@@ -216,6 +216,7 @@ async def op_status(request: web.Request) -> web.Response:
         "subscribed": bool(subscribed),
         "links": links,
         "reward_text": await op.reward_text(),
+        "bonus_label": await op.bonus_label(),
     })
 
 

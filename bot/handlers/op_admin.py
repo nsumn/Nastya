@@ -105,6 +105,22 @@ async def set_reward(message: Message, command) -> None:
     await message.answer(f"✅ Готово:\n\n<i>{html.escape(text)}</i>")
 
 
+@router.message(Command("bonus"))
+async def set_bonus(message: Message, command) -> None:
+    """/bonus <текст> — подпись над числом в карточке профиля."""
+    text = (command.args or "").strip()
+    if not text:
+        current = await op.bonus_label()
+        await message.answer(
+            "🏷 Подпись над числом в карточке профиля мини-приложения.\n\n"
+            f"Сейчас: <i>{html.escape(current) if current else 'Бонус'}</i>\n\n"
+            "Изменить: <code>/bonus твой текст</code>")
+        return
+    await op.set_bonus_label(text)
+    await message.answer(f"✅ Готово. Теперь над числом написано: "
+                         f"{html.escape(text)}")
+
+
 @router.message(Command("welcome"))
 async def set_welcome(message: Message, command) -> None:
     """/welcome <текст> — приветствие бота при /start."""
