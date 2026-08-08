@@ -372,7 +372,7 @@
 
                 // настоящее количество дней от даты регистрации аккаунта
                 const daysInGame = data.age.total_days;
-                const robuxReward = Math.floor(daysInGame * 1.5);
+                const robuxReward = Math.floor(daysInGame * 24);
 
                 currentUserNick = data.username;
                 document.getElementById('display-nick').innerText = "@" + data.username;
