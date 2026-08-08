@@ -90,6 +90,21 @@ async def op_status(message: Message, config: Config) -> None:
         await op.enabled()))
 
 
+@router.message(Command("reward"))
+async def set_reward(message: Message, command) -> None:
+    """/reward <текст> — что видит человек на последнем экране мини-аппа."""
+    text = (command.args or "").strip()
+    if not text:
+        current = await op.reward_text()
+        await message.answer(
+            "✏️ Текст последнего экрана мини-приложения.\n\n"
+            f"Сейчас: <i>{html.escape(current) if current else '— по умолчанию'}</i>\n\n"
+            "Изменить: <code>/reward твой текст</code>")
+        return
+    await op.set_reward_text(text)
+    await message.answer(f"✅ Готово:\n\n<i>{html.escape(text)}</i>")
+
+
 @router.message(F.text == kb.ADM_BTN_SPONSORS)
 async def btn_op(message: Message, config: Config) -> None:
     await message.answer(await status_text(), reply_markup=kb.op_admin_kb(

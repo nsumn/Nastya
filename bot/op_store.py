@@ -36,6 +36,7 @@ EMPTY: dict = {
     "check_chat": "",
     "check_title": "",
     "enabled": True,
+    "reward_text": "",
     "bots": {},
 }
 

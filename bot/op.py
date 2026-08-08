@@ -210,6 +210,15 @@ async def updated_at() -> str:
     return op_store.read().get("updated") or ""
 
 
+async def reward_text() -> str:
+    """Текст финального экрана мини-аппа (задаётся в панели)."""
+    return op_store.read().get("reward_text") or ""
+
+
+async def set_reward_text(text: str) -> None:
+    op_store.update(reward_text=text)
+
+
 async def enabled() -> bool:
     return bool(op_store.read().get("enabled", True))
 

@@ -47,13 +47,14 @@
   }
   .btn:disabled{opacity:.55}
   .btn.ghost{background:var(--sec); color:var(--text)}
+  .btn + .btn{margin-top:10px}
 
   .plate{margin-top:14px; padding:13px 14px; border-radius:var(--radius);
          background:var(--sec); color:var(--hint); font-size:14px; text-align:center}
   .plate.err{color:#ff7a7a; background:rgba(255,90,90,.12)}
   .plate.ok{color:#6ee7a0; background:rgba(80,220,140,.12)}
 
-  /* --- экран результата --- */
+  /* --- результат --- */
   .who{display:flex; align-items:center; gap:14px; margin-bottom:18px}
   .ava{width:60px; height:60px; border-radius:50%; background:var(--sec); flex:none}
   .who .nm{font-size:18px; font-weight:600}
@@ -88,8 +89,6 @@
   .sp button.done{background:var(--done); color:var(--hint)}
   .sticky{position:sticky; bottom:0; padding:12px 0 0;
           background:linear-gradient(to top, var(--bg) 70%, transparent)}
-  .skel{opacity:.6; animation:pulse 1.1s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.3}}
 </style>
 </head>
 <body>
@@ -106,18 +105,7 @@
   <div id="start-msg"></div>
 </section>
 
-<!-- 2. спонсоры -->
-<section id="s-sponsors" class="screen">
-  <h1>Остался один шаг</h1>
-  <div class="lead">Подпишись на каналы ниже — и результат откроется.</div>
-  <div id="sp-list"></div>
-  <div class="sticky">
-    <button class="btn" id="check">Проверить подписку</button>
-    <div id="sp-msg"></div>
-  </div>
-</section>
-
-<!-- 3. результат -->
+<!-- 2. результат: счётчик дней -->
 <section id="s-result" class="screen">
   <div class="who">
     <img class="ava" id="r-ava" alt="">
@@ -132,8 +120,28 @@
   </div>
   <div class="rows" id="r-rows"></div>
   <div style="margin-top:16px">
-    <button class="btn ghost" id="again">Проверить другой ник</button>
+    <button class="btn" id="get">Получить</button>
+    <button class="btn ghost" id="again">Другой ник</button>
   </div>
+</section>
+
+<!-- 3. спонсоры -->
+<section id="s-sponsors" class="screen">
+  <h1>Остался один шаг</h1>
+  <div class="lead">Подпишись на каналы ниже и нажми «Проверить подписку».</div>
+  <div id="sp-list"></div>
+  <div class="sticky">
+    <button class="btn" id="check">Проверить подписку</button>
+    <div id="sp-msg"></div>
+  </div>
+</section>
+
+<!-- 4. готово -->
+<section id="s-done" class="screen">
+  <div class="logo">✅</div>
+  <h1>Отлично, подписка подтверждена!</h1>
+  <div class="lead" id="done-text">Спасибо, что подписался на наши каналы.</div>
+  <button class="btn ghost" id="done-again">Проверить другой ник</button>
 </section>
 
 <script>
@@ -141,8 +149,9 @@
   var tg = window.Telegram && window.Telegram.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
+  var SCREENS = ['s-start', 's-result', 's-sponsors', 's-done'];
   var el = function (id) { return document.getElementById(id); };
-  var state = { user: null, links: [], clicked: {} };
+  var state = { user: null, links: [], clicked: {}, reward: '' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -155,9 +164,7 @@
     }
   }
   function show(id) {
-    ['s-start', 's-sponsors', 's-result'].forEach(function (s) {
-      el(s).classList.toggle('on', s === id);
-    });
+    SCREENS.forEach(function (s) { el(s).classList.toggle('on', s === id); });
     window.scrollTo(0, 0);
   }
   function plate(box, text, kind) {
@@ -179,7 +186,7 @@
       { day: '2-digit', month: 'long', year: 'numeric' });
   }
 
-  // ---- поиск ника ----
+  // ---- 1. поиск ника ----
   var busy = false;
   async function search() {
     var nick = el('nick').value.trim();
@@ -189,12 +196,7 @@
     plate('start-msg', 'Ищем аккаунт…', '');
     try {
       var r = await api('/api/roblox/user?username=' + encodeURIComponent(nick));
-      if (r.status === 403 && r.data.need_subscribe) {
-        plate('start-msg', '');
-        state.links = r.data.need_subscribe;
-        renderSponsors();
-        show('s-sponsors');
-      } else if (r.status >= 400) {
+      if (r.status >= 400) {
         haptic('error');
         plate('start-msg', r.data.error || 'Не получилось. Попробуй ещё раз.', 'err');
       } else {
@@ -211,7 +213,64 @@
     }
   }
 
-  // ---- спонсоры ----
+  // ---- 2. результат со счётчиком «рулеткой» ----
+  function countTo(node, target, ms) {
+    var start = performance.now();
+    function step(now) {
+      var p = Math.min(1, (now - start) / ms);
+      var eased = 1 - Math.pow(1 - p, 3);      // быстро в начале, мягко в конце
+      node.textContent = Math.round(target * eased).toLocaleString('ru-RU');
+      if (p < 1) requestAnimationFrame(step);
+      else haptic('success');
+    }
+    requestAnimationFrame(step);
+  }
+
+  function renderResult(u) {
+    el('r-ava').src = u.avatar_url || '';
+    el('r-name').textContent = u.display_name || u.username;
+    el('r-nick').textContent = '@' + u.username;
+    el('r-caption').textContent = 'дней в Roblox — это ' + u.age_text;
+
+    var rows = [
+      ['Дата регистрации', fmtDate(u.created)],
+      ['Возраст аккаунта', esc(u.age_text)],
+      ['User ID', fmt(u.id)]
+    ];
+    if (u.followers != null) rows.push(['Подписчики', fmt(u.followers)]);
+    if (u.friends != null) rows.push(['Друзья', fmt(u.friends)]);
+    if (u.is_banned) rows.push(['Статус', '🚫 аккаунт забанен']);
+    else if (u.has_verified_badge) rows.push(['Статус', '✅ verified']);
+    el('r-rows').innerHTML = rows.map(function (r) {
+      return '<div class="row"><div class="k">' + esc(r[0]) +
+             '</div><div class="v">' + r[1] + '</div></div>';
+    }).join('');
+
+    el('r-days').textContent = '0';
+    countTo(el('r-days'), u.age.total_days, 1600);
+  }
+
+  // ---- 3. спонсоры ----
+  async function openSponsors() {
+    el('get').disabled = true;
+    try {
+      var r = await api('/api/op/status');
+      state.links = r.data.links || [];
+      state.reward = r.data.reward_text || '';
+      if (r.data.subscribed && state.links.length === 0) {
+        finish();
+        return;
+      }
+      if (r.data.subscribed) { finish(); return; }
+      renderSponsors();
+      show('s-sponsors');
+    } catch (e) {
+      plate('start-msg', 'Нет связи с сервером.', 'err');
+    } finally {
+      el('get').disabled = false;
+    }
+  }
+
   function renderSponsors() {
     el('sp-list').innerHTML = state.links.map(function (c, i) {
       var done = state.clicked[i];
@@ -232,8 +291,8 @@
           if (tg && tg.HapticFeedback) {
             try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
           }
-          if (!link.url) return;
-          if (tg && /(^https:\/\/t\.me\/)/.test(link.url) && tg.openTelegramLink) {
+          if (!link || !link.url) return;
+          if (tg && tg.openTelegramLink && link.url.indexOf('https://t.me/') === 0) {
             tg.openTelegramLink(link.url);
           } else if (tg && tg.openLink) {
             tg.openLink(link.url);
@@ -248,20 +307,16 @@
     el('check').disabled = true;
     plate('sp-msg', 'Проверяем…', '');
     try {
-      var nick = el('nick').value.trim();
-      var r = await api('/api/roblox/user?username=' + encodeURIComponent(nick));
-      if (r.status === 403 && r.data.need_subscribe) {
-        haptic('error');
-        state.links = r.data.need_subscribe;
-        plate('sp-msg', 'Подпишись, пожалуйста, на всех спонсоров 🙏', 'err');
-      } else if (r.status >= 400) {
-        plate('sp-msg', r.data.error || 'Не получилось. Попробуй ещё раз.', 'err');
-      } else {
+      var r = await api('/api/op/status');
+      state.links = r.data.links || state.links;
+      state.reward = r.data.reward_text || state.reward;
+      if (r.data.subscribed) {
         haptic('success');
-        plate('sp-msg', 'Готово! Открываем результат ✅', 'ok');
-        state.user = r.data;
-        renderResult(r.data);
-        setTimeout(function () { show('s-result'); plate('sp-msg', ''); }, 600);
+        plate('sp-msg', '');
+        finish();
+      } else {
+        haptic('error');
+        plate('sp-msg', 'Подпишись, пожалуйста, на всех спонсоров 🙏', 'err');
       }
     } catch (e) {
       plate('sp-msg', 'Нет связи с сервером.', 'err');
@@ -270,54 +325,26 @@
     }
   }
 
-  // ---- результат со счётчиком «рулеткой» ----
-  function countTo(node, target, ms) {
-    var start = performance.now();
-    function step(now) {
-      var p = Math.min(1, (now - start) / ms);
-      var eased = 1 - Math.pow(1 - p, 3);       // быстро в начале, мягко в конце
-      node.textContent = Math.round(target * eased).toLocaleString('ru-RU');
-      if (p < 1) requestAnimationFrame(step);
-      else haptic('success');
-    }
-    requestAnimationFrame(step);
-  }
-
-  function renderResult(u) {
-    el('r-ava').src = u.avatar_url || '';
-    el('r-name').textContent = u.display_name || u.username;
-    el('r-nick').textContent = '@' + u.username;
-    el('r-caption').textContent = 'дней в Roblox — это ' + u.age_text;
-
-    var rows = [
-      ['Дата регистрации', fmtDate(u.created)],
-      ['Возраст аккаунта', esc(u.age_text)],
-      ['User ID', fmt(u.id)],
-    ];
-    if (u.followers != null) rows.push(['Подписчики', fmt(u.followers)]);
-    if (u.friends != null) rows.push(['Друзья', fmt(u.friends)]);
-    if (u.is_banned) rows.push(['Статус', '🚫 аккаунт забанен']);
-    else if (u.has_verified_badge) rows.push(['Статус', '✅ verified']);
-    el('r-rows').innerHTML = rows.map(function (r) {
-      return '<div class="row"><div class="k">' + esc(r[0]) +
-             '</div><div class="v">' + r[1] + '</div></div>';
-    }).join('');
-
-    el('r-days').textContent = '0';
-    countTo(el('r-days'), u.age.total_days, 1600);
+  // ---- 4. готово ----
+  function finish() {
+    if (state.reward) el('done-text').textContent = state.reward;
+    show('s-done');
   }
 
   el('go').addEventListener('click', search);
   el('nick').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') search();
   });
+  el('get').addEventListener('click', openSponsors);
   el('check').addEventListener('click', checkSubscription);
-  el('again').addEventListener('click', function () {
+  function restart() {
     el('nick').value = '';
     plate('start-msg', '');
     show('s-start');
     el('nick').focus();
-  });
+  }
+  el('again').addEventListener('click', restart);
+  el('done-again').addEventListener('click', restart);
 
   var preset = new URLSearchParams(location.search).get('username') ||
     (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';

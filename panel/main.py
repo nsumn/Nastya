@@ -17,7 +17,7 @@ import os
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramAPIError
-from aiogram.filters import BaseFilter, Command, CommandStart
+from aiogram.filters import BaseFilter, Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (CallbackQuery, InlineKeyboardButton,
@@ -39,6 +39,7 @@ log = logging.getLogger("panel")
 BTN_CHANGE = "🔄 Поменять все ссылки"
 BTN_BOTS = "🤖 Мои боты"
 BTN_PREVIEW = "👀 Как видят люди"
+BTN_REWARD = "✏️ Финальный экран"
 
 MIN_LINKS = 3
 
@@ -46,6 +47,7 @@ MIN_LINKS = 3
 class PanelSG(StatesGroup):
     waiting_list = State()
     waiting_link = State()
+    waiting_reward = State()
 
 
 class IsOwner(BaseFilter):
@@ -65,7 +67,8 @@ def menu_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text=BTN_CHANGE)],
                   [KeyboardButton(text=BTN_BOTS),
-                   KeyboardButton(text=BTN_PREVIEW)]],
+                   KeyboardButton(text=BTN_PREVIEW)],
+                  [KeyboardButton(text=BTN_REWARD)]],
         resize_keyboard=True,
     )
 
@@ -150,6 +153,29 @@ async def show_bots(message: Message) -> None:
     lines += ["", "⚠️ — бот не админ в проверочном канале, подписку "
                   "проверить не сможет."]
     await message.answer("\n".join(lines))
+
+
+@router.message(F.text == BTN_REWARD)
+async def ask_reward(message: Message, state: FSMContext) -> None:
+    current = await op.reward_text()
+    await state.set_state(PanelSG.waiting_reward)
+    await message.answer(
+        "✏️ Текст на последнем экране мини-приложения — его видит человек "
+        "после того, как подписался.\n\n"
+        f"Сейчас: <i>{html.escape(current) if current else 'Спасибо, что подписался на наши каналы.'}</i>\n\n"
+        "Пришли новый текст одним сообщением.")
+
+
+@router.message(StateFilter(PanelSG.waiting_reward))
+async def save_reward(message: Message, state: FSMContext) -> None:
+    text = (message.text or message.caption or "").strip()
+    if not text:
+        await message.answer("Пришли текст одним сообщением.")
+        return
+    await op.set_reward_text(text)
+    await state.clear()
+    await message.answer("✅ Готово. Теперь на последнем экране написано:\n\n"
+                         f"<i>{html.escape(text)}</i>", reply_markup=menu_kb())
 
 
 @router.message(F.forward_origin.as_("origin"))

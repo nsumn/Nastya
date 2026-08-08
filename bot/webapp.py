@@ -114,16 +114,6 @@ async def roblox_user(request: web.Request) -> web.Response:
         return web.json_response(
             {"error": "Слишком много запросов. Подожди минуту."}, status=429)
 
-    # Обязательная подписка на спонсоров.
-    user_id = init_data_user_id(parsed)
-    bot = request.app.get("bot")
-    if user_id and bot is not None and not await op.is_subscribed(bot, user_id):
-        links = await op.visible_links(bot)
-        return web.json_response(
-            {"error": "Подпишись на спонсоров, чтобы пользоваться ботом.",
-             "need_subscribe": [x.as_dict() for x in links]},
-            status=403)
-
     username = request.query.get("username", "")
     try:
         data = await client.lookup(username)
@@ -140,8 +130,32 @@ async def roblox_user(request: web.Request) -> web.Response:
     return web.json_response(data)
 
 
+async def op_status(request: web.Request) -> web.Response:
+    """Список спонсоров и подписан ли человек — для экрана со спонсорами."""
+    config = request.app["config"]
+    parsed = verify_init_data(
+        request.headers.get("X-Telegram-Init-Data")
+        or request.query.get("initData", ""), config.bot_token)
+    if parsed is None and not config.miniapp_allow_anon:
+        return web.json_response(
+            {"error": "Открой мини-приложение через Telegram."}, status=401)
+
+    bot = request.app.get("bot")
+    user_id = init_data_user_id(parsed)
+    links = [x.as_dict() for x in await op.visible_links(bot)]
+    subscribed = True
+    if user_id and bot is not None:
+        subscribed = await op.is_subscribed(bot, user_id)
+    return web.json_response({
+        "subscribed": bool(subscribed),
+        "links": links,
+        "reward_text": await op.reward_text(),
+    })
+
+
 def setup_miniapp(app: web.Application) -> None:
     """Подключает маршруты мини-приложения к общему aiohttp-приложению."""
     app.router.add_get("/app", miniapp_index)
     app.router.add_get("/app/", miniapp_index)
     app.router.add_get("/api/roblox/user", roblox_user)
+    app.router.add_get("/api/op/status", op_status)
