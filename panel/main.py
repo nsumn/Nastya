@@ -161,7 +161,7 @@ async def show_bots(message: Message) -> None:
 @router.message(F.text == BTN_STATS)
 async def show_stats(message: Message) -> None:
     from bot.handlers.op_admin import stats_text
-    await message.answer(await stats_text())
+    await message.answer(await stats_text(message.bot))
 
 
 @router.message(F.text == BTN_REWARD)

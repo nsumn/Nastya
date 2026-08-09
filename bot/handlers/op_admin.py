@@ -106,31 +106,68 @@ async def set_reward(message: Message, command) -> None:
     await message.answer(f"✅ Готово:\n\n<i>{html.escape(text)}</i>")
 
 
-async def stats_text() -> str:
+async def stats_text(bot=None) -> str:
     st = await db.user_stats()
     active = st["total"] - st["blocked"]
+    since = await op.period_started()
+    link = await op.check_url()
+
     def part(n: int) -> str:
         return f" ({round(n / st['total'] * 100)}%)" if st["total"] else ""
-    return "\n".join([
+
+    # за период — с момента, когда в последний раз менялись ссылки
+    new_users = await db.count_since("start", since)
+    opens = await db.count_since("app_open", since)
+    searches = await db.count_since("search", since, unique=False)
+    passed = await db.count_since("op_passed", since)
+    joined = await db.count_since("join", since)
+    joined_link = await db.count_since("join", since, info=link) if link else 0
+    left = await db.count_since("leave", since)
+
+    subs_now = await db.subscribers_now()
+    subs_link = await db.subscribers_now(link) if link else 0
+
+    in_channel = ""
+    chat = await op.check_chat()
+    if bot is not None and chat:
+        try:
+            total_members = await bot.get_chat_member_count(chat)
+            in_channel = f"\n👤 Всего в канале: <b>{total_members}</b>"
+        except TelegramAPIError:
+            pass
+
+    lines = [
         "📊 <b>Статистика</b>",
         "",
-        f"👥 Всего людей в боте: <b>{st['total']}</b>",
+        f"<b>С момента смены ссылок</b> ({since[:16] if since else 'ссылки ещё не менялись'})",
+        f"🆕 Новых людей: <b>{new_users}</b>",
+        f"📱 Открывали мини-приложение: <b>{opens}</b>",
+        f"🔎 Поисков ника: <b>{searches}</b>",
+        f"🔓 Прошли проверку подписки: <b>{passed}</b>",
+        f"➕ Вступили в канал: <b>{joined}</b>"
+        + (f", из них по текущей ссылке: <b>{joined_link}</b>" if link else ""),
+        f"➖ Отписались: <b>{left}</b>",
+        "",
+        "<b>Сейчас</b>",
+        f"✅ Подписано (по учтённым вступлениям): <b>{subs_now}</b>"
+        + (f"\n🔗 Из них по текущей ссылке: <b>{subs_link}</b>" if link else "")
+        + in_channel,
+        "",
+        "<b>Всего за всё время</b>",
+        f"👥 Людей в боте: <b>{st['total']}</b>",
         f"✅ Осталось: <b>{active}</b>{part(active)}",
         f"🚫 Заблокировали бота: <b>{st['blocked']}</b>{part(st['blocked'])}",
-        "",
         f"📱 Открывали мини-приложение: <b>{st['opened_app']}</b>{part(st['opened_app'])}",
-        f"🔎 Искали ник: <b>{st['searched']}</b>{part(st['searched'])}",
-        f"🔁 Всего поисков: <b>{st['searches_total']}</b>",
-        f"🔓 Прошли проверку подписки: <b>{st['op_passed']}</b>{part(st['op_passed'])}",
-        "",
-        f"🆕 Пришли сегодня: <b>{st['today']}</b>",
-        f"📅 За неделю: <b>{st['week']}</b>",
-    ])
+        f"🔁 Поисков: <b>{st['searches_total']}</b>",
+        f"🔓 Прошли проверку: <b>{st['op_passed']}</b>{part(st['op_passed'])}",
+        f"📅 Пришли за неделю: <b>{st['week']}</b>",
+    ]
+    return "\n".join(lines)
 
 
 @router.message(Command("stats"))
 async def show_stats(message: Message) -> None:
-    await message.answer(await stats_text())
+    await message.answer(await stats_text(message.bot))
 
 
 @router.message(Command("bonus"))

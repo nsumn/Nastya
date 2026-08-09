@@ -23,6 +23,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass
+from datetime import datetime
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
@@ -165,6 +166,11 @@ def extract_link(text: str, entities) -> str:
     return m.group(0) if m else ""
 
 
+def _sql_now() -> str:
+    """Метка времени в том же виде, что и у событий в базе (МСК)."""
+    return datetime.now(op_store.MSK).strftime("%Y-%m-%d %H:%M:%S")
+
+
 # ---------- хранилище (общий файл на все боты) ----------
 
 async def get_items() -> list[Link]:
@@ -175,7 +181,9 @@ async def get_items() -> list[Link]:
 
 async def save_items(items: list[Link], label: str = "") -> None:
     changes = {"items": [i.as_dict() for i in items],
-               "updated": op_store.now_msk()}
+               "updated": op_store.now_msk(),
+               # с этого момента считается статистика «за сегодня»
+               "period_started": _sql_now()}
     if label:
         changes["label"] = label
     op_store.update(**changes)
@@ -186,7 +194,12 @@ async def check_url() -> str:
 
 
 async def set_check_url(url: str) -> None:
-    op_store.update(check_url=url)
+    op_store.update(check_url=url, period_started=_sql_now())
+
+
+async def period_started() -> str:
+    """Когда в последний раз менялись ссылки (начало текущего периода)."""
+    return op_store.read().get("period_started") or ""
 
 
 async def check_chat() -> str:

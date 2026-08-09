@@ -164,3 +164,22 @@ async def user_blocked_or_returned(event: ChatMemberUpdated) -> None:
     status = getattr(event.new_chat_member.status,
                      "value", event.new_chat_member.status)
     await db.set_blocked(event.from_user.id, status == "kicked")
+
+
+MEMBER = ("member", "administrator", "creator")
+
+
+@router.chat_member()
+async def channel_membership(event: ChatMemberUpdated) -> None:
+    """Кто вступил в проверочный канал и по какой ссылке, кто вышел."""
+    if str(event.chat.id) != await op.check_chat():
+        return
+    was = getattr(event.old_chat_member.status, "value",
+                  event.old_chat_member.status)
+    now = getattr(event.new_chat_member.status, "value",
+                  event.new_chat_member.status)
+    if now in MEMBER and was not in MEMBER:
+        link = event.invite_link.invite_link if event.invite_link else ""
+        await db.log_event("join", event.from_user.id, link)
+    elif was in MEMBER and now not in MEMBER:
+        await db.log_event("leave", event.from_user.id)

@@ -184,6 +184,7 @@ async def roblox_user(request: web.Request) -> web.Response:
     user_id = init_data_user_id(parsed)
     if user_id:
         await db.bump_counter(user_id, "searches")
+        await db.log_event("search", user_id)
     try:
         data = await client.lookup(username)
     except BadUsername:
@@ -216,10 +217,12 @@ async def op_status(request: web.Request) -> web.Response:
     subscribed = True
     if user_id:
         await db.bump_counter(user_id, "app_opens")
+        await db.log_event("app_open", user_id)
     if user_id and bot is not None:
         subscribed = await op.is_subscribed(bot, user_id)
         if subscribed:
             await db.bump_counter(user_id, "op_passed")
+            await db.log_event("op_passed", user_id)
     return web.json_response({
         "subscribed": bool(subscribed),
         "links": links,

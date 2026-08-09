@@ -40,6 +40,7 @@ EMPTY: dict = {
     "welcome_text": "",
     "button_text": "",
     "bonus_label": "",
+    "period_started": "",
     "bots": {},
 }
 

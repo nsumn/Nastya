@@ -80,7 +80,76 @@ async def init_db(path: str) -> None:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS events (
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts      TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
+                kind    TEXT NOT NULL,
+                user_id INTEGER,
+                info    TEXT
+            )
+            """
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS events_kind_ts ON events (kind, ts)")
         await db.commit()
+
+
+# ---------- события (для статистики за период) ----------
+
+async def log_event(kind: str, user_id: Optional[int] = None,
+                    info: Optional[str] = None) -> None:
+    """Запоминает событие: start, app_open, search, op_passed, join, leave."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO events (kind, user_id, info) VALUES (?, ?, ?)",
+            (kind, user_id, info),
+        )
+        await db.commit()
+
+
+async def count_since(kind: str, since: Optional[str], unique: bool = True,
+                      info: Optional[str] = None) -> int:
+    """Сколько событий (или разных людей) с момента `since`."""
+    what = "COUNT(DISTINCT user_id)" if unique else "COUNT(*)"
+    sql = f"SELECT {what} FROM events WHERE kind = ?"
+    args: list = [kind]
+    if since:
+        sql += " AND ts >= ?"
+        args.append(since)
+    if info is not None:
+        sql += " AND info = ?"
+        args.append(info)
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(sql, args) as cur:
+            row = await cur.fetchone()
+            return (row[0] if row else 0) or 0
+
+
+async def subscribers_now(link: Optional[str] = None) -> int:
+    """Сколько человек сейчас состоит в проверочном канале.
+
+    Считаем по последнему событию каждого человека: вступил или ушёл.
+    Если задана ссылка — только те, кто пришёл именно по ней.
+    """
+    sql = """
+        SELECT COUNT(*) FROM (
+            SELECT user_id, MAX(id) AS last_id
+            FROM events WHERE kind IN ('join', 'leave') AND user_id IS NOT NULL
+            GROUP BY user_id
+        ) t
+        JOIN events e ON e.id = t.last_id
+        WHERE e.kind = 'join'
+    """
+    args: list = []
+    if link:
+        sql += " AND e.info = ?"
+        args.append(link)
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(sql, args) as cur:
+            row = await cur.fetchone()
+            return (row[0] if row else 0) or 0
 
 
 # ---------- users (кто пользуется ботом) ----------

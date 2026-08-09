@@ -18,6 +18,7 @@ router = Router(name="start")
 async def cmd_start(message: Message, config: Config) -> None:
     u = message.from_user
     await db.track_user(u.id, u.username, u.full_name)
+    await db.log_event("start", u.id)
     # У администратора снизу — кнопки управления, у покупателей — обычное меню.
     is_admin = config.admin_chat_id and message.from_user.id == config.admin_chat_id
     bottom = (kb.admin_reply_kb(config) if is_admin
