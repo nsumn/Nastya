@@ -138,8 +138,8 @@ async def _reply_lookup(message: Message, query: str,
         data = await roblox.lookup(query)
     except BadUsername:
         await message.answer(
-            "❌ Ник не похож на ник Roblox: 3–20 символов, латиница, "
-            "цифры и максимум одно «_».")
+            "❌ В нике Roblox бывают только латинские буквы, цифры "
+            "и подчёркивание. Проверь раскладку.")
     except UserNotFound:
         await message.answer("❌ Аккаунт с таким ником не найден.")
     except RobloxError as exc:

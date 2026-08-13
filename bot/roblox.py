@@ -25,8 +25,9 @@ USERS_API = "https://users.roblox.com"
 THUMBS_API = "https://thumbnails.roblox.com"
 FRIENDS_API = "https://friends.roblox.com"
 
-# Ник Roblox: 3–20 символов, буквы/цифры и не больше одного «_» внутри.
-USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9]|_(?=[A-Za-z0-9]))*$")
+# Не выдумываем правила Roblox: пропускаем всё, что вообще может быть ником
+# (латиница, цифры, подчёркивание), а существует он или нет — решает Roblox.
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{1,25}$")
 CACHE_TTL = 300  # секунд
 
 
@@ -61,7 +62,7 @@ def normalize_username(raw: str) -> str:
 def validate_username(name: str) -> None:
     if name.startswith("#"):
         return  # это id
-    if not (3 <= len(name) <= 20) or not USERNAME_RE.match(name):
+    if not USERNAME_RE.match(name):
         raise BadUsername(name)
 
 

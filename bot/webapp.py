@@ -189,8 +189,8 @@ async def roblox_user(request: web.Request) -> web.Response:
         data = await client.lookup(username)
     except BadUsername:
         return web.json_response(
-            {"error": "Ник не похож на ник Roblox: 3–20 символов, "
-                      "латиница, цифры и максимум одно «_»."}, status=400)
+            {"error": "В нике Roblox бывают только латинские буквы, "
+                      "цифры и подчёркивание. Проверь раскладку."}, status=400)
     except UserNotFound:
         return web.json_response(
             {"error": "Аккаунт с таким ником не найден."}, status=404)
