@@ -12,6 +12,13 @@ BTN_TARIFFS = "🧾 Тарифы"
 BTN_PROFILE = "👤 Мой профиль"
 BTN_CONTACTS = "❗️ Контакты/FAQ"
 BTN_ROBLOX = "🎮 Возраст Roblox"
+BTN_MAP = "🎁 Получить приглашение"
+
+
+def default_button_label(config: Config | None) -> str:
+    """Что написано на кнопке запуска, если владелец не задал своё."""
+    return (BTN_MAP if getattr(config, "bot_mode", "") == "map"
+            else BTN_ROBLOX)
 
 
 def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
@@ -22,7 +29,7 @@ def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
     проверить подпись. Мини-апп открывается кнопкой под сообщением и
     кнопкой-меню у поля ввода.
     """
-    return KeyboardButton(text=label or BTN_ROBLOX)
+    return KeyboardButton(text=label or default_button_label(config))
 
 
 def main_reply_kb(config: Config | None = None,
@@ -71,7 +78,7 @@ def roblox_app_kb(config: Config, label: str = "") -> InlineKeyboardMarkup | Non
     if not config.miniapp_url:
         return None
     b = InlineKeyboardBuilder()
-    b.row(InlineKeyboardButton(text=label or "🎮 Открыть мини-приложение",
+    b.row(InlineKeyboardButton(text=label or default_button_label(config),
                                web_app=WebAppInfo(url=config.miniapp_url)))
     return b.as_markup()
 

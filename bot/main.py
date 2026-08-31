@@ -43,7 +43,8 @@ async def _set_menu_button(bot: Bot, config) -> None:
         return
     try:
         if config.miniapp_url:
-            label = await op.button_text() or "Открыть"
+            from . import keyboards as kb
+            label = await op.button_text() or kb.default_button_label(config)
             await bot.set_chat_menu_button(
                 menu_button=MenuButtonWebApp(text=label[:16],
                                              web_app=WebAppInfo(url=config.miniapp_url)))
