@@ -281,7 +281,6 @@ async def invite(request: web.Request) -> web.Response:
                      + user.get("last_name", "")).strip() or None,
         )
         await db.log_event("invite_request", user_id, nick)
-        await _notify_admin(request.app, user_id, user, nick)
         existing = await db.get_invite(user_id)
 
     return web.json_response(_invite_state(existing or {
@@ -300,26 +299,6 @@ def _invite_state(row: dict, note: str) -> dict:
         "hours": INVITE_HOURS,
         "note": note,
     }
-
-
-async def _notify_admin(app, user_id: int, user: dict, nick: str) -> None:
-    """Сообщает администратору о новой заявке, чтобы её было кому выдать."""
-    bot = app.get("bot")
-    admin_id = app["config"].admin_chat_id
-    if bot is None or not admin_id:
-        return
-    who = user.get("username")
-    who = f"@{who}" if who else (user.get("first_name") or str(user_id))
-    try:
-        await bot.send_message(
-            admin_id,
-            f"🆕 <b>Заявка на приглашение</b>\n\n"
-            f"Ник Roblox: <b>{nick}</b>\n"
-            f"От: {who} (<code>{user_id}</code>)\n\n"
-            f"Выдать: <code>/sent {user_id}</code>\n"
-            f"Все заявки: /invites")
-    except Exception as exc:  # noqa: BLE001
-        log.warning("Не смог сообщить о заявке: %s", exc)
 
 
 async def op_status(request: web.Request) -> web.Response:
