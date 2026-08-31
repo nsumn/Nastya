@@ -88,6 +88,11 @@
             justify-content:center; color:#fff; font-size:13px; font-weight:900}
   .sp.done .mark{border-color:#000; background:#000}
 
+  .warn{
+    background:var(--fill); border:2px solid var(--line); border-radius:12px;
+    padding:12px 14px; margin-bottom:16px; font-size:13px; font-weight:600;
+    color:#4B5563; text-align:left; line-height:1.45;
+  }
   .timer{
     font-size:44px; font-weight:900; letter-spacing:-1px; margin:8px 0 12px;
     font-variant-numeric:tabular-nums;
@@ -146,6 +151,8 @@
     <div class="ava"><img id="ava-img" alt=""><span id="ava-icon">👤</span></div>
     <div class="name" id="found-name">Username</div>
     <div class="nick" id="found-nick">@displayname</div>
+    <div class="warn">⚠️ Приглашение выдаётся только на один аккаунт.
+      Проверь, что ник верный — поменять потом не получится.</div>
     <button class="btn" id="b-invite">Получить приглашение</button>
     <button class="btn outline" id="b-other">Это не мой аккаунт</button>
   </section>
@@ -184,7 +191,8 @@
     <p class="grey" style="margin-bottom:24px">Приглашение придёт в течение
       этого времени. Пожалуйста, ожидай.</p>
     <div class="note" id="invite-note"></div>
-    <button class="btn outline" id="b-restart">Закрыть</button>
+    <button class="btn outline" id="b-restart">Проверить другой аккаунт</button>
+    <button class="btn outline" id="b-close">Закрыть</button>
   </section>
 
 </div>
@@ -408,8 +416,18 @@
     show('s-search'); el('nick').focus();
   }
   el('b-other').addEventListener('click', restart);
-  el('b-restart').addEventListener('click', function () {
-    if (tg && tg.close) { tg.close(); } else { restart(); }
+
+  // Если заявка уже оставлена — не начинаем всё сначала, а сразу показываем
+  // её таймер. Ник не передаём, поэтому новая заявка при этом не создаётся.
+  (async function resume() {
+    try {
+      var r = await api('/api/invite');
+      if (r.data && r.data.status === 'pending') finish(r.data);
+    } catch (e) { /* нет связи — оставляем обычный первый экран */ }
+  })();
+  el('b-restart').addEventListener('click', restart);
+  el('b-close').addEventListener('click', function () {
+    if (tg && tg.close) { tg.close(); }
   });
 })();
 </script>
