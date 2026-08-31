@@ -7,6 +7,12 @@ from .config import Config, Tariff
 
 TARIFF_PROMPT = "👇 ВЫБЕРИ ТАРИФ 👇"
 
+WELCOME_MAP = (
+    "🗺 <b>Привет!</b>\n\n"
+    "Здесь можно получить приглашение на карту Roblox.\n\n"
+    "Жми кнопку ниже 👇"
+)
+
 WELCOME_ROBLOX = (
     "🎮 <b>Привет!</b>\n\n"
     "Здесь можно узнать, <b>сколько существует любой аккаунт Roblox</b>: "

@@ -41,6 +41,7 @@ EMPTY: dict = {
     "button_text": "",
     "bonus_label": "",
     "period_started": "",
+    "map_link": "",
     "bots": {},
 }
 

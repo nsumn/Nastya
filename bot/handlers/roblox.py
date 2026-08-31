@@ -30,7 +30,7 @@ class RobloxBot(BaseFilter):
     """Только для бота-проверялки: там любое сообщение — это ник."""
 
     async def __call__(self, message: Message, config: Config) -> bool:
-        return config.bot_mode == "roblox"
+        return config.bot_mode in ("roblox", "map")
 
 ASK = ("🎮 Пришли ник Roblox — покажу, сколько существует аккаунт.\n\n"
        "Например: <code>/roblox builderman</code>")

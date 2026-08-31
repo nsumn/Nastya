@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Roblox Rewards</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  /* Оформление из присланного файла, но без Tailwind и внешних шрифтов:
+     всё внутри страницы, чтобы ничего не отваливалось на телефоне. */
+  :root{
+    --bg:#F2F4F5; --ink:#393B3D; --black:#111214; --grey:#656668;
+    --line:#B8B8B8; --green:#00B06F; --green-d:#00905B; --red:#d64545;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.5 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif;
+    display:flex; align-items:flex-start; justify-content:center; padding:16px;
+  }
+  .card{
+    background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.15);
+    padding:24px; width:100%; max-width:400px; margin:12px auto;
+  }
+  .screen{display:none}
+  .screen.on{display:block; animation:fade .3s ease-in}
+  @keyframes fade{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+
+  h1{font-size:24px; font-weight:800; color:var(--black); margin:0 0 12px; text-align:center}
+  h2{font-size:20px; font-weight:700; color:var(--black); margin:0 0 4px; text-align:center}
+  p.lead{font-size:15px; color:var(--grey); line-height:1.6; margin:0 0 28px; text-align:center}
+  p.sub{font-size:14px; color:var(--grey); margin:0 0 22px; text-align:center}
+
+  .logo{
+    width:64px; height:64px; margin:0 auto 24px; background:#000; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; transform:rotate(-6deg);
+    color:#fff; font-size:30px;
+  }
+  input{
+    width:100%; padding:12px 16px; font-size:16px; text-align:center; font-weight:500;
+    background:#fff; border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); outline:none; margin-bottom:16px;
+  }
+  input:focus{border-color:var(--black)}
+
+  .btn{
+    width:100%; padding:14px; border:0; border-radius:8px; font-size:16px;
+    font-weight:600; cursor:pointer; background:var(--black); color:#fff;
+  }
+  .btn.green{background:var(--green); font-size:18px; font-weight:700}
+  .btn.green:active{background:var(--green-d)}
+  .btn:disabled{opacity:.5}
+  .btn.link{background:none; color:var(--grey); font-size:14px; font-weight:500;
+            padding:8px; margin-top:12px}
+
+  .err{display:none; color:#d33; font-size:14px; font-weight:500;
+       text-align:center; margin-top:12px}
+  .err.on{display:block}
+
+  .badge{display:inline-block; background:#E8F5E9; color:var(--green);
+         padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700;
+         text-transform:uppercase; letter-spacing:.5px; margin-bottom:18px}
+  .ava{width:112px; height:112px; margin:0 auto 16px; border-radius:50%;
+       background:var(--bg); border:1px solid #e5e7eb; overflow:hidden;
+       display:flex; align-items:center; justify-content:center; font-size:44px}
+  .ava img{width:100%; height:100%; object-fit:cover; display:none}
+  .nick{font-size:24px; font-weight:800; color:var(--black); margin-bottom:2px}
+  .dname{font-size:14px; color:var(--grey); font-weight:500; margin-bottom:28px}
+
+  /* спонсоры */
+  .sp{display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+      background:#fff; border:2px solid #e5e7eb; border-radius:8px;
+      padding:10px 12px; margin-bottom:8px; cursor:pointer; font:inherit}
+  .sp.done{border-color:var(--green); background:#f2fbf7}
+  .sp .ic{width:36px; height:36px; flex:none; border-radius:8px; background:#E8F1FF;
+          display:flex; align-items:center; justify-content:center; font-size:18px}
+  .sp .t{flex:1; min-width:0; font-weight:700; font-size:14px; color:var(--ink);
+         overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .sp .mark{width:22px; height:22px; flex:none; border-radius:50%;
+            border:2px solid #cfd4d8; display:flex; align-items:center;
+            justify-content:center; color:#fff; font-size:12px; font-weight:800}
+  .sp.done .mark{border-color:var(--green); background:var(--green)}
+
+  .invite{display:block; word-break:break-all; background:var(--bg);
+          border:1px solid #e5e7eb; border-radius:8px; padding:14px;
+          font-size:15px; font-weight:600; color:var(--green); text-align:center;
+          margin-bottom:14px; text-decoration:none}
+  .note{background:var(--bg); border:1px solid #e5e7eb; border-radius:8px;
+        padding:14px; font-size:14px; color:var(--ink); margin-bottom:14px}
+  .spin{width:22px; height:22px; margin:0 auto; border-radius:50%;
+        border:3px solid var(--bg); border-top-color:var(--black);
+        animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- 1. приветствие -->
+  <section id="s-intro" class="screen on">
+    <div class="logo">🗺</div>
+    <h1>Секретная карта</h1>
+    <p class="lead">Здесь можно получить персональное приглашение на карту,
+      где робуксы выдают за прохождение уровней.</p>
+    <button class="btn" id="b-next">Далее</button>
+  </section>
+
+  <!-- 2. поиск ника -->
+  <section id="s-search" class="screen">
+    <h2>Поиск аккаунта</h2>
+    <p class="sub">Введи свой никнейм, чтобы мы нашли профиль.</p>
+    <input id="nick" placeholder="Например: Builderman" maxlength="30"
+           autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button class="btn" id="b-search">Найти профиль</button>
+    <div id="search-err" class="err"></div>
+  </section>
+
+  <!-- 3. загрузка -->
+  <section id="s-load" class="screen">
+    <div style="padding:36px 0; text-align:center">
+      <div class="spin"></div>
+      <p class="sub" id="load-text" style="margin-top:16px">Ищем профиль…</p>
+    </div>
+  </section>
+
+  <!-- 4. аккаунт найден -->
+  <section id="s-found" class="screen" style="text-align:center">
+    <div class="badge">Аккаунт найден</div>
+    <div class="ava"><img id="ava-img" alt=""><span id="ava-icon">👤</span></div>
+    <div class="nick" id="found-name">Username</div>
+    <div class="dname" id="found-nick">@nickname</div>
+    <button class="btn green" id="b-invite">Получить ссылку</button>
+    <button class="btn link" id="b-other">Это не мой аккаунт</button>
+  </section>
+
+  <!-- 5. спонсоры -->
+  <section id="s-sponsors" class="screen">
+    <h2>Остался последний шаг</h2>
+    <p class="sub" id="sp-lead">Чтобы получить приглашение, подпишись
+      на наших спонсоров.</p>
+    <div id="sp-list"></div>
+    <button class="btn green" id="b-check" style="margin-top:6px">Проверить подписку</button>
+    <div id="sp-err" class="err"></div>
+  </section>
+
+  <!-- 6. приглашение -->
+  <section id="s-done" class="screen" style="text-align:center">
+    <div class="badge">Подписка подтверждена</div>
+    <h1>Твоё приглашение</h1>
+    <a class="invite" id="invite-link" href="#" target="_blank" rel="noopener"></a>
+    <div class="note" id="invite-note"></div>
+    <button class="btn green" id="b-open">Открыть карту</button>
+    <button class="btn link" id="b-restart">Проверить другой аккаунт</button>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    try { tg.ready(); } catch (e) {}
+    try { tg.expand(); } catch (e) {}
+    try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {}
+  }
+
+  var SCREENS = ['s-intro', 's-search', 's-load', 's-found', 's-sponsors', 's-done'];
+  var el = function (id) { return document.getElementById(id); };
+  var state = { user: null, links: [], clicked: {}, invite: '', note: '' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function haptic(k) {
+    if (tg && tg.HapticFeedback) {
+      try { tg.HapticFeedback.notificationOccurred(k); } catch (e) {}
+    }
+  }
+  function tap() {
+    if (tg && tg.HapticFeedback) {
+      try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
+    }
+  }
+  function show(id) {
+    SCREENS.forEach(function (s) { el(s).classList.toggle('on', s === id); });
+    window.scrollTo(0, 0);
+  }
+  function err(box, text) {
+    var n = el(box);
+    n.textContent = text || '';
+    n.classList.toggle('on', !!text);
+  }
+  function openLink(url) {
+    if (!url) return;
+    if (tg && tg.openTelegramLink && url.indexOf('https://t.me/') === 0) {
+      tg.openTelegramLink(url);
+    } else if (tg && tg.openLink) { tg.openLink(url); }
+    else { window.open(url, '_blank'); }
+  }
+
+  // данные Telegram: из SDK, иначе из адреса страницы
+  function initData() {
+    if (tg && tg.initData) return tg.initData;
+    var m = /[#&?]tgWebAppData=([^&]*)/.exec((location.hash || '') + (location.search || ''));
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  async function api(url) {
+    var res = await fetch(url, {
+      headers: {
+        'X-Telegram-Init-Data': initData(),
+        'X-App-Hash': encodeURIComponent((location.hash || '') + (location.search || ''))
+      }
+    });
+    var data = await res.json().catch(function () { return {}; });
+    return { status: res.status, data: data };
+  }
+
+  // ---- поиск аккаунта (через наш сервер, не из браузера) ----
+  async function search() {
+    var nick = el('nick').value.trim();
+    if (!nick) { err('search-err', 'Введи никнейм!'); return; }
+    err('search-err', '');
+    el('load-text').textContent = 'Ищем профиль…';
+    show('s-load');
+    try {
+      var r = await api('/api/roblox/user?username=' + encodeURIComponent(nick));
+      if (r.status >= 400) {
+        haptic('error');
+        err('search-err', r.data.error || 'Игрок не найден.');
+        show('s-search');
+        return;
+      }
+      state.user = r.data;
+      el('found-name').textContent = r.data.display_name || r.data.username;
+      el('found-nick').textContent = '@' + r.data.username;
+      var img = el('ava-img'), icon = el('ava-icon');
+      img.style.display = 'none'; icon.style.display = '';
+      if (r.data.avatar_url) {
+        img.onload = function () { img.style.display = 'block'; icon.style.display = 'none'; };
+        img.src = r.data.avatar_url;
+      }
+      haptic('success');
+      show('s-found');
+    } catch (e) {
+      err('search-err', 'Нет связи с сервером.');
+      show('s-search');
+    }
+  }
+
+  // ---- приглашение: сервер сам проверит подписку ----
+  async function requestInvite() {
+    tap();
+    el('load-text').textContent = 'Проверяем подписку…';
+    show('s-load');
+    try {
+      var r = await api('/api/invite');
+      if (r.data.invite) { finish(r.data); return; }
+      state.links = r.data.need_subscribe || [];
+      state.note = r.data.note || '';
+      renderSponsors();
+      show('s-sponsors');
+    } catch (e) {
+      err('search-err', 'Нет связи с сервером.');
+      show('s-found');
+    }
+  }
+
+  function renderSponsors() {
+    el('sp-list').innerHTML = state.links.map(function (c, i) {
+      var m = String(c.title).match(/^\s*(\p{Extended_Pictographic}️?|\d️?⃣)/u);
+      var icon = m ? m[1] : '✈️';
+      var name = m ? c.title.slice(m[0].length).trim() : c.title;
+      var done = state.clicked[i] ? ' done' : '';
+      return '<button class="sp' + done + '" data-i="' + i + '">' +
+        '<span class="ic">' + esc(icon) + '</span>' +
+        '<span class="t">' + esc(name) + '</span>' +
+        '<span class="mark">' + (state.clicked[i] ? '✓' : '') + '</span></button>';
+    }).join('');
+
+    Array.prototype.forEach.call(el('sp-list').querySelectorAll('.sp'), function (b) {
+      b.addEventListener('click', function () {
+        var i = +b.dataset.i;
+        state.clicked[i] = true;
+        b.classList.add('done');
+        b.querySelector('.mark').textContent = '✓';
+        err('sp-err', '');
+        tap();
+        openLink((state.links[i] || {}).url);
+      });
+    });
+  }
+
+  async function check() {
+    el('b-check').disabled = true;
+    err('sp-err', '');
+    try {
+      var r = await api('/api/invite');
+      if (r.data.invite) { haptic('success'); finish(r.data); }
+      else {
+        haptic('error');
+        state.links = r.data.need_subscribe || state.links;
+        err('sp-err', r.data.error || 'Подпишись, пожалуйста, на всех спонсоров.');
+      }
+    } catch (e) {
+      err('sp-err', 'Нет связи с сервером.');
+    } finally { el('b-check').disabled = false; }
+  }
+
+  function finish(data) {
+    state.invite = data.invite || '';
+    var a = el('invite-link');
+    a.textContent = state.invite;
+    a.href = state.invite;
+    el('invite-note').textContent = data.note || '';
+    el('invite-note').style.display = data.note ? '' : 'none';
+    show('s-done');
+  }
+
+  el('b-next').addEventListener('click', function () { tap(); show('s-search'); el('nick').focus(); });
+  el('b-search').addEventListener('click', search);
+  el('nick').addEventListener('keydown', function (e) { if (e.key === 'Enter') search(); });
+  el('b-invite').addEventListener('click', requestInvite);
+  el('b-check').addEventListener('click', check);
+  el('b-open').addEventListener('click', function () { openLink(state.invite); });
+  function restart() {
+    el('nick').value = ''; state.clicked = {}; err('search-err', '');
+    show('s-search'); el('nick').focus();
+  }
+  el('b-other').addEventListener('click', restart);
+  el('b-restart').addEventListener('click', restart);
+})();
+</script>
+</body>
+</html>

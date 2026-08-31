@@ -28,7 +28,7 @@ def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
 def main_reply_kb(config: Config | None = None,
                   label: str = "") -> ReplyKeyboardMarkup:
     """Постоянное меню снизу, у поля ввода."""
-    if getattr(config, "bot_mode", "payments") == "roblox":
+    if getattr(config, "bot_mode", "payments") in ("roblox", "map"):
         rows = [[_roblox_button(config, label)]]
     else:
         rows = [
@@ -89,7 +89,7 @@ ADM_BTN_SPONSORS = "📢 Спонсоры (ОП)"  # обрабатываетс�
 
 def admin_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     """Нижнее меню администратора."""
-    if getattr(config, "bot_mode", "payments") == "roblox":
+    if getattr(config, "bot_mode", "payments") in ("roblox", "map"):
         # В Roblox-боте продавать нечего — только обязательная подписка.
         return ReplyKeyboardMarkup(
             keyboard=[[KeyboardButton(text=ADM_BTN_SPONSORS)]],

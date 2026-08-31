@@ -259,6 +259,15 @@ async def set_bonus_label(text: str) -> None:
     op_store.update(bonus_label=text)
 
 
+async def map_link() -> str:
+    """Ссылка-приглашение на карту Roblox (выдаётся после подписки)."""
+    return op_store.read().get("map_link") or ""
+
+
+async def set_map_link(url: str) -> None:
+    op_store.update(map_link=url)
+
+
 async def enabled() -> bool:
     return bool(op_store.read().get("enabled", True))
 

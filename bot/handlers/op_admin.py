@@ -170,6 +170,24 @@ async def show_stats(message: Message) -> None:
     await message.answer(await stats_text(message.bot))
 
 
+@router.message(Command("maplink"))
+async def set_map(message: Message, command) -> None:
+    """/maplink <ссылка> — приглашение на карту, которое выдаётся после подписки."""
+    url = (command.args or "").strip()
+    if not url:
+        current = await op.map_link()
+        await message.answer(
+            "🗺 Ссылка-приглашение на карту.\n\n"
+            f"Сейчас: {html.escape(current) if current else '⚠️ не задана'}\n\n"
+            "Изменить: <code>/maplink https://www.roblox.com/games/...</code>")
+        return
+    if not url.startswith("http"):
+        await message.answer("Ссылка должна начинаться с https://")
+        return
+    await op.set_map_link(url)
+    await message.answer(f"✅ Приглашение обновлено:\n{html.escape(url)}")
+
+
 @router.message(Command("bonus"))
 async def set_bonus(message: Message, command) -> None:
     """/bonus <текст> — подпись над числом в карточке профиля."""

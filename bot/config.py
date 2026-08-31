@@ -156,8 +156,13 @@ def load_config() -> Config:
     # Мини-приложение живёт на том же сервере: PUBLIC_BASE_URL + /app.
     # Telegram открывает WebApp только по https, поэтому http-адрес не берём.
     public_base_url = _get("PUBLIC_BASE_URL")
+    mode_raw = _get("BOT_MODE", "payments").lower()
+    bot_mode = ("map" if mode_raw.startswith("map")
+                else "roblox" if mode_raw.startswith("rob") else "payments")
+    # у режима «карта» своя страница мини-приложения
+    page = "/map" if bot_mode == "map" else "/app"
     miniapp_url = _get("MINIAPP_URL") or (
-        public_base_url.rstrip("/") + "/app" if public_base_url else "")
+        public_base_url.rstrip("/") + page if public_base_url else "")
     if not miniapp_url.startswith("https://"):
         miniapp_url = ""
 
@@ -190,7 +195,6 @@ def load_config() -> Config:
         miniapp_url=miniapp_url,
         miniapp_allow_anon=_get("MINIAPP_ALLOW_ANON", "0") in ("1", "true", "yes"),
         op_state_file=_get("OP_STATE_FILE", "op_state.json"),
-        bot_mode=("roblox" if _get("BOT_MODE", "payments").lower().startswith("rob")
-                  else "payments"),
+            bot_mode=bot_mode,
         tariffs=tariffs,
     )

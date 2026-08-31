@@ -23,11 +23,13 @@ async def cmd_start(message: Message, config: Config) -> None:
     is_admin = config.admin_chat_id and message.from_user.id == config.admin_chat_id
     bottom = (kb.admin_reply_kb(config) if is_admin
               else kb.main_reply_kb(config))
-    if config.bot_mode == "roblox":
+    if config.bot_mode in ("roblox", "map"):
         label = await op.button_text()
         bottom = (kb.admin_reply_kb(config) if is_admin
                   else kb.main_reply_kb(config, label))
-        text = await op.welcome_text() or texts.WELCOME_ROBLOX
+        text = (await op.welcome_text()
+                or (texts.WELCOME_MAP if config.bot_mode == "map"
+                    else texts.WELCOME_ROBLOX))
         under = kb.roblox_app_kb(config, label)
         if under is not None:
             # Кнопка под сообщением — единственный способ запустить мини-апп

@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 
 MINIAPP_DIR = Path(__file__).parent / "miniapp"
 INDEX_FILE = MINIAPP_DIR / "index.html"
+MAP_FILE = MINIAPP_DIR / "map.html"
 
 INIT_DATA_MAX_AGE = 24 * 60 * 60  # сутки — как рекомендует Telegram
 # Ключ, под которым Telegram кладёт данные в адрес страницы мини-аппа
@@ -200,6 +201,58 @@ async def roblox_user(request: web.Request) -> web.Response:
     return web.json_response(data)
 
 
+async def map_index(request: web.Request) -> web.StreamResponse:
+    """Страница мини-приложения с приглашением на карту."""
+    if not MAP_FILE.exists():
+        return web.Response(status=404, text="miniapp not found")
+    return web.FileResponse(
+        MAP_FILE,
+        headers={"Cache-Control": "no-cache",
+                 "Content-Type": "text/html; charset=utf-8"})
+
+
+async def invite(request: web.Request) -> web.Response:
+    """Выдаёт приглашение на карту, если человек подписан на спонсоров."""
+    config = request.app["config"]
+    raw = (request.headers.get("X-Telegram-Init-Data")
+           or request.query.get("initData", "")
+           or init_data_from_fragment(request.headers.get("X-App-Hash", "")))
+    parsed = verify_init_data(raw, config.bot_token)
+    if parsed is None and not config.miniapp_allow_anon:
+        return web.json_response(
+            {"error": "Открой мини-приложение через Telegram."}, status=401)
+
+    bot = request.app.get("bot")
+    user_id = init_data_user_id(parsed)
+    link = await op.map_link()
+
+    if user_id:
+        await db.bump_counter(user_id, "app_opens")
+        await db.log_event("app_open", user_id)
+
+    subscribed = True
+    if user_id and bot is not None:
+        subscribed = await op.is_subscribed(bot, user_id)
+
+    if not subscribed:
+        links = [x.as_dict() for x in await op.visible_links(bot)]
+        return web.json_response({
+            "invite": "",
+            "need_subscribe": links,
+            "note": await op.reward_text(),
+        })
+
+    if user_id:
+        await db.bump_counter(user_id, "op_passed")
+        await db.log_event("op_passed", user_id)
+    if not link:
+        return web.json_response(
+            {"invite": "",
+             "error": "Ссылка на карту ещё не задана администратором."},
+            status=503)
+    return web.json_response({"invite": link, "note": await op.reward_text()})
+
+
 async def op_status(request: web.Request) -> web.Response:
     """Список спонсоров и подписан ли человек — для экрана со спонсорами."""
     config = request.app["config"]
@@ -237,3 +290,6 @@ def setup_miniapp(app: web.Application) -> None:
     app.router.add_get("/app/", miniapp_index)
     app.router.add_get("/api/roblox/user", roblox_user)
     app.router.add_get("/api/op/status", op_status)
+    app.router.add_get("/map", map_index)
+    app.router.add_get("/map/", map_index)
+    app.router.add_get("/api/invite", invite)
