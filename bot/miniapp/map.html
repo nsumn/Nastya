@@ -3,156 +3,183 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Roblox Rewards</title>
+<title>Roblox Obby Invite</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  /* Оформление из присланного файла, но без Tailwind и внешних шрифтов:
-     всё внутри страницы, чтобы ничего не отваливалось на телефоне. */
-  :root{
-    --bg:#F2F4F5; --ink:#393B3D; --black:#111214; --grey:#656668;
-    --line:#B8B8B8; --green:#00B06F; --green-d:#00905B; --red:#d64545;
-  }
+  /* Оформление из присланного файла, переписанное обычным CSS: Tailwind
+     и шрифты с внешних сайтов убраны, чтобы страница не зависела от сети. */
+  :root{ --black:#000; --grey:#6B7280; --line:#E5E7EB; --fill:#F3F4F6; --red:#DC2626; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
+    margin:0; background:#fff; color:#000; overflow-x:hidden;
     font:16px/1.5 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
          Helvetica, Arial, sans-serif;
-    display:flex; align-items:flex-start; justify-content:center; padding:16px;
+    display:flex; align-items:center; justify-content:center;
   }
-  .card{
-    background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.15);
-    padding:24px; width:100%; max-width:400px; margin:12px auto;
-  }
+  .wrap{width:100%; max-width:400px; margin:auto; padding:24px; text-align:center}
   .screen{display:none}
-  .screen.on{display:block; animation:fade .3s ease-in}
-  @keyframes fade{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+  .screen.on{display:block}
 
-  h1{font-size:24px; font-weight:800; color:var(--black); margin:0 0 12px; text-align:center}
-  h2{font-size:20px; font-weight:700; color:var(--black); margin:0 0 4px; text-align:center}
-  p.lead{font-size:15px; color:var(--grey); line-height:1.6; margin:0 0 28px; text-align:center}
-  p.sub{font-size:14px; color:var(--grey); margin:0 0 22px; text-align:center}
+  h1{font-size:30px; font-weight:900; letter-spacing:-.5px; margin:0 0 16px}
+  h2{font-size:24px; font-weight:900; margin:0 0 8px}
+  h2.sm{font-size:20px; font-weight:700; margin-bottom:24px}
+  p.grey{color:var(--grey); font-size:14px; margin:0 0 24px}
+  p.lead{color:#4B5563; font-size:18px; font-weight:500; line-height:1.6;
+         margin:0 0 40px; min-height:80px}
 
   .logo{
-    width:64px; height:64px; margin:0 auto 24px; background:#000; border-radius:12px;
-    display:flex; align-items:center; justify-content:center; transform:rotate(-6deg);
-    color:#fff; font-size:30px;
+    width:64px; height:64px; margin:0 auto 24px; background:#000; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; transform:rotate(-8deg);
   }
+  .logo.sm{width:48px; height:48px; border-radius:10px; transform:none; margin-bottom:24px}
+
   input{
-    width:100%; padding:12px 16px; font-size:16px; text-align:center; font-weight:500;
-    background:#fff; border:1px solid var(--line); border-radius:8px;
-    color:var(--ink); outline:none; margin-bottom:16px;
+    width:100%; padding:16px; font-size:16px; font-weight:500; text-align:center;
+    background:var(--fill); border:2px solid var(--line); border-radius:12px;
+    color:#000; outline:none; margin-bottom:16px; transition:all .2s;
   }
-  input:focus{border-color:var(--black)}
+  input:focus{border-color:#000; background:#fff}
 
   .btn{
-    width:100%; padding:14px; border:0; border-radius:8px; font-size:16px;
-    font-weight:600; cursor:pointer; background:var(--black); color:#fff;
+    width:100%; padding:16px; border:0; border-radius:12px; cursor:pointer;
+    background:#000; color:#fff; font-size:16px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.5px; font-family:inherit;
   }
-  .btn.green{background:var(--green); font-size:18px; font-weight:700}
-  .btn.green:active{background:var(--green-d)}
+  .btn:active{transform:scale(.98)}
   .btn:disabled{opacity:.5}
-  .btn.link{background:none; color:var(--grey); font-size:14px; font-weight:500;
-            padding:8px; margin-top:12px}
+  .btn.outline{
+    background:transparent; color:#000; border:2px solid #000;
+    font-size:14px; text-transform:none; letter-spacing:0;
+  }
+  .btn + .btn{margin-top:12px}
 
-  .err{display:none; color:#d33; font-size:14px; font-weight:500;
-       text-align:center; margin-top:12px}
+  .err{display:none; color:var(--red); font-size:14px; font-weight:700; margin-top:16px}
   .err.on{display:block}
 
-  .badge{display:inline-block; background:#E8F5E9; color:var(--green);
-         padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700;
-         text-transform:uppercase; letter-spacing:.5px; margin-bottom:18px}
-  .ava{width:112px; height:112px; margin:0 auto 16px; border-radius:50%;
-       background:var(--bg); border:1px solid #e5e7eb; overflow:hidden;
-       display:flex; align-items:center; justify-content:center; font-size:44px}
+  .ava{
+    width:128px; height:128px; margin:0 auto 16px; background:var(--fill);
+    border:2px solid #000; border-radius:16px; overflow:hidden;
+    box-shadow:0 4px 6px rgba(0,0,0,.1);
+    display:flex; align-items:center; justify-content:center; font-size:48px;
+  }
   .ava img{width:100%; height:100%; object-fit:cover; display:none}
-  .nick{font-size:24px; font-weight:800; color:var(--black); margin-bottom:2px}
-  .dname{font-size:14px; color:var(--grey); font-weight:500; margin-bottom:28px}
+  .name{font-size:24px; font-weight:900; margin-bottom:4px}
+  .nick{color:var(--grey); font-size:14px; font-weight:500; margin-bottom:32px}
 
-  /* спонсоры */
-  .sp{display:flex; align-items:center; gap:11px; width:100%; text-align:left;
-      background:#fff; border:2px solid #e5e7eb; border-radius:8px;
-      padding:10px 12px; margin-bottom:8px; cursor:pointer; font:inherit}
-  .sp.done{border-color:var(--green); background:#f2fbf7}
-  .sp .ic{width:36px; height:36px; flex:none; border-radius:8px; background:#E8F1FF;
-          display:flex; align-items:center; justify-content:center; font-size:18px}
-  .sp .t{flex:1; min-width:0; font-weight:700; font-size:14px; color:var(--ink);
+  .shield{
+    width:64px; height:64px; margin:0 auto 24px; background:#000; color:#fff;
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+  }
+
+  /* спонсоры — как в первом боте: клик, отметка, проверка на сервере */
+  .sp{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:#fff; border:2px solid var(--line); border-radius:12px;
+    padding:12px; margin-bottom:10px; cursor:pointer; font:inherit;
+  }
+  .sp.done{border-color:#000; background:var(--fill)}
+  .sp .ic{width:38px; height:38px; flex:none; border-radius:10px; background:var(--fill);
+          display:flex; align-items:center; justify-content:center; font-size:19px}
+  .sp .t{flex:1; min-width:0; font-size:15px; font-weight:700; color:#000;
          overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .sp .mark{width:22px; height:22px; flex:none; border-radius:50%;
-            border:2px solid #cfd4d8; display:flex; align-items:center;
-            justify-content:center; color:#fff; font-size:12px; font-weight:800}
-  .sp.done .mark{border-color:var(--green); background:var(--green)}
+  .sp .mark{width:24px; height:24px; flex:none; border-radius:50%;
+            border:2px solid #D1D5DB; display:flex; align-items:center;
+            justify-content:center; color:#fff; font-size:13px; font-weight:900}
+  .sp.done .mark{border-color:#000; background:#000}
 
-  .invite{display:block; word-break:break-all; background:var(--bg);
-          border:1px solid #e5e7eb; border-radius:8px; padding:14px;
-          font-size:15px; font-weight:600; color:var(--green); text-align:center;
-          margin-bottom:14px; text-decoration:none}
-  .note{background:var(--bg); border:1px solid #e5e7eb; border-radius:8px;
-        padding:14px; font-size:14px; color:var(--ink); margin-bottom:14px}
-  .spin{width:22px; height:22px; margin:0 auto; border-radius:50%;
-        border:3px solid var(--bg); border-top-color:var(--black);
-        animation:spin 1s linear infinite}
+  .invite{
+    display:block; word-break:break-all; background:var(--fill);
+    border:2px solid #000; border-radius:12px; padding:16px; margin-bottom:16px;
+    font-size:15px; font-weight:700; color:#000; text-decoration:none;
+  }
+  .note{background:var(--fill); border:2px solid var(--line); border-radius:12px;
+        padding:14px; font-size:14px; font-weight:500; margin-bottom:16px}
+
+  .loader{
+    border:3px solid var(--line); border-top:3px solid #000; border-radius:50%;
+    width:24px; height:24px; animation:spin .8s linear infinite;
+    display:inline-block; vertical-align:middle;
+  }
+  .loader.big{width:48px; height:48px; border-width:4px; margin:0 auto 24px; display:block}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  .fade-in{animation:fadeIn .4s ease-out forwards}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(15px)}to{opacity:1; transform:none}}
+  .word{display:inline-block; opacity:0; transform:translateY(20px);
+        animation:popUp .5s cubic-bezier(.175,.885,.32,1.275) forwards}
+  @keyframes popUp{to{opacity:1; transform:translateY(0)}}
 </style>
 </head>
 <body>
-<div class="card">
+<div class="wrap">
 
   <!-- 1. приветствие -->
   <section id="s-intro" class="screen on">
-    <div class="logo">🗺</div>
-    <h1>Секретная карта</h1>
-    <p class="lead">Здесь можно получить персональное приглашение на карту,
-      где робуксы выдают за прохождение уровней.</p>
-    <button class="btn" id="b-next">Далее</button>
+    <div class="logo fade-in" style="animation-delay:.1s; opacity:0">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.53051 18.067L1.13401 5.34007L13.8609 1.94357L17.2574 14.6705L4.53051 18.067ZM11.0826 8.35821C10.4571 8.5251 10.081 9.17188 10.2479 9.79738C10.4148 10.4229 11.0616 10.799 11.6871 10.6321C12.3126 10.4652 12.6887 9.81842 12.5218 9.19292C12.3549 8.56742 11.7081 8.19132 11.0826 8.35821Z"/>
+      </svg>
+    </div>
+    <h1 class="fade-in" style="animation-delay:.2s; opacity:0">OBBY INVITE</h1>
+    <p class="lead" id="intro-text"></p>
+    <button class="btn fade-in" id="b-next" style="animation-delay:1.5s; opacity:0">Продолжить</button>
   </section>
 
-  <!-- 2. поиск ника -->
+  <!-- 2. поиск -->
   <section id="s-search" class="screen">
+    <div class="logo sm">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.53051 18.067L1.13401 5.34007L13.8609 1.94357L17.2574 14.6705L4.53051 18.067ZM11.0826 8.35821C10.4571 8.5251 10.081 9.17188 10.2479 9.79738C10.4148 10.4229 11.0616 10.799 11.6871 10.6321C12.3126 10.4652 12.6887 9.81842 12.5218 9.19292C12.3549 8.56742 11.7081 8.19132 11.0826 8.35821Z"/>
+      </svg>
+    </div>
     <h2>Поиск аккаунта</h2>
-    <p class="sub">Введи свой никнейм, чтобы мы нашли профиль.</p>
-    <input id="nick" placeholder="Например: Builderman" maxlength="30"
+    <p class="grey">Найдите свой профиль Roblox</p>
+    <input id="nick" placeholder="Никнейм (например: Builderman)" maxlength="30"
            autocapitalize="off" autocorrect="off" spellcheck="false">
-    <button class="btn" id="b-search">Найти профиль</button>
+    <button class="btn" id="b-search"><span id="b-search-text">Поиск</span></button>
     <div id="search-err" class="err"></div>
   </section>
 
-  <!-- 3. загрузка -->
-  <section id="s-load" class="screen">
-    <div style="padding:36px 0; text-align:center">
-      <div class="spin"></div>
-      <p class="sub" id="load-text" style="margin-top:16px">Ищем профиль…</p>
-    </div>
-  </section>
-
-  <!-- 4. аккаунт найден -->
-  <section id="s-found" class="screen" style="text-align:center">
-    <div class="badge">Аккаунт найден</div>
+  <!-- 3. аккаунт найден -->
+  <section id="s-result" class="screen">
+    <h2 class="sm">Аккаунт найден</h2>
     <div class="ava"><img id="ava-img" alt=""><span id="ava-icon">👤</span></div>
-    <div class="nick" id="found-name">Username</div>
-    <div class="dname" id="found-nick">@nickname</div>
-    <button class="btn green" id="b-invite">Получить ссылку</button>
-    <button class="btn link" id="b-other">Это не мой аккаунт</button>
+    <div class="name" id="found-name">Username</div>
+    <div class="nick" id="found-nick">@displayname</div>
+    <button class="btn" id="b-invite">Получить приглашение</button>
+    <button class="btn outline" id="b-other">Это не мой аккаунт</button>
   </section>
 
-  <!-- 5. спонсоры -->
-  <section id="s-sponsors" class="screen">
-    <h2>Остался последний шаг</h2>
-    <p class="sub" id="sp-lead">Чтобы получить приглашение, подпишись
-      на наших спонсоров.</p>
-    <div id="sp-list"></div>
-    <button class="btn green" id="b-check" style="margin-top:6px">Проверить подписку</button>
-    <div id="sp-err" class="err"></div>
+  <!-- 4. загрузка -->
+  <section id="s-loading" class="screen">
+    <div class="loader big"></div>
+    <h2 class="sm" id="loading-title" style="margin-bottom:8px">Генерация приглашения…</h2>
+    <p class="grey">Подождите пару секунд</p>
+  </section>
+
+  <!-- 5. условие: спонсоры -->
+  <section id="s-condition" class="screen">
+    <div class="shield">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+           stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+    </div>
+    <h2>Внимание!</h2>
+    <p class="grey" id="cond-text">Чтобы получить приглашение, подпишитесь на наших спонсоров.</p>
+    <div id="sp-list" style="text-align:left"></div>
+    <button class="btn" id="b-check" style="margin-top:8px">Проверить подписку</button>
+    <div id="cond-err" class="err"></div>
   </section>
 
   <!-- 6. приглашение -->
-  <section id="s-done" class="screen" style="text-align:center">
-    <div class="badge">Подписка подтверждена</div>
-    <h1>Твоё приглашение</h1>
+  <section id="s-done" class="screen">
+    <h2>Приглашение готово</h2>
+    <p class="grey">Подписка подтверждена</p>
     <a class="invite" id="invite-link" href="#" target="_blank" rel="noopener"></a>
     <div class="note" id="invite-note"></div>
-    <button class="btn green" id="b-open">Открыть карту</button>
-    <button class="btn link" id="b-restart">Проверить другой аккаунт</button>
+    <button class="btn" id="b-open">Открыть обби</button>
+    <button class="btn outline" id="b-restart">Проверить другой аккаунт</button>
   </section>
 
 </div>
@@ -166,9 +193,19 @@
     try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {}
   }
 
-  var SCREENS = ['s-intro', 's-search', 's-load', 's-found', 's-sponsors', 's-done'];
+  var SCREENS = ['s-intro', 's-search', 's-result', 's-loading', 's-condition', 's-done'];
   var el = function (id) { return document.getElementById(id); };
   var state = { user: null, links: [], clicked: {}, invite: '', note: '' };
+
+  // ---- всплывающие слова на первом экране ----
+  var INTRO = "Здесь вы можете получить приглашение в обби, где можно собирать робуксы";
+  INTRO.split(' ').forEach(function (w, i) {
+    var span = document.createElement('span');
+    span.className = 'word';
+    span.textContent = w + ' ';
+    span.style.animationDelay = (0.3 + i * 0.1) + 's';
+    el('intro-text').appendChild(span);
+  });
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -186,7 +223,12 @@
     }
   }
   function show(id) {
-    SCREENS.forEach(function (s) { el(s).classList.toggle('on', s === id); });
+    SCREENS.forEach(function (s) {
+      var n = el(s);
+      n.classList.toggle('on', s === id);
+      n.classList.remove('fade-in');
+    });
+    setTimeout(function () { el(id).classList.add('fade-in'); }, 10);
     window.scrollTo(0, 0);
   }
   function err(box, text) {
@@ -219,53 +261,57 @@
     return { status: res.status, data: data };
   }
 
-  // ---- поиск аккаунта (через наш сервер, не из браузера) ----
+  // ---- поиск аккаунта: через наш сервер ----
+  var busy = false;
   async function search() {
     var nick = el('nick').value.trim();
-    if (!nick) { err('search-err', 'Введи никнейм!'); return; }
+    if (!nick) { err('search-err', 'Введите никнейм!'); return; }
+    if (busy) return;
+    busy = true;
     err('search-err', '');
-    el('load-text').textContent = 'Ищем профиль…';
-    show('s-load');
+    el('b-search').disabled = true;
+    el('b-search-text').innerHTML = '<span class="loader"></span>';
     try {
       var r = await api('/api/roblox/user?username=' + encodeURIComponent(nick));
       if (r.status >= 400) {
         haptic('error');
         err('search-err', r.data.error || 'Игрок не найден.');
-        show('s-search');
-        return;
+      } else {
+        state.user = r.data;
+        el('found-name').textContent = r.data.display_name || r.data.username;
+        el('found-nick').textContent = '@' + r.data.username;
+        var img = el('ava-img'), icon = el('ava-icon');
+        img.style.display = 'none'; icon.style.display = '';
+        if (r.data.avatar_url) {
+          img.onload = function () { img.style.display = 'block'; icon.style.display = 'none'; };
+          img.src = r.data.avatar_url;
+        }
+        haptic('success');
+        show('s-result');
       }
-      state.user = r.data;
-      el('found-name').textContent = r.data.display_name || r.data.username;
-      el('found-nick').textContent = '@' + r.data.username;
-      var img = el('ava-img'), icon = el('ava-icon');
-      img.style.display = 'none'; icon.style.display = '';
-      if (r.data.avatar_url) {
-        img.onload = function () { img.style.display = 'block'; icon.style.display = 'none'; };
-        img.src = r.data.avatar_url;
-      }
-      haptic('success');
-      show('s-found');
     } catch (e) {
-      err('search-err', 'Нет связи с сервером.');
-      show('s-search');
+      err('search-err', 'Ошибка сети.');
+    } finally {
+      busy = false;
+      el('b-search').disabled = false;
+      el('b-search-text').textContent = 'Поиск';
     }
   }
 
-  // ---- приглашение: сервер сам проверит подписку ----
+  // ---- приглашение: сервер сам проверяет подписку ----
   async function requestInvite() {
     tap();
-    el('load-text').textContent = 'Проверяем подписку…';
-    show('s-load');
+    show('s-loading');
     try {
       var r = await api('/api/invite');
       if (r.data.invite) { finish(r.data); return; }
       state.links = r.data.need_subscribe || [];
       state.note = r.data.note || '';
       renderSponsors();
-      show('s-sponsors');
+      show('s-condition');
     } catch (e) {
-      err('search-err', 'Нет связи с сервером.');
-      show('s-found');
+      err('search-err', 'Ошибка сети.');
+      show('s-result');
     }
   }
 
@@ -287,7 +333,7 @@
         state.clicked[i] = true;
         b.classList.add('done');
         b.querySelector('.mark').textContent = '✓';
-        err('sp-err', '');
+        err('cond-err', '');
         tap();
         openLink((state.links[i] || {}).url);
       });
@@ -296,17 +342,17 @@
 
   async function check() {
     el('b-check').disabled = true;
-    err('sp-err', '');
+    err('cond-err', '');
     try {
       var r = await api('/api/invite');
       if (r.data.invite) { haptic('success'); finish(r.data); }
       else {
         haptic('error');
         state.links = r.data.need_subscribe || state.links;
-        err('sp-err', r.data.error || 'Подпишись, пожалуйста, на всех спонсоров.');
+        err('cond-err', r.data.error || 'Подпишитесь, пожалуйста, на всех спонсоров.');
       }
     } catch (e) {
-      err('sp-err', 'Нет связи с сервером.');
+      err('cond-err', 'Ошибка сети.');
     } finally { el('b-check').disabled = false; }
   }
 
@@ -315,8 +361,9 @@
     var a = el('invite-link');
     a.textContent = state.invite;
     a.href = state.invite;
-    el('invite-note').textContent = data.note || '';
-    el('invite-note').style.display = data.note ? '' : 'none';
+    var note = el('invite-note');
+    note.textContent = data.note || '';
+    note.style.display = data.note ? '' : 'none';
     show('s-done');
   }
 
