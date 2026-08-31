@@ -170,6 +170,64 @@ async def show_stats(message: Message) -> None:
     await message.answer(await stats_text(message.bot))
 
 
+@router.message(Command("invites"))
+async def show_invites(message: Message) -> None:
+    """Кто ждёт приглашение."""
+    rows = await db.pending_invites(30)
+    counts = await db.invite_counts()
+    if not rows:
+        await message.answer(
+            f"📭 Заявок в ожидании нет.\n"
+            f"Всего за всё время: {counts['total']}")
+        return
+    lines = [f"📬 <b>Ждут приглашение: {counts['pending']}</b> "
+             f"(всего заявок: {counts['total']})", ""]
+    for r in rows:
+        who = f"@{r['tg_username']}" if r["tg_username"] else (
+            r["tg_name"] or str(r["user_id"]))
+        lines.append(
+            f"• <b>{html.escape(r['roblox_username'])}</b> — "
+            f"{html.escape(who)}\n"
+            f"  {r['requested_at']} · выдать: <code>/sent {r['user_id']}</code>")
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("sent"))
+async def mark_sent(message: Message, command) -> None:
+    """/sent <id> — отметить заявку выданной и отправить человеку ссылку."""
+    arg = (command.args or "").strip()
+    if not arg.isdigit():
+        await message.answer("Формат: <code>/sent 123456789</code>\n"
+                             "Список заявок — /invites")
+        return
+    user_id = int(arg)
+    row = await db.get_invite(user_id)
+    if row is None:
+        await message.answer("Заявки от этого человека нет.")
+        return
+    if row["sent_at"]:
+        await message.answer(f"Уже выдано {row['sent_at']}.")
+        return
+
+    link = await op.map_link()
+    delivered = False
+    if link:
+        try:
+            await message.bot.send_message(
+                user_id,
+                f"🎉 Твоё приглашение на обби для аккаунта "
+                f"<b>{html.escape(row['roblox_username'])}</b>:\n{link}",
+                disable_web_page_preview=True)
+            delivered = True
+        except TelegramAPIError as exc:
+            await message.answer(f"⚠️ Не смог написать человеку: {exc}")
+    await db.mark_invite_sent(user_id)
+    await message.answer(
+        f"✅ Заявка на <b>{html.escape(row['roblox_username'])}</b> отмечена выданной."
+        + ("\nСсылку отправила ему в личку." if delivered else
+           "\n⚠️ Ссылка не отправлена — задай её командой /maplink."))
+
+
 @router.message(Command("maplink"))
 async def set_map(message: Message, command) -> None:
     """/maplink <ссылка> — приглашение на карту, которое выдаётся после подписки."""

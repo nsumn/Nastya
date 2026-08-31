@@ -93,7 +93,74 @@ async def init_db(path: str) -> None:
         )
         await db.execute(
             "CREATE INDEX IF NOT EXISTS events_kind_ts ON events (kind, ts)")
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS invites (
+                user_id         INTEGER PRIMARY KEY,
+                tg_username     TEXT,
+                tg_name         TEXT,
+                roblox_username TEXT NOT NULL,
+                roblox_id       INTEGER,
+                requested_at    TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
+                requested_ts    INTEGER NOT NULL DEFAULT 0,
+                sent_at         TEXT
+            )
+            """
+        )
         await db.commit()
+
+
+# ---------- заявки на приглашение ----------
+
+async def get_invite(user_id: int) -> Optional[dict]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM invites WHERE user_id = ?", (user_id,)
+        ) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
+
+
+async def create_invite(user_id: int, roblox_username: str, roblox_id: int,
+                        requested_ts: int, tg_username: Optional[str] = None,
+                        tg_name: Optional[str] = None) -> None:
+    """Заявка создаётся один раз: повторные попытки её не меняют."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT OR IGNORE INTO invites (user_id, tg_username, tg_name, "
+            "roblox_username, roblox_id, requested_ts) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, tg_username, tg_name, roblox_username, roblox_id,
+             requested_ts),
+        )
+        await db.commit()
+
+
+async def mark_invite_sent(user_id: int) -> bool:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        cur = await db.execute(
+            "UPDATE invites SET sent_at = datetime('now', '+3 hours') "
+            "WHERE user_id = ? AND sent_at IS NULL", (user_id,))
+        await db.commit()
+        return cur.rowcount > 0
+
+
+async def pending_invites(limit: int = 30) -> list[dict]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM invites WHERE sent_at IS NULL "
+            "ORDER BY requested_ts LIMIT ?", (limit,)
+        ) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def invite_counts() -> dict:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            "SELECT COUNT(*), SUM(sent_at IS NULL) FROM invites") as cur:
+            row = await cur.fetchone() or (0, 0)
+    return {"total": row[0] or 0, "pending": row[1] or 0}
 
 
 # ---------- события (для статистики за период) ----------

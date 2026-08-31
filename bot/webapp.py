@@ -211,8 +211,15 @@ async def map_index(request: web.Request) -> web.StreamResponse:
                  "Content-Type": "text/html; charset=utf-8"})
 
 
+INVITE_HOURS = 24        # столько ждём выдачи приглашения
+
+
 async def invite(request: web.Request) -> web.Response:
-    """Выдаёт приглашение на карту, если человек подписан на спонсоров."""
+    """Заявка на приглашение.
+
+    Одна заявка на человека: если он уже оставил её на другой ник, повторно
+    получить нельзя. Заявка создаётся только после проверки подписки.
+    """
     config = request.app["config"]
     raw = (request.headers.get("X-Telegram-Init-Data")
            or request.query.get("initData", "")
@@ -224,33 +231,95 @@ async def invite(request: web.Request) -> web.Response:
 
     bot = request.app.get("bot")
     user_id = init_data_user_id(parsed)
-    link = await op.map_link()
+    nick = (request.query.get("username", "") or "").strip()
 
     if user_id:
         await db.bump_counter(user_id, "app_opens")
         await db.log_event("app_open", user_id)
 
+    # уже есть заявка — показываем её (или объясняем, что она на другой ник)
+    existing = await db.get_invite(user_id) if user_id else None
+    if existing:
+        if nick and nick.lower() != (existing["roblox_username"] or "").lower():
+            return web.json_response({
+                "error": "Приглашение выдаётся только на один аккаунт. "
+                         f"Твоя заявка уже оформлена на ник "
+                         f"{existing['roblox_username']}.",
+                "locked_to": existing["roblox_username"],
+            }, status=409)
+        return web.json_response(_invite_state(existing,
+                                               await op.reward_text()))
+
     subscribed = True
     if user_id and bot is not None:
         subscribed = await op.is_subscribed(bot, user_id)
-
     if not subscribed:
         links = [x.as_dict() for x in await op.visible_links(bot)]
-        return web.json_response({
-            "invite": "",
-            "need_subscribe": links,
-            "note": await op.reward_text(),
-        })
+        return web.json_response({"status": "need_subscribe",
+                                  "need_subscribe": links})
+
+    if not nick:
+        return web.json_response(
+            {"error": "Сначала найди свой аккаунт."}, status=400)
 
     if user_id:
         await db.bump_counter(user_id, "op_passed")
         await db.log_event("op_passed", user_id)
-    if not link:
-        return web.json_response(
-            {"invite": "",
-             "error": "Ссылка на карту ещё не задана администратором."},
-            status=503)
-    return web.json_response({"invite": link, "note": await op.reward_text()})
+
+        user = {}
+        try:
+            user = json.loads(parsed.get("user", "{}")) if parsed else {}
+        except ValueError:
+            user = {}
+        await db.create_invite(
+            user_id=user_id,
+            roblox_username=nick,
+            roblox_id=int(request.query.get("roblox_id", "0") or 0),
+            requested_ts=int(time.time()),
+            tg_username=user.get("username"),
+            tg_name=(user.get("first_name", "") + " "
+                     + user.get("last_name", "")).strip() or None,
+        )
+        await db.log_event("invite_request", user_id, nick)
+        await _notify_admin(request.app, user_id, user, nick)
+        existing = await db.get_invite(user_id)
+
+    return web.json_response(_invite_state(existing or {
+        "roblox_username": nick, "requested_ts": int(time.time())},
+        await op.reward_text()))
+
+
+def _invite_state(row: dict, note: str) -> dict:
+    """Состояние заявки для страницы: ник, срок и сколько осталось ждать."""
+    started = int(row.get("requested_ts") or 0) or int(time.time())
+    return {
+        "status": "pending",
+        "username": row.get("roblox_username", ""),
+        "requested_ts": started,
+        "deadline_ts": started + INVITE_HOURS * 3600,
+        "hours": INVITE_HOURS,
+        "note": note,
+    }
+
+
+async def _notify_admin(app, user_id: int, user: dict, nick: str) -> None:
+    """Сообщает администратору о новой заявке, чтобы её было кому выдать."""
+    bot = app.get("bot")
+    admin_id = app["config"].admin_chat_id
+    if bot is None or not admin_id:
+        return
+    who = user.get("username")
+    who = f"@{who}" if who else (user.get("first_name") or str(user_id))
+    try:
+        await bot.send_message(
+            admin_id,
+            f"🆕 <b>Заявка на приглашение</b>\n\n"
+            f"Ник Roblox: <b>{nick}</b>\n"
+            f"От: {who} (<code>{user_id}</code>)\n\n"
+            f"Выдать: <code>/sent {user_id}</code>\n"
+            f"Все заявки: /invites")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Не смог сообщить о заявке: %s", exc)
 
 
 async def op_status(request: web.Request) -> web.Response:

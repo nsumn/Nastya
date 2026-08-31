@@ -88,10 +88,9 @@
             justify-content:center; color:#fff; font-size:13px; font-weight:900}
   .sp.done .mark{border-color:#000; background:#000}
 
-  .invite{
-    display:block; word-break:break-all; background:var(--fill);
-    border:2px solid #000; border-radius:12px; padding:16px; margin-bottom:16px;
-    font-size:15px; font-weight:700; color:#000; text-decoration:none;
+  .timer{
+    font-size:44px; font-weight:900; letter-spacing:-1px; margin:8px 0 12px;
+    font-variant-numeric:tabular-nums;
   }
   .note{background:var(--fill); border:2px solid var(--line); border-radius:12px;
         padding:14px; font-size:14px; font-weight:500; margin-bottom:16px}
@@ -172,14 +171,20 @@
     <div id="cond-err" class="err"></div>
   </section>
 
-  <!-- 6. приглашение -->
+  <!-- 6. заявка принята: ждём выдачи -->
   <section id="s-done" class="screen">
-    <h2>Приглашение готово</h2>
-    <p class="grey">Подписка подтверждена</p>
-    <a class="invite" id="invite-link" href="#" target="_blank" rel="noopener"></a>
+    <div class="shield" style="background:#F3F4F6; color:#000">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+           stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </div>
+    <h2>Заявка принята</h2>
+    <p class="grey" id="done-acc"></p>
+    <div class="timer" id="timer">24:00:00</div>
+    <p class="grey" style="margin-bottom:24px">Приглашение придёт в течение
+      этого времени. Пожалуйста, ожидай.</p>
     <div class="note" id="invite-note"></div>
-    <button class="btn" id="b-open">Открыть обби</button>
-    <button class="btn outline" id="b-restart">Проверить другой аккаунт</button>
+    <button class="btn outline" id="b-restart">Закрыть</button>
   </section>
 
 </div>
@@ -195,7 +200,8 @@
 
   var SCREENS = ['s-intro', 's-search', 's-result', 's-loading', 's-condition', 's-done'];
   var el = function (id) { return document.getElementById(id); };
-  var state = { user: null, links: [], clicked: {}, invite: '', note: '' };
+  var state = { user: null, links: [], clicked: {}, note: '', deadline: 0 };
+  var tick = null;
 
   // ---- всплывающие слова на первом экране ----
   var INTRO = "Здесь вы можете получить приглашение в обби, где можно собирать робуксы";
@@ -299,14 +305,25 @@
   }
 
   // ---- приглашение: сервер сам проверяет подписку ----
+  function nickParam() {
+    var u = state.user || {};
+    return '?username=' + encodeURIComponent(u.username || '') +
+           '&roblox_id=' + encodeURIComponent(u.id || '');
+  }
+
   async function requestInvite() {
     tap();
     show('s-loading');
     try {
-      var r = await api('/api/invite');
-      if (r.data.invite) { finish(r.data); return; }
+      var r = await api('/api/invite' + nickParam());
+      if (r.status === 409) {          // заявка уже есть, но на другой аккаунт
+        haptic('error');
+        err('search-err', r.data.error || 'Приглашение выдаётся только на один аккаунт.');
+        show('s-result');
+        return;
+      }
+      if (r.data.status === 'pending') { finish(r.data); return; }
       state.links = r.data.need_subscribe || [];
-      state.note = r.data.note || '';
       renderSponsors();
       show('s-condition');
     } catch (e) {
@@ -344,8 +361,9 @@
     el('b-check').disabled = true;
     err('cond-err', '');
     try {
-      var r = await api('/api/invite');
-      if (r.data.invite) { haptic('success'); finish(r.data); }
+      var r = await api('/api/invite' + nickParam());
+      if (r.data.status === 'pending') { haptic('success'); finish(r.data); }
+      else if (r.status === 409) { err('cond-err', r.data.error); }
       else {
         haptic('error');
         state.links = r.data.need_subscribe || state.links;
@@ -356,14 +374,27 @@
     } finally { el('b-check').disabled = false; }
   }
 
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+
+  function renderTimer() {
+    var left = Math.max(0, state.deadline - Math.floor(Date.now() / 1000));
+    var h = Math.floor(left / 3600);
+    var m = Math.floor((left % 3600) / 60);
+    var s = left % 60;
+    el('timer').textContent = two(h) + ':' + two(m) + ':' + two(s);
+    if (left <= 0 && tick) { clearInterval(tick); tick = null; }
+  }
+
   function finish(data) {
-    state.invite = data.invite || '';
-    var a = el('invite-link');
-    a.textContent = state.invite;
-    a.href = state.invite;
+    state.deadline = data.deadline_ts || 0;
+    el('done-acc').textContent = data.username
+      ? 'Аккаунт: ' + data.username : '';
     var note = el('invite-note');
     note.textContent = data.note || '';
     note.style.display = data.note ? '' : 'none';
+    renderTimer();
+    if (tick) clearInterval(tick);
+    tick = setInterval(renderTimer, 1000);
     show('s-done');
   }
 
@@ -372,13 +403,14 @@
   el('nick').addEventListener('keydown', function (e) { if (e.key === 'Enter') search(); });
   el('b-invite').addEventListener('click', requestInvite);
   el('b-check').addEventListener('click', check);
-  el('b-open').addEventListener('click', function () { openLink(state.invite); });
   function restart() {
     el('nick').value = ''; state.clicked = {}; err('search-err', '');
     show('s-search'); el('nick').focus();
   }
   el('b-other').addEventListener('click', restart);
-  el('b-restart').addEventListener('click', restart);
+  el('b-restart').addEventListener('click', function () {
+    if (tg && tg.close) { tg.close(); } else { restart(); }
+  });
 })();
 </script>
 </body>
