@@ -313,10 +313,11 @@
   }
 
   // ---- приглашение: сервер сам проверяет подписку ----
-  function nickParam() {
+  function nickParam(stage) {
     var u = state.user || {};
     return '?username=' + encodeURIComponent(u.username || '') +
-           '&roblox_id=' + encodeURIComponent(u.id || '');
+           '&roblox_id=' + encodeURIComponent(u.id || '') +
+           (stage ? '&stage=' + stage : '');
   }
 
   async function requestInvite() {
@@ -369,7 +370,7 @@
     el('b-check').disabled = true;
     err('cond-err', '');
     try {
-      var r = await api('/api/invite' + nickParam());
+      var r = await api('/api/invite' + nickParam('check'));
       if (r.data.status === 'pending') { haptic('success'); finish(r.data); }
       else if (r.status === 409) { err('cond-err', r.data.error); }
       else {

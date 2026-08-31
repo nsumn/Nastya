@@ -250,10 +250,13 @@ async def invite(request: web.Request) -> web.Response:
         return web.json_response(_invite_state(existing,
                                                await op.reward_text()))
 
+    # Список спонсоров показываем всем, даже тем, кто уже подписан: заявка
+    # оформляется только после нажатия «Проверить подписку» (stage=check).
+    stage = request.query.get("stage", "")
     subscribed = True
     if user_id and bot is not None:
         subscribed = await op.is_subscribed(bot, user_id)
-    if not subscribed:
+    if stage != "check" or not subscribed:
         links = [x.as_dict() for x in await op.visible_links(bot)]
         return web.json_response({"status": "need_subscribe",
                                   "need_subscribe": links})
