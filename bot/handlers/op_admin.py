@@ -262,6 +262,23 @@ async def set_bonus(message: Message, command) -> None:
                          f"{html.escape(text)}")
 
 
+async def _refresh_menu_button(message: Message, config: Config) -> str:
+    """Ставит новую подпись на кнопку-меню у поля ввода сразу, без перезапуска."""
+    if not config.miniapp_url:
+        return ""
+    from aiogram.types import MenuButtonWebApp, WebAppInfo
+    from .. import keyboards as kb
+    label = (await op.button_text()) or kb.default_button_label(config)
+    try:
+        await message.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text=label[:60], web_app=WebAppInfo(url=config.miniapp_url)))
+        return "\n\nКнопка у поля ввода тоже обновлена."
+    except TelegramAPIError as exc:
+        log.warning("Не смог обновить кнопку-меню: %s", exc)
+        return "\n\n⚠️ Кнопку у поля ввода обновить не вышло, попробуй позже."
+
+
 @router.message(Command("welcome"))
 async def set_welcome(message: Message, command) -> None:
     """/welcome <текст> — приветствие бота при /start."""
@@ -278,7 +295,7 @@ async def set_welcome(message: Message, command) -> None:
 
 
 @router.message(Command("button"))
-async def set_button(message: Message, command) -> None:
+async def set_button(message: Message, command, config: Config) -> None:
     """/button <текст> — подпись кнопки, открывающей мини-приложение."""
     text = (command.args or "").strip()
     if not text:
@@ -290,8 +307,10 @@ async def set_button(message: Message, command) -> None:
             "После смены пришли себе /start, чтобы увидеть новую кнопку.")
         return
     await op.set_button_text(text)
+    note = await _refresh_menu_button(message, config)
     await message.answer(f"✅ Кнопка теперь называется: {html.escape(text)}\n\n"
-                         "Нажми /start, чтобы клавиатура обновилась.")
+                         "Нажми /start, чтобы обновилась кнопка под сообщением."
+                         + note)
 
 
 @router.message(F.text == kb.ADM_BTN_SPONSORS)

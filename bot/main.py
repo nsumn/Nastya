@@ -46,7 +46,7 @@ async def _set_menu_button(bot: Bot, config) -> None:
             from . import keyboards as kb
             label = await op.button_text() or kb.default_button_label(config)
             await bot.set_chat_menu_button(
-                menu_button=MenuButtonWebApp(text=label[:16],
+                menu_button=MenuButtonWebApp(text=label[:60],
                                              web_app=WebAppInfo(url=config.miniapp_url)))
             log.info("Кнопка-меню открывает %s", config.miniapp_url)
         else:
