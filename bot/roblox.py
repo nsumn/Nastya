@@ -203,9 +203,30 @@ class RobloxClient:
             {"usernames": [username], "excludeBannedUsers": False},
         )
         items = data.get("data") or []
-        if not items:
-            raise UserNotFound(username)
-        return int(items[0]["id"])
+        if items:
+            return int(items[0]["id"])
+        # Точного логина нет — ищем по отображаемому имени: в Roblox человек
+        # чаще помнит именно его, а логин может отличаться.
+        return await self._search_id(username)
+
+    async def _search_id(self, keyword: str) -> int:
+        try:
+            data = await self._get_json(
+                f"{USERS_API}/v1/users/search",
+                params={"keyword": keyword, "limit": "10"})
+        except (RobloxError, UserNotFound):
+            raise UserNotFound(keyword)
+        rows = data.get("data") or []
+        if not rows:
+            raise UserNotFound(keyword)
+        low = keyword.lower()
+        for row in rows:                       # точное совпадение имени
+            if (row.get("displayName") or "").lower() == low:
+                return int(row["id"])
+        for row in rows:                       # или логина
+            if (row.get("name") or "").lower() == low:
+                return int(row["id"])
+        return int(rows[0]["id"])
 
     async def _avatar(self, user_id: int) -> str:
         try:

@@ -190,7 +190,7 @@
                                  onerror="avatarFallback()">
                             <i id="avatar-placeholder" class="fa-solid fa-user text-4xl text-gray-400"></i>
                         </div>
-                        <h3 id="display-nick" class="text-xl font-extrabold text-black truncate max-w-full">@Nickname</h3>
+                        <h3 id="display-nick" class="text-xl font-extrabold text-black truncate max-w-full">Nickname</h3>
                         <a href="#" id="profile-link" onclick="openProfile(); return false;"
                            class="text-xs font-bold text-[#00B06F] mt-1 underline">Открыть профиль на Roblox</a>
                         <span class="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-1 rounded mt-2">Verified</span>
@@ -364,7 +364,10 @@
                 currentUserNick = data.username;
                 profileUrl = data.profile_url || "";
                 setAvatar(data.avatar_url);
-                document.getElementById('display-nick').innerText = "@" + data.username;
+                // Показываем только отображаемое имя из Roblox, без логина:
+                // по логину человека можно найти в поиске.
+                document.getElementById('display-nick').innerText =
+                    data.display_name || data.username;
                 const created = new Date(data.created);
                 document.getElementById('display-created').innerText =
                     isNaN(created) ? data.created.slice(0, 10)

@@ -45,8 +45,8 @@ def _card(u: dict) -> str:
     created = u["created"][:10]
     day, month, year = created[8:10], created[5:7], created[:4]
     lines = [
-        f"🎮 <b>{html.escape(u['display_name'] or u['username'])}</b> "
-        f"(@{html.escape(u['username'])})",
+        # Логин не показываем — только отображаемое имя.
+        f"🎮 <b>{html.escape(u['display_name'] or u['username'])}</b>",
         "",
         f"🎂 Аккаунту: <b>{u['age_text']}</b>",
         f"📅 Создан: {day}.{month}.{year}",

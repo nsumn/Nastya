@@ -150,7 +150,7 @@
     <h2 class="sm">Аккаунт найден</h2>
     <div class="ava"><img id="ava-img" alt=""><span id="ava-icon">👤</span></div>
     <div class="name" id="found-name">Username</div>
-    <div class="nick" id="found-nick">@displayname</div>
+    <div class="nick" id="found-nick"></div>
     <div class="warn">⚠️ Приглашение выдаётся только на один аккаунт.
       Проверь, что ник верный — поменять потом не получится.</div>
     <button class="btn" id="b-invite">Получить приглашение</button>
@@ -292,8 +292,10 @@
         err('search-err', r.data.error || 'Игрок не найден.');
       } else {
         state.user = r.data;
+        // Только отображаемое имя: логин не показываем, чтобы по нему
+        // нельзя было найти аккаунт в поиске Roblox.
         el('found-name').textContent = r.data.display_name || r.data.username;
-        el('found-nick').textContent = '@' + r.data.username;
+        el('found-nick').textContent = '';
         var img = el('ava-img'), icon = el('ava-icon');
         img.style.display = 'none'; icon.style.display = '';
         if (r.data.avatar_url) {
