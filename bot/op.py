@@ -48,6 +48,25 @@ CHECK_LINE_MAX = 45        # длиннее — это уже абзац инс�
 
 _ok_cache: dict[int, float] = {}
 
+# Тексты у каждого бота свои, а список спонсоров общий. Область задаётся
+# режимом бота: op.set_scope("map") — и настройки не пересекаются с другими.
+_scope = ""
+
+
+def set_scope(name: str) -> None:
+    global _scope
+    _scope = (name or "").strip()
+
+
+def _k(key: str) -> str:
+    return f"{key}:{_scope}" if _scope else key
+
+
+def _own(key: str) -> str:
+    """Значение своей области, а если его нет — общее (как было раньше)."""
+    st = op_store.read()
+    return st.get(_k(key)) or st.get(key) or ""
+
 
 @dataclass
 class Link:
@@ -225,47 +244,47 @@ async def updated_at() -> str:
 
 async def reward_text() -> str:
     """Текст финального экрана мини-аппа (задаётся в панели)."""
-    return op_store.read().get("reward_text") or ""
+    return _own("reward_text")
 
 
 async def set_reward_text(text: str) -> None:
-    op_store.update(reward_text=text)
+    op_store.update(**{_k("reward_text"): text})
 
 
 async def welcome_text() -> str:
     """Приветствие бота (задаётся владельцем командой /welcome)."""
-    return op_store.read().get("welcome_text") or ""
+    return _own("welcome_text")
 
 
 async def set_welcome_text(text: str) -> None:
-    op_store.update(welcome_text=text)
+    op_store.update(**{_k("welcome_text"): text})
 
 
 async def button_text() -> str:
     """Подпись нижней кнопки, открывающей мини-приложение."""
-    return op_store.read().get("button_text") or ""
+    return _own("button_text")
 
 
 async def set_button_text(text: str) -> None:
-    op_store.update(button_text=text)
+    op_store.update(**{_k("button_text"): text})
 
 
 async def bonus_label() -> str:
     """Подпись строки над числом в карточке профиля (задаётся владельцем)."""
-    return op_store.read().get("bonus_label") or ""
+    return _own("bonus_label")
 
 
 async def set_bonus_label(text: str) -> None:
-    op_store.update(bonus_label=text)
+    op_store.update(**{_k("bonus_label"): text})
 
 
 async def map_link() -> str:
     """Ссылка-приглашение на карту Roblox (выдаётся после подписки)."""
-    return op_store.read().get("map_link") or ""
+    return _own("map_link")
 
 
 async def set_map_link(url: str) -> None:
-    op_store.update(map_link=url)
+    op_store.update(**{_k("map_link"): url})
 
 
 async def enabled() -> bool:

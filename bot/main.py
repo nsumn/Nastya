@@ -78,6 +78,7 @@ async def main() -> None:
     await db.init_db(config.db_path)
     await settings_store.load_overrides(config)  # цены/способы из БД
     op_store.configure(config.op_state_file)     # общий список ОП на все боты
+    op.set_scope(config.bot_mode)                # тексты — свои у каждого бота
     await op.migrate_from_db()
 
     bot = Bot(config.bot_token,
