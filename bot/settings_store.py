@@ -64,11 +64,21 @@ async def set_stars_channel(config: Config, tariff_id: str, *,
 
     channel_id — numeric id канала (бот должен быть его админом), из него
     делается одноразовая ссылка; link — запасная статичная ссылка.
+
+    Новый id всегда обнуляет старую запасную ссылку: иначе, если бот не
+    сможет создать приглашение (не админ канала), покупатель молча получит
+    ссылку на ПРЕЖНИЙ канал — то есть канал «не поменяется».
     """
     tariff = config.tariffs[tariff_id]
     if channel_id is not None:
         tariff.stars_channel_id = channel_id
         await db.set_setting(f"stars_channel_id:{tariff_id}", str(channel_id))
+        if link is None:
+            link = ""
+    elif link is not None:
+        # Задали только ссылку — старый id больше не должен перебивать её.
+        tariff.stars_channel_id = 0
+        await db.set_setting(f"stars_channel_id:{tariff_id}", "0")
     if link is not None:
         tariff.stars_link = link
         await db.set_setting(f"stars_channel_link:{tariff_id}", link)

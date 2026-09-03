@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import html
+import re
 
 from aiogram import F, Router
 from aiogram.filters import Command, StateFilter
@@ -322,6 +323,12 @@ async def adm_desc_set(message: Message, config: Config,
 
 # ---------- канал для оплаты звёздами ----------
 
+def _private_link_id(text: str) -> int | None:
+    """Достаёт id закрытого канала из ссылки вида t.me/c/2233445566/78."""
+    m = re.search(r"t\.me/c/(\d+)", text)
+    return int(f"-100{m.group(1)}") if m else None
+
+
 def _stars_channel_state(t) -> str:
     """Человекочитаемое описание текущего канала для звёзд."""
     lines = []
@@ -339,8 +346,10 @@ STARS_CHANNEL_PROMPT = (
     "• <b>перешли любой пост из нужного канала</b> — я возьму его ID "
     "(самый надёжный способ), или\n"
     "• ID канала числом (например <code>-1001234567890</code>), или\n"
+    "• ссылку на пост канала <code>https://t.me/c/.../78</code> "
+    "(«Копировать ссылку» — работает и если пересылка запрещена), или\n"
     "• ссылку-приглашение <code>https://t.me/+...</code> — тогда всем будет "
-    "выдаваться она.\n\n"
+    "выдаваться она, без одноразовых.\n\n"
     "⚠️ Чтобы бот выдавал одноразовые ссылки, добавь его в этот канал "
     "администратором с правом «Пригласительные ссылки»."
 )
@@ -396,13 +405,27 @@ async def adm_starschan_set(message: Message, config: Config,
     link: str | None = None
 
     chat = getattr(message.forward_origin, "chat", None)
-    text = (message.text or message.caption or "").strip()
+    text = (message.text or message.caption or "").strip().split(" ")[0]
+    internal = _private_link_id(text)
     if chat is not None:
         chat_id = chat.id
     elif text.lstrip("-").isdigit():
         chat_id = int(text)
+    elif internal is not None:
+        # Ссылка на пост закрытого канала: t.me/c/2233445566/78 → -1002233445566
+        chat_id = internal
     elif "t.me/" in text:
-        link = text.split()[0]
+        link = text
+    elif message.forward_origin is not None:
+        # В канале запрещено пересылать — источник скрыт, ID не узнать.
+        await message.answer(
+            "В этом канале запрещена пересылка, поэтому его ID из пересланного "
+            "поста не виден.\n\n"
+            "Открой канал → любой пост → «Копировать ссылку» и пришли её сюда "
+            "(вида <code>https://t.me/c/2233445566/78</code>) — я достану ID "
+            "из неё.",
+            reply_markup=kb.admin_back_kb())
+        return
     else:
         await message.answer(
             "Не понял. " + STARS_CHANNEL_PROMPT,
@@ -420,10 +443,13 @@ async def adm_starschan_set(message: Message, config: Config,
             status = (f"✅ Проверка пройдена: бот админ канала, одноразовые "
                       f"ссылки работают.\nПример: {check}")
         else:
-            status = ("⚠️ ID сохранён, но сделать ссылку не вышло — добавь "
-                      "бота в канал администратором с правом "
-                      "«Пригласительные ссылки». Пока покупателям будет "
-                      "уходить запасная ссылка.")
+            status = ("❌ ID сохранён, но создать приглашение не вышло — "
+                      "бот не админ этого канала.\n\n"
+                      "Добавь бота в канал администратором с правом "
+                      "«Пригласительные ссылки» и нажми эту кнопку ещё раз.\n"
+                      "Пока проверка не пройдена, оплатившим звёздами будет "
+                      "приходить «ссылку пришлёт администратор» — старый канал "
+                      "им больше не выдаётся.")
     else:
         status = ("✅ Сохранено. Одноразовые ссылки для этого канала "
                   "выдаваться не будут — всем уходит эта ссылка.")
