@@ -193,14 +193,16 @@ async def pay_stars(call: CallbackQuery, config: Config) -> None:
         reply_markup=kb.back_to_methods_kb(tariff))
     await call.answer()
     # Нативный счёт Telegram Stars: валюта XTR, provider_token пустой.
+    # Telegram обрезает счёт жёстко: title — максимум 32 символа.
+    name = tariff.stars_name
     sent = await call.bot.send_invoice(
         chat_id=call.from_user.id,
-        title=tariff.title,
-        description=f"Доступ: {tariff.title}",
+        title=name[:32],
+        description=f"Доступ: {name}"[:255],
         payload=f"stars:{tariff.id}",
         provider_token="",
         currency="XTR",
-        prices=[LabeledPrice(label=tariff.title, amount=price)],
+        prices=[LabeledPrice(label=name[:32], amount=price)],
     )
     stars_invoices[call.from_user.id] = sent.message_id
 

@@ -38,6 +38,9 @@ async def load_overrides(config: Config) -> None:
         slink = settings.get(f"stars_channel_link:{tid}")
         if slink is not None:
             tariff.stars_link = slink
+        stitle = settings.get(f"stars_title:{tid}")
+        if stitle is not None:
+            tariff.stars_title = stitle
     for name in ("card", "sbp", "stars"):
         val = settings.get(f"method:{name}")
         if val is not None:
@@ -82,6 +85,12 @@ async def set_stars_channel(config: Config, tariff_id: str, *,
     if link is not None:
         tariff.stars_link = link
         await db.set_setting(f"stars_channel_link:{tariff_id}", link)
+
+
+async def set_stars_title(config: Config, tariff_id: str, title: str) -> None:
+    """Название канала на экране оплаты звёздами. Пусто — берётся title тарифа."""
+    config.tariffs[tariff_id].stars_title = title
+    await db.set_setting(f"stars_title:{tariff_id}", title)
 
 
 async def set_method(config: Config, name: str, enabled: bool) -> None:

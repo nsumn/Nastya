@@ -344,6 +344,7 @@ async def _stars_channel_state(bot, t) -> str:
     else:
         lines.append("Канал по ID: не задан")
     lines.append(f"Запасная ссылка: {t.stars_link or '— (не задана)'}")
+    lines.append(f"На экране оплаты: «{html.escape(t.stars_name)}»")
     return "\n".join(lines)
 
 
@@ -440,6 +441,11 @@ async def adm_starschan_set(message: Message, config: Config,
 
     await settings_store.set_stars_channel(
         config, tid, channel_id=chat_id, link=link)
+    # На экране оплаты звёздами показываем название самого канала: раньше там
+    # всегда стоял title тарифа, из-за чего смена канала была не видна.
+    await settings_store.set_stars_title(
+        config, tid,
+        await services.chat_title(message.bot, chat_id) if chat_id else "")
     await state.clear()
 
     if chat_id is not None:
@@ -462,7 +468,9 @@ async def adm_starschan_set(message: Message, config: Config,
 
     await message.answer(
         f"⭐ Канал для звёзд «{tariff.button}» обновлён.\n\n"
-        f"{await _stars_channel_state(message.bot, tariff)}\n\n{status}",
+        f"{await _stars_channel_state(message.bot, tariff)}\n\n"
+        f"На экране «⭐ Telegram Stars» покупатель теперь видит "
+        f"«{html.escape(tariff.stars_name)}».\n\n{status}",
         reply_markup=kb.admin_menu_kb())
 
 

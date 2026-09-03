@@ -31,6 +31,14 @@ class Tariff:
     stars_price: int = 0       # цена в звёздах (⭐). 0 = оплата звёздами выключена
     channel_id: int = 0        # numeric id канала (СБП/карта) для одноразовых ссылок
     stars_channel_id: int = 0  # numeric id канала для звёзд
+    stars_title: str = ""      # что показывать на экране оплаты звёздами
+    #                            (пусто = title тарифа; подставляется из
+    #                            названия канала при его смене в /admin)
+
+    @property
+    def stars_name(self) -> str:
+        """Название на экране оплаты звёздами — канала, а не тарифа."""
+        return self.stars_title or self.title
 
 
 @dataclass

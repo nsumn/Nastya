@@ -89,7 +89,7 @@ def sbp_in_development() -> str:
 def stars_offer(t: Tariff, buy_stars_link: str) -> str:
     text = (
         "⭐ Оплата Telegram Stars\n\n"
-        f"Тариф: {t.title}\n\n"
+        f"Канал: {t.stars_name}\n\n"
         "После оплаты вы автоматически попадаете в канал.\n\n"
     )
     if buy_stars_link:
