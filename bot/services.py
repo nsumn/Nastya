@@ -34,6 +34,18 @@ async def make_invite(bot: Bot, chat_id: int, fallback_link: str) -> str:
         return fallback_link or "ссылку пришлёт администратор"
 
 
+async def chat_title(bot: Bot, chat_id: int) -> str:
+    """Название канала по его id — чтобы админ видел, какой канал настроен."""
+    if not chat_id:
+        return ""
+    try:
+        chat = await bot.get_chat(chat_id)
+    except Exception as e:  # noqa: BLE001
+        log.warning("get_chat failed for %s: %s", chat_id, e)
+        return ""
+    return chat.title or ""
+
+
 async def deliver_purchase(bot: Bot, config: Config, tx_id: str) -> None:
     """Выдаёт ссылку покупателю и уведомляет администратора.
 

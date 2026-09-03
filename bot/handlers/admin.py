@@ -329,14 +329,20 @@ def _private_link_id(text: str) -> int | None:
     return int(f"-100{m.group(1)}") if m else None
 
 
-def _stars_channel_state(t) -> str:
-    """Человекочитаемое описание текущего канала для звёзд."""
+async def _stars_channel_state(bot, t) -> str:
+    """Человекочитаемое описание текущего канала для звёзд.
+
+    Показываем НАЗВАНИЕ канала, а не только id: так сразу видно, что настроен
+    именно тот канал, который нужен.
+    """
     lines = []
     if t.stars_channel_id:
-        lines.append(f"ID канала: <code>{t.stars_channel_id}</code> "
+        title = await services.chat_title(bot, t.stars_channel_id)
+        name = f"«{html.escape(title)}»" if title else "название недоступно"
+        lines.append(f"Канал: {name}\nID: <code>{t.stars_channel_id}</code> "
                      f"(бот делает одноразовые ссылки сам)")
     else:
-        lines.append("ID канала: не задан")
+        lines.append("Канал по ID: не задан")
     lines.append(f"Запасная ссылка: {t.stars_link or '— (не задана)'}")
     return "\n".join(lines)
 
@@ -383,7 +389,7 @@ async def adm_starschan_pick(call: CallbackQuery, config: Config,
     await state.update_data(tid=tid)
     await call.message.edit_text(
         f"⭐ Канал для оплаты звёздами — «{tariff.button}»\n\n"
-        f"Сейчас:\n{_stars_channel_state(tariff)}\n\n"
+        f"Сейчас:\n{await _stars_channel_state(call.bot, tariff)}\n\n"
         f"{STARS_CHANNEL_PROMPT}",
         reply_markup=kb.admin_back_kb())
     await call.answer()
@@ -456,7 +462,7 @@ async def adm_starschan_set(message: Message, config: Config,
 
     await message.answer(
         f"⭐ Канал для звёзд «{tariff.button}» обновлён.\n\n"
-        f"{_stars_channel_state(tariff)}\n\n{status}",
+        f"{await _stars_channel_state(message.bot, tariff)}\n\n{status}",
         reply_markup=kb.admin_menu_kb())
 
 

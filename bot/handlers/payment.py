@@ -220,8 +220,11 @@ async def on_successful_payment(message: Message, config: Config) -> None:
     if tariff:
         link = await services.make_invite(
             message.bot, tariff.stars_channel_id, tariff.stars_link)
+        channel = await services.chat_title(
+            message.bot, tariff.stars_channel_id)
     else:
         link = ""
+        channel = ""
     await message.answer(texts.stars_delivered(link))
 
     u = message.from_user
@@ -236,6 +239,7 @@ async def on_successful_payment(message: Message, config: Config) -> None:
             config.admin_chat_id,
             f"⭐ ОПЛАТА ЗВЁЗДАМИ ПОДТВЕРЖДЕНА\n"
             f"Тариф: {title}\n"
+            f"Канал: {channel or link or '—'}\n"
             f"Сумма: {sp.total_amount} ⭐\n"
             f"От: <a href=\"tg://user?id={u.id}\">{u.full_name}</a>\n"
             f"Юзернейм: {uname}\n"
