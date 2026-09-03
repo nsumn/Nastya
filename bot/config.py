@@ -131,11 +131,15 @@ def load_config() -> Config:
             "- Распределение вариантов ОГЭ по регионам"
         ),
         channel_link=_get("PERESDACHA_CHANNEL_LINK") or channel_link,
-        stars_link=_get("PERESDACHA_CHANNEL_LINK") or stars_link,
+        # Канал для звёзд можно задать отдельно: PERESDACHA_STARS_*.
+        # Если не задан — берётся тот же канал, что и для СБП/карты.
+        stars_link=_get("PERESDACHA_STARS_CHANNEL_LINK")
+        or _get("PERESDACHA_CHANNEL_LINK") or stars_link,
         stars_price=555,
         channel_id=int(_get("PERESDACHA_CHANNEL_ID", "0") or "0")
         or int(_get("CHANNEL_ID", "0") or "0"),
-        stars_channel_id=int(_get("PERESDACHA_CHANNEL_ID", "0") or "0")
+        stars_channel_id=int(_get("PERESDACHA_STARS_CHANNEL_ID", "0") or "0")
+        or int(_get("PERESDACHA_CHANNEL_ID", "0") or "0")
         or int(_get("STARS_CHANNEL_ID", "0") or "0"),
     )
 

@@ -29,6 +29,7 @@ ADM_BTN_INVITE = "🔗 Ссылка для вступления"
 ADM_BTN_PRICE = "💰 Изменить цену"
 ADM_BTN_STARS = "⭐ Цена в звёздах"
 ADM_BTN_DESC = "📝 Описание"
+ADM_BTN_STARS_CHAN = "⭐ Канал для звёзд"
 ADM_BTN_CARD = "💳 Карта"
 ADM_BTN_METHODS = "🔧 Способы оплаты"
 ADM_BTN_PAYERS = "📋 Кто оплатил"
@@ -43,6 +44,7 @@ def admin_reply_kb() -> ReplyKeyboardMarkup:
              KeyboardButton(text=ADM_BTN_STARS)],
             [KeyboardButton(text=ADM_BTN_DESC),
              KeyboardButton(text=ADM_BTN_CARD)],
+            [KeyboardButton(text=ADM_BTN_STARS_CHAN)],
             [KeyboardButton(text=ADM_BTN_METHODS),
              KeyboardButton(text=ADM_BTN_PAYERS)],
         ],
@@ -133,6 +135,8 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
                                callback_data="adm:starsprice"))
     b.row(InlineKeyboardButton(text="📝 Изменить описание",
                                callback_data="adm:desc"))
+    b.row(InlineKeyboardButton(text="⭐ Канал для звёзд",
+                               callback_data="adm:starschan"))
     b.row(InlineKeyboardButton(text="💳 Изменить карту",
                                callback_data="adm:card"))
     b.row(InlineKeyboardButton(text="🔗 Ссылка для вступления",
@@ -166,14 +170,18 @@ def admin_back_kb() -> InlineKeyboardMarkup:
 
 
 def admin_tariff_pick_kb(config: Config, action: str) -> InlineKeyboardMarkup:
-    """Выбор тарифа для смены цены. action: 'setprice' или 'setstars'."""
+    """Выбор тарифа. action: 'setprice', 'setstars', 'setdesc',
+    'setstarschan' или 'makeinvite'."""
     b = InlineKeyboardBuilder()
     for t in config.tariffs.values():
         if action == "setprice":
             label = f"{t.button} — {t.price:g}₽"
         elif action == "setstars":
             label = f"{t.button} — {t.stars_price}⭐"
-        else:  # setdesc
+        elif action == "setstarschan":
+            mark = "id есть" if t.stars_channel_id else "по ссылке"
+            label = f"{t.button} — {mark}"
+        else:  # setdesc / makeinvite
             label = t.button
         b.row(InlineKeyboardButton(text=label,
                                    callback_data=f"adm:{action}:{t.id}"))

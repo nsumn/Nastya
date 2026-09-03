@@ -41,8 +41,11 @@ async def show_forwarded_chat_id(message: Message, config: Config) -> None:
     await message.reply(
         f"📡 Канал: {chat.title}\n"
         f"ID: <code>{chat.id}</code>\n\n"
-        "Впиши это число в .env как CHANNEL_ID (основной канал) "
-        "или STARS_CHANNEL_ID (канал для звёзд)."
+        "Канал для звёзд проще всего сменить прямо в боте: "
+        "кнопка «⭐ Канал для звёзд» в /admin — там просто перешли пост "
+        "из нужного канала.\n"
+        "Либо впиши это число в .env: CHANNEL_ID (основной канал), "
+        "STARS_CHANNEL_ID (канал для звёзд)."
     )
 
 

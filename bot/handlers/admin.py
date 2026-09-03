@@ -3,6 +3,7 @@
 /admin → меню с кнопками:
   💰 Изменить цену (RUB)      — цена тарифа везде
   ⭐ Изменить цену (звёзды)    — цена в звёздах для всех
+  ⭐ Канал для звёзд           — куда попадает оплативший звёздами
   🔧 Способы оплаты           — вкл/выкл карта/СБП/звёзды
   📋 Кто оплатил              — журнал оплат со временем
 """
@@ -28,6 +29,7 @@ class AdminSG(StatesGroup):
     price = State()
     stars_price = State()
     description = State()
+    stars_channel = State()
     card = State()
 
 
@@ -109,6 +111,17 @@ async def btn_desc(message: Message, config: Config,
     await state.clear()
     await message.answer("📝 У какого тарифа изменить описание?",
                          reply_markup=kb.admin_tariff_pick_kb(config, "setdesc"))
+
+
+@router.message(F.text == kb.ADM_BTN_STARS_CHAN)
+async def btn_stars_channel(message: Message, config: Config,
+                            state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer(
+        "⭐ У какого тарифа изменить канал для оплаты звёздами?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "setstarschan"))
 
 
 @router.message(F.text == kb.ADM_BTN_CARD)
@@ -304,6 +317,120 @@ async def adm_desc_set(message: Message, config: Config,
     await state.clear()
     await message.answer(
         f"✅ Описание «{config.tariffs[tid].button}» обновлено.",
+        reply_markup=kb.admin_menu_kb())
+
+
+# ---------- канал для оплаты звёздами ----------
+
+def _stars_channel_state(t) -> str:
+    """Человекочитаемое описание текущего канала для звёзд."""
+    lines = []
+    if t.stars_channel_id:
+        lines.append(f"ID канала: <code>{t.stars_channel_id}</code> "
+                     f"(бот делает одноразовые ссылки сам)")
+    else:
+        lines.append("ID канала: не задан")
+    lines.append(f"Запасная ссылка: {t.stars_link or '— (не задана)'}")
+    return "\n".join(lines)
+
+
+STARS_CHANNEL_PROMPT = (
+    "Пришли одним сообщением:\n"
+    "• <b>перешли любой пост из нужного канала</b> — я возьму его ID "
+    "(самый надёжный способ), или\n"
+    "• ID канала числом (например <code>-1001234567890</code>), или\n"
+    "• ссылку-приглашение <code>https://t.me/+...</code> — тогда всем будет "
+    "выдаваться она.\n\n"
+    "⚠️ Чтобы бот выдавал одноразовые ссылки, добавь его в этот канал "
+    "администратором с правом «Пригласительные ссылки»."
+)
+
+
+@router.callback_query(F.data == "adm:starschan")
+async def adm_starschan(call: CallbackQuery, config: Config,
+                        state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    await state.clear()
+    await call.message.edit_text(
+        "⭐ У какого тарифа изменить канал для оплаты звёздами?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "setstarschan"))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:setstarschan:"))
+async def adm_starschan_pick(call: CallbackQuery, config: Config,
+                             state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    tariff = config.tariffs.get(tid)
+    if tariff is None:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.stars_channel)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"⭐ Канал для оплаты звёздами — «{tariff.button}»\n\n"
+        f"Сейчас:\n{_stars_channel_state(tariff)}\n\n"
+        f"{STARS_CHANNEL_PROMPT}",
+        reply_markup=kb.admin_back_kb())
+    await call.answer()
+
+
+@router.message(StateFilter(AdminSG.stars_channel))
+async def adm_starschan_set(message: Message, config: Config,
+                            state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    tid = (await state.get_data()).get("tid")
+    tariff = config.tariffs.get(tid) if tid else None
+    if tariff is None:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+
+    chat_id: int | None = None
+    link: str | None = None
+
+    chat = getattr(message.forward_origin, "chat", None)
+    text = (message.text or message.caption or "").strip()
+    if chat is not None:
+        chat_id = chat.id
+    elif text.lstrip("-").isdigit():
+        chat_id = int(text)
+    elif "t.me/" in text:
+        link = text.split()[0]
+    else:
+        await message.answer(
+            "Не понял. " + STARS_CHANNEL_PROMPT,
+            reply_markup=kb.admin_back_kb())
+        return
+
+    await settings_store.set_stars_channel(
+        config, tid, channel_id=chat_id, link=link)
+    await state.clear()
+
+    if chat_id is not None:
+        # Сразу проверяем, что бот админ канала: пробуем сделать ссылку.
+        check = await services.make_invite(message.bot, chat_id, "")
+        if check.startswith("http"):
+            status = (f"✅ Проверка пройдена: бот админ канала, одноразовые "
+                      f"ссылки работают.\nПример: {check}")
+        else:
+            status = ("⚠️ ID сохранён, но сделать ссылку не вышло — добавь "
+                      "бота в канал администратором с правом "
+                      "«Пригласительные ссылки». Пока покупателям будет "
+                      "уходить запасная ссылка.")
+    else:
+        status = ("✅ Сохранено. Одноразовые ссылки для этого канала "
+                  "выдаваться не будут — всем уходит эта ссылка.")
+
+    await message.answer(
+        f"⭐ Канал для звёзд «{tariff.button}» обновлён.\n\n"
+        f"{_stars_channel_state(tariff)}\n\n{status}",
         reply_markup=kb.admin_menu_kb())
 
 

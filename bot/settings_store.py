@@ -1,7 +1,7 @@
 """Мост между БД-настройками и живым конфигом.
 
-Цена, цена в звёздах и включённость способов оплаты меняются администратором
-на лету: сохраняются в БД и сразу применяются к объектам в памяти (config),
+Цена, цена в звёздах, канал для звёзд и включённость способов оплаты
+меняются администратором на лету: сохраняются в БД и сразу применяются к объектам в памяти (config),
 поэтому весь остальной код просто читает tariff.price / config.methods_enabled.
 """
 from __future__ import annotations
@@ -29,6 +29,15 @@ async def load_overrides(config: Config) -> None:
         desc = settings.get(f"desc:{tid}")
         if desc is not None:
             tariff.description = desc
+        schan = settings.get(f"stars_channel_id:{tid}")
+        if schan is not None:
+            try:
+                tariff.stars_channel_id = int(schan)
+            except ValueError:
+                pass
+        slink = settings.get(f"stars_channel_link:{tid}")
+        if slink is not None:
+            tariff.stars_link = slink
     for name in ("card", "sbp", "stars"):
         val = settings.get(f"method:{name}")
         if val is not None:
@@ -46,6 +55,23 @@ async def set_price(config: Config, tariff_id: str, price: float) -> None:
 async def set_stars_price(config: Config, tariff_id: str, price: int) -> None:
     config.tariffs[tariff_id].stars_price = price
     await db.set_setting(f"stars_price:{tariff_id}", str(price))
+
+
+async def set_stars_channel(config: Config, tariff_id: str, *,
+                            channel_id: int | None = None,
+                            link: str | None = None) -> None:
+    """Меняет канал, который выдаётся после оплаты звёздами.
+
+    channel_id — numeric id канала (бот должен быть его админом), из него
+    делается одноразовая ссылка; link — запасная статичная ссылка.
+    """
+    tariff = config.tariffs[tariff_id]
+    if channel_id is not None:
+        tariff.stars_channel_id = channel_id
+        await db.set_setting(f"stars_channel_id:{tariff_id}", str(channel_id))
+    if link is not None:
+        tariff.stars_link = link
+        await db.set_setting(f"stars_channel_link:{tariff_id}", link)
 
 
 async def set_method(config: Config, name: str, enabled: bool) -> None:
