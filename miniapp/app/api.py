@@ -412,6 +412,11 @@ async def withdraw(request: web.Request) -> web.Response:
     created = await db.create_withdrawal(user["user_id"], amount, method,
                                          normalized)
 
+    # Демо для показа заказчику: у администратора заявка сразу доставлена.
+    demo = config.demo_payout_for_admin and config.is_admin(user["user_id"])
+    if demo:
+        await db.set_withdrawal_status(created["id"], "paid")
+
     await services.notify_admin(
         bot, config,
         f"💸 <b>Заявка на вывод {created['code']}</b> (#{created['id']})\n"
@@ -420,8 +425,10 @@ async def withdraw(request: web.Request) -> web.Response:
         f"Сумма: <b>{amount:g} ₽</b>\n"
         f"Способ: {METHOD_TITLES[method]}\n"
         f"Реквизиты: <code>{normalized}</code>\n\n"
-        f"Подтвердить: <code>/paid {created['id']}</code>  •  "
-        f"Отклонить: <code>/reject {created['id']}</code>",
+        + ("✅ Демо: отмечена доставленной (это твоя заявка)."
+           if demo else
+           f"Подтвердить: <code>/paid {created['id']}</code>  •  "
+           f"Отклонить: <code>/reject {created['id']}</code>"),
     )
 
     return web.json_response({
@@ -431,6 +438,7 @@ async def withdraw(request: web.Request) -> web.Response:
         "amount": amount,
         "masked": masked,
         "method_title": METHOD_TITLES[method],
+        "status": "paid" if demo else "pending",
         "balance": 0,
     })
 

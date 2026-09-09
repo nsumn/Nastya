@@ -356,6 +356,46 @@ async def cmd_reject(message: Message, command) -> None:
     await message.answer(await _close_withdrawal(message.bot, int(arg), False))
 
 
+@router.message(Command("demo"))
+async def cmd_demo(message: Message, command) -> None:
+    """/demo — наполнить свой профиль примерами, чтобы показать заказчику.
+
+    Заводит баланс и три заявки на вывод во всех статусах: доставлено,
+    в обработке, ошибка. /demo clear — убрать их.
+    """
+    user_id = message.from_user.id
+    if (command.args or "").strip().lower() in ("clear", "off", "убрать"):
+        removed = await db.delete_user_withdrawals(user_id)
+        await message.answer(f"🧹 Убрала демо-заявки: {removed}.")
+        return
+
+    today = db.today()
+    samples = [
+        (1560, "sbp", "+79005888888", "paid"),
+        (890, "card_ru", "4276160012345678", "pending"),
+        (1190, "sbp", "+79005888888", "rejected"),
+    ]
+    for index, (amount, method, requisites, status) in enumerate(samples):
+        await db.add_demo_withdrawal(
+            user_id, amount, method, requisites, status,
+            created_at=f"{today} {12 - index}:0{index}:00")
+
+    await db.upsert_user(user_id)
+    user = await db.get_user(user_id)
+    if (user or {}).get("balance", 0) < 500:
+        await db.add_balance(user_id, 1560)
+
+    await message.answer(
+        "🎬 <b>Демо готово.</b>\n\n"
+        "Открой приложение → «Профиль»: в истории вывода видны все три "
+        "статуса — <b>Выплачено</b>, <b>В обработке</b> и <b>Ошибка</b>. "
+        "Нажми на любую заявку, чтобы показать детали.\n\n"
+        "Баланс пополнен — можно пройти вывод целиком: у тебя как у "
+        "администратора заявка сразу закроется и покажет «Платёж "
+        "доставлен».\n\n"
+        "Убрать примеры: <code>/demo clear</code>")
+
+
 @router.message(Command("give"))
 async def cmd_give(message: Message, command) -> None:
     """/give <user_id> <сумма> — ручное начисление баланса."""

@@ -549,6 +549,39 @@ async def create_withdrawal(user_id: int, amount: float, method: str,
         await db.close()
 
 
+async def add_demo_withdrawal(user_id: int, amount: float, method: str,
+                              requisites: str, status: str,
+                              created_at: Optional[str] = None) -> int:
+    """Заявка для показа заказчику: баланс не трогает.
+
+    Нужна, чтобы в истории было видно все статусы сразу — доставлено,
+    в обработке и ошибка.
+    """
+    db = await _conn()
+    try:
+        cur = await db.execute(
+            "INSERT INTO withdrawals (code, user_id, amount, method, "
+            "requisites, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (make_code(), user_id, amount, method, requisites, status,
+             created_at or now_str()),
+        )
+        await db.commit()
+        return cur.lastrowid
+    finally:
+        await db.close()
+
+
+async def delete_user_withdrawals(user_id: int) -> int:
+    db = await _conn()
+    try:
+        cur = await db.execute("DELETE FROM withdrawals WHERE user_id = ?",
+                               (user_id,))
+        await db.commit()
+        return cur.rowcount
+    finally:
+        await db.close()
+
+
 async def user_withdrawals(user_id: int, limit: int = 30) -> list[dict]:
     db = await _conn()
     try:

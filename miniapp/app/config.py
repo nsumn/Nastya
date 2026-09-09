@@ -45,6 +45,10 @@ class Config:
     min_withdraw: float = 500.0
     participants_base: int = 7000
     autoapprove: bool = True
+    # Демо для заказчика: у администратора заявка на вывод сразу
+    # помечается доставленной, чтобы можно было показать этот экран.
+    # На обычных участников не влияет.
+    demo_payout_for_admin: bool = True
 
     db_path: str = "voxy.db"
     op_state_file: str = "op_state.json"
@@ -75,6 +79,7 @@ def load_config() -> Config:
         min_withdraw=float(_int("MIN_WITHDRAW", 500) or 500),
         participants_base=_int("PARTICIPANTS_BASE", 7000),
         autoapprove=_get("AUTOAPPROVE", "1") != "0",
+        demo_payout_for_admin=_get("DEMO_PAYOUT_FOR_ADMIN", "1") != "0",
         db_path=_get("DB_PATH", "voxy.db") or "voxy.db",
         op_state_file=_get("OP_STATE_FILE", "op_state.json") or "op_state.json",
         panel_bot_token=_get("PANEL_BOT_TOKEN"),

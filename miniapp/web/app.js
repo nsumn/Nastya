@@ -889,19 +889,33 @@ async function payoutPreview() {
  * партнёров, сервер отвечает 409 и присылает список каналов — показываем
  * экран «Подтвердите подписку» вместо заявки.
  */
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function createWithdrawal() {
   const { method, digits } = state.payout;
   showLoader('Создаём заявку на вывод', 'Обрабатываем данные');
   try {
-    const result = await api('/api/withdraw', {
-      method: 'POST',
-      body: { method, requisites: digits },
-    });
+    // Лоадер держим хотя бы пару секунд: иначе экран моргает и человек
+    // не успевает понять, что вообще произошло.
+    const [result] = await Promise.all([
+      api('/api/withdraw', { method: 'POST', body: { method, requisites: digits } }),
+      sleep(1800),
+    ]);
     haptic('success');
     state.data.user.balance = result.balance;
     state.profile = null;
     state.payoutGate = null;
     launchConfetti();
+
+    if (result.status === 'paid') {
+      showSuccess(
+        'Платёж доставлен',
+        `${rub(result.amount)} отправлены на ${result.method_title} `
+        + `${result.masked}. Заявка ${result.code} закрыта.`,
+        'Вернуться в профиль', 'to-profile');
+      return;
+    }
+
     showSuccess(
       'Заявка отправлена',
       'Все подписки подтверждены. Средства зарезервированы, заявка '
