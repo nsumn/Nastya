@@ -1,0 +1,16 @@
+[Unit]
+Description=VOXY telegram mini app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=voxy
+WorkingDirectory=/opt/voxy/miniapp
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/voxy/miniapp/.venv/bin/python -m app.main
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
