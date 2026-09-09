@@ -279,6 +279,30 @@ async def set_demo_totals(user_id: int, earned: float) -> None:
         await db.close()
 
 
+async def reset_user(user_id: int) -> dict[str, int]:
+    """Вернуть участника в исходное состояние.
+
+    Удаляет его ответы и заявки на вывод, обнуляет баланс и заработок —
+    задания снова становятся доступными. Трогает только этого человека.
+    """
+    db = await _conn()
+    try:
+        cur = await db.execute("DELETE FROM submissions WHERE user_id = ?",
+                               (user_id,))
+        submissions = cur.rowcount
+        cur = await db.execute("DELETE FROM withdrawals WHERE user_id = ?",
+                               (user_id,))
+        withdrawals = cur.rowcount
+        await db.execute(
+            "UPDATE users SET balance = 0, total_earned = 0 WHERE user_id = ?",
+            (user_id,),
+        )
+        await db.commit()
+        return {"submissions": submissions, "withdrawals": withdrawals}
+    finally:
+        await db.close()
+
+
 async def all_user_ids() -> list[int]:
     db = await _conn()
     try:

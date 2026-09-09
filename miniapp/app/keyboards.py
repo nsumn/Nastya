@@ -14,6 +14,7 @@ ADM_BTN_WITHDRAWALS = "💸 Выводы"
 ADM_BTN_SUBS = "🧾 Модерация"
 ADM_BTN_STATS = "📊 Статистика"
 ADM_BTN_APP = "👀 Приложение"
+ADM_BTN_RESET = "♻️ Начать заново"
 
 
 def default_button_label(config=None) -> str:
@@ -44,8 +45,17 @@ def admin_reply_kb() -> ReplyKeyboardMarkup:
              KeyboardButton(text=ADM_BTN_SUBS)],
             [KeyboardButton(text=ADM_BTN_STATS),
              KeyboardButton(text=ADM_BTN_APP)],
+            [KeyboardButton(text=ADM_BTN_RESET)],
         ],
         resize_keyboard=True)
+
+
+def reset_confirm() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="♻️ Да, начать заново", callback_data="adm:reset_yes")
+    builder.button(text="Отмена", callback_data="adm:reset_no")
+    builder.adjust(1, 1)
+    return builder.as_markup()
 
 
 def open_app(url: str, brand: str, label: str = "") -> InlineKeyboardMarkup:

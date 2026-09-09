@@ -356,6 +356,39 @@ async def cmd_reject(message: Message, command) -> None:
     await message.answer(await _close_withdrawal(message.bot, int(arg), False))
 
 
+@router.message(Command("reset"))
+@router.message(F.text == kb.ADM_BTN_RESET)
+async def cmd_reset(message: Message) -> None:
+    """Сброс своих данных, чтобы показать демо заново."""
+    await message.answer(
+        "♻️ <b>Начать заново?</b>\n\n"
+        "Удалю твои сданные задания и заявки на вывод, обнулю баланс — "
+        "все задания снова станут доступными, и можно показывать путь "
+        "с самого начала.\n\n"
+        "Другие участники не пострадают: чищу только твой аккаунт.",
+        reply_markup=kb.reset_confirm())
+
+
+@router.callback_query(F.data == "adm:reset_no")
+async def reset_cancel(call: CallbackQuery) -> None:
+    await call.answer("Отменила")
+    with contextlib.suppress(Exception):
+        await call.message.edit_text("Ничего не трогала.")
+
+
+@router.callback_query(F.data == "adm:reset_yes")
+async def reset_confirm(call: CallbackQuery) -> None:
+    removed = await db.reset_user(call.from_user.id)
+    await call.answer("Готово")
+    with contextlib.suppress(Exception):
+        await call.message.edit_text(
+            "♻️ <b>Готово, можно показывать заново.</b>\n\n"
+            f"Удалено ответов: {removed['submissions']}\n"
+            f"Удалено заявок на вывод: {removed['withdrawals']}\n"
+            "Баланс обнулён, все задания снова доступны.\n\n"
+            "Открой приложение — лента как у нового участника.")
+
+
 @router.message(Command("demo"))
 async def cmd_demo(message: Message, command) -> None:
     """/demo — наполнить свой профиль примерами, чтобы показать заказчику.
