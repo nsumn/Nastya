@@ -22,13 +22,20 @@ ss -lntp | grep 8082 || echo "порт свободен"
 ## 1. Домен на DuckDNS
 
 1. Зайти на https://www.duckdns.org, войти через Google/GitHub.
-2. Создать поддомен, например `voxy-app` → получится
-   `voxy-app.duckdns.org`.
-3. В поле **current ip** вписать IP сервера и нажать **update ip**.
+2. Создать поддомен, например `otzzzzzi` → получится
+   `otzzzzzi.duckdns.org`.
+3. IP выставить **с самого сервера** — так DuckDNS подставит правильный
+   адрес, а не адрес твоего браузера:
+
+```bash
+curl "https://www.duckdns.org/update?domains=otzzzzzi&token=ТВОЙ_ТОКЕН&ip="
+# ответ должен быть: OK
+```
+
 4. Проверить с сервера, что домен резолвится в нужный IP:
 
 ```bash
-dig +short voxy-app.duckdns.org
+dig +short otzzzzzi.duckdns.org
 ```
 
 Если IP сервера меняется, поставь автообновление (токен берётся на
@@ -37,7 +44,7 @@ duckdns.org, он на странице сверху):
 ```bash
 mkdir -p /opt/duckdns
 cat > /opt/duckdns/duck.sh <<'EOF'
-echo url="https://www.duckdns.org/update?domains=voxy-app&token=ТВОЙ_ТОКЕН&ip=" \
+echo url="https://www.duckdns.org/update?domains=otzzzzzi&token=ТВОЙ_ТОКЕН&ip=" \
   | curl -k -o /opt/duckdns/duck.log -K -
 EOF
 chmod +x /opt/duckdns/duck.sh
@@ -61,7 +68,7 @@ nano .env
 ```
 BOT_TOKEN=токен от @BotFather
 ADMIN_CHAT_ID=твой id (узнать у @userinfobot)
-PUBLIC_BASE_URL=https://voxy-app.duckdns.org
+PUBLIC_BASE_URL=https://otzzzzzi.duckdns.org
 PORT=8082
 WEBAPP_DEV=0
 ```
@@ -75,7 +82,7 @@ WEBAPP_DEV=0
 cat > /etc/nginx/sites-available/voxy <<'EOF'
 server {
     listen 80;
-    server_name voxy-app.duckdns.org;
+    server_name otzzzzzi.duckdns.org;
 
     location / {
         proxy_pass http://127.0.0.1:8082;
@@ -89,13 +96,13 @@ EOF
 ln -sf /etc/nginx/sites-available/voxy /etc/nginx/sites-enabled/voxy
 nginx -t && systemctl reload nginx
 
-certbot --nginx -d voxy-app.duckdns.org
+certbot --nginx -d otzzzzzi.duckdns.org
 ```
 
 Certbot сам допишет в конфиг 443 и сертификат. Дальше проверить:
 
 ```bash
-curl -I https://voxy-app.duckdns.org/health
+curl -I https://otzzzzzi.duckdns.org/health
 ```
 
 ## 4. Автозапуск
@@ -146,7 +153,7 @@ journalctl -u voxy -n 50 --no-pager    # последние логи
 ss -lntp | grep 8082                   # слушает ли порт
 curl -I http://127.0.0.1:8082/health   # отвечает ли локально
 nginx -t                               # цел ли конфиг nginx
-dig +short voxy-app.duckdns.org        # туда ли смотрит домен
+dig +short otzzzzzi.duckdns.org        # туда ли смотрит домен
 ```
 
 - **Мини-апп не открывается, «Открой через Telegram» или 401** — почти
