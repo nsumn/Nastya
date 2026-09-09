@@ -38,16 +38,21 @@ async def _send_entry(message: Message, config) -> None:
                              reply_markup=kb.subscribe_kb(links))
         return
 
-    if not config.webapp_url:
-        await message.answer(texts.NO_WEBAPP_URL)
-        return
-
     greeting = (await op.welcome_text()) or texts.greeting(config.brand_name)
     is_admin = config.is_admin(message.from_user.id)
     await message.answer(
         greeting,
         reply_markup=kb.admin_reply_kb() if is_admin
         else kb.main_reply_kb(label))
+
+    # Адрес мини-аппа может быть ещё не настроен: админу говорим, чего не
+    # хватает, обычному участнику — человеческую формулировку. Клавиатуру
+    # показываем в любом случае, иначе админкой не воспользоваться.
+    if not config.webapp_url:
+        await message.answer(texts.NO_WEBAPP_URL if is_admin
+                             else texts.APP_NOT_READY)
+        return
+
     await message.answer(texts.OPEN_HINT,
                          reply_markup=await _open_markup(config, label))
 
@@ -83,7 +88,9 @@ async def gate_check(call: CallbackQuery, config) -> None:
     await call.answer("Подписка подтверждена ✅")
     label = (await op.button_text()) or kb.default_button_label(config)
     if not config.webapp_url:
-        await call.message.answer(texts.NO_WEBAPP_URL)
+        await call.message.answer(
+            texts.NO_WEBAPP_URL if config.is_admin(call.from_user.id)
+            else texts.APP_NOT_READY)
         return
     await call.message.answer(
         texts.GATE_PASSED,
