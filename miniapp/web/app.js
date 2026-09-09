@@ -14,6 +14,7 @@ const state = {
   task: null,        // задание на экране выполнения
   draft: { template: null, text: '', rating: 0 },
   payout: { method: null, digits: '', error: '', preview: null },
+  payoutGate: null,  // экран «Подтвердите подписку» перед выводом
   top: null,
   profile: null,
 };
@@ -50,7 +51,7 @@ const plural = (n, one, few, many) => {
 const haptic = (type = 'light') => {
   try {
     if (!tg || !tg.HapticFeedback) return;
-    if (type === 'success' || type === 'error') {
+    if (['success', 'error', 'warning'].includes(type)) {
       tg.HapticFeedback.notificationOccurred(type);
     } else {
       tg.HapticFeedback.impactOccurred(type);
@@ -92,6 +93,7 @@ async function api(path, { method = 'GET', body } = {}) {
         : 'Что-то пошло не так. Попробуйте ещё раз.');
     const error = new Error(message);
     error.status = response.status;
+    error.payload = payload;
     throw error;
   }
   return payload;
@@ -99,8 +101,8 @@ async function api(path, { method = 'GET', body } = {}) {
 
 /* ---------- модалки ---------- */
 
-function showOverlay(html) {
-  overlayEl.innerHTML = `<div class="modal">${html}</div>`;
+function showOverlay(html, extraClass = '') {
+  overlayEl.innerHTML = `<div class="modal ${extraClass}">${html}</div>`;
   overlayEl.hidden = false;
 }
 
@@ -130,6 +132,24 @@ function showSuccess(title, text, buttonText, action) {
     <p>${esc(text)}</p>
     <button class="btn" data-action="${action}">${esc(buttonText)}</button>
   `);
+}
+
+/** Салют на успешном экране. Сам себя убирает через 3.5 секунды. */
+function launchConfetti() {
+  const colors = ['#6c4df6', '#a259f7', '#00a87e', '#f5a524', '#e5484d', '#3ba0ff'];
+  const box = document.createElement('div');
+  box.className = 'confetti';
+  for (let i = 0; i < 46; i += 1) {
+    const piece = document.createElement('i');
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDuration = `${2 + Math.random() * 1.6}s`;
+    piece.style.animationDelay = `${Math.random() * 0.5}s`;
+    piece.style.transform = `rotate(${Math.random() * 180}deg)`;
+    box.appendChild(piece);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3500);
 }
 
 /* ---------- шапка ---------- */
@@ -373,16 +393,30 @@ function viewTop() {
 function viewProfile() {
   if (!state.profile) return `${topbar()}<div class="boot"><div class="boot__spinner"></div></div>`;
 
-  const { user, done_count: doneCount, history, min_withdraw: minWithdraw } = state.profile;
+  const { user, done_count: doneCount, history, payouts,
+          min_withdraw: minWithdraw } = state.profile;
   const initial = esc((user.name || '?').trim().slice(0, 1).toUpperCase());
   const avatar = user.photo
     ? `<img class="rank__ava" src="${esc(user.photo)}" alt="">`
     : `<div class="rank__ava">${initial}</div>`;
-
   const canWithdraw = user.balance >= minWithdraw;
 
+  const cardIcon = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="2.5" y="5" width="19" height="14" rx="3.5"/><path d="M2.5 10h19"/>
+    </svg>`;
+
+  const payoutCards = payouts.map((item, index) => `
+    <div class="payout-card" data-action="payout-details" data-index="${index}">
+      <div class="payout-card__body">
+        <div class="payout-card__date">${esc(item.date)}</div>
+        <div class="payout-card__meta">${esc(item.method_title)} ${esc(item.masked)}</div>
+        <span class="badge badge--${esc(item.status)}">${esc(item.status_title)}</span>
+      </div>
+      <div class="payout-card__sum">${rub(item.amount)}</div>
+    </div>`).join('');
+
   const operations = history.map((op) => {
-    const positive = op.amount >= 0;
     const status = op.status === 'pending' ? ' • на проверке'
       : op.status === 'rejected' ? ' • отклонено' : '';
     return `
@@ -392,45 +426,97 @@ function viewProfile() {
           <div class="op__title">${esc(op.title)}</div>
           <div class="op__date">${esc(op.date)}${status}</div>
         </div>
-        <div class="op__sum ${positive ? 'plus' : 'minus'}">
-          ${positive ? '+' : '−'}${rub(Math.abs(op.amount))}
-        </div>
+        <div class="op__sum plus">+${rub(op.amount)}</div>
       </div>`;
   }).join('');
 
   return `
     ${topbar()}
-    <section class="profile-head">
+
+    <section class="profile-hero">
       ${avatar}
-      <div>
-        <div class="profile-head__name">${esc(user.name)}</div>
-        <div class="profile-head__tag">${user.username ? '@' + esc(user.username) : 'участник платформы'}</div>
+      <div class="profile-hero__name">${esc(user.name)}</div>
+      <div class="profile-hero__role">исполнитель ${esc(state.data.brand.name)}</div>
+    </section>
+
+    <section class="tiles">
+      <div class="tile tile--accent">
+        <div class="tile__label">доступно</div>
+        <div class="tile__value">${rub(user.balance)}</div>
+      </div>
+      <div class="tile">
+        <div class="tile__label">заработано всего</div>
+        <div class="tile__value">${rub(user.total_earned)}</div>
+      </div>
+      <div class="tile">
+        <div class="tile__label">заданий</div>
+        <div class="tile__value">${doneCount}</div>
       </div>
     </section>
 
-    <section class="wallet">
-      <div class="wallet__label">Доступно к выводу</div>
-      <div class="wallet__value">${rub(user.balance)}</div>
-      <button class="btn" data-action="payout" ${canWithdraw ? '' : 'disabled'}>
-        ${canWithdraw ? 'Вывести средства' : `Вывод от ${rub(minWithdraw)}`}
-      </button>
-    </section>
+    <button class="btn btn--wide" data-action="payout" ${canWithdraw ? '' : 'disabled'}>
+      ${cardIcon}
+      ${canWithdraw ? 'Вывести средства'
+        : (user.balance > 0 ? `Вывод от ${rub(minWithdraw)}` : 'Нет средств для вывода')}
+    </button>
 
-    <section class="mini-stats">
-      <div class="stat" style="--accent:var(--mint)">
-        <div class="stat__label">заработано всего</div>
-        <div class="stat__value">${rub(user.total_earned)}</div>
-      </div>
-      <div class="stat" style="--accent:var(--brand)">
-        <div class="stat__label">заданий выполнено</div>
-        <div class="stat__value">${doneCount}</div>
-      </div>
+    <section class="card">
+      <h2 class="card__title">История вывода</h2>
+      ${payouts.length ? `
+        <p class="muted-note">Нажмите на заявку, чтобы посмотреть детали</p>
+        ${payoutCards}`
+        : '<p class="empty">Заявок пока не было.<br>Накопите баланс и выведите средства.</p>'}
     </section>
 
     <section class="card">
-      <p class="section-label">История операций</p>
-      ${operations || '<p class="empty">Операций пока нет.<br>Выполните первое задание — оно появится здесь.</p>'}
+      <h2 class="card__title">История заданий</h2>
+      ${operations || '<p class="empty">Выполните первое задание — оно появится здесь.</p>'}
     </section>`;
+}
+
+/* ---------- экран: подтверждение подписки перед выводом ---------- */
+
+function viewPayoutGate() {
+  const gate = state.payoutGate || { sponsors: [] };
+  const channels = gate.sponsors.map((sponsor, index) => `
+    <a class="channel ${sponsor.subscribed ? 'is-ok' : ''}"
+       href="${esc(sponsor.url)}" target="_blank" rel="noopener">
+      <div class="channel__body">
+        <div class="channel__title">${esc(sponsor.title)}</div>
+        ${sponsor.subtitle ? `<div class="channel__sub">${esc(sponsor.subtitle)}</div>` : ''}
+      </div>
+      <div class="channel__num">${sponsor.subscribed ? '✓' : index + 1}</div>
+    </a>`).join('');
+
+  return `
+    ${topbar({ back: true })}
+
+    <section class="hero">
+      <h1>Подтвердите подписку</h1>
+    </section>
+
+    <div class="gate-note">
+      <div class="gate-note__mark">✓</div>
+      <div>
+        <div class="gate-note__title">Для подтверждения вывода</div>
+        <div class="gate-note__text">
+          Откройте каждый канал, подпишитесь и после этого нажмите
+          «Проверить подписку».
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="channels__head">
+        <h2>Каналы партнёров</h2>
+        <span class="channels__count">${gate.sponsors.length} шт.</span>
+      </div>
+      ${channels || '<p class="empty">Список каналов пуст.</p>'}
+    </section>
+
+    <div class="sticky-cta">
+      <button class="btn" data-action="check-payout-gate">Проверить подписку</button>
+    </div>`;
 }
 
 /* ---------- экран: вывод средств ---------- */
@@ -577,6 +663,7 @@ function render() {
     profile: viewProfile,
     payout: viewPayout,
     payout_confirm: viewPayoutConfirm,
+    payout_gate: viewPayoutGate,
   };
   screenEl.innerHTML = (views[state.view] || viewTasks)();
 
@@ -585,7 +672,8 @@ function render() {
     tab.classList.toggle('is-active', tab.dataset.tab === state.tab);
   });
 
-  const nested = ['task', 'payout', 'payout_confirm'].includes(state.view);
+  const nested = ['task', 'payout', 'payout_confirm', 'payout_gate']
+    .includes(state.view);
   if (tg && tg.BackButton) {
     if (nested) tg.BackButton.show(); else tg.BackButton.hide();
   }
@@ -667,6 +755,7 @@ function goTab(tab) {
 }
 
 function goBack() {
+  if (state.view === 'payout_gate') { state.view = 'payout_confirm'; render(); return; }
   if (state.view === 'payout_confirm') { state.view = 'payout'; render(); return; }
   if (state.view === 'payout') { state.tab = 'profile'; state.view = 'profile'; render(); return; }
   state.view = state.tab;  // с экрана задания — обратно в ленту
@@ -753,7 +842,12 @@ async function payoutPreview() {
   }
 }
 
-async function payoutConfirm() {
+/**
+ * Создаёт заявку на вывод. Если не подтверждена подписка на каналы
+ * партнёров, сервер отвечает 409 и присылает список каналов — показываем
+ * экран «Подтвердите подписку» вместо заявки.
+ */
+async function createWithdrawal() {
   const { method, digits } = state.payout;
   showLoader('Создаём заявку на вывод', 'Обрабатываем данные');
   try {
@@ -764,16 +858,91 @@ async function payoutConfirm() {
     haptic('success');
     state.data.user.balance = result.balance;
     state.profile = null;
+    state.payoutGate = null;
+    launchConfetti();
     showSuccess(
-      'Заявка создана',
-      `${rub(result.amount)} отправим на ${result.method_title} `
-      + `${result.masked}. Обычно занимает до 24 часов.`,
+      'Заявка отправлена',
+      'Все подписки подтверждены. Средства зарезервированы, '
+      + 'заявка находится в обработке.',
       'Вернуться в профиль', 'to-profile');
   } catch (err) {
     hideOverlay();
+    if (err.status === 409 && err.payload && err.payload.gate) {
+      haptic('warning');
+      state.payoutGate = err.payload.gate;
+      state.view = 'payout_gate';
+      render();
+      return;
+    }
     haptic('error');
     toast(err.message);
   }
+}
+
+/** Кнопка «Проверить подписку» на экране гейта перед выводом. */
+async function checkPayoutGate() {
+  showLoader('Проверяем подписку');
+  try {
+    const gate = await api('/api/subscription/check',
+                           { method: 'POST', body: { scope: 'payout' } });
+    state.payoutGate = gate;
+    hideOverlay();
+    if (gate.passed) {
+      haptic('success');
+      await createWithdrawal();
+    } else {
+      haptic('error');
+      const left = gate.left || 0;
+      toast(`Осталось подписаться: ${left} ${plural(left, 'канал', 'канала', 'каналов')}`);
+      render();
+    }
+  } catch (err) {
+    hideOverlay();
+    toast(err.message);
+  }
+}
+
+/** Карточка заявки на вывод в профиле → детали. */
+function showPayoutDetails(item) {
+  const note = item.status === 'pending'
+    ? 'Обычно обработка занимает до 72 часов.'
+    : item.status === 'paid'
+      ? 'Средства отправлены на указанные реквизиты.'
+      : 'Заявка не прошла — средства вернулись на баланс.';
+
+  showOverlay(`
+    <button class="modal__close" data-action="close-modal" aria-label="Закрыть">✕</button>
+    <div class="modal__icon">₽</div>
+    <h3>Детали заявки</h3>
+    <div class="summary">
+      <div class="summary__row">
+        <span class="summary__key">Номер заявки</span>
+        <span class="summary__val">${esc(item.code)}</span>
+      </div>
+      <div class="summary__row">
+        <span class="summary__key">Сумма</span>
+        <span class="summary__val">${rub(item.amount)}</span>
+      </div>
+      <div class="summary__row">
+        <span class="summary__key">Дата</span>
+        <span class="summary__val">${esc(item.date)}</span>
+      </div>
+      <div class="summary__row">
+        <span class="summary__key">Способ</span>
+        <span class="summary__val">${esc(item.method_title)}</span>
+      </div>
+      <div class="summary__row">
+        <span class="summary__key">Реквизиты</span>
+        <span class="summary__val">${esc(item.masked)}</span>
+      </div>
+      <div class="summary__row">
+        <span class="summary__key">Статус</span>
+        <span class="summary__val">${esc(item.status_title)}</span>
+      </div>
+    </div>
+    <p class="hint">${esc(note)}</p>
+    <button class="btn" data-action="close-modal">Закрыть</button>
+  `, 'modal--sheet');
 }
 
 /* ---------- обработчики кликов ---------- */
@@ -844,8 +1013,17 @@ document.addEventListener('click', (event) => {
   }
 
   if (action === 'preview') { payoutPreview(); return; }
+  if (action === 'check-payout-gate') { checkPayoutGate(); return; }
+
+  if (action === 'payout-details') {
+    const item = state.profile.payouts[Number(target.dataset.index)];
+    if (item) { haptic(); showPayoutDetails(item); }
+    return;
+  }
+
+  if (action === 'close-modal') { hideOverlay(); return; }
   if (action === 'payout-edit') { state.view = 'payout'; render(); return; }
-  if (action === 'payout-confirm') { payoutConfirm(); return; }
+  if (action === 'payout-confirm') { createWithdrawal(); return; }
 
   if (action === 'to-tasks') {
     hideOverlay();

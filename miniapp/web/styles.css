@@ -567,3 +567,134 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
 .sponsor__title { flex: 1; font-size: 15px; font-weight: 650; }
 .sponsor__state { font-size: 13px; font-weight: 700; color: var(--muted); }
 .sponsor.is-ok .sponsor__state { color: var(--mint); }
+
+/* ---------- профиль: плитки, кнопка, история заявок ---------- */
+
+.profile-hero { text-align: center; margin-bottom: 18px; }
+.profile-hero .rank__ava { width: 66px; height: 66px; flex: 0 0 66px;
+                           font-size: 27px; margin: 0 auto 12px; }
+.profile-hero__name { font-size: 25px; font-weight: 800; letter-spacing: -.6px; }
+.profile-hero__role { font-size: 13.5px; color: var(--muted); margin-top: 3px; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
+         margin-bottom: 14px; }
+.tile {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 14px 8px;
+  text-align: center; box-shadow: var(--shadow);
+}
+.tile--accent { background: var(--mint-soft); border-color: transparent; }
+.tile__label { font-size: 9.5px; color: var(--muted); text-transform: uppercase;
+               letter-spacing: .7px; line-height: 1.3; min-height: 24px; }
+.tile__value { font-size: 19px; font-weight: 800; letter-spacing: -.5px;
+               margin-top: 5px; }
+.tile--accent .tile__value { color: var(--mint); }
+
+.btn--wide { display: flex; align-items: center; justify-content: center;
+             gap: 9px; margin-bottom: 16px; }
+.btn--wide svg { width: 21px; height: 21px; }
+
+.muted-note { font-size: 13px; color: var(--muted); margin: -8px 0 14px; }
+
+.payout-card {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--line); border-radius: 18px;
+  background: var(--card-2); padding: 14px;
+  margin-bottom: 10px; cursor: pointer;
+  transition: border-color .15s ease, transform .12s ease;
+}
+.payout-card:last-child { margin-bottom: 0; }
+.payout-card:active { transform: scale(.99); border-color: var(--brand); }
+.payout-card__body { flex: 1; min-width: 0; }
+.payout-card__date { font-size: 14.5px; font-weight: 750; }
+.payout-card__meta { font-size: 13px; color: var(--muted); margin: 3px 0 8px; }
+.payout-card__sum { font-size: 15.5px; font-weight: 800; white-space: nowrap; }
+
+.badge {
+  display: inline-block; font-size: 11.5px; font-weight: 750;
+  padding: 5px 11px; border-radius: 99px;
+}
+.badge--pending { background: rgba(245, 165, 36, .16); color: #b8760a; }
+.badge--paid { background: var(--mint-soft); color: var(--mint); }
+.badge--rejected { background: rgba(229, 72, 77, .14); color: var(--danger); }
+body.dark .badge--pending { color: var(--amber); }
+
+/* ---------- модалка деталей ---------- */
+
+.modal--sheet { text-align: left; position: relative; }
+.modal--sheet h3 { text-align: center; }
+.modal__close {
+  position: absolute; top: 16px; right: 16px;
+  width: 34px; height: 34px; border: none; border-radius: 50%;
+  background: var(--card-2); color: var(--muted);
+  font-size: 17px; line-height: 1; cursor: pointer;
+}
+.modal__icon {
+  width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 18px;
+  background: var(--mint-soft); color: var(--mint);
+  display: grid; place-items: center; font-size: 24px; font-weight: 800;
+}
+.modal .summary { margin: 16px 0 12px; }
+.modal .hint { margin: 0 0 16px; }
+
+/* ---------- конфетти ---------- */
+
+.confetti { position: fixed; inset: 0; z-index: 25; pointer-events: none;
+            overflow: hidden; }
+.confetti i {
+  position: absolute; top: -12px; width: 9px; height: 14px;
+  border-radius: 2px; opacity: .95;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: .9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti { display: none; }
+}
+
+/* ---------- гейт перед выводом ---------- */
+
+.gate-note {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--brand-soft); border-radius: 18px;
+  padding: 15px; margin-bottom: 14px;
+}
+.gate-note__mark {
+  width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px;
+  background: var(--card); color: var(--brand);
+  display: grid; place-items: center; font-size: 17px; font-weight: 800;
+}
+.gate-note__title { font-size: 15px; font-weight: 750; margin-bottom: 3px; }
+.gate-note__text { font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; }
+
+.channels__head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+}
+.channels__head h2 { margin: 0; font-size: 21px; font-weight: 800;
+                     letter-spacing: -.4px; }
+.channels__count { font-size: 17px; font-weight: 800; color: var(--muted); }
+
+.channel {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--line); border-radius: 16px;
+  background: var(--card-2); padding: 13px 14px; margin-bottom: 9px;
+  text-decoration: none; color: inherit;
+}
+.channel:last-child { margin-bottom: 0; }
+.channel.is-ok { border-color: var(--mint); background: var(--mint-soft); }
+.channel__body { flex: 1; min-width: 0; }
+.channel__title { font-size: 15px; font-weight: 700; }
+.channel__sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.channel__num { font-size: 15px; font-weight: 800; color: var(--muted); }
+.channel.is-ok .channel__num { color: var(--mint); }
+
+.sticky-cta {
+  position: sticky; bottom: calc(84px + var(--safe-bottom));
+  margin: 14px -8px 0; padding: 10px 8px 12px; z-index: 3;
+  /* подложка, чтобы список каналов не просвечивал вокруг кнопки */
+  background: linear-gradient(to top,
+    var(--bg) 62%, color-mix(in srgb, var(--bg) 70%, transparent));
+  border-radius: 20px;
+}

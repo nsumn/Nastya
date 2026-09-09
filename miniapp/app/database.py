@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -34,6 +35,14 @@ def today() -> str:
 
 def now_str() -> str:
     return datetime.now(MSK).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def pretty_date(stamp: str) -> str:
+    """Отметка времени из базы → ДД.ММ.ГГГГ."""
+    try:
+        return datetime.strptime((stamp or "")[:10], "%Y-%m-%d").strftime("%d.%m.%Y")
+    except ValueError:
+        return (stamp or "")[:10]
 
 
 def pretty_day(day: str) -> str:
@@ -100,6 +109,7 @@ async def init_db(path: str) -> None:
 
             CREATE TABLE IF NOT EXISTS withdrawals (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                code         TEXT,
                 user_id      INTEGER NOT NULL,
                 amount       REAL NOT NULL,
                 method       TEXT NOT NULL,
@@ -113,7 +123,9 @@ async def init_db(path: str) -> None:
                 id       INTEGER PRIMARY KEY AUTOINCREMENT,
                 chat_id  TEXT NOT NULL,
                 title    TEXT NOT NULL,
+                subtitle TEXT NOT NULL DEFAULT '',
                 url      TEXT NOT NULL,
+                scope    TEXT NOT NULL DEFAULT 'entry',
                 position INTEGER NOT NULL DEFAULT 0,
                 active   INTEGER NOT NULL DEFAULT 1
             );
@@ -124,7 +136,25 @@ async def init_db(path: str) -> None:
             );
             """
         )
+        await _migrate(db)
         await db.commit()
+
+
+async def _migrate(db: aiosqlite.Connection) -> None:
+    """Добивает колонки, появившиеся после первого релиза."""
+    additions = {
+        "sponsors": {
+            "subtitle": "TEXT NOT NULL DEFAULT ''",
+            "scope": "TEXT NOT NULL DEFAULT 'entry'",
+        },
+        "withdrawals": {"code": "TEXT"},
+    }
+    for table, columns in additions.items():
+        async with db.execute(f"PRAGMA table_info({table})") as cur:
+            existing = {row[1] for row in await cur.fetchall()}
+        for column, ddl in columns.items():
+            if column not in existing:
+                await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
 
 
 # ---------- settings ----------
@@ -413,25 +443,20 @@ async def pending_submissions(limit: int = 20) -> list[dict]:
 
 
 async def user_history(user_id: int, limit: int = 30) -> list[dict]:
-    """Лента операций пользователя: сданные задания + выводы."""
+    """Лента выполненных заданий пользователя."""
     db = await _conn()
     try:
         async with db.execute(
             """
             SELECT s.id, s.created_at, s.reward AS amount, s.status,
-                   t.title AS title, t.emoji AS emoji, 'task' AS kind
+                   t.title AS title, t.emoji AS emoji
               FROM submissions s
               LEFT JOIN tasks t ON t.id = s.task_id
              WHERE s.user_id = ?
-            UNION ALL
-            SELECT w.id, w.created_at, -w.amount AS amount, w.status,
-                   'Вывод средств' AS title, '💸' AS emoji, 'withdraw' AS kind
-              FROM withdrawals w
-             WHERE w.user_id = ?
-             ORDER BY created_at DESC, id DESC
+             ORDER BY s.id DESC
              LIMIT ?
             """,
-            (user_id, user_id, limit),
+            (user_id, limit),
         ) as cur:
             return [dict(r) for r in await cur.fetchall()]
     finally:
@@ -467,21 +492,39 @@ async def leaderboard(limit: int = 50) -> list[dict]:
 
 # ---------- withdrawals ----------
 
+def make_code() -> str:
+    """Человекочитаемый номер заявки вида RO-860865."""
+    return f"RO-{secrets.randbelow(900000) + 100000}"
+
+
 async def create_withdrawal(user_id: int, amount: float, method: str,
-                            requisites: str) -> int:
+                            requisites: str) -> dict:
     db = await _conn()
     try:
+        code = make_code()
         cur = await db.execute(
-            "INSERT INTO withdrawals (user_id, amount, method, requisites) "
-            "VALUES (?, ?, ?, ?)",
-            (user_id, amount, method, requisites),
+            "INSERT INTO withdrawals (code, user_id, amount, method, requisites) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (code, user_id, amount, method, requisites),
         )
         await db.execute(
             "UPDATE users SET balance = balance - ? WHERE user_id = ?",
             (amount, user_id),
         )
         await db.commit()
-        return cur.lastrowid
+        return {"id": cur.lastrowid, "code": code}
+    finally:
+        await db.close()
+
+
+async def user_withdrawals(user_id: int, limit: int = 30) -> list[dict]:
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT * FROM withdrawals WHERE user_id = ? "
+            "ORDER BY id DESC LIMIT ?", (user_id, limit),
+        ) as cur:
+            return [dict(r) for r in await cur.fetchall()]
     finally:
         await db.close()
 
@@ -524,26 +567,56 @@ async def pending_withdrawals(limit: int = 20) -> list[dict]:
 
 # ---------- sponsors ----------
 
-async def active_sponsors() -> list[dict]:
+async def active_sponsors(scope: str = "entry") -> list[dict]:
+    """Каналы для проверки подписки. scope: entry (вход) или payout (вывод)."""
     db = await _conn()
     try:
         async with db.execute(
-            "SELECT * FROM sponsors WHERE active = 1 ORDER BY position, id"
+            "SELECT * FROM sponsors WHERE active = 1 "
+            "AND (scope = ? OR scope = 'both') ORDER BY position, id",
+            (scope,),
         ) as cur:
             return [dict(r) for r in await cur.fetchall()]
     finally:
         await db.close()
 
 
-async def add_sponsor(chat_id: str, title: str, url: str) -> int:
+async def all_sponsors() -> list[dict]:
     db = await _conn()
     try:
+        async with db.execute(
+            "SELECT * FROM sponsors ORDER BY scope, position, id"
+        ) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+    finally:
+        await db.close()
+
+
+async def add_sponsor(chat_id: str, title: str, url: str, *,
+                      subtitle: str = "", scope: str = "entry") -> int:
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT COALESCE(MAX(position), 0) + 1 AS p FROM sponsors"
+        ) as cur:
+            position = (await cur.fetchone())["p"]
         cur = await db.execute(
-            "INSERT INTO sponsors (chat_id, title, url) VALUES (?, ?, ?)",
-            (chat_id, title, url),
+            "INSERT INTO sponsors (chat_id, title, subtitle, url, scope, position) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (chat_id, title, subtitle, url, scope, position),
         )
         await db.commit()
         return cur.lastrowid
+    finally:
+        await db.close()
+
+
+async def clear_sponsors(scope: str) -> int:
+    db = await _conn()
+    try:
+        cur = await db.execute("DELETE FROM sponsors WHERE scope = ?", (scope,))
+        await db.commit()
+        return cur.rowcount
     finally:
         await db.close()
 

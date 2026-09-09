@@ -44,19 +44,29 @@ async def check_subscription(bot: Bot, user_id: int,
     return missing
 
 
-async def gate_state(bot: Bot, user_id: int) -> dict:
-    """Состояние проверки подписки для мини-аппа и бота."""
-    sponsors = await db.active_sponsors()
+async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
+    """Состояние проверки подписки.
+
+    scope="entry"  — гейт на входе в приложение;
+    scope="payout" — гейт перед созданием заявки на вывод.
+    """
+    sponsors = await db.active_sponsors(scope)
     if not sponsors:
-        return {"required": False, "passed": True, "sponsors": []}
+        return {"required": False, "passed": True, "scope": scope, "sponsors": []}
+
     missing = await check_subscription(bot, user_id, sponsors)
+    missing_ids = {item["id"] for item in missing}
     return {
         "required": True,
         "passed": not missing,
+        "scope": scope,
+        "total": len(sponsors),
+        "left": len(missing),
         "sponsors": [
-            {"id": s["id"], "title": s["title"], "url": s["url"],
-             "subscribed": all(m["id"] != s["id"] for m in missing)}
-            for s in sponsors
+            {"id": item["id"], "title": item["title"],
+             "subtitle": item.get("subtitle") or "", "url": item["url"],
+             "subscribed": item["id"] not in missing_ids}
+            for item in sponsors
         ],
     }
 

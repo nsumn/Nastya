@@ -26,6 +26,12 @@ METHOD_TITLES = {
     "card_foreign": "Иностранная карта",
 }
 
+STATUS_TITLES = {
+    "pending": "В обработке",
+    "paid": "Выплачено",
+    "rejected": "Ошибка",
+}
+
 MAX_TEXT = 1000
 
 
@@ -58,6 +64,16 @@ def validate_requisites(method: str, raw: str) -> tuple[str, str]:
         return normalized, masked
 
     raise ValueError("Неизвестный способ получения")
+
+
+def mask_stored(method: str, requisites: str) -> str:
+    """Маска для реквизитов, уже лежащих в базе."""
+    digits = _digits(requisites)
+    if not digits:
+        return "••••"
+    if method == "sbp":
+        return f"+7 ••• ••• {digits[-4:]}"
+    return f"•••• {digits[-4:]}"
 
 
 # ---------- авторизация ----------
@@ -152,9 +168,16 @@ async def bootstrap(request: web.Request) -> web.Response:
 
 
 async def check_subscription(request: web.Request) -> web.Response:
+    """Перепроверка подписки. scope: entry (вход) или payout (перед выводом)."""
     bot = request.app["bot"]
     user = await _auth(request)
-    return web.json_response(await services.gate_state(bot, user["user_id"]))
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001 — тело необязательно
+        body = {}
+    scope = "payout" if body.get("scope") == "payout" else "entry"
+    return web.json_response(
+        await services.gate_state(bot, user["user_id"], scope))
 
 
 async def submit_task(request: web.Request) -> web.Response:
@@ -244,6 +267,7 @@ async def profile(request: web.Request) -> web.Response:
     config = request.app["config"]
     user = await _auth(request)
     history = await db.user_history(user["user_id"])
+    payouts = await db.user_withdrawals(user["user_id"])
     return web.json_response({
         "user": _user_payload(user),
         "done_count": await db.user_done_count(user["user_id"]),
@@ -255,10 +279,22 @@ async def profile(request: web.Request) -> web.Response:
                 "emoji": row["emoji"] or "📝",
                 "amount": _money(row["amount"]),
                 "status": row["status"],
-                "kind": row["kind"],
                 "date": (row["created_at"] or "")[:16],
             }
             for row in history
+        ],
+        "payouts": [
+            {
+                "code": row["code"] or f"RO-{row['id']:06d}",
+                "amount": _money(row["amount"]),
+                "method": row["method"],
+                "method_title": METHOD_TITLES.get(row["method"], row["method"]),
+                "masked": mask_stored(row["method"], row["requisites"]),
+                "status": row["status"],
+                "status_title": STATUS_TITLES.get(row["status"], row["status"]),
+                "date": db.pretty_date(row["created_at"]),
+            }
+            for row in payouts
         ],
     })
 
@@ -319,23 +355,33 @@ async def withdraw(request: web.Request) -> web.Response:
     except ValueError as err:
         return web.json_response({"ok": False, "error": str(err)}, status=400)
 
-    wid = await db.create_withdrawal(user["user_id"], amount, method, normalized)
+    # Перед созданием заявки — проверка подписки на каналы партнёров.
+    gate = await services.gate_state(bot, user["user_id"], "payout")
+    if not gate["passed"]:
+        return web.json_response(
+            {"ok": False, "gate": gate,
+             "error": "Подтвердите подписку на каналы партнёров."},
+            status=409)
+
+    created = await db.create_withdrawal(user["user_id"], amount, method,
+                                         normalized)
 
     await services.notify_admin(
         bot, config,
-        f"💸 <b>Заявка на вывод #{wid}</b>\n"
+        f"💸 <b>Заявка на вывод {created['code']}</b> (#{created['id']})\n"
         f"Участник: {services.display_name(user)} "
         f"(<code>{user['user_id']}</code>)\n"
         f"Сумма: <b>{amount:g} ₽</b>\n"
         f"Способ: {METHOD_TITLES[method]}\n"
         f"Реквизиты: <code>{normalized}</code>\n\n"
-        f"Подтвердить: <code>/paid {wid}</code>  •  "
-        f"Отклонить: <code>/reject {wid}</code>",
+        f"Подтвердить: <code>/paid {created['id']}</code>  •  "
+        f"Отклонить: <code>/reject {created['id']}</code>",
     )
 
     return web.json_response({
         "ok": True,
-        "id": wid,
+        "id": created["id"],
+        "code": created["code"],
         "amount": amount,
         "masked": masked,
         "method_title": METHOD_TITLES[method],

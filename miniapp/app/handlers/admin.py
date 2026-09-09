@@ -27,6 +27,31 @@ class NewTask(StatesGroup):
 
 class NewSponsor(StatesGroup):
     payload = State()
+    bulk = State()
+
+
+def parse_sponsor_line(line: str) -> dict | None:
+    """`@channel | Название | ссылка | подзаголовок` → словарь.
+
+    Обязателен только первый элемент; название и ссылку достроим сами.
+    """
+    parts = [part.strip() for part in line.split("|")]
+    chat_id = parts[0]
+    if not chat_id:
+        return None
+    title = parts[1] if len(parts) > 1 and parts[1] else chat_id.lstrip("@")
+    if len(parts) > 2 and parts[2]:
+        url = parts[2]
+    elif chat_id.startswith("@"):
+        url = f"https://t.me/{chat_id[1:]}"
+    else:
+        return None  # для числового id ссылку не угадать
+    return {
+        "chat_id": chat_id,
+        "title": title,
+        "url": url,
+        "subtitle": parts[3] if len(parts) > 3 else "",
+    }
 
 
 def _is_admin(user_id: int, config) -> bool:
@@ -216,10 +241,18 @@ async def sponsors(call: CallbackQuery, config) -> None:
         await call.answer(texts.ADMIN_ONLY, show_alert=True)
         return
     await call.answer()
-    items = await db.active_sponsors()
-    header = ("📣 <b>Спонсоры</b>\n\nНажмите на канал, чтобы удалить его "
-              "из проверки подписки." if items else
-              "📣 <b>Спонсоры</b>\n\nСписок пуст — проверка подписки выключена.")
+    items = await db.all_sponsors()
+    if items:
+        entry = sum(1 for i in items if i["scope"] in ("entry", "both"))
+        payout = sum(1 for i in items if i["scope"] in ("payout", "both"))
+        header = (f"📣 <b>Спонсоры</b>\n\n{texts.SPONSOR_SCOPE_HINT}\n\n"
+                  f"Вход: <b>{entry}</b> • Вывод: <b>{payout}</b>\n"
+                  "Нажмите на канал, чтобы удалить его.")
+        if len(items) > 40:
+            header += f"\n\nПоказаны первые 40 из {len(items)}."
+    else:
+        header = ("📣 <b>Спонсоры</b>\n\nСписок пуст — проверка подписки "
+                  "выключена и на входе, и при выводе.")
     await _safe_edit(call, header, kb.sponsors_list(items))
 
 
@@ -233,25 +266,84 @@ async def sponsor_delete(call: CallbackQuery, config) -> None:
     await sponsors(call, config)
 
 
-@router.callback_query(F.data == "adm:sp_add")
+@router.callback_query(F.data.startswith("adm:sp_add:"))
 async def sponsor_add(call: CallbackQuery, config, state: FSMContext) -> None:
     if not _is_admin(call.from_user.id, config):
         await call.answer(texts.ADMIN_ONLY, show_alert=True)
         return
+    scope = call.data.split(":")[2]
     await call.answer()
     await state.set_state(NewSponsor.payload)
-    await call.message.answer(texts.SPONSOR_ADD)
+    await state.update_data(scope=scope)
+    await call.message.answer(texts.sponsor_add(scope))
 
 
 @router.message(NewSponsor.payload)
 async def sponsor_save(message: Message, state: FSMContext) -> None:
-    parts = [p.strip() for p in (message.text or "").split("|")]
-    if len(parts) < 3:
+    parsed = parse_sponsor_line(message.text or "")
+    if not parsed:
         await message.answer("Формат: @channel | Название | https://t.me/channel")
         return
+    scope = (await state.get_data()).get("scope", "entry")
     await state.clear()
-    await db.add_sponsor(parts[0], parts[1], parts[2])
-    await message.answer("✅ Спонсор добавлен.", reply_markup=kb.admin_panel())
+    await db.add_sponsor(scope=scope, **parsed)
+    await message.answer(
+        f"✅ Канал <b>{parsed['title']}</b> добавлен "
+        f"({texts.SCOPE_TITLES.get(scope, scope)}).",
+        reply_markup=kb.admin_panel())
+
+
+@router.callback_query(F.data == "adm:sp_bulk")
+async def sponsor_bulk(call: CallbackQuery, config) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer(texts.ADMIN_ONLY, show_alert=True)
+        return
+    await call.answer()
+    await _safe_edit(call, texts.BULK_PICK_SCOPE, kb.bulk_scope())
+
+
+@router.callback_query(F.data.startswith("adm:sp_bulk_to:"))
+async def sponsor_bulk_scope(call: CallbackQuery, config,
+                             state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer(texts.ADMIN_ONLY, show_alert=True)
+        return
+    scope = call.data.split(":")[2]
+    await call.answer()
+    await state.set_state(NewSponsor.bulk)
+    await state.update_data(scope=scope)
+    await call.message.answer(texts.bulk_add(scope))
+
+
+@router.message(NewSponsor.bulk)
+async def sponsor_bulk_save(message: Message, state: FSMContext) -> None:
+    lines = [line.strip() for line in (message.text or "").splitlines()
+             if line.strip()]
+    scope = (await state.get_data()).get("scope", "entry")
+
+    removed = 0
+    if lines and lines[0].lower() == "replace":
+        lines.pop(0)
+        removed = await db.clear_sponsors(scope)
+
+    added, skipped = 0, []
+    for line in lines:
+        parsed = parse_sponsor_line(line)
+        if not parsed:
+            skipped.append(line[:40])
+            continue
+        await db.add_sponsor(scope=scope, **parsed)
+        added += 1
+
+    await state.clear()
+    report = [f"✅ Добавлено каналов: <b>{added}</b> "
+              f"({texts.SCOPE_TITLES.get(scope, scope)})."]
+    if removed:
+        report.append(f"Удалено прежних: {removed}.")
+    if skipped:
+        report.append("Не разобрал строки:\n"
+                      + "\n".join(f"• <code>{line}</code>" for line in skipped[:10]))
+    await message.answer("\n".join(report), reply_markup=kb.admin_panel())
 
 
 # ---------- модерация ответов ----------
@@ -338,7 +430,8 @@ async def withdrawals(call: CallbackQuery, config) -> None:
     for wd in items[:10]:
         user = await db.get_user(wd["user_id"])
         await call.message.answer(
-            f"#{wd['id']} • {services.display_name(user or {})} "
+            f"{wd['code'] or '#' + str(wd['id'])} (#{wd['id']}) • "
+            f"{services.display_name(user or {})} "
             f"(<code>{wd['user_id']}</code>)\n"
             f"Сумма: <b>{wd['amount']:g} ₽</b>\n"
             f"Способ: {wd['method']}\n"
@@ -351,18 +444,19 @@ async def _close_withdrawal(bot, wid: int, paid: bool) -> str:
     if not wd or wd["status"] != "pending":
         return "Заявка не найдена или уже обработана."
     await db.set_withdrawal_status(wid, "paid" if paid else "rejected")
+    code = wd["code"] or f"#{wid}"
     if paid:
         await services.notify_user(
             bot, wd["user_id"],
-            f"💸 Заявка #{wid} на {wd['amount']:g} ₽ выплачена.")
-        return f"Заявка #{wid} отмечена как выплаченная."
+            f"💸 Заявка {code} на {wd['amount']:g} ₽ выплачена.")
+        return f"Заявка {code} отмечена как выплаченная."
 
     # Отклонили — возвращаем деньги на баланс участника.
     await db.add_balance(wd["user_id"], wd["amount"], earned=False)
     await services.notify_user(
         bot, wd["user_id"],
-        f"↩️ Заявка #{wid} отклонена, {wd['amount']:g} ₽ вернулись на баланс.")
-    return f"Заявка #{wid} отклонена, средства возвращены."
+        f"↩️ Заявка {code} отклонена, {wd['amount']:g} ₽ вернулись на баланс.")
+    return f"Заявка {code} отклонена, средства возвращены."
 
 
 @router.callback_query(F.data.startswith("adm:wd_paid:"))

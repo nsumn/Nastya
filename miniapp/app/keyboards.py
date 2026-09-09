@@ -63,15 +63,32 @@ def task_actions(task_id: int, active: bool) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+SCOPE_MARKS = {"entry": "🚪", "payout": "💸", "both": "🚪💸"}
+
+
 def sponsors_list(sponsors: list[dict]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    for sponsor in sponsors:
+    for sponsor in sponsors[:40]:
+        mark = SCOPE_MARKS.get(sponsor.get("scope", "entry"), "🚪")
         builder.row(InlineKeyboardButton(
-            text=f"🗑 {sponsor['title']}",
+            text=f"🗑 {mark} {sponsor['title']}",
             callback_data=f"adm:sp_del:{sponsor['id']}"))
-    builder.row(InlineKeyboardButton(text="➕ Добавить спонсора",
-                                     callback_data="adm:sp_add"))
+    builder.row(
+        InlineKeyboardButton(text="➕ Вход", callback_data="adm:sp_add:entry"),
+        InlineKeyboardButton(text="➕ Вывод", callback_data="adm:sp_add:payout"),
+    )
+    builder.row(InlineKeyboardButton(text="📥 Загрузить списком",
+                                     callback_data="adm:sp_bulk"))
     builder.row(InlineKeyboardButton(text="← Назад", callback_data="adm:panel"))
+    return builder.as_markup()
+
+
+def bulk_scope() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🚪 Для входа", callback_data="adm:sp_bulk_to:entry")
+    builder.button(text="💸 Для вывода", callback_data="adm:sp_bulk_to:payout")
+    builder.button(text="← Отмена", callback_data="adm:sponsors")
+    builder.adjust(2, 1)
     return builder.as_markup()
 
 
