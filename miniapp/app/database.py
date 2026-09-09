@@ -260,6 +260,25 @@ async def add_balance(user_id: int, amount: float, *, earned: bool = True) -> No
         await db.close()
 
 
+async def set_demo_totals(user_id: int, earned: float) -> None:
+    """Проставить витринному участнику фиксированный заработок.
+
+    Только для демо-записей с отрицательным id — настоящие балансы
+    так менять нельзя.
+    """
+    if user_id >= 0:
+        raise ValueError("только для витринных участников (id < 0)")
+    db = await _conn()
+    try:
+        await db.execute(
+            "UPDATE users SET total_earned = ?, balance = ? WHERE user_id = ?",
+            (earned, earned, user_id),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
 async def all_user_ids() -> list[int]:
     db = await _conn()
     try:
@@ -486,6 +505,19 @@ async def leaderboard(limit: int = 50) -> list[dict]:
             "ORDER BY total_earned DESC, user_id LIMIT ?", (limit,),
         ) as cur:
             return [dict(r) for r in await cur.fetchall()]
+    finally:
+        await db.close()
+
+
+async def count_earning_above(amount: float) -> int:
+    """Сколько участников заработали больше указанной суммы."""
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE banned = 0 AND total_earned > ?",
+            (amount,),
+        ) as cur:
+            return (await cur.fetchone())["n"]
     finally:
         await db.close()
 

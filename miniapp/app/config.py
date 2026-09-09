@@ -39,7 +39,7 @@ class Config:
     public_base_url: str = ""
     port: int = 8080
 
-    brand_name: str = "VOXY"
+    brand_name: str = "JOWS"
     brand_tagline: str = "платформа заданий"
 
     min_withdraw: float = 500.0
@@ -70,7 +70,7 @@ def load_config() -> Config:
         admin_ids=_ids("ADMIN_IDS"),
         public_base_url=_get("PUBLIC_BASE_URL"),
         port=_int("PORT", 8080) or 8080,
-        brand_name=_get("BRAND_NAME", "VOXY") or "VOXY",
+        brand_name=_get("BRAND_NAME", "JOWS") or "JOWS",
         brand_tagline=_get("BRAND_TAGLINE", "платформа заданий"),
         min_withdraw=float(_int("MIN_WITHDRAW", 500) or 500),
         participants_base=_int("PARTICIPANTS_BASE", 7000),

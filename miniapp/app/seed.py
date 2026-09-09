@@ -54,16 +54,18 @@ DEMO_TASKS = [
 ]
 
 DEMO_TOP = [
-    ("Rappthbx", 28940),
-    ("krezx1", 26780),
-    ("milotonina", 24560),
-    ("rogov12_45", 22410),
-    ("Спайпер", 20980),
-    ("Сашикссс 🍓", 18640),
-    ("nikitos_ok", 17320),
-    ("dashamm", 15870),
-    ("volkov.a", 14290),
-    ("mira_777", 12640),
+    ("Rappthbx", 52340),
+    ("krezx1", 47820),
+    ("milotonina", 43160),
+    ("rogov12_45", 38470),
+    ("Спайпер", 34980),
+    ("Сашикссс 🍓", 31640),
+    ("nikitos_ok", 28310),
+    ("dashamm", 25870),
+    ("volkov.a", 22490),
+    ("mira_777", 19640),
+    ("kirill.dev", 17280),
+    ("polina_23", 15130),
 ]
 
 
@@ -72,8 +74,8 @@ async def seed_if_empty() -> None:
         for position, task in enumerate(DEMO_TASKS):
             await db.add_task(position=position, **task)
 
-    if not await db.leaderboard(1):
-        for index, (name, earned) in enumerate(DEMO_TOP, start=1):
-            user_id = -index
-            await db.upsert_user(user_id, full_name=name)
-            await db.add_balance(user_id, earned)
+    # Витринный рейтинг обновляем при каждом старте: суммы могут поменяться,
+    # а участники всё равно ненастоящие (у них отрицательные id).
+    for index, (name, earned) in enumerate(DEMO_TOP, start=1):
+        await db.upsert_user(-index, full_name=name)
+        await db.set_demo_totals(-index, earned)

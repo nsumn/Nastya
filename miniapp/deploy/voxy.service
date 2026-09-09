@@ -1,5 +1,5 @@
 [Unit]
-Description=VOXY telegram mini app
+Description=JOWS telegram mini app
 # Токены и порт — в /opt/voxy/miniapp/.env
 After=network-online.target
 Wants=network-online.target

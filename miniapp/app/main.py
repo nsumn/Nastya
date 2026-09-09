@@ -22,7 +22,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
-log = logging.getLogger("voxy")
+log = logging.getLogger("jows")
 
 
 async def _setup_bot_ui(bot: Bot, config) -> None:

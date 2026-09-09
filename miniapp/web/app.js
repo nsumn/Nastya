@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────
-   VOXY mini app — клиентская логика.
+   JOWS mini app — клиентская логика.
    Всё состояние держим в одном объекте, экраны перерисовываем целиком:
    приложение маленькое, так проще, чем городить реактивность.
    ───────────────────────────────────────────────────────────── */
@@ -157,21 +157,27 @@ function launchConfetti() {
 function topbar({ back = false } = {}) {
   const brand = state.data.brand;
   const user = state.data.user;
-  const right = back
-    ? '<button class="ghost-btn" data-action="back">← Назад</button>'
-    : `<div class="balance">
-         <span class="balance__label">баланс</span>
-         <span class="balance__value">${rub(user.balance)}</span>
-       </div>`;
+  // Всё прижато влево: кнопка «назад», логотип, название, баланс.
   return `
     <header class="topbar">
+      ${back ? `
+        <button class="back-btn" data-action="back" aria-label="Назад">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7"/>
+          </svg>
+        </button>` : ''}
       <div class="logo">${esc(brand.name.slice(0, 1))}</div>
-      <div>
+      <div class="brand">
         <div class="brand__name">${esc(brand.name)}</div>
         <div class="brand__tag">${esc(brand.tagline)}</div>
       </div>
+      ${back ? '' : `
+        <div class="balance">
+          <span class="balance__label">баланс</span>
+          <span class="balance__value">${rub(user.balance)}</span>
+        </div>`}
       <div class="topbar__spacer"></div>
-      ${right}
     </header>`;
 }
 
@@ -281,9 +287,9 @@ function viewTasks() {
 
 /* ---------- экран: выполнение задания ---------- */
 
-function starSvg(filled) {
-  return `<svg viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}"
-               stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+function starSvg() {
+  // Цвет задаётся классом .is-on, поэтому заливка всегда currentColor.
+  return `<svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9z"/>
           </svg>`;
 }
@@ -346,7 +352,7 @@ function viewTask() {
             ${[1, 2, 3, 4, 5].map((value) => `
               <button class="star ${draft.rating >= value ? 'is-on' : ''}"
                       data-action="rate" data-value="${value}">
-                ${starSvg(draft.rating >= value)}
+                ${starSvg()}
               </button>`).join('')}
           </div>
         </div>` : ''}
@@ -362,22 +368,28 @@ function viewTask() {
 
 /* ---------- экран: рейтинг ---------- */
 
+function rankRow(row, extraClass = '') {
+  const initial = esc((row.name || '?').trim().slice(0, 1).toUpperCase());
+  const avatar = row.photo
+    ? `<img class="rank__ava" src="${esc(row.photo)}" alt="">`
+    : `<div class="rank__ava">${initial}</div>`;
+  return `
+    <div class="rank ${extraClass}">
+      <div class="rank__place">${row.place.toLocaleString('ru-RU')}</div>
+      ${avatar}
+      <div class="rank__name">${esc(row.name)}</div>
+      <div class="rank__sum">${rub(row.total)}</div>
+    </div>`;
+}
+
 function viewTop() {
   if (!state.top) return `${topbar()}<div class="boot"><div class="boot__spinner"></div></div>`;
 
-  const rows = state.top.items.map((row) => {
-    const initial = esc((row.name || '?').trim().slice(0, 1).toUpperCase());
-    const avatar = row.photo
-      ? `<img class="rank__ava" src="${esc(row.photo)}" alt="">`
-      : `<div class="rank__ava">${initial}</div>`;
-    return `
-      <div class="rank ${row.place <= 3 ? `is-top${row.place}` : ''} ${row.is_me ? "is-me" : ""}">
-        <div class="rank__place">${row.place}</div>
-        ${avatar}
-        <div class="rank__name">${esc(row.name)}</div>
-        <div class="rank__sum">${rub(row.total)}</div>
-      </div>`;
-  }).join('');
+  const { me, participants } = state.top;
+  const rows = state.top.items.map((row) => rankRow(
+    row,
+    `${row.place <= 3 ? `is-top${row.place}` : ''} ${row.is_me ? 'is-me' : ''}`,
+  )).join('');
 
   return `
     ${topbar()}
@@ -385,7 +397,20 @@ function viewTop() {
       <h1>Рейтинг</h1>
       <p>Места распределяются по общей сумме заработка за всё время.</p>
     </section>
+
+    ${me && !me.in_list ? `
+      <section class="card my-place">
+        <p class="section-label">Твоё место</p>
+        ${rankRow(me, 'is-me')}
+        <p class="my-place__note">
+          ${me.place.toLocaleString('ru-RU')} место из
+          ${participants.toLocaleString('ru-RU')} участников.
+          Выполняй задания — поднимешься выше.
+        </p>
+      </section>` : ''}
+
     <section class="card">
+      <p class="section-label">Топ участников</p>
       ${rows || '<p class="empty">Пока никто не заработал.<br>Станьте первым 🙂</p>'}
     </section>`;
 }
@@ -466,6 +491,11 @@ function viewProfile() {
       <h2 class="card__title">История вывода</h2>
       ${payouts.length ? `
         <p class="muted-note">Нажмите на заявку, чтобы посмотреть детали</p>
+        ${payouts.some((item) => item.status === 'pending') ? `
+          <div class="warn-strip">
+            ⚠️ Заявка в обработке — не отписывайтесь от каналов,
+            иначе платёж не будет отправлен.
+          </div>` : ''}
         ${payoutCards}`
         : '<p class="empty">Заявок пока не было.<br>Накопите баланс и выведите средства.</p>'}
     </section>
@@ -503,6 +533,17 @@ function viewPayoutGate() {
         <div class="gate-note__text">
           Откройте каждый канал, подпишитесь и после этого нажмите
           «Проверить подписку».
+        </div>
+      </div>
+    </div>
+
+    <div class="gate-note gate-note--warn">
+      <div class="gate-note__mark">!</div>
+      <div>
+        <div class="gate-note__title">Не отписывайтесь до выплаты</div>
+        <div class="gate-note__text">
+          Подписка проверяется ещё раз перед отправкой денег. Если отписаться
+          раньше, заявка будет отклонена, а платёж не отправлен.
         </div>
       </div>
     </div>
@@ -863,8 +904,9 @@ async function createWithdrawal() {
     launchConfetti();
     showSuccess(
       'Заявка отправлена',
-      'Все подписки подтверждены. Средства зарезервированы, '
-      + 'заявка находится в обработке.',
+      'Все подписки подтверждены. Средства зарезервированы, заявка '
+      + 'находится в обработке. Не отписывайтесь от каналов до выплаты — '
+      + 'иначе платёж не будет отправлен.',
       'Вернуться в профиль', 'to-profile');
   } catch (err) {
     hideOverlay();
@@ -905,7 +947,8 @@ async function checkPayoutGate() {
 /** Карточка заявки на вывод в профиле → детали. */
 function showPayoutDetails(item) {
   const note = item.status === 'pending'
-    ? 'Обычно обработка занимает до 72 часов.'
+    ? 'Обычно обработка занимает до 72 часов. Не отписывайтесь от каналов '
+      + 'до выплаты — иначе платёж не будет отправлен.'
     : item.status === 'paid'
       ? 'Средства отправлены на указанные реквизиты.'
       : 'Заявка не прошла — средства вернулись на баланс.';
@@ -988,7 +1031,11 @@ document.addEventListener('click', (event) => {
   if (action === 'rate') {
     state.draft.rating = Number(target.dataset.value);
     haptic();
-    render();
+    // Перерисовывать экран нельзя: он прокрутится наверх прямо под пальцем.
+    document.querySelectorAll('.star').forEach((star, index) => {
+      star.classList.toggle('is-on', index < state.draft.rating);
+    });
+    refreshTaskControls();
     return;
   }
 

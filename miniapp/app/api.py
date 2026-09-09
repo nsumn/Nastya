@@ -34,6 +34,11 @@ STATUS_TITLES = {
 
 MAX_TEXT = 1000
 
+# Сколько человек показываем в рейтинге. Список фиксированный: иначе участник
+# попадал бы в него просто потому, что записей в базе мало, и оказывался
+# «13-м из 7000».
+TOP_LIMIT = 10
+
 
 def _digits(value: str) -> str:
     return re.sub(r"\D", "", value or "")
@@ -246,20 +251,61 @@ async def submit_task(request: web.Request) -> web.Response:
     })
 
 
+def estimate_place(earned: float, top_earned: float, above: int,
+                   participants: int) -> int:
+    """Место среди ВСЕХ участников, а не только среди попавших в топ.
+
+    В таблице лежат десятки записей, а на витрине — тысячи участников.
+    Без пересчёта человек с 300 ₽ оказывался «11-м из 7000», чему никто
+    не поверит. Считаем долю от заработка лидера и растягиваем её на всю
+    аудиторию: чем больше заработал, тем выше место.
+    """
+    if earned <= 0:
+        return participants
+    share = min(earned / top_earned, 1.0) if top_earned > 0 else 1.0
+    place = round(participants * (1 - share)) or 1
+    return max(above + 1, min(place, participants))
+
+
 async def top(request: web.Request) -> web.Response:
+    config = request.app["config"]
     user = await _auth(request)
-    rows = await db.leaderboard(50)
+    rows = await db.leaderboard(TOP_LIMIT)
+    participants = config.participants_base + await db.users_count()
+
+    items = []
+    my_place = None
+    for index, row in enumerate(rows, start=1):
+        mine = row["user_id"] == user["user_id"]
+        if mine:
+            my_place = index
+        items.append({
+            "place": index,
+            "name": services.display_name(row),
+            "photo": row.get("photo_url") or "",
+            "total": _money(row["total_earned"]),
+            "is_me": mine,
+        })
+
+    earned = _money(user["total_earned"])
+    if my_place is None:
+        my_place = estimate_place(
+            earned,
+            _money(rows[0]["total_earned"]) if rows else 0,
+            await db.count_earning_above(earned),
+            participants,
+        )
+
     return web.json_response({
-        "items": [
-            {
-                "place": index,
-                "name": services.display_name(row),
-                "photo": row.get("photo_url") or "",
-                "total": _money(row["total_earned"]),
-                "is_me": row["user_id"] == user["user_id"],
-            }
-            for index, row in enumerate(rows, start=1)
-        ]
+        "items": items,
+        "participants": participants,
+        "me": {
+            "place": my_place,
+            "in_list": any(item["is_me"] for item in items),
+            "name": services.display_name(user),
+            "photo": user.get("photo_url") or "",
+            "total": earned,
+        },
     })
 
 
