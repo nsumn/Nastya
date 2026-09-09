@@ -127,6 +127,10 @@ ok "$APP_DIR/.env (токен виден только root)"
 
 # ---------- пользователь ----------
 
+# Папку отдаём служебному пользователю, а команды обновления запускают от
+# root — заранее помечаем репозиторий доверенным, иначе git ругнётся
+# «dubious ownership».
+git config --global --add safe.directory "$(cd "$APP_DIR/.." && pwd)" 2>/dev/null || true
 id -u "$USER_NAME" >/dev/null 2>&1 || useradd --system --home "$APP_DIR" "$USER_NAME"
 chown -R "$USER_NAME:$USER_NAME" "$(dirname "$APP_DIR")"
 ok "владелец файлов: $USER_NAME"
@@ -226,8 +230,8 @@ cat <<EOF
   4. /tasks — заведи реальные задания вместо демо.
 
 Полезное:
+  sudo bash $APP_DIR/deploy/update.sh      # обновиться до свежего кода
   systemctl restart $SERVICE
   journalctl -u $SERVICE -n 50 --no-pager
-  cd $(dirname "$APP_DIR") && git pull && systemctl restart $SERVICE
 
 EOF

@@ -169,9 +169,21 @@ journalctl -u voxy-panel -n 30 --no-pager
 ## Обновление
 
 ```bash
-cd /opt/voxy && git pull
-miniapp/.venv/bin/pip install -r miniapp/requirements.txt
-systemctl restart voxy voxy-panel
+sudo bash /opt/voxy/miniapp/deploy/update.sh
+```
+
+Скрипт забирает свежий код, доставляет зависимости, возвращает права
+служебному пользователю, перезапускает службы и проверяет, что приложение
+отвечает. Настройки (`.env`), база и состояние подписки не трогаются.
+
+После обновления закрой мини-апп в Telegram и открой заново — иначе
+увидишь старую страницу из кэша клиента.
+
+Если обновляешь вручную и git ругается на «dubious ownership» — папка
+принадлежит служебному пользователю, а команда запущена от root:
+
+```bash
+git config --global --add safe.directory /opt/voxy
 ```
 
 ## Если что-то не так
