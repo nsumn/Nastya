@@ -114,12 +114,32 @@ def _money(value: float) -> float:
     return round(float(value or 0), 2)
 
 
-def _user_payload(user: dict) -> dict:
+def _demo_face(config, user: dict) -> tuple[str, str, str]:
+    """Имя, фото и эмодзи-аватар с учётом демо-профиля администратора."""
+    name = services.display_name(user)
+    photo = user.get("photo_url") or ""
+    avatar = ""
+    if config.is_admin(user["user_id"]):
+        if config.demo_admin_name:
+            name = config.demo_admin_name
+        picture = (config.demo_admin_avatar or "").strip()
+        if picture.startswith("http"):
+            photo = picture
+        elif picture:
+            photo, avatar = "", picture
+    return name, photo, avatar
+
+
+def _user_payload(user: dict, config=None) -> dict:
+    name, photo, avatar = (
+        _demo_face(config, user) if config
+        else (services.display_name(user), user.get("photo_url") or "", ""))
     return {
         "id": user["user_id"],
-        "name": services.display_name(user),
+        "name": name,
         "username": user.get("username") or "",
-        "photo": user.get("photo_url") or "",
+        "photo": photo,
+        "avatar": avatar,
         "balance": _money(user["balance"]),
         "total_earned": _money(user["total_earned"]),
     }
@@ -157,7 +177,7 @@ async def bootstrap(request: web.Request) -> web.Response:
 
     return web.json_response({
         "brand": {"name": config.brand_name, "tagline": config.brand_tagline},
-        "user": _user_payload(user),
+        "user": _user_payload(user, config),
         "gate": gate,
         "day": db.pretty_day(day),
         "tasks": payload_tasks,
@@ -279,10 +299,12 @@ async def top(request: web.Request) -> web.Response:
         mine = row["user_id"] == user["user_id"]
         if mine:
             my_place = index
+        name, photo, avatar = _demo_face(config, row)
         items.append({
             "place": index,
-            "name": services.display_name(row),
-            "photo": row.get("photo_url") or "",
+            "name": name,
+            "photo": photo,
+            "avatar": avatar,
             "total": _money(row["total_earned"]),
             "is_me": mine,
         })
@@ -302,8 +324,9 @@ async def top(request: web.Request) -> web.Response:
         "me": {
             "place": my_place,
             "in_list": any(item["is_me"] for item in items),
-            "name": services.display_name(user),
-            "photo": user.get("photo_url") or "",
+            "name": _demo_face(config, user)[0],
+            "photo": _demo_face(config, user)[1],
+            "avatar": _demo_face(config, user)[2],
             "total": earned,
         },
     })
@@ -315,7 +338,7 @@ async def profile(request: web.Request) -> web.Response:
     history = await db.user_history(user["user_id"])
     payouts = await db.user_withdrawals(user["user_id"])
     return web.json_response({
-        "user": _user_payload(user),
+        "user": _user_payload(user, config),
         "done_count": await db.user_done_count(user["user_id"]),
         "min_withdraw": config.min_withdraw,
         "support": config.support_username,

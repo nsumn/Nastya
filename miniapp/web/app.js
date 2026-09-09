@@ -152,6 +152,14 @@ function launchConfetti() {
   setTimeout(() => box.remove(), 3500);
 }
 
+/** Аватар: фото из Telegram, эмодзи из настроек или первая буква имени. */
+function avatarHtml(person, cls = 'rank__ava') {
+  if (person.photo) return `<img class="${cls}" src="${esc(person.photo)}" alt="">`;
+  const face = person.avatar
+    || esc((person.name || '?').trim().slice(0, 1).toUpperCase());
+  return `<div class="${cls}">${face}</div>`;
+}
+
 /* ---------- шапка ---------- */
 
 function topbar({ back = false } = {}) {
@@ -369,10 +377,7 @@ function viewTask() {
 /* ---------- экран: рейтинг ---------- */
 
 function rankRow(row, extraClass = '') {
-  const initial = esc((row.name || '?').trim().slice(0, 1).toUpperCase());
-  const avatar = row.photo
-    ? `<img class="rank__ava" src="${esc(row.photo)}" alt="">`
-    : `<div class="rank__ava">${initial}</div>`;
+  const avatar = avatarHtml(row);
   return `
     <div class="rank ${extraClass}">
       <div class="rank__place">${row.place.toLocaleString('ru-RU')}</div>
@@ -422,10 +427,7 @@ function viewProfile() {
 
   const { user, done_count: doneCount, history, payouts,
           min_withdraw: minWithdraw } = state.profile;
-  const initial = esc((user.name || '?').trim().slice(0, 1).toUpperCase());
-  const avatar = user.photo
-    ? `<img class="rank__ava" src="${esc(user.photo)}" alt="">`
-    : `<div class="rank__ava">${initial}</div>`;
+  const avatar = avatarHtml(user);
   const canWithdraw = user.balance >= minWithdraw;
 
   const cardIcon = `
@@ -689,8 +691,14 @@ function viewPayoutConfirm() {
 
 /* ---------- рендер ---------- */
 
+let lastView = null;
+
 function render() {
   if (!state.data) return;
+  // Внутри одного экрана (раскрыли карточку задания, обновили список каналов)
+  // прокрутку сохраняем: иначе страница прыгает наверх прямо под пальцем.
+  const sameView = state.view === lastView;
+  const scroll = window.scrollY;
 
   if (!state.data.gate.passed) {
     tabbarEl.hidden = true;
@@ -720,7 +728,8 @@ function render() {
     if (nested) tg.BackButton.show(); else tg.BackButton.hide();
   }
 
-  window.scrollTo({ top: 0 });
+  window.scrollTo({ top: sameView ? scroll : 0 });
+  lastView = state.view;
   bindInputs();
 }
 
