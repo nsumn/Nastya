@@ -47,6 +47,8 @@ class Config:
     autoapprove: bool = True
 
     db_path: str = "voxy.db"
+    op_state_file: str = "op_state.json"
+    panel_bot_token: str = ""
     support_username: str = "@support"
     webapp_dev: bool = False
 
@@ -74,6 +76,8 @@ def load_config() -> Config:
         participants_base=_int("PARTICIPANTS_BASE", 7000),
         autoapprove=_get("AUTOAPPROVE", "1") != "0",
         db_path=_get("DB_PATH", "voxy.db") or "voxy.db",
+        op_state_file=_get("OP_STATE_FILE", "op_state.json") or "op_state.json",
+        panel_bot_token=_get("PANEL_BOT_TOKEN"),
         support_username=_get("SUPPORT_USERNAME", "@support"),
         webapp_dev=_get("WEBAPP_DEV", "0") == "1",
     )

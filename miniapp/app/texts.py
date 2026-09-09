@@ -14,6 +14,9 @@ def greeting(brand: str) -> str:
     )
 
 
+OPEN_HINT = "Нажми кнопку ниже, чтобы открыть приложение 👇"
+
+
 def gate_required(brand: str) -> str:
     return (
         f"🔒 <b>Доступ к {brand}</b>\n\n"
@@ -40,16 +43,25 @@ ADMIN_PANEL = "🛠 <b>Админ-панель</b>\n\nВыберите разд�
 ADMIN_ONLY = "Команда доступна только администратору."
 
 
-def admin_stats(data: dict) -> str:
+def admin_stats(data: dict, since: str = "", new_users: int = 0,
+                period_subs: int = 0) -> str:
+    period = (
+        "<b>С момента смены ссылок</b> "
+        f"({since[:16] if since else 'ссылки ещё не менялись'})\n"
+        f"🆕 Новых участников: <b>{new_users}</b>\n"
+        f"✅ Выполнено заданий: <b>{period_subs}</b>\n\n"
+    )
     return (
         "📊 <b>Статистика</b>\n\n"
-        f"Участников: <b>{data['users']}</b>\n"
-        f"Выполнено заданий: <b>{data['submissions']}</b> "
+        + period +
+        "<b>Всего</b>\n"
+        f"👥 Участников: <b>{data['users']}</b>\n"
+        f"📝 Выполнено заданий: <b>{data['submissions']}</b> "
         f"(сегодня: {data['today']})\n"
-        f"На балансах: <b>{data['balance']:g} ₽</b>\n"
-        f"Выплачено: <b>{data['paid']:g} ₽</b>\n\n"
-        f"Ждут модерации: {data['pending_sub']}\n"
-        f"Заявок на вывод: {data['pending_wd']}"
+        f"💰 На балансах: <b>{data['balance']:g} ₽</b>\n"
+        f"💸 Выплачено: <b>{data['paid']:g} ₽</b>\n\n"
+        f"⏳ Заявок на вывод: {data['pending_wd']}\n"
+        f"🧾 Ждут модерации: {data['pending_sub']}"
     )
 
 

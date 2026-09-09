@@ -2,35 +2,95 @@
 from __future__ import annotations
 
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
-                           WebAppInfo)
+                           KeyboardButton, ReplyKeyboardMarkup, WebAppInfo)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+# Подписи нижних (reply) кнопок — используются и в клавиатуре, и в фильтрах.
+BTN_APP = "🚀 Открыть приложение"
 
-def open_app(url: str, brand: str) -> InlineKeyboardMarkup:
+ADM_BTN_SPONSORS = "📢 Подписка"
+ADM_BTN_TASKS = "📋 Задания"
+ADM_BTN_WITHDRAWALS = "💸 Выводы"
+ADM_BTN_SUBS = "🧾 Модерация"
+ADM_BTN_STATS = "📊 Статистика"
+ADM_BTN_APP = "👀 Приложение"
+
+
+def default_button_label(config=None) -> str:
+    """Что написано на кнопке запуска, если владелец не задал своё."""
+    brand = getattr(config, "brand_name", "") or ""
+    return f"🚀 Открыть {brand}".strip() if brand else BTN_APP
+
+
+def main_reply_kb(label: str = "") -> ReplyKeyboardMarkup:
+    """Постоянное меню снизу.
+
+    Мини-приложение отсюда не открываем: по документации Telegram запуск
+    с кнопки клавиатуры приходит без initData, и сервер не может проверить
+    подпись. Мини-апп открывается инлайн-кнопкой и кнопкой-меню у поля ввода.
+    """
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=label or BTN_APP)]],
+        resize_keyboard=True)
+
+
+def admin_reply_kb() -> ReplyKeyboardMarkup:
+    """Нижние кнопки администратора."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=ADM_BTN_SPONSORS),
+             KeyboardButton(text=ADM_BTN_TASKS)],
+            [KeyboardButton(text=ADM_BTN_WITHDRAWALS),
+             KeyboardButton(text=ADM_BTN_SUBS)],
+            [KeyboardButton(text=ADM_BTN_STATS),
+             KeyboardButton(text=ADM_BTN_APP)],
+        ],
+        resize_keyboard=True)
+
+
+def open_app(url: str, brand: str, label: str = "") -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text=f"🚀 Открыть {brand}", web_app=WebAppInfo(url=url))
+    builder.button(text=label or f"🚀 Открыть {brand}",
+                   web_app=WebAppInfo(url=url))
     return builder.as_markup()
 
 
-def gate(sponsors: list[dict]) -> InlineKeyboardMarkup:
+def subscribe_kb(links) -> InlineKeyboardMarkup:
+    """Список каналов + кнопка «Я подписался» — то, что видит пользователь."""
     builder = InlineKeyboardBuilder()
-    for sponsor in sponsors:
-        mark = "✅" if sponsor.get("subscribed") else "📣"
-        builder.row(InlineKeyboardButton(text=f"{mark} {sponsor['title']}",
-                                         url=sponsor["url"]))
-    builder.row(InlineKeyboardButton(text="🔄 Проверить подписку",
+    for item in links:
+        builder.row(InlineKeyboardButton(text=item.title, url=item.url))
+    builder.row(InlineKeyboardButton(text="✅ Я подписался",
                                      callback_data="gate:check"))
     return builder.as_markup()
 
 
-def admin_panel() -> InlineKeyboardMarkup:
+def op_check_kb() -> InlineKeyboardMarkup:
+    """Такая же кнопка для предпросмотра у администратора."""
     builder = InlineKeyboardBuilder()
-    builder.button(text="📊 Статистика", callback_data="adm:stats")
-    builder.button(text="📋 Задания", callback_data="adm:tasks")
-    builder.button(text="💸 Выводы", callback_data="adm:wd")
-    builder.button(text="📣 Спонсоры", callback_data="adm:sponsors")
-    builder.button(text="🧾 Модерация", callback_data="adm:subs")
-    builder.adjust(2, 2, 1)
+    builder.button(text="✅ Я подписался", callback_data="sub:check")
+    return builder.as_markup()
+
+
+def op_admin_kb(is_on: bool, target: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text=f"Проверка подписки: {'✅ вкл' if is_on else '❌ выкл'}",
+        callback_data="op:toggle"))
+    builder.row(InlineKeyboardButton(
+        text=("Следующий список → 🚪 вход" if target == "entry"
+              else "Следующий список → 💸 вывод"),
+        callback_data=f"op:target:{'payout' if target == 'entry' else 'entry'}"))
+    builder.row(
+        InlineKeyboardButton(text="👀 Вход", callback_data="op:preview:entry"),
+        InlineKeyboardButton(text="👀 Вывод", callback_data="op:preview:payout"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="🗑 Очистить вход",
+                             callback_data="op:clear:entry"),
+        InlineKeyboardButton(text="🗑 Очистить вывод",
+                             callback_data="op:clear:payout"),
+    )
     return builder.as_markup()
 
 
@@ -59,35 +119,6 @@ def task_actions(task_id: int, active: bool) -> InlineKeyboardMarkup:
                    callback_data=f"adm:task_toggle:{task_id}")
     builder.button(text="🗑 Удалить", callback_data=f"adm:task_del:{task_id}")
     builder.button(text="← К списку", callback_data="adm:tasks")
-    builder.adjust(2, 1)
-    return builder.as_markup()
-
-
-SCOPE_MARKS = {"entry": "🚪", "payout": "💸", "both": "🚪💸"}
-
-
-def sponsors_list(sponsors: list[dict]) -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    for sponsor in sponsors[:40]:
-        mark = SCOPE_MARKS.get(sponsor.get("scope", "entry"), "🚪")
-        builder.row(InlineKeyboardButton(
-            text=f"🗑 {mark} {sponsor['title']}",
-            callback_data=f"adm:sp_del:{sponsor['id']}"))
-    builder.row(
-        InlineKeyboardButton(text="➕ Вход", callback_data="adm:sp_add:entry"),
-        InlineKeyboardButton(text="➕ Вывод", callback_data="adm:sp_add:payout"),
-    )
-    builder.row(InlineKeyboardButton(text="📥 Загрузить списком",
-                                     callback_data="adm:sp_bulk"))
-    builder.row(InlineKeyboardButton(text="← Назад", callback_data="adm:panel"))
-    return builder.as_markup()
-
-
-def bulk_scope() -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🚪 Для входа", callback_data="adm:sp_bulk_to:entry")
-    builder.button(text="💸 Для вывода", callback_data="adm:sp_bulk_to:payout")
-    builder.button(text="← Отмена", callback_data="adm:sponsors")
     builder.adjust(2, 1)
     return builder.as_markup()
 

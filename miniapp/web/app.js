@@ -178,12 +178,14 @@ function topbar({ back = false } = {}) {
 /* ---------- экран: проверка подписки ---------- */
 
 function viewGate() {
-  const sponsors = state.data.gate.sponsors.map((sponsor) => `
-    <a class="sponsor ${sponsor.subscribed ? 'is-ok' : ''}"
-       href="${esc(sponsor.url)}" target="_blank" rel="noopener">
-      <div class="sponsor__icon">📣</div>
-      <div class="sponsor__title">${esc(sponsor.title)}</div>
-      <div class="sponsor__state">${sponsor.subscribed ? '✓ есть' : 'подписаться'}</div>
+  const sponsors = state.data.gate.sponsors.map((sponsor, index) => `
+    <a class="sponsor" href="${esc(sponsor.url)}" target="_blank" rel="noopener">
+      <div class="sponsor__icon">${index + 1}</div>
+      <div>
+        <div class="sponsor__title">${esc(sponsor.title)}</div>
+        ${sponsor.subtitle ? `<div class="channel__sub">${esc(sponsor.subtitle)}</div>` : ''}
+      </div>
+      <div class="sponsor__state">подписаться</div>
     </a>`).join('');
 
   return `
@@ -479,13 +481,12 @@ function viewProfile() {
 function viewPayoutGate() {
   const gate = state.payoutGate || { sponsors: [] };
   const channels = gate.sponsors.map((sponsor, index) => `
-    <a class="channel ${sponsor.subscribed ? 'is-ok' : ''}"
-       href="${esc(sponsor.url)}" target="_blank" rel="noopener">
+    <a class="channel" href="${esc(sponsor.url)}" target="_blank" rel="noopener">
       <div class="channel__body">
         <div class="channel__title">${esc(sponsor.title)}</div>
         ${sponsor.subtitle ? `<div class="channel__sub">${esc(sponsor.subtitle)}</div>` : ''}
       </div>
-      <div class="channel__num">${sponsor.subscribed ? '✓' : index + 1}</div>
+      <div class="channel__num">${index + 1}</div>
     </a>`).join('');
 
   return `
@@ -782,7 +783,7 @@ async function checkGate() {
       await reload();
     } else {
       haptic('error');
-      toast('Подписка найдена не на все каналы');
+      toast('Подписка не найдена — подпишитесь и попробуйте снова');
       render();
     }
   } catch (err) {
@@ -892,8 +893,7 @@ async function checkPayoutGate() {
       await createWithdrawal();
     } else {
       haptic('error');
-      const left = gate.left || 0;
-      toast(`Осталось подписаться: ${left} ${plural(left, 'канал', 'канала', 'каналов')}`);
+      toast('Подписка не найдена — проверьте, что подписались на все каналы');
       render();
     }
   } catch (err) {

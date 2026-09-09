@@ -2,46 +2,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Iterable
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 
-from . import database as db
+from . import op
 
 log = logging.getLogger(__name__)
-
-SUBSCRIBED = {"member", "administrator", "creator"}
-
-
-def _chat_id(raw: str) -> str | int:
-    raw = (raw or "").strip()
-    if raw.lstrip("-").isdigit():
-        return int(raw)
-    return raw if raw.startswith("@") else f"@{raw}"
-
-
-async def check_subscription(bot: Bot, user_id: int,
-                             sponsors: Iterable[dict]) -> list[dict]:
-    """Возвращает список спонсоров, на которых пользователь НЕ подписан.
-
-    Если бот не может проверить канал (не админ, канал удалён) — считаем
-    подписку выполненной, чтобы не запирать пользователей навсегда.
-    """
-    missing: list[dict] = []
-    for sponsor in sponsors:
-        try:
-            member = await bot.get_chat_member(_chat_id(sponsor["chat_id"]),
-                                               user_id)
-        except TelegramAPIError as err:
-            log.warning("Не удалось проверить подписку на %s: %s",
-                        sponsor["chat_id"], err)
-            continue
-        status = getattr(member, "status", "")
-        status = getattr(status, "value", status)
-        if status not in SUBSCRIBED:
-            missing.append(sponsor)
-    return missing
 
 
 async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
@@ -49,24 +16,27 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
 
     scope="entry"  — гейт на входе в приложение;
     scope="payout" — гейт перед созданием заявки на вывод.
-    """
-    sponsors = await db.active_sponsors(scope)
-    if not sponsors:
-        return {"required": False, "passed": True, "scope": scope, "sponsors": []}
 
-    missing = await check_subscription(bot, user_id, sponsors)
-    missing_ids = {item["id"] for item in missing}
+    Список каналов показываем целиком, а подписку проверяем по одному
+    проверочному каналу: чужие каналы Telegram проверять не даёт — бот
+    должен быть их администратором.
+    """
+    if not await op.gate_active(scope):
+        return {"required": False, "passed": True, "scope": scope,
+                "total": 0, "sponsors": []}
+
+    links = await op.visible_links(bot, scope)
+
+    passed = await op.is_subscribed(bot, user_id)
     return {
         "required": True,
-        "passed": not missing,
+        "passed": passed,
         "scope": scope,
-        "total": len(sponsors),
-        "left": len(missing),
+        "total": len(links),
         "sponsors": [
-            {"id": item["id"], "title": item["title"],
-             "subtitle": item.get("subtitle") or "", "url": item["url"],
-             "subscribed": item["id"] not in missing_ids}
-            for item in sponsors
+            {"title": item.title, "subtitle": item.subtitle,
+             "url": item.url, "check": item.is_check}
+            for item in links
         ],
     }
 

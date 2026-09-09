@@ -630,6 +630,35 @@ async def delete_sponsor(sponsor_id: int) -> None:
         await db.close()
 
 
+async def count_users_since(since: str) -> int:
+    """Сколько участников пришло с указанного момента (МСК)."""
+    if not since:
+        return 0
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE created_at >= ? "
+            "AND user_id > 0", (since,),
+        ) as cur:
+            return (await cur.fetchone())["n"]
+    finally:
+        await db.close()
+
+
+async def count_submissions_since(since: str) -> int:
+    if not since:
+        return 0
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT COUNT(*) AS n FROM submissions WHERE created_at >= ?",
+            (since,),
+        ) as cur:
+            return (await cur.fetchone())["n"]
+    finally:
+        await db.close()
+
+
 # ---------- статистика для админки ----------
 
 async def stats() -> dict[str, Any]:

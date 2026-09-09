@@ -12,9 +12,10 @@ from aiogram.types import (BotCommand, MenuButtonWebApp, WebAppInfo)
 from aiohttp import web
 
 from . import database as db
+from . import op, op_store
 from .api import build_app
 from .config import load_config
-from .handlers import admin, start
+from .handlers import admin, op_admin, start
 from .seed import seed_if_empty
 
 logging.basicConfig(
@@ -32,9 +33,10 @@ async def _setup_bot_ui(bot: Bot, config) -> None:
             BotCommand(command="app", description="Задания и баланс"),
         ])
         if config.webapp_url:
+            label = (await op.button_text()) or config.brand_name
             await bot.set_chat_menu_button(
                 menu_button=MenuButtonWebApp(
-                    text=config.brand_name,
+                    text=label[:60],
                     web_app=WebAppInfo(url=config.webapp_url)))
     except TelegramAPIError as err:
         log.warning("Не удалось настроить меню бота: %s", err)
@@ -48,13 +50,18 @@ async def main() -> None:
     await db.init_db(config.db_path)
     await seed_if_empty()
 
+    # Общее состояние обязательной подписки: один файл на все боты и панель.
+    op_store.configure(config.op_state_file)
+    await op.migrate_from_db(await db.all_sponsors())
+
     bot = Bot(config.bot_token,
               default=DefaultBotProperties(parse_mode="HTML",
                                            link_preview_is_disabled=True))
 
     dp = Dispatcher()
-    dp.include_router(admin.router)
-    dp.include_router(start.router)
+    dp.include_router(admin.router)      # задания, выплаты, модерация (FSM)
+    dp.include_router(op_admin.router)   # подписка: списки ссылок от админа
+    dp.include_router(start.router)      # всё остальное — участники
 
     app = build_app(bot, config)
     runner = web.AppRunner(app)
@@ -65,6 +72,7 @@ async def main() -> None:
              config.port, config.webapp_url or "<PUBLIC_BASE_URL не задан>")
 
     await _setup_bot_ui(bot, config)
+    await op.announce(bot)
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)

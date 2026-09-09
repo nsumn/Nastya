@@ -562,9 +562,11 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
   box-shadow: var(--shadow); text-decoration: none; color: inherit;
 }
 .sponsor__icon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 13px;
-                 background: var(--brand-soft); display: grid; place-items: center;
-                 font-size: 18px; }
-.sponsor__title { flex: 1; font-size: 15px; font-weight: 650; }
+                 background: var(--brand-soft); color: var(--brand);
+                 display: grid; place-items: center;
+                 font-size: 16px; font-weight: 800; }
+.sponsor > div:nth-child(2) { flex: 1; min-width: 0; }
+.sponsor__title { font-size: 15px; font-weight: 650; }
 .sponsor__state { font-size: 13px; font-weight: 700; color: var(--muted); }
 .sponsor.is-ok .sponsor__state { color: var(--mint); }
 

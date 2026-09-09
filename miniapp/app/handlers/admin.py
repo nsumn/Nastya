@@ -1,19 +1,46 @@
-"""Админка: статистика, задания, спонсоры, модерация ответов и выплаты."""
+"""Админка: задания, модерация ответов и выплаты.
+
+Подписка и спонсоры живут в отдельном роутере (`op_admin.py`), как в
+предыдущих ботах: список каналов присылается обычным сообщением.
+
+Управление — нижними кнопками (появляются у администратора после /start)
+и командами:
+
+  /tasks   — список заданий
+  /wd      — очередь заявок на вывод
+  /subs    — очередь ответов на модерации
+  /stats   — статистика
+  /paid <id> /reject <id> — закрыть заявку на вывод
+  /give <user_id> <сумма> — начислить баланс вручную
+"""
 from __future__ import annotations
 
 import contextlib
 
 from aiogram import F, Router
-from aiogram.filters import Command
+from aiogram.filters import BaseFilter, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
 from .. import keyboards as kb
-from .. import services, texts
+from .. import op, services, texts
+from ..config import Config
 
 router = Router(name="admin")
+
+
+class IsAdmin(BaseFilter):
+    """Роутер целиком только для администратора (см. op_admin.IsAdmin)."""
+
+    async def __call__(self, event, config: Config) -> bool:
+        user = getattr(event, "from_user", None)
+        return bool(user and config.is_admin(user.id))
+
+
+router.message.filter(IsAdmin())
+router.callback_query.filter(IsAdmin())
 
 
 class NewTask(StatesGroup):
@@ -25,94 +52,65 @@ class NewTask(StatesGroup):
     templates = State()
 
 
-class NewSponsor(StatesGroup):
-    payload = State()
-    bulk = State()
-
-
-def parse_sponsor_line(line: str) -> dict | None:
-    """`@channel | Название | ссылка | подзаголовок` → словарь.
-
-    Обязателен только первый элемент; название и ссылку достроим сами.
-    """
-    parts = [part.strip() for part in line.split("|")]
-    chat_id = parts[0]
-    if not chat_id:
-        return None
-    title = parts[1] if len(parts) > 1 and parts[1] else chat_id.lstrip("@")
-    if len(parts) > 2 and parts[2]:
-        url = parts[2]
-    elif chat_id.startswith("@"):
-        url = f"https://t.me/{chat_id[1:]}"
-    else:
-        return None  # для числового id ссылку не угадать
-    return {
-        "chat_id": chat_id,
-        "title": title,
-        "url": url,
-        "subtitle": parts[3] if len(parts) > 3 else "",
-    }
-
-
-def _is_admin(user_id: int, config) -> bool:
-    return config.is_admin(user_id)
-
-
 async def _safe_edit(call: CallbackQuery, text: str, markup=None) -> None:
     with contextlib.suppress(Exception):
         await call.message.edit_text(text, reply_markup=markup)
 
 
-# ---------- вход в панель ----------
+# ---------- панель ----------
 
 @router.message(Command("admin"))
-async def cmd_admin(message: Message, config) -> None:
-    if not _is_admin(message.from_user.id, config):
-        await message.answer(texts.ADMIN_ONLY)
+async def cmd_admin(message: Message) -> None:
+    await message.answer(texts.ADMIN_PANEL, reply_markup=kb.admin_reply_kb())
+
+
+@router.message(Command("stats"))
+@router.message(F.text == kb.ADM_BTN_STATS)
+async def stats(message: Message) -> None:
+    """Статистика: за текущий период ОП и за всё время."""
+    since = await op.period_started()
+    await message.answer(texts.admin_stats(
+        await db.stats(),
+        since=since,
+        new_users=await db.count_users_since(since),
+        period_subs=await db.count_submissions_since(since),
+    ))
+
+
+@router.message(F.text == kb.ADM_BTN_APP)
+async def open_app(message: Message, config: Config) -> None:
+    if not config.webapp_url:
+        await message.answer(texts.NO_WEBAPP_URL)
         return
-    await message.answer(texts.ADMIN_PANEL, reply_markup=kb.admin_panel())
-
-
-@router.callback_query(F.data == "adm:panel")
-async def panel(call: CallbackQuery, config, state: FSMContext) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await state.clear()
-    await call.answer()
-    await _safe_edit(call, texts.ADMIN_PANEL, kb.admin_panel())
-
-
-@router.callback_query(F.data == "adm:stats")
-async def stats(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await call.answer()
-    await _safe_edit(call, texts.admin_stats(await db.stats()),
-                     kb.back_to_panel())
+    await message.answer("Мини-приложение глазами участника 👇",
+                         reply_markup=kb.open_app(config.webapp_url,
+                                                  config.brand_name))
 
 
 # ---------- задания ----------
 
+@router.message(Command("tasks"))
+@router.message(F.text == kb.ADM_BTN_TASKS)
+async def tasks_cmd(message: Message) -> None:
+    items = await db.all_tasks()
+    header = ("📋 <b>Задания</b>\n\n🟢 — активно, ⚪️ — выключено.\n"
+              "Задания без даты показываются в ленте каждый день."
+              if items else "📋 <b>Задания</b>\n\nПока пусто.")
+    await message.answer(header, reply_markup=kb.tasks_list(items))
+
+
 @router.callback_query(F.data == "adm:tasks")
-async def tasks(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await call.answer()
+async def tasks_back(call: CallbackQuery) -> None:
     items = await db.all_tasks()
     header = ("📋 <b>Задания</b>\n\n🟢 — активно, ⚪️ — выключено.\n"
               "Задания без даты показываются в ленте каждый день."
               if items else "📋 <b>Задания</b>\n\nПока пусто.")
     await _safe_edit(call, header, kb.tasks_list(items))
+    await call.answer()
 
 
 @router.callback_query(F.data.startswith("adm:task:"))
-async def task_card(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def task_card(call: CallbackQuery) -> None:
     task = await db.get_task(int(call.data.split(":")[2]))
     if not task:
         await call.answer("Задание не найдено", show_alert=True)
@@ -133,33 +131,24 @@ async def task_card(call: CallbackQuery, config) -> None:
 
 
 @router.callback_query(F.data.startswith("adm:task_toggle:"))
-async def task_toggle(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def task_toggle(call: CallbackQuery) -> None:
     task_id = int(call.data.split(":")[2])
     task = await db.get_task(task_id)
     if task:
         await db.set_task_active(task_id, not task["active"])
     await call.answer("Готово")
-    await tasks(call, config)
+    await tasks_back(call)
 
 
 @router.callback_query(F.data.startswith("adm:task_del:"))
-async def task_delete(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def task_delete(call: CallbackQuery) -> None:
     await db.delete_task(int(call.data.split(":")[2]))
     await call.answer("Задание удалено")
-    await tasks(call, config)
+    await tasks_back(call)
 
 
 @router.callback_query(F.data == "adm:task_add")
-async def task_add(call: CallbackQuery, config, state: FSMContext) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def task_add(call: CallbackQuery, state: FSMContext) -> None:
     await call.answer()
     await state.set_state(NewTask.title)
     await call.message.answer(texts.TASK_ADD_TITLE)
@@ -230,142 +219,24 @@ async def task_add_templates(message: Message, state: FSMContext) -> None:
     )
     await message.answer(
         f"✅ Задание #{task_id} добавлено и уже видно в приложении.",
-        reply_markup=kb.admin_panel())
-
-
-# ---------- спонсоры ----------
-
-@router.callback_query(F.data == "adm:sponsors")
-async def sponsors(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await call.answer()
-    items = await db.all_sponsors()
-    if items:
-        entry = sum(1 for i in items if i["scope"] in ("entry", "both"))
-        payout = sum(1 for i in items if i["scope"] in ("payout", "both"))
-        header = (f"📣 <b>Спонсоры</b>\n\n{texts.SPONSOR_SCOPE_HINT}\n\n"
-                  f"Вход: <b>{entry}</b> • Вывод: <b>{payout}</b>\n"
-                  "Нажмите на канал, чтобы удалить его.")
-        if len(items) > 40:
-            header += f"\n\nПоказаны первые 40 из {len(items)}."
-    else:
-        header = ("📣 <b>Спонсоры</b>\n\nСписок пуст — проверка подписки "
-                  "выключена и на входе, и при выводе.")
-    await _safe_edit(call, header, kb.sponsors_list(items))
-
-
-@router.callback_query(F.data.startswith("adm:sp_del:"))
-async def sponsor_delete(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await db.delete_sponsor(int(call.data.split(":")[2]))
-    await call.answer("Удалено")
-    await sponsors(call, config)
-
-
-@router.callback_query(F.data.startswith("adm:sp_add:"))
-async def sponsor_add(call: CallbackQuery, config, state: FSMContext) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    scope = call.data.split(":")[2]
-    await call.answer()
-    await state.set_state(NewSponsor.payload)
-    await state.update_data(scope=scope)
-    await call.message.answer(texts.sponsor_add(scope))
-
-
-@router.message(NewSponsor.payload)
-async def sponsor_save(message: Message, state: FSMContext) -> None:
-    parsed = parse_sponsor_line(message.text or "")
-    if not parsed:
-        await message.answer("Формат: @channel | Название | https://t.me/channel")
-        return
-    scope = (await state.get_data()).get("scope", "entry")
-    await state.clear()
-    await db.add_sponsor(scope=scope, **parsed)
-    await message.answer(
-        f"✅ Канал <b>{parsed['title']}</b> добавлен "
-        f"({texts.SCOPE_TITLES.get(scope, scope)}).",
-        reply_markup=kb.admin_panel())
-
-
-@router.callback_query(F.data == "adm:sp_bulk")
-async def sponsor_bulk(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await call.answer()
-    await _safe_edit(call, texts.BULK_PICK_SCOPE, kb.bulk_scope())
-
-
-@router.callback_query(F.data.startswith("adm:sp_bulk_to:"))
-async def sponsor_bulk_scope(call: CallbackQuery, config,
-                             state: FSMContext) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    scope = call.data.split(":")[2]
-    await call.answer()
-    await state.set_state(NewSponsor.bulk)
-    await state.update_data(scope=scope)
-    await call.message.answer(texts.bulk_add(scope))
-
-
-@router.message(NewSponsor.bulk)
-async def sponsor_bulk_save(message: Message, state: FSMContext) -> None:
-    lines = [line.strip() for line in (message.text or "").splitlines()
-             if line.strip()]
-    scope = (await state.get_data()).get("scope", "entry")
-
-    removed = 0
-    if lines and lines[0].lower() == "replace":
-        lines.pop(0)
-        removed = await db.clear_sponsors(scope)
-
-    added, skipped = 0, []
-    for line in lines:
-        parsed = parse_sponsor_line(line)
-        if not parsed:
-            skipped.append(line[:40])
-            continue
-        await db.add_sponsor(scope=scope, **parsed)
-        added += 1
-
-    await state.clear()
-    report = [f"✅ Добавлено каналов: <b>{added}</b> "
-              f"({texts.SCOPE_TITLES.get(scope, scope)})."]
-    if removed:
-        report.append(f"Удалено прежних: {removed}.")
-    if skipped:
-        report.append("Не разобрал строки:\n"
-                      + "\n".join(f"• <code>{line}</code>" for line in skipped[:10]))
-    await message.answer("\n".join(report), reply_markup=kb.admin_panel())
+        reply_markup=kb.admin_reply_kb())
 
 
 # ---------- модерация ответов ----------
 
-@router.callback_query(F.data == "adm:subs")
-async def subs(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await call.answer()
+@router.message(Command("subs"))
+@router.message(F.text == kb.ADM_BTN_SUBS)
+async def subs(message: Message) -> None:
     items = await db.pending_submissions()
     if not items:
-        await _safe_edit(call, "🧾 <b>Модерация</b>\n\nНет ответов в очереди.",
-                         kb.back_to_panel())
+        await message.answer("🧾 <b>Модерация</b>\n\nНет ответов в очереди.")
         return
 
-    await _safe_edit(call, f"🧾 <b>Модерация</b>\n\nВ очереди: {len(items)}",
-                     kb.back_to_panel())
+    await message.answer(f"🧾 <b>Модерация</b>\n\nВ очереди: {len(items)}")
     for sub in items[:10]:
         task = await db.get_task(sub["task_id"])
         user = await db.get_user(sub["user_id"])
-        await call.message.answer(
+        await message.answer(
             f"#{sub['id']} • {services.display_name(user or {})} "
             f"(<code>{sub['user_id']}</code>)\n"
             f"{(task or {}).get('title', 'задание')} — {sub['reward']:g} ₽\n"
@@ -375,10 +246,7 @@ async def subs(call: CallbackQuery, config) -> None:
 
 
 @router.callback_query(F.data.startswith("adm:sub_ok:"))
-async def sub_approve(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def sub_approve(call: CallbackQuery) -> None:
     sub = await db.get_submission(int(call.data.split(":")[2]))
     if not sub or sub["status"] != "pending":
         await call.answer("Уже обработано", show_alert=True)
@@ -394,10 +262,7 @@ async def sub_approve(call: CallbackQuery, config) -> None:
 
 
 @router.callback_query(F.data.startswith("adm:sub_no:"))
-async def sub_reject(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def sub_reject(call: CallbackQuery) -> None:
     sub = await db.get_submission(int(call.data.split(":")[2]))
     if not sub or sub["status"] != "pending":
         await call.answer("Уже обработано", show_alert=True)
@@ -413,23 +278,18 @@ async def sub_reject(call: CallbackQuery, config) -> None:
 
 # ---------- выплаты ----------
 
-@router.callback_query(F.data == "adm:wd")
-async def withdrawals(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
-    await call.answer()
+@router.message(Command("wd"))
+@router.message(F.text == kb.ADM_BTN_WITHDRAWALS)
+async def withdrawals(message: Message) -> None:
     items = await db.pending_withdrawals()
     if not items:
-        await _safe_edit(call, "💸 <b>Выводы</b>\n\nНет заявок в очереди.",
-                         kb.back_to_panel())
+        await message.answer("💸 <b>Выводы</b>\n\nНет заявок в очереди.")
         return
 
-    await _safe_edit(call, f"💸 <b>Выводы</b>\n\nВ очереди: {len(items)}",
-                     kb.back_to_panel())
+    await message.answer(f"💸 <b>Выводы</b>\n\nВ очереди: {len(items)}")
     for wd in items[:10]:
         user = await db.get_user(wd["user_id"])
-        await call.message.answer(
+        await message.answer(
             f"{wd['code'] or '#' + str(wd['id'])} (#{wd['id']}) • "
             f"{services.display_name(user or {})} "
             f"(<code>{wd['user_id']}</code>)\n"
@@ -444,6 +304,7 @@ async def _close_withdrawal(bot, wid: int, paid: bool) -> str:
     if not wd or wd["status"] != "pending":
         return "Заявка не найдена или уже обработана."
     await db.set_withdrawal_status(wid, "paid" if paid else "rejected")
+
     code = wd["code"] or f"#{wid}"
     if paid:
         await services.notify_user(
@@ -460,10 +321,7 @@ async def _close_withdrawal(bot, wid: int, paid: bool) -> str:
 
 
 @router.callback_query(F.data.startswith("adm:wd_paid:"))
-async def wd_paid(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def wd_paid(call: CallbackQuery) -> None:
     result = await _close_withdrawal(call.bot, int(call.data.split(":")[2]), True)
     await call.answer(result, show_alert=True)
     with contextlib.suppress(Exception):
@@ -471,10 +329,7 @@ async def wd_paid(call: CallbackQuery, config) -> None:
 
 
 @router.callback_query(F.data.startswith("adm:wd_reject:"))
-async def wd_reject(call: CallbackQuery, config) -> None:
-    if not _is_admin(call.from_user.id, config):
-        await call.answer(texts.ADMIN_ONLY, show_alert=True)
-        return
+async def wd_reject(call: CallbackQuery) -> None:
     result = await _close_withdrawal(call.bot, int(call.data.split(":")[2]), False)
     await call.answer(result, show_alert=True)
     with contextlib.suppress(Exception):
@@ -482,38 +337,34 @@ async def wd_reject(call: CallbackQuery, config) -> None:
 
 
 @router.message(Command("paid"))
-async def cmd_paid(message: Message, config) -> None:
-    if not _is_admin(message.from_user.id, config):
+async def cmd_paid(message: Message, command) -> None:
+    arg = (command.args or "").strip()
+    if not arg.isdigit():
+        await message.answer("Использование: <code>/paid 12</code>\n"
+                             "Список заявок — /wd")
         return
-    parts = (message.text or "").split()
-    if len(parts) < 2 or not parts[1].isdigit():
-        await message.answer("Использование: /paid &lt;id заявки&gt;")
-        return
-    await message.answer(await _close_withdrawal(message.bot, int(parts[1]), True))
+    await message.answer(await _close_withdrawal(message.bot, int(arg), True))
 
 
 @router.message(Command("reject"))
-async def cmd_reject(message: Message, config) -> None:
-    if not _is_admin(message.from_user.id, config):
+async def cmd_reject(message: Message, command) -> None:
+    arg = (command.args or "").strip()
+    if not arg.isdigit():
+        await message.answer("Использование: <code>/reject 12</code>\n"
+                             "Список заявок — /wd")
         return
-    parts = (message.text or "").split()
-    if len(parts) < 2 or not parts[1].isdigit():
-        await message.answer("Использование: /reject &lt;id заявки&gt;")
-        return
-    await message.answer(await _close_withdrawal(message.bot, int(parts[1]), False))
+    await message.answer(await _close_withdrawal(message.bot, int(arg), False))
 
 
 @router.message(Command("give"))
-async def cmd_give(message: Message, config) -> None:
+async def cmd_give(message: Message, command) -> None:
     """/give <user_id> <сумма> — ручное начисление баланса."""
-    if not _is_admin(message.from_user.id, config):
-        return
-    parts = (message.text or "").split()
-    if len(parts) < 3:
-        await message.answer("Использование: /give &lt;user_id&gt; &lt;сумма&gt;")
+    parts = (command.args or "").split()
+    if len(parts) < 2:
+        await message.answer("Использование: <code>/give 123456 500</code>")
         return
     try:
-        user_id, amount = int(parts[1]), float(parts[2].replace(",", "."))
+        user_id, amount = int(parts[0]), float(parts[1].replace(",", "."))
     except ValueError:
         await message.answer("Не понял параметры. Пример: /give 123456 500")
         return

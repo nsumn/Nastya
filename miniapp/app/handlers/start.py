@@ -1,4 +1,4 @@
-"""Приветствие, проверка подписки на спонсоров и кнопка запуска мини-аппа."""
+"""Приветствие, гейт подписки и кнопка запуска мини-аппа."""
 from __future__ import annotations
 
 from aiogram import F, Router
@@ -7,7 +7,7 @@ from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
 from .. import keyboards as kb
-from .. import services, texts
+from .. import op, texts
 
 router = Router(name="start")
 
@@ -21,56 +21,70 @@ async def _remember(message: Message) -> None:
     )
 
 
-async def _send_entry(target: Message, config, user_id: int,
-                      edit: bool = False) -> None:
+async def _open_markup(config, label: str):
+    if not config.webapp_url:
+        return None
+    return kb.open_app(config.webapp_url, config.brand_name, label)
+
+
+async def _send_entry(message: Message, config) -> None:
     """Показывает гейт подписки либо кнопку «Открыть приложение»."""
-    gate = await services.gate_state(target.bot, user_id)
+    label = (await op.button_text()) or kb.default_button_label(config)
 
-    if not gate["passed"]:
-        text = texts.gate_required(config.brand_name)
-        markup = kb.gate(gate["sponsors"])
-    elif not config.webapp_url:
-        text = texts.NO_WEBAPP_URL
-        markup = None
-    else:
-        text = texts.greeting(config.brand_name)
-        markup = kb.open_app(config.webapp_url, config.brand_name)
+    gate_on = await op.gate_active("entry")
+    if gate_on and not await op.is_subscribed(message.bot, message.from_user.id):
+        links = await op.visible_links(message.bot, "entry")
+        await message.answer(await op.gate_text(message.bot, "entry"),
+                             reply_markup=kb.subscribe_kb(links))
+        return
 
-    if edit:
-        await target.edit_text(text, reply_markup=markup)
-    else:
-        await target.answer(text, reply_markup=markup)
+    if not config.webapp_url:
+        await message.answer(texts.NO_WEBAPP_URL)
+        return
+
+    greeting = (await op.welcome_text()) or texts.greeting(config.brand_name)
+    is_admin = config.is_admin(message.from_user.id)
+    await message.answer(
+        greeting,
+        reply_markup=kb.admin_reply_kb() if is_admin
+        else kb.main_reply_kb(label))
+    await message.answer(texts.OPEN_HINT,
+                         reply_markup=await _open_markup(config, label))
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, config) -> None:
     await _remember(message)
-    await _send_entry(message, config, message.from_user.id)
+    await _send_entry(message, config)
 
 
 @router.message(Command("app"))
+@router.message(F.text.in_({kb.BTN_APP}))
 async def cmd_app(message: Message, config) -> None:
     await _remember(message)
-    await _send_entry(message, config, message.from_user.id)
+    await _send_entry(message, config)
+
+
+@router.message(F.chat.type == "private", F.text, ~F.text.startswith("/"))
+async def any_text(message: Message, config) -> None:
+    """Любое сообщение от участника — открываем приложение."""
+    await _remember(message)
+    await _send_entry(message, config)
 
 
 @router.callback_query(F.data == "gate:check")
 async def gate_check(call: CallbackQuery, config) -> None:
-    gate = await services.gate_state(call.bot, call.from_user.id)
-
-    if not gate["passed"]:
+    op.forget(call.from_user.id)
+    if await op.gate_active("entry") and not await op.is_subscribed(
+            call.bot, call.from_user.id):
         await call.answer(texts.GATE_NOT_PASSED, show_alert=True)
-        try:
-            await call.message.edit_reply_markup(
-                reply_markup=kb.gate(gate["sponsors"]))
-        except Exception:  # noqa: BLE001 — сообщение могло не измениться
-            pass
         return
 
     await call.answer("Подписка подтверждена ✅")
-    if config.webapp_url:
-        await call.message.edit_text(
-            texts.GATE_PASSED,
-            reply_markup=kb.open_app(config.webapp_url, config.brand_name))
-    else:
-        await call.message.edit_text(texts.NO_WEBAPP_URL)
+    label = (await op.button_text()) or kb.default_button_label(config)
+    if not config.webapp_url:
+        await call.message.answer(texts.NO_WEBAPP_URL)
+        return
+    await call.message.answer(
+        texts.GATE_PASSED,
+        reply_markup=await _open_markup(config, label))
