@@ -531,6 +531,14 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
 
 .overlay[hidden], .tabbar[hidden] { display: none !important; }
 
+/* Пока открыта клавиатура, нижняя панель и липкая кнопка убираются:
+   иначе они закрывают поле ввода и не видно, что набираешь. */
+body.keyboard-open .tabbar { display: none !important; }
+body.keyboard-open .screen { padding-bottom: 24px; }
+body.keyboard-open .sticky-cta {
+  position: static; background: none; padding: 0; margin: 14px 0 0;
+}
+
 .overlay {
   position: fixed; inset: 0; z-index: 20;
   background: rgba(10, 10, 24, .5);

@@ -572,6 +572,9 @@ const METHODS = [
 ];
 
 function formatRequisites(method, digits) {
+  // Пустое поле оставляем пустым: если заранее подставить «+7», каретка
+  // может встать перед ним и первая же цифра уедет в начало строки.
+  if (!digits) return '';
   if (method === 'sbp') {
     const rest = digits.slice(1);
     const parts = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6, 8), rest.slice(8, 10)];
@@ -582,6 +585,7 @@ function formatRequisites(method, digits) {
 
 function normalizeDigits(method, raw) {
   let digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
   if (method === 'sbp') {
     if (digits.startsWith('8')) digits = '7' + digits.slice(1);
     if (!digits.startsWith('7')) digits = '7' + digits;
@@ -750,6 +754,15 @@ function bindInputs() {
 
   const requisites = document.getElementById('requisites');
   if (requisites) {
+    // Каретка всегда в конце: иначе цифра, набранная «перед» уже введённым
+    // текстом, ломает номер.
+    const toEnd = () => {
+      const end = requisites.value.length;
+      requisites.setSelectionRange(end, end);
+    };
+    requisites.addEventListener('focus', () => setTimeout(toEnd, 0));
+    requisites.addEventListener('click', toEnd);
+
     requisites.addEventListener('input', () => {
       const method = state.payout.method;
       state.payout.digits = normalizeDigits(method, requisites.value);
@@ -1120,6 +1133,49 @@ tabbarEl.addEventListener('click', (event) => {
   goTab(tab.dataset.tab);
 });
 
+/* ---------- клавиатура ---------- */
+
+/**
+ * Пока открыта экранная клавиатура, нижняя панель перекрывает поле ввода
+ * и человек не видит, что набирает. Прячем панель и подводим активное поле
+ * в зону видимости.
+ */
+function setupKeyboard() {
+  let scrollTimer = null;
+
+  const showField = (field) => {
+    clearTimeout(scrollTimer);
+    // Клавиатура выезжает не мгновенно — ждём, пока экран уменьшится.
+    scrollTimer = setTimeout(() => {
+      if (document.activeElement !== field) return;
+      field.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 320);
+  };
+
+  document.addEventListener('focusin', (event) => {
+    const field = event.target;
+    if (!field.matches || !field.matches('input, textarea')) return;
+    document.body.classList.add('keyboard-open');
+    showField(field);
+  });
+
+  document.addEventListener('focusout', (event) => {
+    if (!event.target.matches || !event.target.matches('input, textarea')) return;
+    document.body.classList.remove('keyboard-open');
+  });
+
+  // Клавиатура может менять высоту (эмодзи, автоподстановка) — держим поле видимым.
+  const viewport = window.visualViewport;
+  if (viewport) {
+    viewport.addEventListener('resize', () => {
+      const field = document.activeElement;
+      if (field && field.matches && field.matches('input, textarea')) {
+        showField(field);
+      }
+    });
+  }
+}
+
 /* ---------- запуск ---------- */
 
 async function reload() {
@@ -1147,6 +1203,7 @@ async function boot() {
     if (tg.BackButton) tg.BackButton.onClick(goBack);
   }
   applyTheme();
+  setupKeyboard();
 
   try {
     await reload();
