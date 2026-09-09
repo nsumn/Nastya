@@ -1,5 +1,6 @@
 [Unit]
 Description=VOXY admin panel bot
+# Токены и порт — в /opt/voxy/miniapp/.env
 After=network-online.target
 Wants=network-online.target
 

@@ -1,68 +1,131 @@
 # Деплой
 
-## 1. Сервер
+Мини-апп открывается в Telegram **только по HTTPS** с валидным сертификатом,
+поэтому нужен домен. Бесплатный вариант — DuckDNS.
+
+## 0. Если на сервере уже есть другие боты
+
+Ставим VOXY отдельно, ничего чужого не трогаем:
+
+| Что | Папка | Порт | Службы |
+|-----|-------|------|--------|
+| бот оплаты ОГЭ | `/opt/nastya-bot` | 8080 | `nastya-bot` |
+| Roblox-боты | `/opt/rbdays` | 8081 | `rbdays-bot`, `rbmap-bot`, `rbdays-panel` |
+| **VOXY** | `/opt/voxy` | **8082** | `voxy`, `voxy-panel` |
+
+Порт задаётся в `.env` (`PORT=8082`). Проверить, что он свободен:
 
 ```bash
-adduser --system --group --home /opt/voxy voxy
-git clone <repo> /opt/voxy
+ss -lntp | grep 8082 || echo "порт свободен"
+```
+
+## 1. Домен на DuckDNS
+
+1. Зайти на https://www.duckdns.org, войти через Google/GitHub.
+2. Создать поддомен, например `voxy-app` → получится
+   `voxy-app.duckdns.org`.
+3. В поле **current ip** вписать IP сервера и нажать **update ip**.
+4. Проверить с сервера, что домен резолвится в нужный IP:
+
+```bash
+dig +short voxy-app.duckdns.org
+```
+
+Если IP сервера меняется, поставь автообновление (токен берётся на
+duckdns.org, он на странице сверху):
+
+```bash
+mkdir -p /opt/duckdns
+cat > /opt/duckdns/duck.sh <<'EOF'
+echo url="https://www.duckdns.org/update?domains=voxy-app&token=ТВОЙ_ТОКЕН&ip=" \
+  | curl -k -o /opt/duckdns/duck.log -K -
+EOF
+chmod +x /opt/duckdns/duck.sh
+( crontab -l 2>/dev/null; echo "*/5 * * * * /opt/duckdns/duck.sh >/dev/null 2>&1" ) | crontab -
+```
+
+## 2. Код и зависимости
+
+```bash
+git clone -b claude/telegram-mini-app-subscriptions-9qf4me \
+  https://github.com/nsumn/Nastya.git /opt/voxy
 cd /opt/voxy/miniapp
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env && nano .env
-chown -R voxy:voxy /opt/voxy
+cp .env.example .env
+nano .env
 ```
 
-В `.env` обязательны: `BOT_TOKEN`, `ADMIN_CHAT_ID`, `PUBLIC_BASE_URL`
-(HTTPS-адрес, по которому снаружи доступен этот сервер), `WEBAPP_DEV=0`.
+В `.env` обязательно:
 
-## 2. nginx + сертификат
+```
+BOT_TOKEN=токен от @BotFather
+ADMIN_CHAT_ID=твой id (узнать у @userinfobot)
+PUBLIC_BASE_URL=https://voxy-app.duckdns.org
+PORT=8082
+WEBAPP_DEV=0
+```
 
-Telegram открывает мини-апп только по HTTPS с валидным сертификатом.
+Если нужен отдельный бот-панель — заведи второго бота у @BotFather и
+впиши его токен в `PANEL_BOT_TOKEN`.
 
-```nginx
+## 3. nginx и сертификат
+
+```bash
+cat > /etc/nginx/sites-available/voxy <<'EOF'
 server {
-    listen 443 ssl http2;
-    server_name voxy.example.com;
-
-    ssl_certificate     /etc/letsencrypt/live/voxy.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/voxy.example.com/privkey.pem;
+    listen 80;
+    server_name voxy-app.duckdns.org;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8082;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
+EOF
+ln -sf /etc/nginx/sites-available/voxy /etc/nginx/sites-enabled/voxy
+nginx -t && systemctl reload nginx
+
+certbot --nginx -d voxy-app.duckdns.org
 ```
 
+Certbot сам допишет в конфиг 443 и сертификат. Дальше проверить:
+
 ```bash
-certbot --nginx -d voxy.example.com
+curl -I https://voxy-app.duckdns.org/health
 ```
 
-## 3. Автозапуск
+## 4. Автозапуск
 
 ```bash
-cp deploy/voxy.service deploy/voxy-panel.service /etc/systemd/system/
+useradd --system --home /opt/voxy voxy 2>/dev/null
+chown -R voxy:voxy /opt/voxy
+
+cp /opt/voxy/miniapp/deploy/voxy.service /etc/systemd/system/
+cp /opt/voxy/miniapp/deploy/voxy-panel.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now voxy
-journalctl -u voxy -f
+journalctl -u voxy -n 30 --no-pager
 
-# бот-панель (нужен PANEL_BOT_TOKEN в .env)
+# бот-панель — только если задан PANEL_BOT_TOKEN
 systemctl enable --now voxy-panel
-journalctl -u voxy-panel -f
+journalctl -u voxy-panel -n 30 --no-pager
 ```
 
-Оба процесса читают и пишут один файл `OP_STATE_FILE` — списки каналов
-меняются сразу везде. Файл лежит рядом с проектом, доступ к нему нужен
-обоим службам (одинаковый `User=`).
+Обе службы читают и пишут один файл `OP_STATE_FILE` — списки каналов
+меняются сразу везде. Поэтому у них должен быть одинаковый `User=`.
 
-## 4. После запуска
+## 5. После запуска
 
-1. `/start` у бота — должна появиться кнопка «Открыть VOXY».
-2. Переслать боту любой пост из проверочного канала (бот должен быть
-   его администратором) — он запомнит, по какому каналу проверять подписку.
-3. Прислать боту сообщение со списком спонсорских ссылок; следующим
+1. `/start` у бота — появится кнопка «Открыть VOXY», приложение должно
+   открыться внутри Telegram.
+2. Сделать бота **администратором проверочного канала**, затем переслать
+   боту любой пост из этого канала — он запомнит, по какому каналу
+   проверять подписку.
+3. Прислать боту сообщение со списком спонсорских ссылок, следующим
    сообщением — проверочную ссылку. Раздел (вход/вывод) переключается
    в `/op`.
 4. `/tasks` — заменить демо-задания на реальные.
@@ -71,9 +134,36 @@ journalctl -u voxy-panel -f
 
 ```bash
 cd /opt/voxy && git pull
-.venv/bin/pip install -r miniapp/requirements.txt
-systemctl restart voxy
+miniapp/.venv/bin/pip install -r miniapp/requirements.txt
+systemctl restart voxy voxy-panel
 ```
 
-База (`voxy.db`) лежит рядом с проектом и переживает обновления — бэкапьте её
-перед миграциями: `cp /opt/voxy/miniapp/voxy.db ~/voxy-$(date +%F).db`.
+## Если что-то не так
+
+```bash
+systemctl status voxy                  # жив ли процесс
+journalctl -u voxy -n 50 --no-pager    # последние логи
+ss -lntp | grep 8082                   # слушает ли порт
+curl -I http://127.0.0.1:8082/health   # отвечает ли локально
+nginx -t                               # цел ли конфиг nginx
+dig +short voxy-app.duckdns.org        # туда ли смотрит домен
+```
+
+- **Мини-апп не открывается, «Открой через Telegram» или 401** — почти
+  всегда дело в способе запуска: с кнопки обычной клавиатуры Telegram не
+  передаёт `initData`, и подпись проверить нечем. Открывать можно только
+  инлайн-кнопкой под сообщением и кнопкой-меню у поля ввода — так и сделано.
+- **Проверка подписки не срабатывает** — бот не администратор проверочного
+  канала.
+- **Сертификат не выпускается** — сначала проверь, что DuckDNS указывает
+  на актуальный IP сервера и что порт 80 открыт.
+- **`.env` не читается** — в нём не должно быть пробелов перед именем
+  переменной.
+
+База (`voxy.db`) и состояние подписки (`op_state.json`) лежат рядом с
+проектом и переживают обновление. Бэкап перед изменениями:
+
+```bash
+cp /opt/voxy/miniapp/voxy.db ~/voxy-$(date +%F).db
+cp /opt/voxy/miniapp/op_state.json ~/op-$(date +%F).json
+```
