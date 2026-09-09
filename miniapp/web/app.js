@@ -427,7 +427,6 @@ function viewProfile() {
 
   const { user, done_count: doneCount, history, payouts,
           min_withdraw: minWithdraw } = state.profile;
-  const avatar = avatarHtml(user);
   const canWithdraw = user.balance >= minWithdraw;
 
   const cardIcon = `
@@ -463,7 +462,6 @@ function viewProfile() {
     ${topbar()}
 
     <section class="profile-hero">
-      ${avatar}
       <div class="profile-hero__name">${esc(user.name)}</div>
       <div class="profile-hero__role">исполнитель ${esc(state.data.brand.name)}</div>
     </section>

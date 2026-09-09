@@ -603,10 +603,8 @@ body.keyboard-open .sticky-cta {
 
 /* ---------- профиль: плитки, кнопка, история заявок ---------- */
 
-.profile-hero { text-align: center; margin-bottom: 18px; }
-.profile-hero .rank__ava { width: 66px; height: 66px; flex: 0 0 66px;
-                           font-size: 27px; margin: 0 auto 12px; }
-.profile-hero__name { font-size: 25px; font-weight: 800; letter-spacing: -.6px; }
+.profile-hero { text-align: center; margin: 6px 0 20px; }
+.profile-hero__name { font-size: 27px; font-weight: 800; letter-spacing: -.7px; }
 .profile-hero__role { font-size: 13.5px; color: var(--muted); margin-top: 3px; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
