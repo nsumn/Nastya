@@ -11,8 +11,8 @@
 
 ```bash
 git clone -b claude/telegram-mini-app-subscriptions-9qf4me \
-  https://github.com/nsumn/Nastya.git /opt/voxy
-sudo bash /opt/voxy/miniapp/deploy/install.sh
+  https://github.com/nsumn/Nastya.git /opt/jows
+sudo bash /opt/jows/miniapp/deploy/install.sh
 ```
 
 Ответы можно передать заранее, тогда скрипт ничего не спросит:
@@ -20,7 +20,7 @@ sudo bash /opt/voxy/miniapp/deploy/install.sh
 ```bash
 sudo BOT_TOKEN='123:AA...' ADMIN_ID=413124905 \
      DOMAIN=otzzzzzi.duckdns.org PORT=8082 \
-     bash /opt/voxy/miniapp/deploy/install.sh
+     bash /opt/jows/miniapp/deploy/install.sh
 ```
 
 Дополнительно: `DUCKDNS_TOKEN=...` — скрипт сам пропишет IP сервера на
@@ -40,7 +40,7 @@ DuckDNS и поставит обновление по крону; `PANEL_BOT_TOK
 |-----|-------|------|--------|
 | бот оплаты ОГЭ | `/opt/nastya-bot` | 8080 | `nastya-bot` |
 | Roblox-боты | `/opt/rbdays` | 8081 | `rbdays-bot`, `rbmap-bot`, `rbdays-panel` |
-| **JOWS** | `/opt/voxy` | **8082** | `voxy`, `voxy-panel` |
+| **JOWS** | `/opt/jows` | **8082** | `jows`, `jows-panel` |
 
 Порт задаётся в `.env` (`PORT=8082`). Проверить, что он свободен:
 
@@ -84,8 +84,8 @@ chmod +x /opt/duckdns/duck.sh
 
 ```bash
 git clone -b claude/telegram-mini-app-subscriptions-9qf4me \
-  https://github.com/nsumn/Nastya.git /opt/voxy
-cd /opt/voxy/miniapp
+  https://github.com/nsumn/Nastya.git /opt/jows
+cd /opt/jows/miniapp
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env
@@ -108,7 +108,7 @@ WEBAPP_DEV=0
 ## 3. nginx и сертификат
 
 ```bash
-cat > /etc/nginx/sites-available/voxy <<'EOF'
+cat > /etc/nginx/sites-available/jows <<'EOF'
 server {
     listen 80;
     server_name otzzzzzi.duckdns.org;
@@ -122,7 +122,7 @@ server {
     }
 }
 EOF
-ln -sf /etc/nginx/sites-available/voxy /etc/nginx/sites-enabled/voxy
+ln -sf /etc/nginx/sites-available/jows /etc/nginx/sites-enabled/jows
 nginx -t && systemctl reload nginx
 
 certbot --nginx -d otzzzzzi.duckdns.org
@@ -137,18 +137,18 @@ curl -I https://otzzzzzi.duckdns.org/health
 ## 4. Автозапуск
 
 ```bash
-useradd --system --home /opt/voxy voxy 2>/dev/null
-chown -R voxy:voxy /opt/voxy
+useradd --system --home /opt/jows jows 2>/dev/null
+chown -R jows:jows /opt/jows
 
-cp /opt/voxy/miniapp/deploy/voxy.service /etc/systemd/system/
-cp /opt/voxy/miniapp/deploy/voxy-panel.service /etc/systemd/system/
+cp /opt/jows/miniapp/deploy/jows.service /etc/systemd/system/
+cp /opt/jows/miniapp/deploy/jows-panel.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now voxy
-journalctl -u voxy -n 30 --no-pager
+systemctl enable --now jows
+journalctl -u jows -n 30 --no-pager
 
 # бот-панель — только если задан PANEL_BOT_TOKEN
-systemctl enable --now voxy-panel
-journalctl -u voxy-panel -n 30 --no-pager
+systemctl enable --now jows-panel
+journalctl -u jows-panel -n 30 --no-pager
 ```
 
 Обе службы читают и пишут один файл `OP_STATE_FILE` — списки каналов
@@ -166,10 +166,38 @@ journalctl -u voxy-panel -n 30 --no-pager
    в `/op`.
 4. `/tasks` — заменить демо-задания на реальные.
 
+## Переименование старой установки (voxy → jows)
+
+Если проект ставился раньше, он лежит в `/opt/voxy` и служба называется
+`voxy`. Работать это продолжит: скрипты обновления сами находят нужную
+службу. Но если хочется, чтобы и на сервере всё называлось одинаково:
+
+```bash
+systemctl stop voxy
+mv /opt/voxy /opt/jows
+sed -i 's|/opt/voxy|/opt/jows|g' /opt/jows/miniapp/.env
+id -u jows >/dev/null 2>&1 || useradd --system --home /opt/jows jows
+chown -R jows:jows /opt/jows
+
+cp /opt/jows/miniapp/deploy/jows.service /etc/systemd/system/
+systemctl disable voxy && rm -f /etc/systemd/system/voxy.service
+systemctl daemon-reload && systemctl enable --now jows
+
+mv /etc/nginx/sites-available/voxy /etc/nginx/sites-available/jows
+ln -sf /etc/nginx/sites-available/jows /etc/nginx/sites-enabled/jows
+rm -f /etc/nginx/sites-enabled/voxy
+nginx -t && systemctl reload nginx
+
+systemctl status jows --no-pager
+```
+
+База и состояние подписки переезжают вместе с папкой, настройки
+сохраняются. Домен и сертификат не меняются.
+
 ## Обновление
 
 ```bash
-sudo bash /opt/voxy/miniapp/deploy/update.sh
+sudo bash /opt/jows/miniapp/deploy/update.sh
 ```
 
 Скрипт забирает свежий код, доставляет зависимости, возвращает права
@@ -183,14 +211,14 @@ sudo bash /opt/voxy/miniapp/deploy/update.sh
 принадлежит служебному пользователю, а команда запущена от root:
 
 ```bash
-git config --global --add safe.directory /opt/voxy
+git config --global --add safe.directory /opt/jows
 ```
 
 ## Если что-то не так
 
 ```bash
-systemctl status voxy                  # жив ли процесс
-journalctl -u voxy -n 50 --no-pager    # последние логи
+systemctl status jows                  # жив ли процесс
+journalctl -u jows -n 50 --no-pager    # последние логи
 ss -lntp | grep 8082                   # слушает ли порт
 curl -I http://127.0.0.1:8082/health   # отвечает ли локально
 nginx -t                               # цел ли конфиг nginx
@@ -208,10 +236,10 @@ dig +short otzzzzzi.duckdns.org        # туда ли смотрит домен
 - **`.env` не читается** — в нём не должно быть пробелов перед именем
   переменной.
 
-База (`voxy.db`) и состояние подписки (`op_state.json`) лежат рядом с
+База (`jows.db`) и состояние подписки (`op_state.json`) лежат рядом с
 проектом и переживают обновление. Бэкап перед изменениями:
 
 ```bash
-cp /opt/voxy/miniapp/voxy.db ~/voxy-$(date +%F).db
-cp /opt/voxy/miniapp/op_state.json ~/op-$(date +%F).json
+cp /opt/jows/miniapp/jows.db ~/jows-$(date +%F).db
+cp /opt/jows/miniapp/op_state.json ~/op-$(date +%F).json
 ```

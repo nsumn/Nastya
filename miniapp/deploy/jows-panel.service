@@ -1,15 +1,15 @@
 [Unit]
 Description=JOWS admin panel bot
-# Токены и порт — в /opt/voxy/miniapp/.env
+# Токены и порт — в /opt/jows/miniapp/.env
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=voxy
-WorkingDirectory=/opt/voxy/miniapp
+User=jows
+WorkingDirectory=/opt/jows/miniapp
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/opt/voxy/miniapp/.venv/bin/python -m panel.main
+ExecStart=/opt/jows/miniapp/.venv/bin/python -m panel.main
 Restart=always
 RestartSec=5
 

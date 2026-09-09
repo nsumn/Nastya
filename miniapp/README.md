@@ -172,4 +172,4 @@ cloudflared tunnel --url http://localhost:8080
 
 ## Деплой
 
-`deploy/voxy.service` — юнит для systemd. Порядок в `deploy/DEPLOY.md`.
+`deploy/jows.service` — юнит для systemd. Порядок в `deploy/DEPLOY.md`.

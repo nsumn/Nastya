@@ -54,7 +54,7 @@ class Config:
     demo_admin_name: str = ""
     demo_admin_avatar: str = ""
 
-    db_path: str = "voxy.db"
+    db_path: str = "jows.db"
     op_state_file: str = "op_state.json"
     panel_bot_token: str = ""
     support_username: str = "@support"
@@ -86,7 +86,7 @@ def load_config() -> Config:
         demo_payout_for_admin=_get("DEMO_PAYOUT_FOR_ADMIN", "1") != "0",
         demo_admin_name=_get("DEMO_ADMIN_NAME", "Мария"),
         demo_admin_avatar=_get("DEMO_ADMIN_AVATAR"),
-        db_path=_get("DB_PATH", "voxy.db") or "voxy.db",
+        db_path=_get("DB_PATH", "jows.db") or "jows.db",
         op_state_file=_get("OP_STATE_FILE", "op_state.json") or "op_state.json",
         panel_bot_token=_get("PANEL_BOT_TOKEN"),
         support_username=_get("SUPPORT_USERNAME", "@support"),

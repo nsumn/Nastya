@@ -20,7 +20,7 @@ import aiosqlite
 
 MSK = timezone(timedelta(hours=3))
 
-_DB_PATH = "voxy.db"
+_DB_PATH = "jows.db"
 
 
 def configure(path: str) -> None:

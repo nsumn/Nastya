@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Обновление до свежего кода — одной командой:
 #
-#   sudo bash /opt/voxy/miniapp/deploy/update.sh
+#   sudo bash /opt/jows/miniapp/deploy/update.sh
 #
 # Забирает изменения из GitHub, доставляет зависимости, возвращает права
 # служебному пользователю и перезапускает бота. Настройки (.env), база и
@@ -10,8 +10,18 @@ set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_DIR="$(cd "$APP_DIR/.." && pwd)"
-SERVICE="${SERVICE:-voxy}"
-USER_NAME="${USER_NAME:-voxy}"
+# Имя службы: новое — jows, но на серверах, поставленных раньше, она
+# называется voxy. Берём ту, что реально существует.
+detect_service() {
+    for name in jows voxy; do
+        if systemctl cat "$name.service" >/dev/null 2>&1; then
+            echo "$name"; return
+        fi
+    done
+    echo jows
+}
+SERVICE="${SERVICE:-$(detect_service)}"
+USER_NAME="${USER_NAME:-jows}"
 
 say()  { printf '\n\033[1;35m▸ %s\033[0m\n' "$*"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
@@ -40,6 +50,24 @@ say "Проверяю зависимости"
 "$APP_DIR/.venv/bin/pip" install -q --upgrade pip
 "$APP_DIR/.venv/bin/pip" install -q -r "$APP_DIR/requirements.txt"
 ok "готово"
+
+say "Настройки"
+# Проект переименован: старое имя в .env заменяем, иначе в приложении
+# так и останется прежняя шапка.
+if grep -q '^BRAND_NAME=VOXY' "$APP_DIR/.env" 2>/dev/null; then
+    sed -i 's/^BRAND_NAME=VOXY/BRAND_NAME=JOWS/' "$APP_DIR/.env"
+    ok "BRAND_NAME: VOXY → JOWS"
+fi
+# Про новые настройки просто сообщаем — молча менять чужой конфиг не станем.
+missing=""
+while IFS= read -r key; do
+    grep -q "^$key=" "$APP_DIR/.env" 2>/dev/null || missing="$missing $key"
+done < <(grep -oE '^[A-Z_]+=' "$APP_DIR/.env.example" | tr -d '=')
+if [ -n "$missing" ]; then
+    warn "в .env нет новых настроек (возьмутся значения по умолчанию):$missing"
+else
+    ok "настройки на месте"
+fi
 
 say "Права и перезапуск"
 id -u "$USER_NAME" >/dev/null 2>&1 && chown -R "$USER_NAME:$USER_NAME" "$REPO_DIR"

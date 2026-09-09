@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
-# Установка VOXY одной командой — без ручной правки файлов.
+# Установка JOWS одной командой — без ручной правки файлов.
 #
-#   bash /opt/voxy/miniapp/deploy/install.sh
+#   bash /opt/jows/miniapp/deploy/install.sh
 #
 # Всё, чего не хватает, скрипт спросит. Можно передать заранее:
 #
 #   BOT_TOKEN=123:AA... ADMIN_ID=413124905 DOMAIN=otzzzzzi.duckdns.org \
-#   bash /opt/voxy/miniapp/deploy/install.sh
+#   bash /opt/jows/miniapp/deploy/install.sh
 #
 # Повторный запуск безопасен: обновляет .env, конфиг nginx и перезапускает
 # службу. Чужие боты на сервере не трогает — своя папка, свой порт.
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SERVICE="${SERVICE:-voxy}"
-USER_NAME="${USER_NAME:-voxy}"
+# Имя службы: новое — jows, но на серверах, поставленных раньше, она
+# называется voxy. Берём ту, что реально существует.
+detect_service() {
+    for name in jows voxy; do
+        if systemctl cat "$name.service" >/dev/null 2>&1; then
+            echo "$name"; return
+        fi
+    done
+    echo jows
+}
+SERVICE="${SERVICE:-$(detect_service)}"
+USER_NAME="${USER_NAME:-jows}"
 
 say()  { printf '\n\033[1;35m▸ %s\033[0m\n' "$*"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
@@ -118,7 +128,7 @@ PARTICIPANTS_BASE=${PARTICIPANTS_BASE:-7000}
 AUTOAPPROVE=${AUTOAPPROVE:-1}
 OP_STATE_FILE=$APP_DIR/op_state.json
 PANEL_BOT_TOKEN=$PANEL_BOT_TOKEN
-DB_PATH=$APP_DIR/voxy.db
+DB_PATH=$APP_DIR/jows.db
 SUPPORT_USERNAME=${SUPPORT_USERNAME:-@support}
 WEBAPP_DEV=0
 EOF
@@ -189,11 +199,11 @@ fi
 command -v systemctl >/dev/null 2>&1 || die "systemd не найден — этот скрипт для обычного Linux-сервера"
 
 say "Запускаю службу"
-sed -e "s|/opt/voxy/miniapp|$APP_DIR|g" -e "s|^User=.*|User=$USER_NAME|" \
-    "$APP_DIR/deploy/voxy.service" > "/etc/systemd/system/$SERVICE.service"
+sed -e "s|/opt/jows/miniapp|$APP_DIR|g" -e "s|^User=.*|User=$USER_NAME|" \
+    "$APP_DIR/deploy/jows.service" > "/etc/systemd/system/$SERVICE.service"
 if [ -n "$PANEL_BOT_TOKEN" ]; then
-    sed -e "s|/opt/voxy/miniapp|$APP_DIR|g" -e "s|^User=.*|User=$USER_NAME|" \
-        "$APP_DIR/deploy/voxy-panel.service" > "/etc/systemd/system/$SERVICE-panel.service"
+    sed -e "s|/opt/jows/miniapp|$APP_DIR|g" -e "s|^User=.*|User=$USER_NAME|" \
+        "$APP_DIR/deploy/jows-panel.service" > "/etc/systemd/system/$SERVICE-panel.service"
 fi
 systemctl daemon-reload
 systemctl enable --now "$SERVICE" >/dev/null 2>&1
