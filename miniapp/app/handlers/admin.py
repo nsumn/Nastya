@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import contextlib
 
+from datetime import datetime, timedelta
+
 from aiogram import F, Router
 from aiogram.filters import BaseFilter, Command
 from aiogram.fsm.context import FSMContext
@@ -475,43 +477,62 @@ async def reset_confirm(call: CallbackQuery) -> None:
 
 
 @router.message(Command("demo"))
-async def cmd_demo(message: Message, command) -> None:
-    """/demo — наполнить свой профиль примерами, чтобы показать заказчику.
+@router.message(F.text == kb.ADM_BTN_DEMO)
+async def cmd_demo(message: Message, command=None) -> None:
+    """Наполнить свой профиль историей — чтобы показать заказчику.
 
-    Заводит баланс и три заявки на вывод во всех статусах: доставлено,
-    в обработке, ошибка. /demo clear — убрать их.
+    Заработок 4850 ₽ разбит на несколько выводов разных статусов и
+    выполненные задания за прошлые дни. Сегодняшние задания остаются
+    нетронутыми, чтобы можно было пройти путь живьём.
     """
     user_id = message.from_user.id
-    if (command.args or "").strip().lower() in ("clear", "off", "убрать"):
-        removed = await db.delete_user_withdrawals(user_id)
-        await message.answer(f"🧹 Убрала демо-заявки: {removed}.")
+    args = (getattr(command, "args", "") or "").strip().lower()
+    if args in ("clear", "off", "убрать"):
+        removed = await db.reset_user(user_id)
+        await message.answer(
+            f"🧹 Демо убрано: ответов {removed['submissions']}, "
+            f"заявок {removed['withdrawals']}. Баланс обнулён.")
         return
 
-    today = db.today()
-    samples = [
-        (1560, "sbp", "+79005888888", "paid"),
-        (890, "card_ru", "4276160012345678", "pending"),
-        (1190, "sbp", "+79005888888", "rejected"),
-    ]
-    for index, (amount, method, requisites, status) in enumerate(samples):
-        await db.add_demo_withdrawal(
-            user_id, amount, method, requisites, status,
-            created_at=f"{today} {12 - index}:0{index}:00")
-
+    await db.reset_user(user_id)
     await db.upsert_user(user_id)
-    user = await db.get_user(user_id)
-    if (user or {}).get("balance", 0) < 500:
-        await db.add_balance(user_id, 1560)
+
+    # Выполненные задания за прошлые дни — сегодняшние не занимаем.
+    tasks = [task for task in await db.all_tasks() if task["active"]]
+    today = datetime.strptime(db.today(), "%Y-%m-%d")
+    for day_back in range(1, 5):
+        day = (today - timedelta(days=day_back)).strftime("%Y-%m-%d")
+        for task in tasks[:3]:
+            await db.add_demo_submission(
+                user_id, task["id"], day, task["reward"],
+                f"{day} 1{day_back}:20:00")
+
+    # Заявки на вывод: три выплачены, одна в обработке, одна с ошибкой.
+    payouts = [
+        (1560, "sbp", "+79005888888", "paid", 0),
+        (1190, "sbp", "+79005888888", "paid", 5),
+        (890, "card_ru", "4276160012345678", "paid", 12),
+        (760, "sbp", "+79005888888", "pending", 0),
+        (450, "sbp", "+79005888888", "rejected", 19),
+    ]
+    for amount, method, requisites, status, days_back in payouts:
+        stamp = (today - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        await db.add_demo_withdrawal(user_id, amount, method, requisites,
+                                     status, created_at=f"{stamp} 14:30:00")
+
+    # Итог на витрине: заработано 4850, из них 450 вернулись после отказа.
+    await db.set_earnings(user_id, total_earned=4850, balance=450)
 
     await message.answer(
         "🎬 <b>Демо готово.</b>\n\n"
-        "Открой приложение → «Профиль»: в истории вывода видны все три "
-        "статуса — <b>Выплачено</b>, <b>В обработке</b> и <b>Ошибка</b>. "
-        "Нажми на любую заявку, чтобы показать детали.\n\n"
-        "Баланс пополнен — можно пройти вывод целиком: у тебя как у "
-        "администратора заявка сразу закроется и покажет «Платёж "
-        "доставлен».\n\n"
-        "Убрать примеры: <code>/demo clear</code>")
+        "В профиле: заработано всего <b>4850 ₽</b>, доступно "
+        "<b>450 ₽</b> (вернулись после отклонённой заявки).\n\n"
+        "История вывода — пять заявок: три <b>выплачено</b>, одна "
+        "<b>в обработке</b>, одна с <b>ошибкой</b>. Нажми на любую, "
+        "чтобы показать детали.\n\n"
+        "Задания за прошлые дни отмечены выполненными, а сегодняшние "
+        "свободны — можно пройти путь с самого начала.\n\n"
+        "Убрать: <code>/demo clear</code> или кнопка «♻️ Начать заново».")
 
 
 @router.message(Command("give"))

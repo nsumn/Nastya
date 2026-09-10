@@ -417,7 +417,7 @@ async def profile(request: web.Request) -> web.Response:
                 "emoji": row["emoji"] or "📝",
                 "amount": _money(row["amount"]),
                 "status": row["status"],
-                "date": (row["created_at"] or "")[:16],
+                "date": db.pretty_date(row["created_at"]),
             }
             for row in history
         ],

@@ -15,6 +15,7 @@ ADM_BTN_SUBS = "🧾 Модерация"
 ADM_BTN_STATS = "📊 Статистика"
 ADM_BTN_APP = "👀 Приложение"
 ADM_BTN_RESET = "♻️ Начать заново"
+ADM_BTN_DEMO = "🎬 Демо для показа"
 
 
 def default_button_label(config=None) -> str:
@@ -45,7 +46,8 @@ def admin_reply_kb() -> ReplyKeyboardMarkup:
              KeyboardButton(text=ADM_BTN_SUBS)],
             [KeyboardButton(text=ADM_BTN_STATS),
              KeyboardButton(text=ADM_BTN_APP)],
-            [KeyboardButton(text=ADM_BTN_RESET)],
+            [KeyboardButton(text=ADM_BTN_DEMO),
+             KeyboardButton(text=ADM_BTN_RESET)],
         ],
         resize_keyboard=True)
 

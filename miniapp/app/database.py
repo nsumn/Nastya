@@ -506,7 +506,7 @@ async def user_history(user_id: int, limit: int = 30) -> list[dict]:
               FROM submissions s
               LEFT JOIN tasks t ON t.id = s.task_id
              WHERE s.user_id = ?
-             ORDER BY s.id DESC
+             ORDER BY s.created_at DESC, s.id DESC
              LIMIT ?
             """,
             (user_id, limit),
@@ -583,6 +583,40 @@ async def create_withdrawal(user_id: int, amount: float, method: str,
         await db.close()
 
 
+async def set_earnings(user_id: int, total_earned: float,
+                       balance: float) -> None:
+    """Проставить участнику баланс и суммарный заработок.
+
+    Нужно только для демонстрации заказчику — вызывается лишь для
+    администратора.
+    """
+    db = await _conn()
+    try:
+        await db.execute(
+            "UPDATE users SET total_earned = ?, balance = ? WHERE user_id = ?",
+            (total_earned, balance, user_id),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def add_demo_submission(user_id: int, task_id: int, day: str,
+                              reward: float, created_at: str) -> None:
+    """Выполненное задание задним числом — для истории на показе."""
+    db = await _conn()
+    try:
+        await db.execute(
+            "INSERT OR IGNORE INTO submissions (user_id, task_id, day, text, "
+            "rating, reward, status, created_at) "
+            "VALUES (?, ?, ?, 'Демо', 5, ?, 'approved', ?)",
+            (user_id, task_id, day, reward, created_at),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
 async def add_demo_withdrawal(user_id: int, amount: float, method: str,
                               requisites: str, status: str,
                               created_at: Optional[str] = None) -> int:
@@ -620,8 +654,9 @@ async def user_withdrawals(user_id: int, limit: int = 30) -> list[dict]:
     db = await _conn()
     try:
         async with db.execute(
+            # По дате, а не по id: демо-заявки заводятся задним числом.
             "SELECT * FROM withdrawals WHERE user_id = ? "
-            "ORDER BY id DESC LIMIT ?", (user_id, limit),
+            "ORDER BY created_at DESC, id DESC LIMIT ?", (user_id, limit),
         ) as cur:
             return [dict(r) for r in await cur.fetchall()]
     finally:
