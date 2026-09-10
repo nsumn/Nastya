@@ -123,6 +123,14 @@ def tasks_list(tasks: list[dict]) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def task_kind() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📝 Отзыв", callback_data="adm:task_kind:review")
+    builder.button(text="🎬 Ролик", callback_data="adm:task_kind:video")
+    builder.adjust(2)
+    return builder.as_markup()
+
+
 def task_actions(task_id: int, active: bool) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="⏸ Выключить" if active else "▶️ Включить",

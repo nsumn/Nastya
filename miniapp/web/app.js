@@ -293,6 +293,141 @@ function viewTasks() {
     </section>`;
 }
 
+/* ---------- ролик ---------- */
+
+/** Достаёт id ролика из любой формы ссылки YouTube, включая Shorts. */
+function youtubeId(url) {
+  const patterns = [
+    /youtube\.com\/shorts\/([\w-]{6,})/,
+    /youtu\.be\/([\w-]{6,})/,
+    /[?&]v=([\w-]{6,})/,
+    /youtube\.com\/embed\/([\w-]{6,})/,
+  ];
+  for (const pattern of patterns) {
+    const found = (url || '').match(pattern);
+    if (found) return found[1];
+  }
+  return '';
+}
+
+/** Загружает YouTube API один раз и отдаёт промис готовности. */
+let ytReady = null;
+function loadYouTube() {
+  if (ytReady) return ytReady;
+  ytReady = new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) { resolve(window.YT); return; }
+    const failed = setTimeout(() => reject(new Error('YouTube не отвечает')), 8000);
+    window.onYouTubeIframeAPIReady = () => { clearTimeout(failed); resolve(window.YT); };
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.onerror = () => { clearTimeout(failed); reject(new Error('плеер не загрузился')); };
+    document.head.appendChild(script);
+  });
+  return ytReady;
+}
+
+/**
+ * Плеер задания «посмотреть ролик».
+ *
+ * Засчитываем только реально просмотренное время: секунды капают, пока
+ * ролик играет. Перемотать в конец и сдать не получится. Если YouTube
+ * не открылся (заблокировано встраивание, нет сети) — показываем ссылку
+ * и отсчёт: человек смотрит снаружи и возвращается.
+ */
+const watch = { seconds: 0, done: false, timer: null, player: null };
+
+function resetWatch() {
+  clearInterval(watch.timer);
+  watch.seconds = 0;
+  watch.done = false;
+  watch.timer = null;
+  watch.player = null;
+}
+
+function watchProgress() {
+  const need = state.task.min_watch || 1;
+  const left = Math.max(0, Math.ceil(need - watch.seconds));
+  const percent = Math.min(100, Math.round((watch.seconds / need) * 100));
+
+  const bar = document.querySelector('.watch__fill');
+  if (bar) bar.style.width = `${percent}%`;
+  const label = document.querySelector('.watch__label');
+  if (label) {
+    label.textContent = watch.done
+      ? '✓ Ролик просмотрен — можно забрать награду'
+      : `Осталось смотреть: ${left} ${plural(left, 'секунда', 'секунды', 'секунд')}`;
+    label.classList.toggle('is-ok', watch.done);
+  }
+  const card = document.querySelector('.watch');
+  if (card) card.classList.toggle('is-done', watch.done);
+  const button = document.querySelector('[data-action="submit-video"]');
+  if (button) button.disabled = !watch.done;
+}
+
+function tickWatch(step) {
+  if (watch.done) return;
+  watch.seconds += step;
+  if (watch.seconds >= (state.task.min_watch || 1)) {
+    watch.done = true;
+    haptic('success');
+    clearInterval(watch.timer);
+  }
+  watchProgress();
+}
+
+async function mountPlayer() {
+  const task = state.task;
+  const videoId = youtubeId(task.video_url);
+  const holder = document.getElementById('player');
+  if (!holder) return;
+  if (!videoId) { fallbackWatch('Ссылка на ролик не распознана'); return; }
+
+  try {
+    const YT = await loadYouTube();
+    watch.player = new YT.Player('player', {
+      videoId,
+      playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+      events: {
+        onReady: () => {
+          const frame = document.querySelector('.watch__video');
+          if (frame) frame.classList.add('is-ready');
+        },
+        onStateChange: (event) => {
+          if (event.data === YT.PlayerState.PLAYING) {
+            clearInterval(watch.timer);
+            watch.timer = setInterval(() => tickWatch(0.5), 500);
+          } else {
+            clearInterval(watch.timer);
+          }
+          if (event.data === YT.PlayerState.ENDED) {
+            watch.seconds = state.task.min_watch || 1;
+            tickWatch(0);
+          }
+        },
+        onError: () => fallbackWatch('Ролик не открылся внутри приложения'),
+      },
+    });
+  } catch (err) {
+    fallbackWatch(err.message);
+  }
+}
+
+/** Запасной путь: смотрим ролик снаружи, время идёт по таймеру. */
+function fallbackWatch(reason) {
+  const box = document.querySelector('.watch__video');
+  if (!box) return;
+  box.classList.add('is-fallback');   // высокий блок плеера больше не нужен
+  box.innerHTML = `
+    <div class="watch__fallback">
+      <p>${esc(reason)}. Откройте ролик по ссылке и вернитесь — время
+         пойдёт автоматически.</p>
+      <a class="btn" href="${esc(state.task.video_url)}"
+         target="_blank" rel="noopener" data-action="watch-outside">
+        ▶︎ Открыть ролик
+      </a>
+    </div>`;
+}
+
 /* ---------- экран: выполнение задания ---------- */
 
 function starSvg() {
@@ -302,8 +437,43 @@ function starSvg() {
           </svg>`;
 }
 
+function viewVideoTask() {
+  const task = state.task;
+  return `
+    ${topbar({ back: true })}
+
+    <section class="task-hero">
+      <div class="task__emoji">${esc(task.emoji)}</div>
+      <div class="task__body">
+        <div class="task__title">${esc(task.title)}</div>
+        <div class="task__meta">
+          <span>Ролик • ${task.min_watch} ${plural(task.min_watch, 'секунда', 'секунды', 'секунд')} • до ${esc(task.deadline)}</span>
+        </div>
+      </div>
+      <div class="reward">+${rub(task.reward)}</div>
+    </section>
+
+    <section class="card">
+      <p class="section-label">Условия задания</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.5">${esc(task.brief)}</p>
+
+      <div class="watch">
+        <div class="watch__video"><div id="player"></div></div>
+        <div class="watch__bar"><div class="watch__fill"></div></div>
+        <div class="watch__label">Нажмите ▶︎ и досмотрите ролик до конца</div>
+      </div>
+
+      <p class="hint">Награда придёт сразу после просмотра.</p>
+
+      <button class="btn" data-action="submit-video" disabled>
+        Получить награду
+      </button>
+    </section>`;
+}
+
 function viewTask() {
   const task = state.task;
+  if (task.kind === 'video') return viewVideoTask();
   const { draft } = state;
   const left = Math.max(0, task.min_chars - draft.text.trim().length);
   const ratingOk = !task.require_rating || draft.rating === 5;
@@ -733,6 +903,12 @@ function render() {
   window.scrollTo({ top: sameView ? scroll : 0 });
   lastView = state.view;
   bindInputs();
+
+  if (state.view === 'task' && state.task.kind === 'video'
+      && !document.querySelector('.watch__video iframe')) {
+    mountPlayer();
+    watchProgress();
+  }
 }
 
 function bindInputs() {
@@ -863,6 +1039,7 @@ async function submitTask() {
         task_id: task.id,
         text: state.draft.text.trim(),
         rating: state.draft.rating,
+        token: state.draft.token || '',
       },
     });
     haptic('success');
@@ -1044,12 +1221,27 @@ document.addEventListener('click', (event) => {
   if (action === 'open-task') {
     const id = Number(target.dataset.id);
     state.task = state.data.tasks.find((item) => item.id === id);
-    state.draft = { template: null, text: '', rating: 0 };
+    state.draft = { template: null, text: '', rating: 0, token: '' };
+    resetWatch();
     state.view = 'task';
     haptic();
     render();
+    // Сервер засекает время открытия — по нему проверяется, что ролик
+    // действительно смотрели, а не сдали сразу.
+    api('/api/task/start', { method: 'POST', body: { task_id: id } })
+      .then((res) => { state.draft.token = res.token; })
+      .catch(() => { /* без токена сервер сам не пропустит */ });
     return;
   }
+
+  if (action === 'watch-outside') {
+    // Ушли смотреть наружу — время идёт по таймеру.
+    clearInterval(watch.timer);
+    watch.timer = setInterval(() => tickWatch(1), 1000);
+    return;
+  }
+
+  if (action === 'submit-video') { submitTask(); return; }
 
   if (action === 'pick-template') {
     const index = Number(target.dataset.index);

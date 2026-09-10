@@ -6,9 +6,13 @@ X-Telegram-Init-Data. Никакому user_id из тела запроса мы
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import logging
 import re
+import time
 from pathlib import Path
+from typing import Optional
 
 from aiohttp import web
 
@@ -38,6 +42,42 @@ MAX_TEXT = 1000
 # попадал бы в него просто потому, что записей в базе мало, и оказывался
 # «13-м из 7000».
 TOP_LIMIT = 10
+
+# Небольшой допуск: пока ответ дойдёт до сервера, пара секунд теряется.
+WATCH_TOLERANCE = 3
+
+
+def watch_token(secret: str, user_id: int, task_id: int, day: str,
+                started: int) -> str:
+    """Подпись момента, когда человек открыл задание.
+
+    Досмотр ролика проверить нельзя, но можно убедиться, что между
+    открытием и сдачей прошло не меньше нужного времени — и что метку
+    времени не подделали.
+    """
+    payload = f"{user_id}:{task_id}:{day}:{started}"
+    digest = hmac.new(secret.encode(), payload.encode(),
+                      hashlib.sha256).hexdigest()[:32]
+    return f"{started}.{digest}"
+
+
+def check_watch_token(secret: str, token: str, user_id: int, task_id: int,
+                      day: str, need_seconds: int) -> Optional[str]:
+    """Возвращает текст ошибки или None, если всё в порядке."""
+    started_raw, _, digest = (token or "").partition(".")
+    if not started_raw.isdigit() or not digest:
+        return "Откройте задание заново."
+    started = int(started_raw)
+    expected = watch_token(secret, user_id, task_id, day, started)
+    if not hmac.compare_digest(expected, token):
+        return "Откройте задание заново."
+    waited = int(time.time()) - started
+    if waited > 12 * 60 * 60:
+        return "Задание было открыто слишком давно — откройте заново."
+    if waited + WATCH_TOLERANCE < need_seconds:
+        left = max(1, need_seconds - waited)
+        return f"Досмотрите ролик — осталось около {left} с."
+    return None
 
 
 def _digits(value: str) -> str:
@@ -170,6 +210,9 @@ async def bootstrap(request: web.Request) -> web.Response:
             "deadline": task["deadline"],
             "require_rating": task["require_rating"],
             "templates": task["templates"],
+            "kind": task.get("kind") or "review",
+            "video_url": task.get("video_url") or "",
+            "min_watch": task.get("min_watch") or 0,
             "done": task["id"] in done,
         }
         for task in tasks
@@ -205,6 +248,24 @@ async def check_subscription(request: web.Request) -> web.Response:
         await services.gate_state(bot, user["user_id"], scope))
 
 
+async def start_task(request: web.Request) -> web.Response:
+    """Человек открыл задание — засекаем время (для роликов)."""
+    config = request.app["config"]
+    user = await _auth(request)
+    body = await request.json()
+    task = await db.get_task(int(body.get("task_id") or 0))
+    if not task or not task["active"]:
+        return web.json_response({"ok": False, "error": "Задание не найдено."},
+                                 status=404)
+    started = int(time.time())
+    return web.json_response({
+        "ok": True,
+        "token": watch_token(config.bot_token, user["user_id"], task["id"],
+                             db.today(), started),
+        "min_watch": task.get("min_watch") or 0,
+    })
+
+
 async def submit_task(request: web.Request) -> web.Response:
     config = request.app["config"]
     bot = request.app["bot"]
@@ -224,21 +285,29 @@ async def submit_task(request: web.Request) -> web.Response:
 
     text = (body.get("text") or "").strip()
     rating = int(body.get("rating") or 0)
-
-    if len(text) < task["min_chars"]:
-        return web.json_response(
-            {"ok": False,
-             "error": f"Нужно минимум {task['min_chars']} символов."},
-            status=400)
-    if len(text) > MAX_TEXT:
-        return web.json_response(
-            {"ok": False, "error": "Текст слишком длинный."}, status=400)
-    if task["require_rating"] and rating != 5:
-        return web.json_response(
-            {"ok": False, "error": "Поставьте максимальную оценку."},
-            status=400)
-
     day = db.today()
+
+    if (task.get("kind") or "review") == "video":
+        need = int(task.get("min_watch") or 0)
+        problem = check_watch_token(config.bot_token, str(body.get("token") or ""),
+                                    user["user_id"], task["id"], day, need)
+        if problem:
+            return web.json_response({"ok": False, "error": problem}, status=400)
+        text, rating = "Ролик просмотрен", 0
+    else:
+        if len(text) < task["min_chars"]:
+            return web.json_response(
+                {"ok": False,
+                 "error": f"Нужно минимум {task['min_chars']} символов."},
+                status=400)
+        if len(text) > MAX_TEXT:
+            return web.json_response(
+                {"ok": False, "error": "Текст слишком длинный."}, status=400)
+        if task["require_rating"] and rating != 5:
+            return web.json_response(
+                {"ok": False, "error": "Поставьте максимальную оценку."},
+                status=400)
+
     status = "approved" if config.autoapprove else "pending"
     reward = _money(task["reward"])
     sub_id = await db.create_submission(user["user_id"], task["id"], day,
@@ -491,6 +560,7 @@ def build_app(bot, config) -> web.Application:
     app.router.add_get("/health", health)
     app.router.add_get("/api/bootstrap", bootstrap)
     app.router.add_post("/api/subscription/check", check_subscription)
+    app.router.add_post("/api/task/start", start_task)
     app.router.add_post("/api/task/submit", submit_task)
     app.router.add_get("/api/top", top)
     app.router.add_get("/api/profile", profile)

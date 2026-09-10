@@ -52,6 +52,13 @@ class NewTask(StatesGroup):
     templates = State()
 
 
+class NewVideo(StatesGroup):
+    title = State()
+    url = State()
+    reward = State()
+    watch = State()
+
+
 async def _safe_edit(call: CallbackQuery, text: str, markup=None) -> None:
     with contextlib.suppress(Exception):
         await call.message.edit_text(text, reply_markup=markup)
@@ -116,18 +123,23 @@ async def task_card(call: CallbackQuery) -> None:
         await call.answer("Задание не найдено", show_alert=True)
         return
     await call.answer()
-    templates = "\n".join(f"• {t}" for t in task["templates"]) or "—"
-    await _safe_edit(
-        call,
-        f"{task['emoji']} <b>{task['title']}</b>\n"
-        f"Награда: <b>{task['reward']:g} ₽</b>\n"
-        f"Минимум символов: {task['min_chars']}\n"
-        f"До: {task['deadline']}\n"
-        f"Оценка 5★ обязательна: {'да' if task['require_rating'] else 'нет'}\n\n"
-        f"<i>{task['brief'] or task['short_desc']}</i>\n\n"
-        f"Шаблоны:\n{templates}",
-        kb.task_actions(task["id"], bool(task["active"])),
-    )
+    if (task.get("kind") or "review") == "video":
+        body = (f"{task['emoji']} <b>{task['title']}</b>  🎬\n"
+                f"Награда: <b>{task['reward']:g} ₽</b>\n"
+                f"Смотреть: {task['min_watch']} с\n"
+                f"До: {task['deadline']}\n\n"
+                f"Ссылка: {task['video_url']}")
+    else:
+        templates = "\n".join(f"• {t}" for t in task["templates"]) or "—"
+        body = (f"{task['emoji']} <b>{task['title']}</b>\n"
+                f"Награда: <b>{task['reward']:g} ₽</b>\n"
+                f"Минимум символов: {task['min_chars']}\n"
+                f"До: {task['deadline']}\n"
+                f"Оценка 5★ обязательна: "
+                f"{'да' if task['require_rating'] else 'нет'}\n\n"
+                f"<i>{task['brief'] or task['short_desc']}</i>\n\n"
+                f"Шаблоны:\n{templates}")
+    await _safe_edit(call, body, kb.task_actions(task["id"], bool(task["active"])))
 
 
 @router.callback_query(F.data.startswith("adm:task_toggle:"))
@@ -150,8 +162,81 @@ async def task_delete(call: CallbackQuery) -> None:
 @router.callback_query(F.data == "adm:task_add")
 async def task_add(call: CallbackQuery, state: FSMContext) -> None:
     await call.answer()
+    await state.clear()
+    await call.message.answer(texts.TASK_PICK_KIND, reply_markup=kb.task_kind())
+
+
+@router.callback_query(F.data.startswith("adm:task_kind:"))
+async def task_kind(call: CallbackQuery, state: FSMContext) -> None:
+    kind = call.data.split(":")[2]
+    await call.answer()
+    if kind == "video":
+        await state.set_state(NewVideo.title)
+        await call.message.answer(texts.VIDEO_ADD_TITLE)
+        return
     await state.set_state(NewTask.title)
     await call.message.answer(texts.TASK_ADD_TITLE)
+
+
+# ---------- задание с роликом ----------
+
+@router.message(NewVideo.title)
+async def video_title(message: Message, state: FSMContext) -> None:
+    raw = (message.text or "").strip()
+    emoji, _, title = raw.partition(" ")
+    if not title:
+        emoji, title = "🎬", raw
+    await state.update_data(emoji=emoji, title=title.strip())
+    await state.set_state(NewVideo.url)
+    await message.answer(texts.VIDEO_ADD_URL)
+
+
+@router.message(NewVideo.url)
+async def video_url(message: Message, state: FSMContext) -> None:
+    url = (message.text or "").strip()
+    if not url.startswith("http"):
+        await message.answer("Ссылка должна начинаться с https://")
+        return
+    await state.update_data(url=url)
+    await state.set_state(NewVideo.reward)
+    await message.answer(texts.VIDEO_ADD_REWARD)
+
+
+@router.message(NewVideo.reward)
+async def video_reward(message: Message, state: FSMContext) -> None:
+    raw = (message.text or "").replace(",", ".").strip()
+    try:
+        reward = float(raw)
+    except ValueError:
+        await message.answer("Нужно число. Например: 50")
+        return
+    await state.update_data(reward=reward)
+    await state.set_state(NewVideo.watch)
+    await message.answer(texts.VIDEO_ADD_WATCH)
+
+
+@router.message(NewVideo.watch)
+async def video_watch(message: Message, state: FSMContext) -> None:
+    raw = (message.text or "").strip()
+    if not raw.isdigit() or int(raw) < 1:
+        await message.answer("Нужно целое число секунд. Например: 15")
+        return
+    data = await state.get_data()
+    await state.clear()
+
+    task_id = await db.add_task(
+        title=data["title"], reward=data["reward"], emoji=data["emoji"],
+        kind="video", video_url=data["url"], min_watch=int(raw),
+        require_rating=False, min_chars=0, templates=[],
+        short_desc="Короткое видео от рекламодателя.",
+        brief=("Нажмите ▶︎ и досмотрите ролик до конца — награда придёт "
+               "сразу после просмотра."),
+    )
+    await message.answer(
+        f"✅ Ролик #{task_id} добавлен: смотреть {raw} с, награда "
+        f"{data['reward']:g} ₽.\n\nОткрой приложение и проверь, что видео "
+        f"проигрывается.",
+        reply_markup=kb.admin_reply_kb())
 
 
 @router.message(NewTask.title)

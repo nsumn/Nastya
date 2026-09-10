@@ -740,3 +740,40 @@ body.dark .warn-strip { color: var(--amber); }
     var(--bg) 62%, color-mix(in srgb, var(--bg) 70%, transparent));
   border-radius: 20px;
 }
+
+/* ---------- задание «посмотреть ролик» ---------- */
+
+.watch { margin-bottom: 16px; }
+.watch__video {
+  position: relative; width: 100%; aspect-ratio: 9 / 16;
+  max-height: 62vh; margin: 0 auto 12px;
+  border-radius: 18px; overflow: hidden;
+  background: #0d0d14; display: grid; place-items: center;
+}
+.watch__video iframe { width: 100%; height: 100%; border: 0; }
+.watch__video::after {
+  content: "Загружаем ролик…";
+  position: absolute; color: rgba(255, 255, 255, .55); font-size: 13px;
+  pointer-events: none;
+}
+.watch__video.is-ready::after, .watch__video.is-fallback::after { content: none; }
+.watch__video.is-fallback { aspect-ratio: auto; height: auto; }
+
+.watch__fallback { padding: 22px 18px; text-align: center; color: #fff; }
+.watch__fallback p { margin: 0 0 16px; font-size: 13.5px; line-height: 1.5;
+                     color: rgba(255, 255, 255, .75); }
+
+.watch__bar {
+  height: 8px; border-radius: 99px; background: var(--brand-soft);
+  overflow: hidden; margin-bottom: 10px;
+}
+.watch__fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  transition: width .3s linear;
+}
+.watch__label { font-size: 13.5px; color: var(--muted); text-align: center;
+                font-weight: 600; }
+.watch__label.is-ok { color: var(--mint); }
+.watch.is-done .watch__bar { background: var(--mint-soft); }
+.watch.is-done .watch__fill { background: var(--mint); }

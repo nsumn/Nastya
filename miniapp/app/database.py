@@ -87,6 +87,9 @@ async def init_db(path: str) -> None:
                 min_chars      INTEGER NOT NULL DEFAULT 35,
                 deadline       TEXT NOT NULL DEFAULT '23:59',
                 require_rating INTEGER NOT NULL DEFAULT 1,
+                kind           TEXT NOT NULL DEFAULT 'review',
+                video_url      TEXT NOT NULL DEFAULT '',
+                min_watch      INTEGER NOT NULL DEFAULT 0,
                 templates      TEXT NOT NULL DEFAULT '[]',
                 position       INTEGER NOT NULL DEFAULT 0,
                 active         INTEGER NOT NULL DEFAULT 1,
@@ -148,6 +151,11 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             "scope": "TEXT NOT NULL DEFAULT 'entry'",
         },
         "withdrawals": {"code": "TEXT"},
+        "tasks": {
+            "kind": "TEXT NOT NULL DEFAULT 'review'",
+            "video_url": "TEXT NOT NULL DEFAULT ''",
+            "min_watch": "INTEGER NOT NULL DEFAULT 0",
+        },
     }
     for table, columns in additions.items():
         async with db.execute(f"PRAGMA table_info({table})") as cur:
@@ -365,20 +373,22 @@ async def add_task(*, title: str, reward: float, emoji: str = "📝",
                    short_desc: str = "", brief: str = "", min_chars: int = 35,
                    deadline: str = "23:59", require_rating: bool = True,
                    templates: Optional[list[str]] = None,
-                   day: Optional[str] = None, position: int = 0) -> int:
+                   day: Optional[str] = None, position: int = 0,
+                   kind: str = "review", video_url: str = "",
+                   min_watch: int = 0) -> int:
     db = await _conn()
     try:
         cur = await db.execute(
             """
             INSERT INTO tasks (day, emoji, title, short_desc, brief, reward,
                                min_chars, deadline, require_rating, templates,
-                               position)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               position, kind, video_url, min_watch)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (day, emoji, title, short_desc, brief, reward, min_chars, deadline,
              1 if require_rating else 0, json.dumps(templates or [],
                                                     ensure_ascii=False),
-             position),
+             position, kind, video_url, min_watch),
         )
         await db.commit()
         return cur.lastrowid
