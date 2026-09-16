@@ -193,6 +193,8 @@ async def bootstrap(request: web.Request) -> web.Response:
     bot = request.app["bot"]
     user = await _auth(request)
 
+    await db.log_event(user["user_id"], "app_open")
+
     gate = await services.gate_state(bot, user["user_id"])
     day = db.today()
     tasks = await db.tasks_for_day(day)
@@ -360,6 +362,25 @@ def estimate_place(earned: float, top_earned: float, above: int,
     share = min(earned / top_earned, 1.0) if top_earned > 0 else 1.0
     place = round(participants * (1 - share)) or 1
     return max(above + 1, min(place, participants))
+
+
+# Что разрешено присылать с клиента — чтобы в статистику не попал мусор.
+CLIENT_EVENTS = {"payout_open"}
+
+
+async def log_client_event(request: web.Request) -> web.Response:
+    """Клиент отмечает шаг воронки (например, открыт экран вывода)."""
+    user = await _auth(request)
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001 — тело может быть пустым
+        body = {}
+    kind = str(body.get("kind") or "")
+    if kind not in CLIENT_EVENTS:
+        return web.json_response({"ok": False, "error": "unknown event"},
+                                 status=400)
+    await db.log_event(user["user_id"], kind)
+    return web.json_response({"ok": True})
 
 
 async def top(request: web.Request) -> web.Response:
@@ -566,6 +587,7 @@ def build_app(bot, config) -> web.Application:
     app.router.add_get("/health", health)
     app.router.add_get("/api/bootstrap", bootstrap)
     app.router.add_post("/api/subscription/check", check_subscription)
+    app.router.add_post("/api/event", log_client_event)
     app.router.add_post("/api/task/start", start_task)
     app.router.add_post("/api/task/submit", submit_task)
     app.router.add_get("/api/top", top)

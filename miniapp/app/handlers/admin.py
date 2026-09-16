@@ -83,6 +83,8 @@ async def stats(message: Message) -> None:
         since=since,
         new_users=await db.count_users_since(since),
         period_subs=await db.count_submissions_since(since),
+        funnel_period=await db.funnel(since) if since else None,
+        funnel_all=await db.funnel(),
     ))
 
 

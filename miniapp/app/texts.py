@@ -48,26 +48,54 @@ ADMIN_PANEL = "🛠 <b>Админ-панель</b>\n\nВыберите разд�
 ADMIN_ONLY = "Команда доступна только администратору."
 
 
+def _share(value: int, base: int) -> str:
+    """Доля от первого шага воронки — чтобы видеть, где отваливаются."""
+    return f" ({round(value / base * 100)}%)" if base else ""
+
+
+def funnel_block(data: dict) -> str:
+    base = data["opened"]
+    return "\n".join([
+        f"📱 Открыли приложение: <b>{data['opened']}</b>",
+        f"✅ Из них выполняли задания: <b>{data['tasks']}</b>"
+        + _share(data["tasks"], base),
+        f"💸 Из них нажимали «Вывести»: <b>{data['payout']}</b>"
+        + _share(data["payout"], base),
+        f"🔒 Из них подписались и ждут вывод: <b>{data['waiting']}</b>"
+        + _share(data["waiting"], base),
+    ])
+
+
 def admin_stats(data: dict, since: str = "", new_users: int = 0,
-                period_subs: int = 0) -> str:
-    period = (
-        "<b>С момента смены ссылок</b> "
-        f"({since[:16] if since else 'ссылки ещё не менялись'})\n"
-        f"🆕 Новых участников: <b>{new_users}</b>\n"
-        f"✅ Выполнено заданий: <b>{period_subs}</b>\n\n"
-    )
-    return (
-        "📊 <b>Статистика</b>\n\n"
-        + period +
-        "<b>Всего</b>\n"
-        f"👥 Участников: <b>{data['users']}</b>\n"
+                period_subs: int = 0, funnel_period: dict | None = None,
+                funnel_all: dict | None = None) -> str:
+    parts = ["📊 <b>Статистика</b>", ""]
+
+    if funnel_period is not None:
+        parts += [
+            "<b>С момента смены ссылок</b> "
+            f"({since[:16] if since else 'ссылки ещё не менялись'})",
+            funnel_block(funnel_period),
+            f"🆕 Новых участников: <b>{new_users}</b>",
+            f"📝 Выполнено заданий: <b>{period_subs}</b>",
+            "",
+        ]
+
+    if funnel_all is not None:
+        parts += ["<b>За всё время</b>", funnel_block(funnel_all), ""]
+
+    parts += [
+        "<b>Итого</b>",
+        f"👥 Участников: <b>{data['users']}</b>",
         f"📝 Выполнено заданий: <b>{data['submissions']}</b> "
-        f"(сегодня: {data['today']})\n"
-        f"💰 На балансах: <b>{data['balance']:g} ₽</b>\n"
-        f"💸 Выплачено: <b>{data['paid']:g} ₽</b>\n\n"
-        f"⏳ Заявок на вывод: {data['pending_wd']}\n"
-        f"🧾 Ждут модерации: {data['pending_sub']}"
-    )
+        f"(сегодня: {data['today']})",
+        f"💰 На балансах: <b>{data['balance']:g} ₽</b>",
+        f"💸 Выплачено: <b>{data['paid']:g} ₽</b>",
+        "",
+        f"⏳ Заявок на вывод: {data['pending_wd']}",
+        f"🧾 Ждут модерации: {data['pending_sub']}",
+    ]
+    return "\n".join(parts)
 
 
 TASK_PICK_KIND = (

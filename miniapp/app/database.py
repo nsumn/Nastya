@@ -133,6 +133,18 @@ async def init_db(path: str) -> None:
                 active   INTEGER NOT NULL DEFAULT 1
             );
 
+            CREATE TABLE IF NOT EXISTS events (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER NOT NULL,
+                kind       TEXT NOT NULL,
+                day        TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now', '+3 hours'))
+            );
+            -- одно событие на человека в день: для воронки этого достаточно,
+            -- а таблица не пухнет от каждого открытия приложения
+            CREATE UNIQUE INDEX IF NOT EXISTS events_uniq
+                ON events (user_id, kind, day);
+
             CREATE TABLE IF NOT EXISTS settings (
                 key   TEXT PRIMARY KEY,
                 value TEXT NOT NULL
@@ -789,6 +801,59 @@ async def count_submissions_since(since: str) -> int:
             (since,),
         ) as cur:
             return (await cur.fetchone())["n"]
+    finally:
+        await db.close()
+
+
+# ---------- события и воронка ----------
+
+async def log_event(user_id: int, kind: str) -> None:
+    """Отметить действие участника. Повторы за день не пишутся."""
+    if user_id <= 0:
+        return
+    db = await _conn()
+    try:
+        await db.execute(
+            "INSERT OR IGNORE INTO events (user_id, kind, day) VALUES (?, ?, ?)",
+            (user_id, kind, today()),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def funnel(since: str = "") -> dict[str, int]:
+    """Сколько людей дошло до каждого шага.
+
+    Каждый следующий шаг считается только среди тех, кто прошёл
+    предыдущий, — это воронка, а не четыре независимых числа.
+    """
+    where = " AND created_at >= ?" if since else ""
+    args: list = [since] if since else []
+
+    opened = ("SELECT DISTINCT user_id FROM events "
+              f"WHERE kind = 'app_open' AND user_id > 0{where}")
+    did_tasks = (f"SELECT DISTINCT user_id FROM submissions "
+                 f"WHERE user_id IN ({opened})"
+                 + (" AND created_at >= ?" if since else ""))
+    tapped = (f"SELECT DISTINCT user_id FROM events "
+              f"WHERE kind = 'payout_open' AND user_id IN ({did_tasks})"
+              + (" AND created_at >= ?" if since else ""))
+    waiting = (f"SELECT DISTINCT user_id FROM withdrawals "
+               f"WHERE status = 'pending' AND user_id IN ({tapped})"
+               + (" AND created_at >= ?" if since else ""))
+
+    steps = {"opened": (opened, 1), "tasks": (did_tasks, 2),
+             "payout": (tapped, 3), "waiting": (waiting, 4)}
+    out: dict[str, int] = {}
+    db = await _conn()
+    try:
+        for key, (sql, depth) in steps.items():
+            async with db.execute(
+                f"SELECT COUNT(*) AS n FROM ({sql})", args * depth
+            ) as cur:
+                out[key] = (await cur.fetchone())["n"]
+        return out
     finally:
         await db.close()
 

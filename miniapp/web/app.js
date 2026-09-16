@@ -1273,6 +1273,9 @@ document.addEventListener('click', (event) => {
     state.view = 'payout';
     haptic();
     render();
+    // Шаг воронки: человек дошёл до вывода.
+    api('/api/event', { method: 'POST', body: { kind: 'payout_open' } })
+      .catch(() => { /* статистика не должна мешать выводу */ });
     return;
   }
 
