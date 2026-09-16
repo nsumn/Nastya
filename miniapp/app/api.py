@@ -321,15 +321,21 @@ async def submit_task(request: web.Request) -> web.Response:
         await db.add_balance(user["user_id"], reward)
 
     fresh = await db.get_user(user["user_id"])
-    await services.notify_admin(
-        bot, config,
-        f"📝 <b>Новый ответ #{sub_id}</b>\n"
-        f"Участник: {services.display_name(fresh)} (<code>{fresh['user_id']}</code>)\n"
-        f"Задание: {task['emoji']} {task['title']} — {reward:g} ₽\n"
-        f"Оценка: {'⭐' * rating if rating else '—'}\n"
-        f"Статус: {'начислено' if status == 'approved' else 'на модерации'}\n\n"
-        f"<i>{text[:600]}</i>",
-    )
+
+    # О каждом выполненном задании админа не дёргаем — это поток, а не
+    # повод что-то сделать. Пишем, только если ответ ждёт модерации
+    # (там нужно решение) или это включено явно.
+    if status == "pending" or config.notify_submissions:
+        await services.notify_admin(
+            bot, config,
+            f"📝 <b>Новый ответ #{sub_id}</b>\n"
+            f"Участник: {services.display_name(fresh)} "
+            f"(<code>{fresh['user_id']}</code>)\n"
+            f"Задание: {task['emoji']} {task['title']} — {reward:g} ₽\n"
+            f"Оценка: {'⭐' * rating if rating else '—'}\n"
+            f"Статус: {'начислено' if status == 'approved' else 'на модерации'}\n\n"
+            f"<i>{text[:600]}</i>",
+        )
 
     return web.json_response({
         "ok": True,

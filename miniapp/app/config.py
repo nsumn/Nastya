@@ -45,6 +45,9 @@ class Config:
     min_withdraw: float = 500.0
     participants_base: int = 7000
     autoapprove: bool = True
+    # Писать ли админу о каждом выполненном задании. По умолчанию нет:
+    # ответы, ждущие модерации, приходят в любом случае.
+    notify_submissions: bool = False
     # Демо для заказчика: у администратора заявка на вывод сразу
     # помечается доставленной, чтобы можно было показать этот экран.
     # На обычных участников не влияет.
@@ -83,6 +86,7 @@ def load_config() -> Config:
         min_withdraw=float(_int("MIN_WITHDRAW", 500) or 500),
         participants_base=_int("PARTICIPANTS_BASE", 7000),
         autoapprove=_get("AUTOAPPROVE", "1") != "0",
+        notify_submissions=_get("NOTIFY_SUBMISSIONS", "0") == "1",
         demo_payout_for_admin=_get("DEMO_PAYOUT_FOR_ADMIN", "1") != "0",
         demo_admin_name=_get("DEMO_ADMIN_NAME", "Мария"),
         demo_admin_avatar=_get("DEMO_ADMIN_AVATAR"),
