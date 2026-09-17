@@ -777,3 +777,35 @@ body.dark .warn-strip { color: var(--amber); }
 .watch__label.is-ok { color: var(--mint); }
 .watch.is-done .watch__bar { background: var(--mint-soft); }
 .watch.is-done .watch__fill { background: var(--mint); }
+
+/* ---------- экран-предупреждение перед списком каналов ---------- */
+
+.intro { text-align: center; padding: 26px 20px 22px; }
+.intro__icon {
+  width: 66px; height: 66px; margin: 0 auto 16px; border-radius: 22px;
+  background: var(--brand-soft); display: grid; place-items: center;
+  font-size: 30px;
+}
+.intro__title { margin: 0 0 10px; font-size: 26px; font-weight: 800;
+                letter-spacing: -.6px; }
+.intro__text { margin: 0 0 18px; font-size: 14.5px; line-height: 1.55;
+               color: var(--muted); }
+
+.intro__accent {
+  background: var(--brand-soft); color: var(--ink);
+  border-radius: 16px; padding: 14px 16px; margin-bottom: 16px;
+  font-size: 15px; line-height: 1.5;
+}
+.intro__accent b { font-weight: 800; }
+
+.intro__list { margin: 0 0 20px; padding: 0; list-style: none;
+               text-align: left; }
+.intro__list li {
+  position: relative; padding-left: 26px; margin-bottom: 10px;
+  font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);
+}
+.intro__list li:last-child { margin-bottom: 0; }
+.intro__list li::before {
+  content: "•"; position: absolute; left: 9px; top: -1px;
+  color: var(--brand); font-weight: 800;
+}

@@ -520,13 +520,16 @@ async def withdraw(request: web.Request) -> web.Response:
     except ValueError as err:
         return web.json_response({"ok": False, "error": str(err)}, status=400)
 
-    # Перед созданием заявки — проверка подписки на каналы партнёров.
-    gate = await services.gate_state(bot, user["user_id"], "payout")
-    if not gate["passed"]:
-        return web.json_response(
-            {"ok": False, "gate": gate,
-             "error": "Подтвердите подписку на каналы партнёров."},
-            status=409)
+    # Подписка требуется только на первый вывод: так обещано человеку
+    # на экране перед списком каналов, и так оно и работает.
+    first_time = await db.count_withdrawals(user["user_id"]) == 0
+    if first_time:
+        gate = await services.gate_state(bot, user["user_id"], "payout")
+        if not gate["passed"]:
+            return web.json_response(
+                {"ok": False, "gate": gate, "first_withdrawal": True,
+                 "error": "Подтвердите подписку на каналы партнёров."},
+                status=409)
 
     created = await db.create_withdrawal(user["user_id"], amount, method,
                                          normalized)

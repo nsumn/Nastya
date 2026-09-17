@@ -662,6 +662,18 @@ async def delete_user_withdrawals(user_id: int) -> int:
         await db.close()
 
 
+async def count_withdrawals(user_id: int) -> int:
+    """Сколько заявок на вывод человек уже создавал."""
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT COUNT(*) AS n FROM withdrawals WHERE user_id = ?", (user_id,)
+        ) as cur:
+            return (await cur.fetchone())["n"]
+    finally:
+        await db.close()
+
+
 async def user_withdrawals(user_id: int, limit: int = 30) -> list[dict]:
     db = await _conn()
     try:

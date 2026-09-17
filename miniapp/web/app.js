@@ -14,7 +14,8 @@ const state = {
   task: null,        // задание на экране выполнения
   draft: { template: null, text: '', rating: 0 },
   payout: { method: null, digits: '', error: '', preview: null },
-  payoutGate: null,  // экран «Подтвердите подписку» перед выводом
+  payoutGate: null,       // экран «Подтвердите подписку» перед выводом
+  seenPayoutIntro: false, // предупреждение перед списком уже показали
   top: null,
   profile: null,
 };
@@ -676,6 +677,36 @@ function viewProfile() {
     </section>`;
 }
 
+/* ---------- экран: что будет дальше ---------- */
+
+function viewPayoutIntro() {
+  return `
+    ${topbar({ back: true })}
+
+    <section class="card intro">
+      <div class="intro__icon">🔒</div>
+      <h2 class="intro__title">Остался один шаг</h2>
+      <p class="intro__text">
+        Чтобы продолжить, подпишитесь на каналы партнёров — они оплачивают
+        задания на платформе.
+      </p>
+
+      <div class="intro__accent">
+        Это нужно <b>только для первого вывода</b>. Все следующие заявки
+        обрабатываются без подписок.
+      </div>
+
+      <ul class="intro__list">
+        <li><b>После первой выплаты можно отписаться</b> — на будущие
+            выводы это не повлияет.</li>
+        <li>Пока первая выплата не пришла, оставайтесь подписанными:
+            подписка проверяется ещё раз перед отправкой денег.</li>
+      </ul>
+
+      <button class="btn" data-action="to-gate">Далее</button>
+    </section>`;
+}
+
 /* ---------- экран: подтверждение подписки перед выводом ---------- */
 
 function viewPayoutGate() {
@@ -710,10 +741,11 @@ function viewPayoutGate() {
     <div class="gate-note gate-note--warn">
       <div class="gate-note__mark">!</div>
       <div>
-        <div class="gate-note__title">Не отписывайтесь до выплаты</div>
+        <div class="gate-note__title">Только для первого вывода</div>
         <div class="gate-note__text">
-          Подписка проверяется ещё раз перед отправкой денег. Если отписаться
-          раньше, заявка будет отклонена, а платёж не отправлен.
+          Следующие заявки обрабатываются без подписок. Отписаться можно
+          сразу после первой выплаты — но не раньше: подписка проверяется
+          ещё раз перед отправкой денег.
         </div>
       </div>
     </div>
@@ -885,6 +917,7 @@ function render() {
     profile: viewProfile,
     payout: viewPayout,
     payout_confirm: viewPayoutConfirm,
+    payout_intro: viewPayoutIntro,
     payout_gate: viewPayoutGate,
   };
   screenEl.innerHTML = (views[state.view] || viewTasks)();
@@ -894,8 +927,8 @@ function render() {
     tab.classList.toggle('is-active', tab.dataset.tab === state.tab);
   });
 
-  const nested = ['task', 'payout', 'payout_confirm', 'payout_gate']
-    .includes(state.view);
+  const nested = ['task', 'payout', 'payout_confirm', 'payout_intro',
+                  'payout_gate'].includes(state.view);
   if (tg && tg.BackButton) {
     if (nested) tg.BackButton.show(); else tg.BackButton.hide();
   }
@@ -993,7 +1026,8 @@ function goTab(tab) {
 }
 
 function goBack() {
-  if (state.view === 'payout_gate') { state.view = 'payout_confirm'; render(); return; }
+  if (state.view === 'payout_gate') { state.view = 'payout_intro'; render(); return; }
+  if (state.view === 'payout_intro') { state.view = 'payout_confirm'; render(); return; }
   if (state.view === 'payout_confirm') { state.view = 'payout'; render(); return; }
   if (state.view === 'payout') { state.tab = 'profile'; state.view = 'profile'; render(); return; }
   state.view = state.tab;  // с экрана задания — обратно в ленту
@@ -1124,7 +1158,9 @@ async function createWithdrawal() {
     if (err.status === 409 && err.payload && err.payload.gate) {
       haptic('warning');
       state.payoutGate = err.payload.gate;
-      state.view = 'payout_gate';
+      // Сначала объясняем, зачем подписки и что это только один раз,
+      // и лишь потом показываем список каналов.
+      state.view = state.seenPayoutIntro ? 'payout_gate' : 'payout_intro';
       render();
       return;
     }
@@ -1289,6 +1325,14 @@ document.addEventListener('click', (event) => {
   }
 
   if (action === 'preview') { payoutPreview(); return; }
+  if (action === 'to-gate') {
+    state.seenPayoutIntro = true;
+    state.view = 'payout_gate';
+    haptic();
+    render();
+    return;
+  }
+
   if (action === 'check-payout-gate') { checkPayoutGate(); return; }
 
   if (action === 'payout-details') {
