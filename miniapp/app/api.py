@@ -520,10 +520,11 @@ async def withdraw(request: web.Request) -> web.Response:
     except ValueError as err:
         return web.json_response({"ok": False, "error": str(err)}, status=400)
 
-    # Подписка требуется только на первый вывод: так обещано человеку
-    # на экране перед списком каналов, и так оно и работает.
+    # PAYOUT_GATE_FIRST_ONLY=1 — подписка спрашивается только на первый
+    # вывод (так обещает экран перед списком каналов). Пока флаг выключен,
+    # проверяем перед каждой заявкой.
     first_time = await db.count_withdrawals(user["user_id"]) == 0
-    if first_time:
+    if first_time or not config.payout_gate_first_only:
         gate = await services.gate_state(bot, user["user_id"], "payout")
         if not gate["passed"]:
             return web.json_response(
