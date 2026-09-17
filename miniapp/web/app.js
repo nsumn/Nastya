@@ -194,7 +194,8 @@ function topbar({ back = false } = {}) {
 
 function viewGate() {
   const sponsors = state.data.gate.sponsors.map((sponsor, index) => `
-    <a class="sponsor" href="${esc(sponsor.url)}" target="_blank" rel="noopener">
+    <a class="sponsor ${sponsor.check ? 'is-check' : ''}"
+       href="${esc(sponsor.url)}" target="_blank" rel="noopener">
       <div class="sponsor__icon">${index + 1}</div>
       <div>
         <div class="sponsor__title">${esc(sponsor.title)}</div>
@@ -712,7 +713,8 @@ function viewPayoutIntro() {
 function viewPayoutGate() {
   const gate = state.payoutGate || { sponsors: [] };
   const channels = gate.sponsors.map((sponsor, index) => `
-    <a class="channel" href="${esc(sponsor.url)}" target="_blank" rel="noopener">
+    <a class="channel ${sponsor.check ? 'is-check' : ''}"
+       href="${esc(sponsor.url)}" target="_blank" rel="noopener">
       <div class="channel__body">
         <div class="channel__title">${esc(sponsor.title)}</div>
         ${sponsor.subtitle ? `<div class="channel__sub">${esc(sponsor.subtitle)}</div>` : ''}

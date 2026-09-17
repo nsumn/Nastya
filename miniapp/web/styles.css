@@ -809,3 +809,29 @@ body.dark .warn-strip { color: var(--amber); }
   content: "•"; position: absolute; left: 9px; top: -1px;
   color: var(--brand); font-weight: 800;
 }
+
+/* ---------- проверочный канал: тот, по которому идёт проверка ---------- */
+
+.channel.is-check,
+.sponsor.is-check {
+  border: 1.5px solid var(--danger);
+  background: rgba(229, 72, 77, .07);
+  animation: pulse-check 2s ease-in-out infinite;
+}
+.channel.is-check .channel__title,
+.sponsor.is-check .sponsor__title { color: var(--danger); font-weight: 800; }
+.channel.is-check .channel__num { color: var(--danger); font-weight: 800; }
+.sponsor.is-check .sponsor__icon {
+  background: rgba(229, 72, 77, .14); color: var(--danger);
+}
+.sponsor.is-check .sponsor__state { color: var(--danger); font-weight: 750; }
+
+@keyframes pulse-check {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 72, 77, .38); }
+  55%      { box-shadow: 0 0 0 7px rgba(229, 72, 77, 0); }
+}
+
+/* Кому анимация мешает — оставляем только цвет. */
+@media (prefers-reduced-motion: reduce) {
+  .channel.is-check, .sponsor.is-check { animation: none; }
+}
