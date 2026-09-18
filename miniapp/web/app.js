@@ -1433,7 +1433,18 @@ function applyTheme() {
   }
 }
 
+/** Регистрируем service worker — без него приложение не поставить на стол. */
+function registerWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      /* не установилось — приложение всё равно работает как сайт */
+    });
+  });
+}
+
 async function boot() {
+  registerWorker();
   if (tg) {
     tg.ready();
     tg.expand();
@@ -1447,6 +1458,11 @@ async function boot() {
   try {
     await reload();
   } catch (err) {
+    // Открыли с рабочего стола и сессии нет — отправляем на вход.
+    if (err.status === 401 && !(tg && tg.initData)) {
+      location.replace('/login');
+      return;
+    }
     screenEl.innerHTML = `
       <div class="gate">
         <div class="gate__lock">⚠️</div>

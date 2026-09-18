@@ -18,6 +18,8 @@ from aiohttp import web
 
 from . import database as db
 from . import services
+from .web_login import (COOKIE_NAME, SESSION_TTL, check_login, make_session,
+                        read_session)
 from .webapp_auth import extract_user
 
 log = logging.getLogger(__name__)
@@ -130,6 +132,17 @@ async def _auth(request: web.Request) -> dict:
                  or request.query.get("initData", ""))
 
     tg_user = extract_user(init_data, config.bot_token)
+
+    # Веб-версия с рабочего стола: initData нет, узнаём по сессионной куке.
+    if not tg_user:
+        user_id = read_session(request.cookies.get(COOKIE_NAME, ""),
+                               config.bot_token)
+        if user_id:
+            known = await db.get_user(user_id)
+            tg_user = {"id": user_id,
+                       "first_name": (known or {}).get("full_name") or "",
+                       "username": (known or {}).get("username") or ""}
+
     if not tg_user and config.webapp_dev:
         tg_user = {"id": 1, "first_name": "Демо", "username": "demo"}
     if not tg_user:
@@ -566,6 +579,90 @@ async def withdraw(request: web.Request) -> web.Response:
     })
 
 
+async def manifest(request: web.Request) -> web.Response:
+    """Манифест приложения — имя берём из настроек, чтобы не расходилось."""
+    config = request.app["config"]
+    return web.json_response({
+        "name": f"{config.brand_name} — {config.brand_tagline}",
+        "short_name": config.brand_name,
+        "start_url": "./",
+        "scope": "./",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#f5f4fb",
+        "theme_color": "#6c4df6",
+        "lang": "ru",
+        "icons": [
+            {"src": "icons/icon-192.png", "sizes": "192x192",
+             "type": "image/png"},
+            {"src": "icons/icon-512.png", "sizes": "512x512",
+             "type": "image/png"},
+            {"src": "icons/maskable-512.png", "sizes": "512x512",
+             "type": "image/png", "purpose": "maskable"},
+        ],
+    }, headers={"Cache-Control": "no-store"})
+
+
+async def login_page(request: web.Request) -> web.Response:
+    """Страница входа для веб-версии: кнопка Telegram Login."""
+    config = request.app["config"]
+    bot = request.app["bot"]
+    try:
+        me = await bot.get_me()
+        username = me.username or ""
+    except Exception:  # noqa: BLE001 — покажем страницу и без имени бота
+        username = ""
+
+    page = (WEB_DIR / "login.html").read_text(encoding="utf-8")
+    return web.Response(
+        text=(page.replace("{{BOT}}", username)
+                  .replace("{{BRAND}}", config.brand_name)
+                  .replace("{{TAGLINE}}", config.brand_tagline)),
+        content_type="text/html",
+        headers={"Cache-Control": "no-store"})
+
+
+async def login_callback(request: web.Request) -> web.Response:
+    """Виджет вернул подписанные данные — проверяем и ставим куку."""
+    config = request.app["config"]
+    data = dict(request.query)
+    if not data:
+        try:
+            data = await request.json()
+        except Exception:  # noqa: BLE001
+            data = {}
+
+    checked = check_login(data, config.bot_token)
+    if not checked:
+        return web.json_response(
+            {"ok": False, "error": "Подпись не совпала, попробуйте ещё раз."},
+            status=401)
+
+    user_id = int(checked["id"])
+    full_name = " ".join(part for part in (checked.get("first_name"),
+                                           checked.get("last_name")) if part)
+    await db.upsert_user(user_id, username=checked.get("username") or "",
+                         full_name=full_name,
+                         photo_url=checked.get("photo_url") or "")
+
+    # За nginx приходит X-Forwarded-Proto; локально по http куку нельзя
+    # помечать Secure, иначе браузер её просто не вернёт.
+    https = request.headers.get("X-Forwarded-Proto", request.scheme) == "https"
+
+    response = web.HTTPFound("/app/")
+    response.set_cookie(
+        COOKIE_NAME, make_session(user_id, config.bot_token),
+        max_age=SESSION_TTL, httponly=True, samesite="Lax", secure=https,
+        path="/")
+    return response
+
+
+async def logout(request: web.Request) -> web.Response:
+    response = web.HTTPFound("/login")
+    response.del_cookie(COOKIE_NAME, path="/")
+    return response
+
+
 async def health(_request: web.Request) -> web.Response:
     return web.Response(text="ok")
 
@@ -589,6 +686,10 @@ def build_app(bot, config) -> web.Application:
     app["config"] = config
 
     app.router.add_get("/health", health)
+    app.router.add_get("/login", login_page)
+    app.router.add_get("/login/callback", login_callback)
+    app.router.add_post("/login/callback", login_callback)
+    app.router.add_get("/logout", logout)
     app.router.add_get("/api/bootstrap", bootstrap)
     app.router.add_post("/api/subscription/check", check_subscription)
     app.router.add_post("/api/event", log_client_event)
@@ -599,6 +700,7 @@ def build_app(bot, config) -> web.Application:
     app.router.add_post("/api/withdraw/preview", withdraw_preview)
     app.router.add_post("/api/withdraw", withdraw)
 
+    app.router.add_get("/app/manifest.webmanifest", manifest)
     app.router.add_get("/app/", index)
     app.router.add_get("/app", index)
     app.router.add_static("/app/", WEB_DIR, name="static")
