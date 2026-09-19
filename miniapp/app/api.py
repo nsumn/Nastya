@@ -17,7 +17,7 @@ from typing import Optional
 from aiohttp import web
 
 from . import database as db
-from . import services
+from . import op, services
 from .web_login import (COOKIE_NAME, SESSION_TTL, check_login, make_session,
                         read_session)
 from .webapp_auth import extract_user
@@ -264,6 +264,9 @@ async def check_subscription(request: web.Request) -> web.Response:
     except Exception:  # noqa: BLE001 — тело необязательно
         body = {}
     scope = "payout" if body.get("scope") == "payout" else "entry"
+    # Кнопку жмут сразу после подписки — спрашиваем Telegram заново,
+    # а не отвечаем из кэша.
+    op.forget(user["user_id"])
     return web.json_response(
         await services.gate_state(bot, user["user_id"], scope, config))
 

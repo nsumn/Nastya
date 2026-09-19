@@ -35,15 +35,16 @@ from . import op_store
 
 log = logging.getLogger(__name__)
 
-OK_TTL = 600          # столько секунд помним, что человек подписан
-OFF_TTL = 60          # и столько — что не подписан (чтобы не дёргать API зря)
+OK_TTL = 600          # столько секунд помним, что человек подписан.
+# Отрицательный ответ не кэшируем вообще: человек подписывается и сразу
+# жмёт «Проверить подписку», и любой кэш тут превращается в «подписка
+# не найдена» у того, кто только что подписался.
 MEMBER_STATUSES = {"creator", "administrator", "member"}
 CHECK_MARK = "проверочн"   # по этому слову ищем строку под проверочную ссылку
 CHECK_LINE_MAX = 45        # длиннее — это абзац инструкции, а не строка списка
 MIN_LINKS = 3              # столько ссылок в сообщении = это список спонсоров
 
 _ok_cache: dict[int, float] = {}
-_off_cache: dict[int, float] = {}
 
 
 @dataclass
@@ -394,12 +395,10 @@ async def gate_text(bot: Bot | None = None, kind: str = "entry") -> str:
 
 def forget(user_id: int) -> None:
     _ok_cache.pop(user_id, None)
-    _off_cache.pop(user_id, None)
 
 
 def _forget_all() -> None:
     _ok_cache.clear()
-    _off_cache.clear()
 
 
 async def subscription_status(bot: Bot | None, user_id: int,
@@ -415,11 +414,8 @@ async def subscription_status(bot: Bot | None, user_id: int,
     if not chat or bot is None:
         return "unknown"
     now = time.monotonic()
-    if not fresh:
-        if _ok_cache.get(user_id, 0) > now:
-            return "on"
-        if _off_cache.get(user_id, 0) > now:
-            return "off"
+    if not fresh and _ok_cache.get(user_id, 0) > now:
+        return "on"
     try:
         member = await bot.get_chat_member(chat, user_id)
     except TelegramAPIError as exc:
@@ -430,9 +426,7 @@ async def subscription_status(bot: Bot | None, user_id: int,
     ok = status in MEMBER_STATUSES or bool(getattr(member, "is_member", False))
     if ok:
         _ok_cache[user_id] = now + OK_TTL
-        _off_cache.pop(user_id, None)
     else:
-        _off_cache[user_id] = now + OFF_TTL
         _ok_cache.pop(user_id, None)
     return "on" if ok else "off"
 

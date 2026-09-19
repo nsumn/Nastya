@@ -85,11 +85,74 @@ async def status_text() -> str:
         f"Проверочный канал: {html.escape(title) if chat else '⚠️ не задан'}",
         f"Проверочная ссылка: {'✅ есть' if await op.check_url() else '⚠️ нет'}",
         f"Проверка: {'✅ включена' if await op.enabled() else '❌ выключена'}",
+        "",
+        "Не находит подписку у того, кто подписан? — /check",
     ]
     if not chat:
         lines += ["", "⚠️ Перешли мне любой пост из проверочного канала — "
                       "один раз, чтобы я знал, по какому каналу проверять."]
     return "\n".join(lines)
+
+
+async def diagnose(bot, user_id: int) -> str:
+    """Что Telegram отвечает про проверочный канал прямо сейчас.
+
+    Нужно, когда участник уверяет, что подписан, а бот не находит:
+    почти всегда дело либо в правах бота, либо в том, что проверочным
+    записан не тот канал, на который человек подписался.
+    """
+    chat_id = await op.check_chat()
+    title = await op.check_title()
+    if not chat_id:
+        return ("🔎 <b>Проверка подписки</b>\n\n"
+                "⚠️ Проверочный канал не задан — проверять нечего, "
+                "приложение пускает всех.\n"
+                "Перешли мне любой пост из канала, чтобы это починить.")
+
+    lines = ["🔎 <b>Проверка подписки</b>", "",
+             f"Канал: <b>{html.escape(title or str(chat_id))}</b>",
+             f"id: <code>{html.escape(str(chat_id))}</code>"]
+
+    try:
+        chat = await bot.get_chat(chat_id)
+    except TelegramAPIError as err:
+        lines += ["", f"❌ Канал не открывается: <code>{html.escape(str(err))}</code>",
+                  "Скорее всего, бота выгнали из канала."]
+        return "\n".join(lines)
+    if chat.title and chat.title != title:
+        lines.append(f"Сейчас называется: <b>{html.escape(chat.title)}</b>")
+    if chat.username:
+        lines.append(f"Ссылка: @{html.escape(chat.username)}")
+
+    try:
+        me = await bot.get_me()
+        member = await bot.get_chat_member(chat_id, me.id)
+        status = getattr(member.status, "value", member.status)
+        admin = status in ("administrator", "creator")
+    except TelegramAPIError as err:
+        lines += ["", f"❌ Не смог узнать свои права: "
+                      f"<code>{html.escape(str(err))}</code>"]
+        return "\n".join(lines)
+
+    lines.append("Бот в канале: "
+                 + ("✅ администратор" if admin else f"⚠️ {status} — "
+                    "без прав администратора Telegram не даёт проверять "
+                    "чужие подписки, и приложение пускает всех"))
+
+    op.forget(user_id)
+    own = await op.subscription_status(bot, user_id, fresh=True)
+    lines += ["", "Твоя подписка по мнению Telegram: "
+              + {"on": "✅ есть", "off": "❌ нет",
+                 "unknown": "🤷 не удалось проверить"}[own]]
+    if own == "off":
+        lines.append("Если ты точно подписана — значит, проверочным "
+                     "записан не тот канал. Перешли пост из нужного.")
+    return "\n".join(lines)
+
+
+@router.message(Command("check"))
+async def check_cmd(message: Message) -> None:
+    await message.answer(await diagnose(message.bot, message.from_user.id))
 
 
 @router.message(Command("op"))
