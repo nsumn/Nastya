@@ -6,6 +6,7 @@ import logging
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 
+from . import database as db
 from . import op
 
 log = logging.getLogger(__name__)
@@ -21,13 +22,17 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
     проверочному каналу: чужие каналы Telegram проверять не даёт — бот
     должен быть их администратором.
     """
+    # Проверяем всегда, даже когда гейт выключен: иначе статистика подписок
+    # и отписок обновляется только у тех, кто дошёл до вывода.
+    status = await track_subscription(bot, user_id)
+
     if not await op.gate_active(scope):
         return {"required": False, "passed": True, "scope": scope,
                 "total": 0, "sponsors": []}
 
     links = await op.visible_links(bot, scope)
 
-    passed = await op.is_subscribed(bot, user_id)
+    passed = status != "off" if await op.enabled() else True
     return {
         "required": True,
         "passed": passed,
@@ -39,6 +44,31 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
             for item in links
         ],
     }
+
+
+async def track_subscription(bot: Bot, user_id: int) -> str:
+    """Проверить подписку на проверочный канал и запомнить результат.
+
+    Именно отсюда берётся статистика: «подписался» — это ответ Telegram
+    на get_chat_member, а не переход по ссылке (перейти можно и не
+    подписавшись). Возвращает «on» / «off» / «unknown».
+    """
+    status = await op.subscription_status(bot, user_id)
+    if status != "unknown":
+        await db.mark_subscription(user_id, status == "on")
+    return status
+
+
+async def refresh_subs(bot: Bot, user_ids) -> None:
+    """Перепроверить подписку у конкретных людей, минуя кэш.
+
+    Нужно для админки: отписку человека, который больше не заходит
+    в приложение, иначе никто не заметит.
+    """
+    for user_id in user_ids:
+        status = await op.subscription_status(bot, user_id, fresh=True)
+        if status != "unknown":
+            await db.mark_subscription(user_id, status == "on")
 
 
 async def notify_admin(bot: Bot, config, text: str, reply_markup=None) -> None:

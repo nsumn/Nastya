@@ -55,20 +55,49 @@ def _share(value: int, base: int) -> str:
 
 def funnel_block(data: dict) -> str:
     base = data["opened"]
-    return "\n".join([
+    lines = [
         f"📱 Открыли приложение: <b>{data['opened']}</b>",
         f"✅ Из них выполняли задания: <b>{data['tasks']}</b>"
         + _share(data["tasks"], base),
         f"💸 Из них нажимали «Вывести»: <b>{data['payout']}</b>"
         + _share(data["payout"], base),
-        f"🔒 Из них подписались и ждут вывод: <b>{data['waiting']}</b>"
+        f"🔒 Из них подписаны и ждут вывод: <b>{data['waiting']}</b>"
         + _share(data["waiting"], base),
+    ]
+    if data.get("waiting_off"):
+        lines.append(f"🚪 Ждут вывод, но отписались: "
+                     f"<b>{data['waiting_off']}</b>")
+    return "\n".join(lines)
+
+
+def subs_block(data: dict, channel: str = "", ready: bool = True) -> str:
+    """Проверочный канал: подписки и отписки, сверенные с Telegram."""
+    name = channel or "Проверочный канал"
+    if not ready:
+        return (f"📡 <b>{name}</b>\n"
+                "Канал не задан — подписку проверить нечем, "
+                "пришлите пост из канала, чтобы бот его запомнил.")
+    return "\n".join([
+        f"📡 <b>{name}</b>",
+        f"➕ Подписались: <b>{data['ever']}</b>",
+        f"✅ Сейчас подписаны: <b>{data['now']}</b>",
+        f"🚪 Отписались: <b>{data['left']}</b>",
     ])
+
+
+SUBS_NOTE = (
+    "<i>Подписка сверяется с Telegram, а не по клику по ссылке. "
+    "Отписку видно, когда человек снова заходит в приложение; "
+    "у тех, чья заявка ждёт выплаты, она перепроверяется прямо сейчас.</i>"
+)
 
 
 def admin_stats(data: dict, since: str = "", new_users: int = 0,
                 period_subs: int = 0, funnel_period: dict | None = None,
-                funnel_all: dict | None = None) -> str:
+                funnel_all: dict | None = None,
+                subs_period: dict | None = None,
+                subs_all: dict | None = None,
+                channel: str = "", check_ready: bool = True) -> str:
     parts = ["📊 <b>Статистика</b>", ""]
 
     if funnel_period is not None:
@@ -76,13 +105,21 @@ def admin_stats(data: dict, since: str = "", new_users: int = 0,
             "<b>С момента смены ссылок</b> "
             f"({since[:16] if since else 'ссылки ещё не менялись'})",
             funnel_block(funnel_period),
+        ]
+        if subs_period is not None:
+            parts += ["", subs_block(subs_period, channel, check_ready)]
+        parts += [
+            "",
             f"🆕 Новых участников: <b>{new_users}</b>",
             f"📝 Выполнено заданий: <b>{period_subs}</b>",
             "",
         ]
 
     if funnel_all is not None:
-        parts += ["<b>За всё время</b>", funnel_block(funnel_all), ""]
+        parts += ["<b>За всё время</b>", funnel_block(funnel_all)]
+        if subs_all is not None:
+            parts += ["", subs_block(subs_all, channel, check_ready)]
+        parts += ["", SUBS_NOTE, ""]
 
     parts += [
         "<b>Итого</b>",

@@ -78,6 +78,10 @@ async def cmd_admin(message: Message) -> None:
 async def stats(message: Message) -> None:
     """Статистика: за текущий период ОП и за всё время."""
     since = await op.period_started()
+    # Прежде чем считать «подписаны и ждут вывод», спрашиваем Telegram
+    # про тех, кому вывод обещан: кто-то из них мог уже отписаться.
+    await services.refresh_subs(message.bot,
+                                await db.pending_withdrawal_users())
     await message.answer(texts.admin_stats(
         await db.stats(),
         since=since,
@@ -85,6 +89,10 @@ async def stats(message: Message) -> None:
         period_subs=await db.count_submissions_since(since),
         funnel_period=await db.funnel(since) if since else None,
         funnel_all=await db.funnel(),
+        subs_period=await db.sub_stats(since) if since else None,
+        subs_all=await db.sub_stats(),
+        channel=await op.check_title(),
+        check_ready=bool(await op.check_chat()),
     ))
 
 

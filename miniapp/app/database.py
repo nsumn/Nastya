@@ -145,6 +145,18 @@ async def init_db(path: str) -> None:
             CREATE UNIQUE INDEX IF NOT EXISTS events_uniq
                 ON events (user_id, kind, day);
 
+            -- Проверенная подписка на проверочный канал: сюда попадает
+            -- только то, что ответил Telegram на get_chat_member, — переходы
+            -- по ссылке ничего не значат, человек мог и не подписаться.
+            CREATE TABLE IF NOT EXISTS subs (
+                user_id  INTEGER PRIMARY KEY,
+                state    TEXT NOT NULL DEFAULT 'off',
+                first_ok TEXT NOT NULL DEFAULT '',
+                last_ok  TEXT NOT NULL DEFAULT '',
+                left_at  TEXT NOT NULL DEFAULT '',
+                leaves   INTEGER NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS settings (
                 key   TEXT PRIMARY KEY,
                 value TEXT NOT NULL
@@ -851,12 +863,20 @@ async def funnel(since: str = "") -> dict[str, int]:
     tapped = (f"SELECT DISTINCT user_id FROM events "
               f"WHERE kind = 'payout_open' AND user_id IN ({did_tasks})"
               + (" AND created_at >= ?" if since else ""))
-    waiting = (f"SELECT DISTINCT user_id FROM withdrawals "
-               f"WHERE status = 'pending' AND user_id IN ({tapped})"
-               + (" AND created_at >= ?" if since else ""))
+    # Последний шаг — не «нажал на ссылку канала», а проверенная подписка:
+    # состояние в subs пишется по ответу Telegram (см. mark_subscription).
+    pending = (f"SELECT DISTINCT w.user_id FROM withdrawals w "
+               f"JOIN subs s ON s.user_id = w.user_id "
+               f"WHERE w.status = 'pending' AND w.user_id IN ({tapped})"
+               + (" AND w.created_at >= ?" if since else ""))
+    waiting = pending.replace("WHERE w.status", "WHERE s.state = 'on' AND w.status")
+    # Заявка висит, а человек уже ушёл из канала.
+    waiting_off = pending.replace(
+        "WHERE w.status", "WHERE s.state = 'off' AND s.leaves > 0 AND w.status")
 
     steps = {"opened": (opened, 1), "tasks": (did_tasks, 2),
-             "payout": (tapped, 3), "waiting": (waiting, 4)}
+             "payout": (tapped, 3), "waiting": (waiting, 4),
+             "waiting_off": (waiting_off, 4)}
     out: dict[str, int] = {}
     db = await _conn()
     try:
@@ -866,6 +886,91 @@ async def funnel(since: str = "") -> dict[str, int]:
             ) as cur:
                 out[key] = (await cur.fetchone())["n"]
         return out
+    finally:
+        await db.close()
+
+
+# ---------- проверенная подписка на проверочный канал ----------
+
+async def mark_subscription(user_id: int, subscribed: bool) -> None:
+    """Запомнить ответ Telegram: человек в проверочном канале или ушёл.
+
+    Отписка засчитывается только тем, у кого подписка когда-то была:
+    иначе «отписавшимися» станут все, кто просто не подписывался.
+    """
+    if user_id <= 0:
+        return
+    stamp = now_str()
+    db = await _conn()
+    try:
+        async with db.execute("SELECT state FROM subs WHERE user_id = ?",
+                              (user_id,)) as cur:
+            row = await cur.fetchone()
+        if subscribed:
+            if row is None:
+                await db.execute(
+                    "INSERT INTO subs (user_id, state, first_ok, last_ok) "
+                    "VALUES (?, 'on', ?, ?)", (user_id, stamp, stamp))
+            else:
+                await db.execute(
+                    "UPDATE subs SET state = 'on', last_ok = ?, first_ok = "
+                    "CASE WHEN first_ok = '' THEN ? ELSE first_ok END "
+                    "WHERE user_id = ?", (stamp, stamp, user_id))
+        elif row is None:
+            await db.execute("INSERT INTO subs (user_id, state) VALUES (?, 'off')",
+                             (user_id,))
+        elif row["state"] == "on":
+            await db.execute(
+                "UPDATE subs SET state = 'off', left_at = ?, leaves = leaves + 1 "
+                "WHERE user_id = ?", (stamp, user_id))
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def sub_stats(since: str = "") -> dict[str, int]:
+    """Сколько человек подписалось на проверочный канал и сколько ушло.
+
+    Только проверенные факты. Отписку видно не сразу: её замечаем,
+    когда человек в следующий раз заходит в приложение, и принудительно —
+    у тех, чья заявка на вывод ждёт выплаты (их перепроверяет админка).
+    """
+    if since:
+        queries = {
+            "ever": ("SELECT COUNT(*) AS n FROM subs WHERE first_ok >= ?",
+                     (since,)),
+            "now": ("SELECT COUNT(*) AS n FROM subs "
+                    "WHERE state = 'on' AND first_ok >= ?", (since,)),
+            "left": ("SELECT COUNT(*) AS n FROM subs "
+                     "WHERE leaves > 0 AND left_at >= ?", (since,)),
+        }
+    else:
+        queries = {
+            "ever": ("SELECT COUNT(*) AS n FROM subs WHERE first_ok <> ''", ()),
+            "now": ("SELECT COUNT(*) AS n FROM subs WHERE state = 'on'", ()),
+            "left": ("SELECT COUNT(*) AS n FROM subs "
+                     "WHERE leaves > 0 AND state = 'off'", ()),
+        }
+    out: dict[str, int] = {}
+    db = await _conn()
+    try:
+        for key, (sql, args) in queries.items():
+            async with db.execute(sql, args) as cur:
+                out[key] = (await cur.fetchone())["n"]
+        return out
+    finally:
+        await db.close()
+
+
+async def pending_withdrawal_users(limit: int = 150) -> list[int]:
+    """Кому обещан вывод прямо сейчас — их подписку перепроверяем вживую."""
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT DISTINCT user_id FROM withdrawals WHERE status = 'pending' "
+            "ORDER BY user_id DESC LIMIT ?", (limit,),
+        ) as cur:
+            return [row["user_id"] for row in await cur.fetchall()]
     finally:
         await db.close()
 

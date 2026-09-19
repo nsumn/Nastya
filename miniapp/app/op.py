@@ -35,12 +35,14 @@ from . import op_store
 log = logging.getLogger(__name__)
 
 OK_TTL = 600          # столько секунд помним, что человек подписан
+OFF_TTL = 60          # и столько — что не подписан (чтобы не дёргать API зря)
 MEMBER_STATUSES = {"creator", "administrator", "member"}
 CHECK_MARK = "проверочн"   # по этому слову ищем строку под проверочную ссылку
 CHECK_LINE_MAX = 45        # длиннее — это абзац инструкции, а не строка списка
 MIN_LINKS = 3              # столько ссылок в сообщении = это список спонсоров
 
 _ok_cache: dict[int, float] = {}
+_off_cache: dict[int, float] = {}
 
 
 @dataclass
@@ -217,7 +219,7 @@ async def check_url() -> str:
 
 async def set_check_url(url: str) -> None:
     op_store.update(check_url=url, period_started=op_store.sql_now())
-    _ok_cache.clear()
+    _forget_all()
 
 
 async def period_started() -> str:
@@ -235,7 +237,7 @@ async def check_title() -> str:
 
 async def set_check_chat(chat_id: int | str, title: str) -> None:
     op_store.update(check_chat=str(chat_id), check_title=title)
-    _ok_cache.clear()
+    _forget_all()
 
 
 async def welcome_text() -> str:
@@ -269,7 +271,7 @@ async def enabled() -> bool:
 
 async def set_enabled(value: bool) -> None:
     op_store.update(enabled=bool(value))
-    _ok_cache.clear()
+    _forget_all()
 
 
 async def announce(bot: Bot) -> None:
@@ -382,32 +384,58 @@ async def gate_text(bot: Bot | None = None, kind: str = "entry") -> str:
 
 def forget(user_id: int) -> None:
     _ok_cache.pop(user_id, None)
+    _off_cache.pop(user_id, None)
+
+
+def _forget_all() -> None:
+    _ok_cache.clear()
+    _off_cache.clear()
+
+
+async def subscription_status(bot: Bot | None, user_id: int,
+                              fresh: bool = False) -> str:
+    """Что Telegram отвечает про членство в проверочном канале.
+
+    «on» — подписан, «off» — нет, «unknown» — проверить нечем (канал не
+    задан или API не ответил). Это факт, а не разрешение: от того,
+    включена ли ОП, он не зависит — статистике нужна правда.
+    `fresh=True` обходит кэш: так админка получает состояние на сейчас.
+    """
+    chat = await check_chat()
+    if not chat or bot is None:
+        return "unknown"
+    now = time.monotonic()
+    if not fresh:
+        if _ok_cache.get(user_id, 0) > now:
+            return "on"
+        if _off_cache.get(user_id, 0) > now:
+            return "off"
+    try:
+        member = await bot.get_chat_member(chat, user_id)
+    except TelegramAPIError as exc:
+        log.warning("Проверка подписки не удалась (бот админ канала %s?): %s",
+                    chat, exc)
+        return "unknown"
+    status = getattr(member.status, "value", member.status)
+    ok = status in MEMBER_STATUSES or bool(getattr(member, "is_member", False))
+    if ok:
+        _ok_cache[user_id] = now + OK_TTL
+        _off_cache.pop(user_id, None)
+    else:
+        _off_cache[user_id] = now + OFF_TTL
+        _ok_cache.pop(user_id, None)
+    return "on" if ok else "off"
 
 
 async def is_subscribed(bot: Bot, user_id: int) -> bool:
-    """Подписан ли человек на проверочный канал.
+    """Пускать ли человека дальше.
 
     Если ОП выключена, канал не задан или Telegram не отвечает — пропускаем:
     лучше пустить, чем заблокировать всех из-за настройки.
     """
     if not await enabled():
         return True
-    chat = await check_chat()
-    if not chat:
-        return True
-    if _ok_cache.get(user_id, 0) > time.monotonic():
-        return True
-    try:
-        member = await bot.get_chat_member(chat, user_id)
-    except TelegramAPIError as exc:
-        log.warning("Проверка подписки не удалась (бот админ канала %s?): %s",
-                    chat, exc)
-        return True
-    status = getattr(member.status, "value", member.status)
-    ok = status in MEMBER_STATUSES or bool(getattr(member, "is_member", False))
-    if ok:
-        _ok_cache[user_id] = time.monotonic() + OK_TTL
-    return ok
+    return await subscription_status(bot, user_id) != "off"
 
 
 async def migrate_from_db(sponsors: list[dict]) -> None:
