@@ -7,12 +7,13 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 
 from . import database as db
-from . import op
+from . import op, texts
 
 log = logging.getLogger(__name__)
 
 
-async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
+async def gate_state(bot: Bot, user_id: int, scope: str = "entry",
+                     config=None) -> dict:
     """Состояние проверки подписки.
 
     scope="entry"  — гейт на входе в приложение;
@@ -24,7 +25,7 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
     """
     # Проверяем всегда, даже когда гейт выключен: иначе статистика подписок
     # и отписок обновляется только у тех, кто дошёл до вывода.
-    status = await track_subscription(bot, user_id)
+    status = await track_subscription(bot, user_id, config)
 
     if not await op.gate_active(scope):
         return {"required": False, "passed": True, "scope": scope,
@@ -46,29 +47,95 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry") -> dict:
     }
 
 
-async def track_subscription(bot: Bot, user_id: int) -> str:
-    """Проверить подписку на проверочный канал и запомнить результат.
+async def track_subscription(bot: Bot, user_id: int, config=None) -> str:
+    """Проверить подписку на проверочный канал и отреагировать.
 
     Именно отсюда берётся статистика: «подписался» — это ответ Telegram
     на get_chat_member, а не переход по ссылке (перейти можно и не
     подписавшись). Возвращает «on» / «off» / «unknown».
+
+    Заодно это точка, где срабатывает правило про вывод: ушёл из канала —
+    заявка отменяется, вернулся — сообщение об отмене убираем.
     """
     status = await op.subscription_status(bot, user_id)
-    if status != "unknown":
-        await db.mark_subscription(user_id, status == "on")
+    if status == "unknown":
+        return status
+
+    await _react(bot, user_id,
+                 await db.mark_subscription(user_id, status == "on"), config)
     return status
 
 
-async def refresh_subs(bot: Bot, user_ids) -> None:
+async def _react(bot: Bot, user_id: int, move: str, config=None) -> None:
+    """Отработать смену состояния подписки."""
+    if move == "gone":
+        await cancel_for_unsubscribe(bot, user_id, config)
+    elif move == "back":
+        await forgive_unsubscribe(bot, user_id)
+
+
+async def cancel_for_unsubscribe(bot: Bot, user_id: int,
+                                 config=None) -> list[dict]:
+    """Человек ушёл из проверочного канала — отменяем обещанный вывод.
+
+    Отменяются только заявки, выданные после проверки подписки (gated).
+    Если ОП выключена или гейт на выводе не настроен, не отменяем ничего:
+    условия, которое человек нарушил, попросту нет.
+    """
+    if not await op.enabled() or not await op.gate_active("payout"):
+        return []
+
+    canceled = await db.cancel_gated_withdrawals(user_id)
+    if not canceled:
+        return []
+
+    message = await notify_user(bot, user_id,
+                                texts.withdraw_canceled(canceled))
+    if message is not None:
+        await db.set_warn_msg(user_id, message.message_id)
+
+    if config is not None:
+        user = await db.get_user(user_id) or {"user_id": user_id}
+        codes = ", ".join(row["code"] or f"#{row['id']}" for row in canceled)
+        total = sum(row["amount"] for row in canceled)
+        await notify_admin(
+            bot, config,
+            f"🚫 <b>Вывод отменён: отписка</b>\n"
+            f"Участник: {display_name(user)} (<code>{user_id}</code>)\n"
+            f"Заявки: {codes}\n"
+            f"Сумма: <b>{total:g} ₽</b> — вернулась на баланс.")
+    return canceled
+
+
+async def forgive_unsubscribe(bot: Bot, user_id: int) -> None:
+    """Подписался обратно — убираем сообщение об отмене.
+
+    Саму заявку не воскрешаем: деньги уже вернулись на баланс, вывод
+    оформляется заново.
+    """
+    message_id = await db.take_warn_msg(user_id)
+    if not message_id:
+        return
+    try:
+        await bot.delete_message(user_id, message_id)
+    except TelegramAPIError as err:
+        log.info("Сообщение об отмене не удалось убрать: %s", err)
+
+
+async def refresh_subs(bot: Bot, user_ids, config=None) -> None:
     """Перепроверить подписку у конкретных людей, минуя кэш.
 
     Нужно для админки: отписку человека, который больше не заходит
-    в приложение, иначе никто не заметит.
+    в приложение, иначе никто не заметит. Реагируем так же, как на живой
+    заход, — иначе отписавшийся так и остался бы с висящей заявкой.
     """
     for user_id in user_ids:
         status = await op.subscription_status(bot, user_id, fresh=True)
-        if status != "unknown":
-            await db.mark_subscription(user_id, status == "on")
+        if status == "unknown":
+            continue
+        await _react(bot, user_id,
+                     await db.mark_subscription(user_id, status == "on"),
+                     config)
 
 
 async def notify_admin(bot: Bot, config, text: str, reply_markup=None) -> None:
@@ -81,11 +148,13 @@ async def notify_admin(bot: Bot, config, text: str, reply_markup=None) -> None:
         log.warning("Не удалось отправить сообщение админу: %s", err)
 
 
-async def notify_user(bot: Bot, user_id: int, text: str) -> None:
+async def notify_user(bot: Bot, user_id: int, text: str):
+    """Написать участнику. None — если он закрыл личку или заблокировал бота."""
     try:
-        await bot.send_message(user_id, text)
+        return await bot.send_message(user_id, text)
     except TelegramAPIError as err:
         log.info("Пользователь %s недоступен: %s", user_id, err)
+        return None
 
 
 def display_name(user: dict) -> str:

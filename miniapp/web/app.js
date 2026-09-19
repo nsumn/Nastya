@@ -668,6 +668,11 @@ function viewProfile() {
             ⚠️ Заявка в обработке — не отписывайтесь от каналов,
             иначе платёж не будет отправлен.
           </div>` : ''}
+        ${payouts[0] && payouts[0].status === 'canceled' ? `
+          <div class="warn-strip warn-strip--danger">
+            🚫 Вывод отменён: вы отписались от каналов спонсоров.
+            Сумма вернулась на баланс — подпишитесь снова и оформите заявку.
+          </div>` : ''}
         ${payoutCards}`
         : '<p class="empty">Заявок пока не было.<br>Накопите баланс и выведите средства.</p>'}
     </section>
@@ -1200,11 +1205,15 @@ function showPayoutDetails(item) {
       + 'до выплаты — иначе платёж не будет отправлен.'
     : item.status === 'paid'
       ? 'Средства отправлены на указанные реквизиты.'
-      : 'Заявка не прошла — средства вернулись на баланс.';
+      : item.status === 'canceled'
+        ? 'Вы отписались от каналов спонсоров, поэтому заявка отменена. '
+          + 'Сумма вернулась на баланс — подпишитесь снова и оформите вывод.'
+        : 'Заявка не прошла — средства вернулись на баланс.';
+  const failed = item.status === 'canceled' || item.status === 'rejected';
 
   showOverlay(`
     <button class="modal__close" data-action="close-modal" aria-label="Закрыть">✕</button>
-    <div class="modal__icon">₽</div>
+    <div class="modal__icon${failed ? ' modal__icon--danger' : ''}">${failed ? '🚫' : '₽'}</div>
     <h3>Детали заявки</h3>
     <div class="summary">
       <div class="summary__row">

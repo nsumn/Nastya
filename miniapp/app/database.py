@@ -7,12 +7,14 @@
 - submissions  — ответы участников (одно задание = один ответ в день);
 - withdrawals  — заявки на вывод средств;
 - sponsors     — каналы спонсоров для проверки подписки;
+- subs         — подтверждённая подписка на проверочный канал;
 - settings     — key-value для настроек, меняемых на лету.
 """
 from __future__ import annotations
 
 import json
 import secrets
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -118,6 +120,9 @@ async def init_db(path: str) -> None:
                 method       TEXT NOT NULL,
                 requisites   TEXT NOT NULL,
                 status       TEXT NOT NULL DEFAULT 'pending',
+                -- заявка выдана под обещание подписки: только такие
+                -- отменяются, если человек ушёл из проверочного канала
+                gated        INTEGER NOT NULL DEFAULT 1,
                 created_at   TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
                 processed_at TEXT
             );
@@ -154,7 +159,10 @@ async def init_db(path: str) -> None:
                 first_ok TEXT NOT NULL DEFAULT '',
                 last_ok  TEXT NOT NULL DEFAULT '',
                 left_at  TEXT NOT NULL DEFAULT '',
-                leaves   INTEGER NOT NULL DEFAULT 0
+                leaves   INTEGER NOT NULL DEFAULT 0,
+                -- id сообщения «вывод отменён»: удаляем его, когда человек
+                -- подписывается обратно
+                warn_msg INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS settings (
@@ -174,7 +182,9 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             "subtitle": "TEXT NOT NULL DEFAULT ''",
             "scope": "TEXT NOT NULL DEFAULT 'entry'",
         },
-        "withdrawals": {"code": "TEXT"},
+        "withdrawals": {"code": "TEXT",
+                        "gated": "INTEGER NOT NULL DEFAULT 1"},
+        "subs": {"warn_msg": "INTEGER NOT NULL DEFAULT 0"},
         "tasks": {
             "kind": "TEXT NOT NULL DEFAULT 'review'",
             "video_url": "TEXT NOT NULL DEFAULT ''",
@@ -588,14 +598,20 @@ def make_code() -> str:
 
 
 async def create_withdrawal(user_id: int, amount: float, method: str,
-                            requisites: str) -> dict:
+                            requisites: str, gated: bool = True) -> dict:
+    """gated — заявку выдали после проверки подписки.
+
+    Отменяем при отписке только такие: если подписку не спрашивали
+    (PAYOUT_GATE_FIRST_ONLY, второй и последующие выводы), то и отбирать
+    выплату не за что.
+    """
     db = await _conn()
     try:
         code = make_code()
         cur = await db.execute(
-            "INSERT INTO withdrawals (code, user_id, amount, method, requisites) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (code, user_id, amount, method, requisites),
+            "INSERT INTO withdrawals (code, user_id, amount, method, "
+            "requisites, gated) VALUES (?, ?, ?, ?, ?, ?)",
+            (code, user_id, amount, method, requisites, int(gated)),
         )
         await db.execute(
             "UPDATE users SET balance = balance - ? WHERE user_id = ?",
@@ -675,11 +691,16 @@ async def delete_user_withdrawals(user_id: int) -> int:
 
 
 async def count_withdrawals(user_id: int) -> int:
-    """Сколько заявок на вывод человек уже создавал."""
+    """Сколько заявок на вывод человек уже создавал.
+
+    Отменённые не в счёт: вывода по ним не было, значит следующая заявка
+    снова считается первой — и подписку опять спросим.
+    """
     db = await _conn()
     try:
         async with db.execute(
-            "SELECT COUNT(*) AS n FROM withdrawals WHERE user_id = ?", (user_id,)
+            "SELECT COUNT(*) AS n FROM withdrawals "
+            "WHERE user_id = ? AND status != 'canceled'", (user_id,)
         ) as cur:
             return (await cur.fetchone())["n"]
     finally:
@@ -892,21 +913,26 @@ async def funnel(since: str = "") -> dict[str, int]:
 
 # ---------- проверенная подписка на проверочный канал ----------
 
-async def mark_subscription(user_id: int, subscribed: bool) -> None:
+async def mark_subscription(user_id: int, subscribed: bool) -> str:
     """Запомнить ответ Telegram: человек в проверочном канале или ушёл.
 
     Отписка засчитывается только тем, у кого подписка когда-то была:
     иначе «отписавшимися» станут все, кто просто не подписывался.
+
+    Возвращает, что изменилось: «gone» — только что ушёл, «back» —
+    вернулся после отписки, «» — ничего нового.
     """
     if user_id <= 0:
-        return
+        return ""
     stamp = now_str()
     db = await _conn()
     try:
-        async with db.execute("SELECT state FROM subs WHERE user_id = ?",
-                              (user_id,)) as cur:
+        async with db.execute("SELECT state, leaves FROM subs "
+                              "WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
         if subscribed:
+            move = ("back" if row is not None and row["state"] == "off"
+                    and row["leaves"] > 0 else "")
             if row is None:
                 await db.execute(
                     "INSERT INTO subs (user_id, state, first_ok, last_ok) "
@@ -916,14 +942,91 @@ async def mark_subscription(user_id: int, subscribed: bool) -> None:
                     "UPDATE subs SET state = 'on', last_ok = ?, first_ok = "
                     "CASE WHEN first_ok = '' THEN ? ELSE first_ok END "
                     "WHERE user_id = ?", (stamp, stamp, user_id))
-        elif row is None:
-            await db.execute("INSERT INTO subs (user_id, state) VALUES (?, 'off')",
-                             (user_id,))
-        elif row["state"] == "on":
-            await db.execute(
-                "UPDATE subs SET state = 'off', left_at = ?, leaves = leaves + 1 "
-                "WHERE user_id = ?", (stamp, user_id))
+        else:
+            move = "gone" if row is not None and row["state"] == "on" else ""
+            if row is None:
+                await db.execute(
+                    "INSERT INTO subs (user_id, state) VALUES (?, 'off')",
+                    (user_id,))
+            elif move:
+                await db.execute(
+                    "UPDATE subs SET state = 'off', left_at = ?, "
+                    "leaves = leaves + 1 WHERE user_id = ?", (stamp, user_id))
         await db.commit()
+        return move
+    finally:
+        await db.close()
+
+
+async def cancel_gated_withdrawals(user_id: int) -> list[dict]:
+    """Отменить заявки, выданные под подписку, и вернуть деньги на баланс.
+
+    Возвращает отменённые заявки — чтобы было о чём написать человеку.
+    """
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT * FROM withdrawals WHERE user_id = ? "
+            "AND status = 'pending' AND gated = 1", (user_id,),
+        ) as cur:
+            rows = [dict(r) for r in await cur.fetchall()]
+        if not rows:
+            return []
+        stamp = now_str()
+        for row in rows:
+            await db.execute(
+                "UPDATE withdrawals SET status = 'canceled', processed_at = ? "
+                "WHERE id = ?", (stamp, row["id"]))
+        await db.execute(
+            "UPDATE users SET balance = balance + ? WHERE user_id = ?",
+            (sum(row["amount"] for row in rows), user_id))
+        await db.commit()
+        return rows
+    finally:
+        await db.close()
+
+
+async def set_warn_msg(user_id: int, message_id: int) -> None:
+    """Запомнить сообщение «вывод отменён», чтобы потом его убрать."""
+    db = await _conn()
+    try:
+        await db.execute("UPDATE subs SET warn_msg = ? WHERE user_id = ?",
+                         (message_id, user_id))
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def take_warn_msg(user_id: int) -> int:
+    """Забрать id сообщения об отмене и забыть его (удалять — один раз)."""
+    db = await _conn()
+    try:
+        async with db.execute("SELECT warn_msg FROM subs WHERE user_id = ?",
+                              (user_id,)) as cur:
+            row = await cur.fetchone()
+        message_id = row["warn_msg"] if row else 0
+        if message_id:
+            await db.execute("UPDATE subs SET warn_msg = 0 WHERE user_id = ?",
+                             (user_id,))
+            await db.commit()
+        return message_id
+    finally:
+        await db.close()
+
+
+async def reset_subs() -> None:
+    """Забыть всё про подписки — при смене проверочного канала.
+
+    Иначе подписчики старого канала разом превратятся в «отписавшихся»
+    от нового, и всем отменятся заявки на вывод.
+    """
+    db = await _conn()
+    try:
+        await db.execute("DELETE FROM subs")
+        await db.commit()
+    except sqlite3.OperationalError:
+        # базу ещё не размечали — значит и забывать нечего
+        pass
     finally:
         await db.close()
 
@@ -943,6 +1046,12 @@ async def sub_stats(since: str = "") -> dict[str, int]:
                     "WHERE state = 'on' AND first_ok >= ?", (since,)),
             "left": ("SELECT COUNT(*) AS n FROM subs "
                      "WHERE leaves > 0 AND left_at >= ?", (since,)),
+            "canceled": ("SELECT COUNT(*) AS n FROM withdrawals "
+                         "WHERE status = 'canceled' AND processed_at >= ?",
+                         (since,)),
+            "canceled_sum": ("SELECT COALESCE(SUM(amount), 0) AS n "
+                             "FROM withdrawals WHERE status = 'canceled' "
+                             "AND processed_at >= ?", (since,)),
         }
     else:
         queries = {
@@ -950,6 +1059,10 @@ async def sub_stats(since: str = "") -> dict[str, int]:
             "now": ("SELECT COUNT(*) AS n FROM subs WHERE state = 'on'", ()),
             "left": ("SELECT COUNT(*) AS n FROM subs "
                      "WHERE leaves > 0 AND state = 'off'", ()),
+            "canceled": ("SELECT COUNT(*) AS n FROM withdrawals "
+                         "WHERE status = 'canceled'", ()),
+            "canceled_sum": ("SELECT COALESCE(SUM(amount), 0) AS n "
+                             "FROM withdrawals WHERE status = 'canceled'", ()),
         }
     out: dict[str, int] = {}
     db = await _conn()

@@ -647,7 +647,8 @@ body.keyboard-open .sticky-cta {
 }
 .badge--pending { background: rgba(245, 165, 36, .16); color: #b8760a; }
 .badge--paid { background: var(--mint-soft); color: var(--mint); }
-.badge--rejected { background: rgba(229, 72, 77, .14); color: var(--danger); }
+.badge--rejected,
+.badge--canceled { background: rgba(229, 72, 77, .14); color: var(--danger); }
 body.dark .badge--pending { color: var(--amber); }
 
 /* ---------- модалка деталей ---------- */
@@ -664,6 +665,9 @@ body.dark .badge--pending { color: var(--amber); }
   width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 18px;
   background: var(--mint-soft); color: var(--mint);
   display: grid; place-items: center; font-size: 24px; font-weight: 800;
+}
+.modal__icon--danger {
+  background: rgba(229, 72, 77, .14); color: var(--danger);
 }
 .modal .summary { margin: 16px 0 12px; }
 .modal .hint { margin: 0 0 16px; }
@@ -709,6 +713,11 @@ body.dark .gate-note--warn .gate-note__mark { color: var(--amber); }
   font-size: 13px; line-height: 1.45; font-weight: 600;
 }
 body.dark .warn-strip { color: var(--amber); }
+
+.warn-strip--danger {
+  background: rgba(229, 72, 77, .14); color: #a3141a;
+}
+body.dark .warn-strip--danger { color: #ff8b8f; }
 
 .channels__head {
   display: flex; justify-content: space-between; align-items: baseline;

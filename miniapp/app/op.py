@@ -30,6 +30,7 @@ from dataclasses import dataclass
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 
+from . import database as db
 from . import op_store
 
 log = logging.getLogger(__name__)
@@ -236,8 +237,17 @@ async def check_title() -> str:
 
 
 async def set_check_chat(chat_id: int | str, title: str) -> None:
+    """Сменить проверочный канал.
+
+    Если канал действительно другой — забываем всё, что знали о подписках:
+    иначе подписчики старого канала разом станут «отписавшимися» от нового,
+    и им отменятся заявки на вывод.
+    """
+    changed = str(chat_id) != await check_chat()
     op_store.update(check_chat=str(chat_id), check_title=title)
     _forget_all()
+    if changed:
+        await db.reset_subs()
 
 
 async def welcome_text() -> str:

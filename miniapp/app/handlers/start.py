@@ -32,7 +32,8 @@ async def _send_entry(message: Message, config) -> None:
     label = (await op.button_text()) or kb.default_button_label(config)
 
     gate_on = await op.gate_active("entry")
-    status = await services.track_subscription(message.bot, message.from_user.id)
+    status = await services.track_subscription(message.bot,
+                                               message.from_user.id, config)
     if gate_on and await op.enabled() and status == "off":
         links = await op.visible_links(message.bot, "entry")
         await message.answer(await op.gate_text(message.bot, "entry"),
@@ -83,7 +84,8 @@ async def gate_check(call: CallbackQuery, config) -> None:
     op.forget(call.from_user.id)
     # Момент, ради которого всё затевалось: человек говорит «подписался» —
     # спрашиваем Telegram и записываем ответ в статистику.
-    status = await services.track_subscription(call.bot, call.from_user.id)
+    status = await services.track_subscription(call.bot, call.from_user.id,
+                                               config)
     if await op.gate_active("entry") and await op.enabled() and status == "off":
         await call.answer(texts.GATE_NOT_PASSED, show_alert=True)
         return

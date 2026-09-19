@@ -36,6 +36,7 @@ STATUS_TITLES = {
     "pending": "В обработке",
     "paid": "Выплачено",
     "rejected": "Ошибка",
+    "canceled": "Отменён",
 }
 
 MAX_TEXT = 1000
@@ -208,7 +209,10 @@ async def bootstrap(request: web.Request) -> web.Response:
 
     await db.log_event(user["user_id"], "app_open")
 
-    gate = await services.gate_state(bot, user["user_id"])
+    gate = await services.gate_state(bot, user["user_id"], config=config)
+    # Проверка могла вернуть деньги на баланс (отписался — вывод отменён),
+    # поэтому перечитываем участника уже после неё.
+    user = await db.get_user(user["user_id"]) or user
     day = db.today()
     tasks = await db.tasks_for_day(day)
     done = await db.done_task_ids(user["user_id"], day)
@@ -252,6 +256,7 @@ async def bootstrap(request: web.Request) -> web.Response:
 
 async def check_subscription(request: web.Request) -> web.Response:
     """Перепроверка подписки. scope: entry (вход) или payout (перед выводом)."""
+    config = request.app["config"]
     bot = request.app["bot"]
     user = await _auth(request)
     try:
@@ -260,7 +265,7 @@ async def check_subscription(request: web.Request) -> web.Response:
         body = {}
     scope = "payout" if body.get("scope") == "payout" else "entry"
     return web.json_response(
-        await services.gate_state(bot, user["user_id"], scope))
+        await services.gate_state(bot, user["user_id"], scope, config))
 
 
 async def start_task(request: web.Request) -> web.Response:
@@ -286,7 +291,7 @@ async def submit_task(request: web.Request) -> web.Response:
     bot = request.app["bot"]
     user = await _auth(request)
 
-    gate = await services.gate_state(bot, user["user_id"])
+    gate = await services.gate_state(bot, user["user_id"], config=config)
     if not gate["passed"]:
         return web.json_response(
             {"ok": False, "error": "Сначала подпишитесь на каналы спонсоров."},
@@ -537,16 +542,20 @@ async def withdraw(request: web.Request) -> web.Response:
     # вывод (так обещает экран перед списком каналов). Пока флаг выключен,
     # проверяем перед каждой заявкой.
     first_time = await db.count_withdrawals(user["user_id"]) == 0
-    if first_time or not config.payout_gate_first_only:
-        gate = await services.gate_state(bot, user["user_id"], "payout")
+    gated = first_time or not config.payout_gate_first_only
+    if gated:
+        gate = await services.gate_state(bot, user["user_id"], "payout",
+                                         config)
         if not gate["passed"]:
             return web.json_response(
                 {"ok": False, "gate": gate, "first_withdrawal": True,
                  "error": "Подтвердите подписку на каналы партнёров."},
                 status=409)
 
+    # gated=1 — заявку выдали под обещание не отписываться. Если человек
+    # уйдёт из проверочного канала, она отменится, а деньги вернутся.
     created = await db.create_withdrawal(user["user_id"], amount, method,
-                                         normalized)
+                                         normalized, gated=gated)
 
     # Демо для показа заказчику: у администратора заявка сразу доставлена.
     demo = config.demo_payout_for_admin and config.is_admin(user["user_id"])

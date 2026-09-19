@@ -75,13 +75,14 @@ async def cmd_admin(message: Message) -> None:
 
 @router.message(Command("stats"))
 @router.message(F.text == kb.ADM_BTN_STATS)
-async def stats(message: Message) -> None:
+async def stats(message: Message, config: Config) -> None:
     """Статистика: за текущий период ОП и за всё время."""
     since = await op.period_started()
     # Прежде чем считать «подписаны и ждут вывод», спрашиваем Telegram
-    # про тех, кому вывод обещан: кто-то из них мог уже отписаться.
+    # про тех, кому вывод обещан: кто-то из них мог уже отписаться —
+    # такие заявки прямо здесь и отменятся.
     await services.refresh_subs(message.bot,
-                                await db.pending_withdrawal_users())
+                                await db.pending_withdrawal_users(), config)
     await message.answer(texts.admin_stats(
         await db.stats(),
         since=since,
