@@ -277,6 +277,10 @@ async def start_task(request: web.Request) -> web.Response:
     if not task or not task["active"]:
         return web.json_response({"ok": False, "error": "Задание не найдено."},
                                  status=404)
+    if not await db.task_in_feed(task["id"], db.today()):
+        return web.json_response(
+            {"ok": False, "error": "Этого задания сегодня нет в ленте."},
+            status=404)
     started = int(time.time())
     return web.json_response({
         "ok": True,
@@ -306,6 +310,13 @@ async def submit_task(request: web.Request) -> web.Response:
     text = (body.get("text") or "").strip()
     rating = int(body.get("rating") or 0)
     day = db.today()
+
+    # Задания меняются каждый день, и сдать можно только сегодняшние:
+    # иначе прямым запросом к API можно было бы пройти весь пул разом.
+    if not await db.task_in_feed(task["id"], day):
+        return web.json_response(
+            {"ok": False, "error": "Этого задания сегодня нет в ленте."},
+            status=404)
 
     if (task.get("kind") or "review") == "video":
         need = int(task.get("min_watch") or 0)

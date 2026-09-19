@@ -20,6 +20,8 @@ from typing import Any, Optional
 
 import aiosqlite
 
+from . import rotation
+
 MSK = timezone(timedelta(hours=3))
 
 _DB_PATH = "jows.db"
@@ -93,6 +95,9 @@ async def init_db(path: str) -> None:
                 video_url      TEXT NOT NULL DEFAULT '',
                 min_watch      INTEGER NOT NULL DEFAULT 0,
                 templates      TEXT NOT NULL DEFAULT '[]',
+                -- 1 — задание из ежедневной ротации: показывается не каждый
+                -- день, а по очереди с остальными (см. app/rotation.py)
+                rotating       INTEGER NOT NULL DEFAULT 0,
                 position       INTEGER NOT NULL DEFAULT 0,
                 active         INTEGER NOT NULL DEFAULT 1,
                 created_at     TEXT NOT NULL DEFAULT (datetime('now', '+3 hours'))
@@ -189,6 +194,7 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             "kind": "TEXT NOT NULL DEFAULT 'review'",
             "video_url": "TEXT NOT NULL DEFAULT ''",
             "min_watch": "INTEGER NOT NULL DEFAULT 0",
+            "rotating": "INTEGER NOT NULL DEFAULT 0",
         },
     }
     for table, columns in additions.items():
@@ -363,11 +369,16 @@ def _task_row(row: aiosqlite.Row) -> dict:
     except json.JSONDecodeError:
         task["templates"] = []
     task["require_rating"] = bool(task["require_rating"])
+    task["rotating"] = bool(task.get("rotating"))
     return task
 
 
 async def tasks_for_day(day: str) -> list[dict]:
-    """Задания дня: привязанные к дате + ежедневные (day IS NULL)."""
+    """Лента дня.
+
+    Закреплённые задания (привязанные к дате или ежедневные) показываются
+    всегда, а задания из ротации — по очереди, сегодняшней выборкой.
+    """
     db = await _conn()
     try:
         async with db.execute(
@@ -375,7 +386,35 @@ async def tasks_for_day(day: str) -> list[dict]:
             "ORDER BY position, id",
             (day,),
         ) as cur:
-            return [_task_row(r) for r in await cur.fetchall()]
+            rows = [_task_row(r) for r in await cur.fetchall()]
+    finally:
+        await db.close()
+    return rotation.pick(rows, day)
+
+
+async def task_in_feed(task_id: int, day: str) -> bool:
+    """Есть ли задание в сегодняшней ленте.
+
+    Без этой проверки задание из ротации можно было бы сдать по прямому
+    запросу в любой день — и пройти весь пул за один вечер.
+    """
+    return any(task["id"] == task_id for task in await tasks_for_day(day))
+
+
+async def mark_rotating(titles: list[str]) -> None:
+    """Перевести задания с такими названиями в ежедневную ротацию.
+
+    Нужно один раз на уже работающей базе: там демо-задания заведены
+    до того, как ротация появилась.
+    """
+    if not titles:
+        return
+    db = await _conn()
+    try:
+        holes = ", ".join("?" * len(titles))
+        await db.execute(
+            f"UPDATE tasks SET rotating = 1 WHERE title IN ({holes})", titles)
+        await db.commit()
     finally:
         await db.close()
 
@@ -409,20 +448,20 @@ async def add_task(*, title: str, reward: float, emoji: str = "📝",
                    templates: Optional[list[str]] = None,
                    day: Optional[str] = None, position: int = 0,
                    kind: str = "review", video_url: str = "",
-                   min_watch: int = 0) -> int:
+                   min_watch: int = 0, rotating: bool = False) -> int:
     db = await _conn()
     try:
         cur = await db.execute(
             """
             INSERT INTO tasks (day, emoji, title, short_desc, brief, reward,
                                min_chars, deadline, require_rating, templates,
-                               position, kind, video_url, min_watch)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               position, kind, video_url, min_watch, rotating)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (day, emoji, title, short_desc, brief, reward, min_chars, deadline,
              1 if require_rating else 0, json.dumps(templates or [],
                                                     ensure_ascii=False),
-             position, kind, video_url, min_watch),
+             position, kind, video_url, min_watch, 1 if rotating else 0),
         )
         await db.commit()
         return cur.lastrowid

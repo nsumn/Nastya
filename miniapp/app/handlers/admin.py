@@ -109,12 +109,22 @@ async def open_app(message: Message, config: Config) -> None:
 
 # ---------- задания ----------
 
+async def _feed_line() -> str:
+    """Что участники видят сегодня — коротко, для шапки списка заданий."""
+    feed = await db.tasks_for_day(db.today())
+    if not feed:
+        return "пусто"
+    return ", ".join(f"{task['emoji']} {task['title']}" for task in feed)
+
+
 @router.message(Command("tasks"))
 @router.message(F.text == kb.ADM_BTN_TASKS)
 async def tasks_cmd(message: Message) -> None:
     items = await db.all_tasks()
-    header = ("📋 <b>Задания</b>\n\n🟢 — активно, ⚪️ — выключено.\n"
-              "Задания без даты показываются в ленте каждый день."
+    header = ("📋 <b>Задания</b>\n\n🟢 — активно, ⚪️ — выключено, "
+              "🔄 — в ежедневной ротации.\n"
+              f"Сегодня в ленте: {await _feed_line()}.\n"
+              "Задания без 🔄 показываются каждый день."
               if items else "📋 <b>Задания</b>\n\nПока пусто.")
     await message.answer(header, reply_markup=kb.tasks_list(items))
 
@@ -122,8 +132,10 @@ async def tasks_cmd(message: Message) -> None:
 @router.callback_query(F.data == "adm:tasks")
 async def tasks_back(call: CallbackQuery) -> None:
     items = await db.all_tasks()
-    header = ("📋 <b>Задания</b>\n\n🟢 — активно, ⚪️ — выключено.\n"
-              "Задания без даты показываются в ленте каждый день."
+    header = ("📋 <b>Задания</b>\n\n🟢 — активно, ⚪️ — выключено, "
+              "🔄 — в ежедневной ротации.\n"
+              f"Сегодня в ленте: {await _feed_line()}.\n"
+              "Задания без 🔄 показываются каждый день."
               if items else "📋 <b>Задания</b>\n\nПока пусто.")
     await _safe_edit(call, header, kb.tasks_list(items))
     await call.answer()
@@ -137,14 +149,16 @@ async def task_card(call: CallbackQuery) -> None:
         return
     await call.answer()
     if (task.get("kind") or "review") == "video":
-        body = (f"{task['emoji']} <b>{task['title']}</b>  🎬\n"
+        body = (f"{task['emoji']} <b>{task['title']}</b>  🎬"
+                f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
                 f"Награда: <b>{task['reward']:g} ₽</b>\n"
                 f"Смотреть: {task['min_watch']} с\n"
                 f"До: {task['deadline']}\n\n"
                 f"Ссылка: {task['video_url']}")
     else:
         templates = "\n".join(f"• {t}" for t in task["templates"]) or "—"
-        body = (f"{task['emoji']} <b>{task['title']}</b>\n"
+        body = (f"{task['emoji']} <b>{task['title']}</b>"
+                f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
                 f"Награда: <b>{task['reward']:g} ₽</b>\n"
                 f"Минимум символов: {task['min_chars']}\n"
                 f"До: {task['deadline']}\n"
