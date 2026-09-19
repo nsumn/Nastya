@@ -25,7 +25,8 @@ from aiogram.filters import BaseFilter, Command, StateFilter
 from aiogram.types import CallbackQuery, ChatMemberUpdated, Message
 
 from .. import keyboards as kb
-from .. import op
+from .. import database as db
+from .. import op, services
 from ..config import Config
 
 log = logging.getLogger(__name__)
@@ -147,6 +148,19 @@ async def diagnose(bot, user_id: int) -> str:
     if own == "off":
         lines.append("Если ты точно подписана — значит, проверочным "
                      "записан не тот канал. Перешли пост из нужного.")
+
+    # Частый вопрос: «отписался, а уведомления нет». Сообщение приходит
+    # только когда есть что отменять — заявка на вывод в обработке.
+    waiting = user_id in await db.pending_withdrawal_users()
+    lines += ["", "Заявка на вывод в обработке: "
+              + ("✅ есть — если отпишешься, её отменят и напишут"
+                 if waiting else
+                 "❌ нет. Отмена и письмо про отписку бывают только когда "
+                 "заявка висит: без неё отменять нечего")]
+    if not admin:
+        lines.append("Пока бот не админ канала, Telegram не присылает "
+                     "события о входе и выходе — отписку видно только "
+                     "при следующем заходе человека в приложение.")
     return "\n".join(lines)
 
 
@@ -331,6 +345,31 @@ async def _maybe_check_link(message: Message) -> bool:
             "⚠️ Я пока не знаю, какой канал проверять. Перешли мне любой "
             "пост из проверочного канала — один раз, и всё заработает.")
     return True
+
+
+# ---------- кто-то вошёл в проверочный канал или вышел ----------
+
+@router.chat_member()
+async def channel_membership(event: ChatMemberUpdated, config: Config) -> None:
+    """Telegram сообщил о смене подписки на проверочный канал.
+
+    Это единственный способ узнать об отписке сразу: иначе она всплывает
+    только когда человек в следующий раз откроет приложение. Работает,
+    пока бот — администратор канала: обычным участникам такие события
+    не приходят.
+    """
+    if str(event.chat.id) != await op.check_chat():
+        return
+    user = event.new_chat_member.user
+    if user is None or user.is_bot:
+        return
+
+    status = getattr(event.new_chat_member.status, "value",
+                     event.new_chat_member.status)
+    subscribed = (status in op.MEMBER_STATUSES
+                  or bool(getattr(event.new_chat_member, "is_member", False)))
+    log.info("Подписка на проверочный канал: %s → %s", user.id, status)
+    await services.apply_membership(event.bot, user.id, subscribed, config)
 
 
 # ---------- бота сделали админом канала ----------

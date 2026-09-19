@@ -66,6 +66,19 @@ async def track_subscription(bot: Bot, user_id: int, config=None) -> str:
     return status
 
 
+async def apply_membership(bot: Bot, user_id: int, subscribed: bool,
+                           config=None) -> None:
+    """Записать готовый факт о подписке и отреагировать.
+
+    Telegram присылает событие о входе и выходе из канала сразу — тогда
+    перепроверять через get_chat_member нечего, ответ уже на руках.
+    Кэш всё равно сбрасываем: он мог остаться с прошлой проверки.
+    """
+    op.forget(user_id)
+    await _react(bot, user_id,
+                 await db.mark_subscription(user_id, subscribed), config)
+
+
 async def _react(bot: Bot, user_id: int, move: str, config=None) -> None:
     """Отработать смену состояния подписки."""
     if move == "gone":

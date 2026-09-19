@@ -12,7 +12,7 @@ from aiogram.types import (BotCommand, MenuButtonWebApp, WebAppInfo)
 from aiohttp import web
 
 from . import database as db
-from . import op, op_store
+from . import op, op_store, services
 from .api import build_app
 from .config import load_config
 from .handlers import admin, op_admin, start
@@ -40,6 +40,31 @@ async def _setup_bot_ui(bot: Bot, config) -> None:
                     web_app=WebAppInfo(url=config.webapp_url)))
     except TelegramAPIError as err:
         log.warning("Не удалось настроить меню бота: %s", err)
+
+
+# Как часто заново спрашиваем Telegram про тех, кому обещан вывод.
+SWEEP_SECONDS = 600
+
+
+async def watch_subscriptions(bot: Bot, config) -> None:
+    """Подстраховка для событий об отписке.
+
+    Обычно про выход из канала Telegram сообщает сразу (см. обработчик
+    chat_member). Но событие можно и не получить — бота на минуту лишили
+    прав, перезапуск пришёлся на нужный момент. Поэтому раз в несколько
+    минут перепроверяем тех, у кого висит заявка на вывод: их немного,
+    а цена пропущенной отписки — выплата не тому.
+    """
+    while True:
+        await asyncio.sleep(SWEEP_SECONDS)
+        try:
+            waiting = await db.pending_withdrawal_users()
+            if waiting:
+                await services.refresh_subs(bot, waiting, config)
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:  # noqa: BLE001 — фоновая задача не должна падать
+            log.warning("Не удалось перепроверить подписки: %s", err)
 
 
 async def main() -> None:
@@ -74,11 +99,19 @@ async def main() -> None:
     await _setup_bot_ui(bot, config)
     await op.announce(bot)
 
+    sweeper = asyncio.create_task(watch_subscriptions(bot, config))
+
     try:
         await bot.delete_webhook(drop_pending_updates=True)
         log.info("Бот запущен")
-        await dp.start_polling(bot, config=config)
+        # chat_member — события о входе и выходе из каналов. Telegram их
+        # не присылает, пока не попросишь явно, а без них отписку видно
+        # только при следующем заходе человека в приложение.
+        await dp.start_polling(
+            bot, config=config,
+            allowed_updates=dp.resolve_used_update_types())
     finally:
+        sweeper.cancel()
         await runner.cleanup()
         await bot.session.close()
 
