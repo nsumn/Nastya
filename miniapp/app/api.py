@@ -598,7 +598,9 @@ async def withdraw(request: web.Request) -> web.Response:
             f"Сумма: <b>{amount:g} ₽</b>\n"
             f"Способ: {METHOD_TITLES[method]}\n"
             f"Реквизиты: <code>{normalized}</code>\n"
-            f"{texts.sub_proof(proof, await op.check_title())}\n\n"
+            f"{texts.sub_proof(proof, await op.check_title())}\n"
+            + (f"↳ <i>{await services.gate_skip_reason(gated, first_time)}"
+               f"</i>\n" if proof != "on" else "") + "\n"
             + ("✅ Демо: отмечена доставленной (это твоя заявка)."
                if demo else
                f"Подтвердить: <code>/paid {created['id']}</code>  •  "

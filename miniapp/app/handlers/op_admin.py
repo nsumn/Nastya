@@ -96,7 +96,8 @@ async def status_text() -> str:
     return "\n".join(lines)
 
 
-async def diagnose(bot, user_id: int, about: int | None = None) -> str:
+async def diagnose(bot, user_id: int, about: int | None = None,
+                   config: Config | None = None) -> str:
     """Что Telegram отвечает про проверочный канал прямо сейчас.
 
     Нужно, когда участник уверяет, что подписан, а бот не находит, или
@@ -151,6 +152,11 @@ async def diagnose(bot, user_id: int, about: int | None = None) -> str:
                     if payout_on else
                     "⚠️ <b>выключена</b> — список каналов для вывода пуст, "
                     "заявки проходят без подписки"))
+    if config is not None and config.payout_gate_first_only:
+        lines.append("⚠️ <b>Подписку спрашиваем только на первый вывод</b> "
+                     "(PAYOUT_GATE_FIRST_ONLY=1). Повторные заявки идут "
+                     "без проверки — так и обещает экран перед списком "
+                     "каналов.")
 
     op.forget(about)
     own = await op.subscription_status(bot, about, fresh=True)
@@ -239,14 +245,14 @@ async def resolve_user(bot, raw: str) -> tuple[int | None, str]:
 
 
 @router.message(Command("check"))
-async def check_cmd(message: Message, command) -> None:
+async def check_cmd(message: Message, command, config: Config) -> None:
     """/check — про себя, /check 8390008785 — про конкретного участника."""
     about, problem = await resolve_user(message.bot, command.args or "")
     if problem:
         await message.answer(problem)
         return
     await message.answer(
-        await diagnose(message.bot, message.from_user.id, about))
+        await diagnose(message.bot, message.from_user.id, about, config))
 
 
 @router.message(Command("op"))

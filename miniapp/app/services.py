@@ -154,6 +154,26 @@ async def refresh_subs(bot: Bot, user_ids, config=None) -> None:
                      config)
 
 
+async def gate_skip_reason(gated: bool, first_time: bool) -> str:
+    """Почему заявка прошла, хотя человек не подписан.
+
+    Путей ровно четыре, и без подсказки их не различить: у всех в заявке
+    одинаковое «❌ НЕ подписан», а причины разные — от настройки
+    до отписки сразу после проверки.
+    """
+    if not gated:
+        return ("подписку не спрашивали: PAYOUT_GATE_FIRST_ONLY=1, "
+                "а этот вывод у человека не первый"
+                if not first_time else
+                "подписку не спрашивали — проверь PAYOUT_GATE_FIRST_ONLY")
+    if not await op.enabled():
+        return "проверка подписки выключена целиком — включается в /op"
+    if not await op.gate_active("payout"):
+        return "список каналов для вывода пуст — проверять было нечего"
+    return ("при создании заявки подписка была — значит, человек ушёл "
+            "из канала сразу после проверки")
+
+
 async def subscribed_for_this(user_id: int, withdrawal_id: int) -> bool:
     """Подписался ли человек ради этой заявки.
 
