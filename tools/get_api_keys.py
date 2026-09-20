@@ -168,16 +168,21 @@ def create_app(page: str) -> tuple[str, str] | None:
     if path.startswith("http"):
         path = path.split("my.telegram.org", 1)[-1]
 
-    names = ["mirrorapp"] + [f"mirror{random.randint(1000, 9999)}"]
+    # Сайт придирчив: имя — латиница UpperCamelCase без пробелов и
+    # подчёркиваний, описание — развёрнутое (короткое он отвергает),
+    # URL — реальный сайт.
+    names = ["MirrorApp"] + [f"Mirror{random.randint(1000, 9999)}"]
     for name in names:
         print(f"Создаю приложение ({name})…")
         payload = dict(fields)          # скрытые поля отправляем как есть
         payload.update({
             "app_title": name,
             "app_shortname": name,
-            "app_url": "",
+            "app_url": "https://example.com",
             "app_platform": "desktop",
-            "app_desc": "personal use",
+            "app_desc": ("Personal application for reading my own Telegram "
+                         "channels and reposting their content to my own "
+                         "channel."),
         })
         answer = _post(path, payload, referer="/apps")
         keys = parse_keys(_get("/apps"))
@@ -186,9 +191,11 @@ def create_app(page: str) -> tuple[str, str] | None:
         print(f"⚠️  ответ сайта: {answer[:200] or '(пусто)'}")
         time.sleep(5)
 
-    print("\n💡 Вход проходит, а создание приложения — нет. Так Telegram "
-          "ведёт себя, когда запрос идёт с адреса дата-центра: это и VPN, "
-          "и сервер. Нужен обычный домашний или мобильный интернет.")
+    print("\n💡 Вход проходит, а создание приложения — нет. Telegram требует, "
+          "чтобы страна IP-адреса совпадала со страной номера телефона. "
+          "Этот сервер стоит не в России, а номер российский — отсюда отказ. "
+          "Создавать приложение нужно с обычного российского интернета "
+          "(домашний wi-fi или мобильный, VPN выключен).")
     return None
 
 
