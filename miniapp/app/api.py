@@ -17,7 +17,7 @@ from typing import Optional
 from aiohttp import web
 
 from . import database as db
-from . import op, services
+from . import op, services, texts
 from .web_login import (COOKIE_NAME, SESSION_TTL, check_login, make_session,
                         read_session)
 from .webapp_auth import extract_user
@@ -559,7 +559,7 @@ async def withdraw(request: web.Request) -> web.Response:
     gated = first_time or not config.payout_gate_first_only
     if gated:
         gate = await services.gate_state(bot, user["user_id"], "payout",
-                                         config)
+                                         config, fresh=True)
         if not gate["passed"]:
             return web.json_response(
                 {"ok": False, "gate": gate, "first_withdrawal": True,
@@ -576,6 +576,11 @@ async def withdraw(request: web.Request) -> web.Response:
     if demo:
         await db.set_withdrawal_status(created["id"], "paid")
 
+    # Проверка подписки «мягкая»: когда Telegram не отвечает, человека
+    # пропускают, чтобы одна сломанная настройка не остановила всех.
+    # Поэтому в заявке пишем, чем проверка закончилась на самом деле —
+    # платить вслепую админ не должен.
+    proof = await op.subscription_status(bot, user["user_id"], fresh=True)
     await services.notify_admin(
         bot, config,
         f"💸 <b>Заявка на вывод {created['code']}</b> (#{created['id']})\n"
@@ -583,7 +588,8 @@ async def withdraw(request: web.Request) -> web.Response:
         f"(<code>{user['user_id']}</code>)\n"
         f"Сумма: <b>{amount:g} ₽</b>\n"
         f"Способ: {METHOD_TITLES[method]}\n"
-        f"Реквизиты: <code>{normalized}</code>\n\n"
+        f"Реквизиты: <code>{normalized}</code>\n"
+        f"{texts.sub_proof(proof, await op.check_title())}\n\n"
         + ("✅ Демо: отмечена доставленной (это твоя заявка)."
            if demo else
            f"Подтвердить: <code>/paid {created['id']}</code>  •  "

@@ -285,13 +285,18 @@ async def set_enabled(value: bool) -> None:
     _forget_all()
 
 
-async def announce(bot: Bot) -> None:
-    """Отметиться в общем состоянии и проверить свои права в канале."""
+async def announce(bot: Bot) -> bool | None:
+    """Отметиться в общем состоянии и проверить свои права в канале.
+
+    Возвращает, может ли бот проверять подписку: True — он админ
+    проверочного канала, False — нет (тогда Telegram не даёт смотреть
+    чужие подписки, и гейт пропускает всех), None — канал не задан.
+    """
     try:
         me = await bot.get_me()
     except TelegramAPIError as exc:
         log.warning("Не смог представиться: %s", exc)
-        return
+        return None
     can_check = None
     chat = await check_chat()
     if chat:
@@ -299,10 +304,13 @@ async def announce(bot: Bot) -> None:
             member = await bot.get_chat_member(chat, me.id)
             status = getattr(member.status, "value", member.status)
             can_check = status in ("administrator", "creator")
-        except TelegramAPIError:
+        except TelegramAPIError as exc:
+            log.warning("Не смог проверить свои права в канале %s: %s",
+                        chat, exc)
             can_check = False
     op_store.register_bot(me.username or str(me.id),
                           me.first_name or "", me.id, can_check)
+    return can_check
 
 
 # ---------- показ пользователю ----------

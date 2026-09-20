@@ -42,6 +42,31 @@ async def _setup_bot_ui(bot: Bot, config) -> None:
         log.warning("Не удалось настроить меню бота: %s", err)
 
 
+async def _warn_if_cannot_check(bot: Bot, config) -> None:
+    """Сказать админу, если проверять подписку нечем.
+
+    Без прав администратора в проверочном канале Telegram не показывает
+    чужие подписки. Проверка тогда «мягкая» — пропускает всех, и заявки
+    на вывод приходят от неподписанных. Молчать об этом нельзя.
+    """
+    can_check = await op.announce(bot)
+    if can_check is not False or not config.admin_chat_id:
+        return
+    title = await op.check_title() or "проверочный канал"
+    log.warning("Бот не админ канала %s — подписку проверить нельзя", title)
+    try:
+        await bot.send_message(
+            config.admin_chat_id,
+            f"⚠️ <b>Подписку проверить нечем</b>\n\n"
+            f"Бот не администратор канала «{title}». Telegram не показывает "
+            f"чужие подписки тем, кто не админ, поэтому проверка сейчас "
+            f"пропускает всех — заявки на вывод будут приходить и от "
+            f"неподписанных.\n\n"
+            f"Сделай бота администратором канала. Проверить: /check")
+    except TelegramAPIError as err:
+        log.warning("Не удалось предупредить админа: %s", err)
+
+
 # Как часто заново спрашиваем Telegram про тех, кому обещан вывод.
 SWEEP_SECONDS = 600
 
@@ -97,7 +122,7 @@ async def main() -> None:
              config.port, config.webapp_url or "<PUBLIC_BASE_URL не задан>")
 
     await _setup_bot_ui(bot, config)
-    await op.announce(bot)
+    await _warn_if_cannot_check(bot, config)
 
     sweeper = asyncio.create_task(watch_subscriptions(bot, config))
 

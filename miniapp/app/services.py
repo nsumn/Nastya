@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 async def gate_state(bot: Bot, user_id: int, scope: str = "entry",
-                     config=None) -> dict:
+                     config=None, fresh: bool = False) -> dict:
     """Состояние проверки подписки.
 
     scope="entry"  — гейт на входе в приложение;
@@ -25,7 +25,9 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry",
     """
     # Проверяем всегда, даже когда гейт выключен: иначе статистика подписок
     # и отписок обновляется только у тех, кто дошёл до вывода.
-    status = await track_subscription(bot, user_id, config)
+    # fresh=True — мимо кэша: перед выплатой важно состояние на сейчас,
+    # а не то, что человек был подписан десять минут назад.
+    status = await track_subscription(bot, user_id, config, fresh)
 
     if not await op.gate_active(scope):
         return {"required": False, "passed": True, "scope": scope,
@@ -47,7 +49,8 @@ async def gate_state(bot: Bot, user_id: int, scope: str = "entry",
     }
 
 
-async def track_subscription(bot: Bot, user_id: int, config=None) -> str:
+async def track_subscription(bot: Bot, user_id: int, config=None,
+                             fresh: bool = False) -> str:
     """Проверить подписку на проверочный канал и отреагировать.
 
     Именно отсюда берётся статистика: «подписался» — это ответ Telegram
@@ -57,7 +60,7 @@ async def track_subscription(bot: Bot, user_id: int, config=None) -> str:
     Заодно это точка, где срабатывает правило про вывод: ушёл из канала —
     заявка отменяется, вернулся — сообщение об отмене убираем.
     """
-    status = await op.subscription_status(bot, user_id)
+    status = await op.subscription_status(bot, user_id, fresh)
     if status == "unknown":
         return status
 
