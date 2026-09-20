@@ -156,7 +156,7 @@ async def diagnose(bot, user_id: int, about: int | None = None) -> str:
     own = await op.subscription_status(bot, about, fresh=True)
     whose = "Его" if about != user_id else "Твоя"
     lines += ["", f"{whose} подписка по мнению Telegram "
-                  f"(<code>{about}</code>): "
+                  f"({await _who(bot, about)}): "
               + {"on": "✅ есть", "off": "❌ нет",
                  "unknown": "🤷 не удалось проверить"}[own]]
     if own == "off" and about == user_id:
@@ -186,6 +186,26 @@ async def diagnose(bot, user_id: int, about: int | None = None) -> str:
                      "события о входе и выходе — отписку видно только "
                      "при следующем заходе человека в приложение.")
     return "\n".join(lines)
+
+
+async def _who(bot, user_id: int) -> str:
+    """Как человек подписан в Telegram сейчас — чтобы узнать его в журнале.
+
+    В заявке стоит имя на момент запуска бота, а в журнале канала —
+    сегодняшнее: люди их меняют, и найти строчку про себя бывает
+    невозможно.
+    """
+    who = f"<code>{user_id}</code>"
+    try:
+        chat = await bot.get_chat(user_id)
+    except TelegramAPIError:
+        return who
+    name = " ".join(filter(None, (chat.first_name, chat.last_name))).strip()
+    if name:
+        who = f"{html.escape(name)}, {who}"
+    if chat.username:
+        who = f"@{html.escape(chat.username)}, {who}"
+    return who
 
 
 async def resolve_user(bot, raw: str) -> tuple[int | None, str]:
