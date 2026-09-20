@@ -21,8 +21,10 @@ from __future__ import annotations
 
 import http.cookiejar
 import json
+import random
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -32,17 +34,32 @@ BASE = "https://my.telegram.org"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/125.0 Safari/537.36")
 
-_jar = http.cookiejar.CookieJar()
+# Сессию храним в файле: повторный запуск не будет заново просить код.
+SESSION_FILE = Path(".my_telegram_session")
+_jar = http.cookiejar.MozillaCookieJar(SESSION_FILE)
+if SESSION_FILE.exists():
+    try:
+        _jar.load(ignore_discard=True, ignore_expires=True)
+    except (OSError, http.cookiejar.LoadError):
+        pass
 _opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(_jar))
 
 
-def _post(path: str, data: dict) -> str:
+def _save_session() -> None:
+    try:
+        _jar.save(ignore_discard=True, ignore_expires=True)
+        SESSION_FILE.chmod(0o600)
+    except OSError:
+        pass
+
+
+def _post(path: str, data: dict, referer: str = "/auth") -> str:
     req = urllib.request.Request(
         BASE + path,
         data=urllib.parse.urlencode(data).encode(),
         headers={
             "User-Agent": UA,
-            "Referer": BASE + "/auth",
+            "Referer": BASE + referer,
             "Origin": BASE,
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "application/x-www-form-urlencoded",
@@ -99,34 +116,59 @@ def login() -> None:
                                    "password": code, "remember": "1"})
     if answer.lower() not in ("true", '"true"'):
         _fail(_explain(answer))
-    print("✅ Вход выполнен.\n")
+    _save_session()
+    print("✅ Вход выполнен (сохранила, второй раз код не понадобится).\n")
+
+
+def _plain(page: str) -> str:
+    """Страница без тегов — так разбор не зависит от вёрстки сайта."""
+    text = re.sub(r"<(script|style)[\s\S]*?</\1>", " ", page, flags=re.I)
+    text = re.sub(r"<[^>]+>", "\n", text)
+    return re.sub(r"[ \t]+", " ", text)
 
 
 def parse_keys(page: str) -> tuple[str, str] | None:
-    api_id = re.search(r"App api_id[\s\S]{0,400}?>\s*(\d{4,12})\s*<", page)
-    api_hash = re.search(r"App api_hash[\s\S]{0,400}?>\s*([0-9a-f]{32})\s*<",
-                         page)
+    text = _plain(page)
+    api_id = re.search(r"api_id:?\s*(\d{4,12})", text)
+    api_hash = re.search(r"api_hash:?\s*([0-9a-f]{32})", text)
+    if not (api_id and api_hash):
+        # запасной вариант: ищем по вёрстке
+        api_id = api_id or re.search(
+            r"App api_id[\s\S]{0,600}?>\s*(\d{4,12})\s*<", page)
+        api_hash = api_hash or re.search(
+            r"App api_hash[\s\S]{0,600}?>\s*([0-9a-f]{32})\s*<", page)
     if api_id and api_hash:
         return api_id.group(1), api_hash.group(1)
     return None
 
 
-def create_app(page: str) -> None:
-    form_hash = re.search(r'name="hash"\s+value="([^"]+)"', page)
+def create_app(page: str) -> tuple[str, str] | None:
+    """Создать приложение. Короткое имя должно быть уникальным на весь
+    Telegram, поэтому при отказе пробуем другое."""
+    form_hash = re.search(r'name="hash"\s+value="([^"]+)"', page) or \
+        re.search(r'value="([^"]+)"\s+name="hash"', page)
     if not form_hash:
-        _fail("не нашёл форму создания приложения. Пришли мне вывод команды "
+        _fail("не нашла форму создания приложения. Пришли мне вывод команды "
               "целиком, разберусь.")
-    print("Создаю приложение…")
-    answer = _post("/apps/create", {
-        "hash": form_hash.group(1),
-        "app_title": "mirror",
-        "app_shortname": "mirrorapp",
-        "app_url": "https://example.com",
-        "app_platform": "desktop",
-        "app_desc": "personal use",
-    })
-    if answer.lower() not in ("true", '"true"', ""):
+
+    names = ["mirrorapp"] + [f"mirror{random.randint(1000, 9999)}"
+                             for _ in range(3)]
+    for name in names:
+        print(f"Создаю приложение ({name})…")
+        answer = _post("/apps/create", {
+            "hash": form_hash.group(1),
+            "app_title": name,
+            "app_shortname": name,
+            "app_url": "https://example.com",
+            "app_platform": "desktop",
+            "app_desc": "personal use",
+        }, referer="/apps")
+        keys = parse_keys(_get("/apps"))
+        if keys:
+            return keys
         print("⚠️  " + _explain(answer))
+        time.sleep(3)
+    return None
 
 
 def save_to_env(api_id: str, api_hash: str) -> None:
@@ -149,16 +191,25 @@ def save_to_env(api_id: str, api_hash: str) -> None:
 def main() -> None:
     print("Получение ключей api_id / api_hash с my.telegram.org\n")
     try:
-        login()
         page = _get("/apps")
+        if "send_password" in page or "Login" in page[:2000]:
+            login()          # сессии нет или протухла — входим по коду
+            page = _get("/apps")
+        else:
+            print("Использую сохранённый вход — код не нужен.\n")
         keys = parse_keys(page)
         if not keys:
-            create_app(page)
+            keys = create_app(page)
             page = _get("/apps")
-            keys = parse_keys(page)
         if not keys:
-            _fail("приложение не создалось. Попробуй через несколько часов — "
-                  "скорее всего сработало ограничение по числу попыток.")
+            dump = Path("apps_page.txt")
+            dump.write_text(_plain(page).strip()[:4000])
+            print("\n--- что сейчас на странице приложений ---")
+            print(_plain(page).strip()[:1200])
+            print("--- конец ---")
+            _fail("ключи не появились. Полный текст страницы сохранён в "
+                  f"{dump} — пришли его мне, разберусь. Вход сохранён, "
+                  "повторный запуск код уже не спросит.")
     except urllib.error.URLError as e:
         _fail(f"не смогла достучаться до my.telegram.org: {e}")
 

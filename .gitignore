@@ -11,3 +11,9 @@ env/
 *.db
 *.sqlite3
 *.log
+
+# Сессия my.telegram.org и служебные дампы
+.my_telegram_session
+apps_page.txt
+mirror.session
+mirror_state.json
