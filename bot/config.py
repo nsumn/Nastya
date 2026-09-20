@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
@@ -33,6 +34,58 @@ class Tariff:
     stars_channel_id: int = 0  # numeric id канала для звёзд
 
 
+def _get_bool(name: str, default: str = "0") -> bool:
+    return _get(name, default).lower() in ("1", "true", "yes", "on", "да")
+
+
+def _get_list(name: str) -> list[str]:
+    """Список из строки вида "a, b ; c" — разделители запятая и точка с запятой."""
+    raw = _get(name)
+    return [p.strip() for p in re.split(r"[,;]", raw) if p.strip()]
+
+
+def _get_ids(name: str) -> list[int]:
+    ids = []
+    for item in _get_list(name):
+        try:
+            ids.append(int(item))
+        except ValueError:
+            continue
+    return ids
+
+
+def _parse_replacements(raw: str) -> list[tuple[str, str]]:
+    """«старое=>новое; ещё=>другое» → [("старое", "новое"), ...]."""
+    pairs = []
+    for chunk in raw.split(";"):
+        if "=>" not in chunk:
+            continue
+        old, new = chunk.split("=>", 1)
+        old = old.strip()
+        if old:
+            pairs.append((old, new.strip()))
+    return pairs
+
+
+@dataclass
+class MirrorConfig:
+    """Автопостинг (зеркало) из чужих каналов в свой — без пометки «Переслано»."""
+    enabled: bool = False
+    sources: list[int] = field(default_factory=list)   # откуда берём посты
+    targets: list[int] = field(default_factory=list)   # куда публикуем
+    delay: int = 0                # задержка перед публикацией, сек
+    remove_links: bool = True     # вырезать t.me-ссылки и @юзернеймы источника
+    footer: str = ""              # своя подпись в конце поста
+    replacements: list[tuple[str, str]] = field(default_factory=list)
+    skip_keywords: list[str] = field(default_factory=list)  # не копировать, если есть слово
+    skip_without_media: bool = False   # копировать только посты с фото/видео
+    sync_edits: bool = True       # править копию, когда правят оригинал
+
+    @property
+    def active(self) -> bool:
+        return bool(self.enabled and self.sources and self.targets)
+
+
 @dataclass
 class Config:
     bot_token: str
@@ -58,6 +111,8 @@ class Config:
     buy_stars_link: str
     test_user_id: int = 0       # для этого id особая цена в звёздах (тест)
     test_stars_price: int = 1   # тестовая цена в звёздах
+
+    mirror: MirrorConfig = field(default_factory=MirrorConfig)
 
     tariffs: dict[str, Tariff] = field(default_factory=dict)
     # Включённые способы оплаты (меняются админом на лету).
@@ -145,6 +200,19 @@ def load_config() -> Config:
 
     admin_chat_id = int(_get("ADMIN_CHAT_ID", "0") or "0")
 
+    mirror = MirrorConfig(
+        enabled=_get_bool("MIRROR_ENABLED", "0"),
+        sources=_get_ids("MIRROR_SOURCES"),
+        targets=_get_ids("MIRROR_TARGETS") or _get_ids("MIRROR_TARGET"),
+        delay=int(_get("MIRROR_DELAY", "0") or "0"),
+        remove_links=_get_bool("MIRROR_REMOVE_LINKS", "1"),
+        footer=_get("MIRROR_FOOTER").replace("\\n", "\n"),
+        replacements=_parse_replacements(_get("MIRROR_REPLACE")),
+        skip_keywords=[w.lower() for w in _get_list("MIRROR_SKIP")],
+        skip_without_media=_get_bool("MIRROR_ONLY_MEDIA", "0"),
+        sync_edits=_get_bool("MIRROR_SYNC_EDITS", "1"),
+    )
+
     return Config(
         bot_token=_get("BOT_TOKEN"),
         admin_chat_id=admin_chat_id,
@@ -172,4 +240,5 @@ def load_config() -> Config:
         test_user_id=int(_get("TEST_USER_ID", "0") or "0"),
         test_stars_price=int(_get("TEST_STARS_PRICE", "1") or "1"),
         tariffs=tariffs,
+        mirror=mirror,
     )

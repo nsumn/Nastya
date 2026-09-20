@@ -12,7 +12,7 @@ from aiohttp import web
 from . import database as db
 from . import services, settings_store
 from .config import load_config
-from .handlers import admin, payment, relay, start
+from .handlers import admin, mirror, payment, relay, start
 from .platega import PlategaClient
 from .webhook import build_app
 
@@ -48,6 +48,7 @@ async def main() -> None:
     )
 
     dp = Dispatcher()
+    dp.include_router(mirror.router)   # автопостинг из чужого канала
     dp.include_router(admin.router)    # админ-команды и FSM — раньше relay
     dp.include_router(start.router)
     dp.include_router(payment.router)
@@ -63,6 +64,10 @@ async def main() -> None:
              config.port, config.callback_url or "<polling only>")
 
     await _resume_pending(bot, config, platega)
+
+    if config.mirror.active:
+        log.info("Автопостинг включён: %s → %s",
+                 config.mirror.sources, config.mirror.targets)
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)

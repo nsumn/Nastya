@@ -3,7 +3,9 @@
 Две сущности:
 - orders  — заказы (платежи по СБП через Platega) с их статусом;
 - relay   — карта «сообщение в чате администратора → user_id» для
-            двусторонней переписки администратора с покупателем.
+            двусторонней переписки администратора с покупателем;
+- mirror_map — карта «пост в канале-источнике → копия в своём канале»
+            (чтобы не публиковать дважды и править копию при правке оригинала).
 """
 from __future__ import annotations
 
@@ -62,6 +64,18 @@ async def init_db(path: str) -> None:
                 amount     REAL NOT NULL,
                 currency   TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now', '+3 hours'))
+            )
+            """
+        )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS mirror_map (
+                src_chat_id INTEGER NOT NULL,
+                src_msg_id  INTEGER NOT NULL,
+                dst_chat_id INTEGER NOT NULL,
+                dst_msg_id  INTEGER NOT NULL,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                PRIMARY KEY (src_chat_id, src_msg_id, dst_chat_id, dst_msg_id)
             )
             """
         )
@@ -209,3 +223,58 @@ async def get_relay_user(admin_msg_id: int) -> Optional[int]:
         ) as cur:
             row = await cur.fetchone()
             return row[0] if row else None
+
+
+# ---------- mirror (автопостинг из чужого канала) ----------
+
+async def save_mirror(src_chat_id: int, src_msg_id: int,
+                      dst_chat_id: int, dst_msg_id: int) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO mirror_map
+                (src_chat_id, src_msg_id, dst_chat_id, dst_msg_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            (src_chat_id, src_msg_id, dst_chat_id, dst_msg_id),
+        )
+        await db.commit()
+
+
+async def mirror_copies(src_chat_id: int, src_msg_id: int) -> list[dict]:
+    """Все копии одного исходного поста (по одной на канал-приёмник)."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT dst_chat_id, dst_msg_id FROM mirror_map
+            WHERE src_chat_id = ? AND src_msg_id = ?
+            ORDER BY dst_msg_id
+            """,
+            (src_chat_id, src_msg_id),
+        ) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def mirror_done(src_chat_id: int, src_msg_id: int,
+                      dst_chat_id: int) -> bool:
+    """Этот пост уже скопирован в этот канал? (защита от дублей)"""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            """
+            SELECT 1 FROM mirror_map
+            WHERE src_chat_id = ? AND src_msg_id = ? AND dst_chat_id = ?
+            """,
+            (src_chat_id, src_msg_id, dst_chat_id),
+        ) as cur:
+            return await cur.fetchone() is not None
+
+
+async def mirror_count() -> int:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            "SELECT COUNT(DISTINCT src_chat_id || ':' || src_msg_id) "
+            "FROM mirror_map"
+        ) as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 0

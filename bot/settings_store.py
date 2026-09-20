@@ -36,6 +36,9 @@ async def load_overrides(config: Config) -> None:
     card = settings.get("card_details")
     if card is not None:
         config.card_details = card
+    mirror = settings.get("mirror:enabled")
+    if mirror is not None:
+        config.mirror.enabled = (mirror == "1")
 
 
 async def set_price(config: Config, tariff_id: str, price: float) -> None:
@@ -61,3 +64,9 @@ async def set_description(config: Config, tariff_id: str, desc: str) -> None:
 async def set_card_details(config: Config, details: str) -> None:
     config.card_details = details
     await db.set_setting("card_details", details)
+
+
+async def set_mirror(config: Config, enabled: bool) -> None:
+    """Включить/выключить автопостинг из чужого канала (кнопкой /mirror)."""
+    config.mirror.enabled = enabled
+    await db.set_setting("mirror:enabled", "1" if enabled else "0")
