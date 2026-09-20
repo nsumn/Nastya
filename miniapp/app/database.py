@@ -1070,6 +1070,18 @@ async def reset_subs() -> None:
         await db.close()
 
 
+async def sub_record(user_id: int) -> Optional[dict]:
+    """Что бот помнит про подписку конкретного человека."""
+    db = await _conn()
+    try:
+        async with db.execute("SELECT * FROM subs WHERE user_id = ?",
+                              (user_id,)) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
+    finally:
+        await db.close()
+
+
 async def sub_stats(since: str = "") -> dict[str, int]:
     """Сколько человек подписалось на проверочный канал и сколько ушло.
 

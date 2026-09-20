@@ -87,7 +87,8 @@ async def status_text() -> str:
         f"Проверочная ссылка: {'✅ есть' if await op.check_url() else '⚠️ нет'}",
         f"Проверка: {'✅ включена' if await op.enabled() else '❌ выключена'}",
         "",
-        "Не находит подписку у того, кто подписан? — /check",
+        "Разобраться с подпиской: /check",
+        "Проверить участника из заявки: /check 8390008785",
     ]
     if not chat:
         lines += ["", "⚠️ Перешли мне любой пост из проверочного канала — "
@@ -95,13 +96,14 @@ async def status_text() -> str:
     return "\n".join(lines)
 
 
-async def diagnose(bot, user_id: int) -> str:
+async def diagnose(bot, user_id: int, about: int | None = None) -> str:
     """Что Telegram отвечает про проверочный канал прямо сейчас.
 
-    Нужно, когда участник уверяет, что подписан, а бот не находит:
-    почти всегда дело либо в правах бота, либо в том, что проверочным
-    записан не тот канал, на который человек подписался.
+    Нужно, когда участник уверяет, что подписан, а бот не находит, или
+    наоборот — заявка на вывод пришла от того, кого в канале нет.
+    `about` — про кого смотрим; по умолчанию про самого админа.
     """
+    about = about or user_id
     chat_id = await op.check_chat()
     title = await op.check_title()
     if not chat_id:
@@ -140,20 +142,42 @@ async def diagnose(bot, user_id: int) -> str:
                     "без прав администратора Telegram не даёт проверять "
                     "чужие подписки, и приложение пускает всех"))
 
-    op.forget(user_id)
-    own = await op.subscription_status(bot, user_id, fresh=True)
-    lines += ["", "Твоя подписка по мнению Telegram: "
+    # Гейт на выводе — отдельный список. Если он пуст, заявки создаются
+    # вообще без проверки подписки: это первое, что стоит исключить,
+    # когда вывод пришёл от неподписанного.
+    payout_on = await op.gate_active("payout")
+    lines.append("Проверка перед выводом: "
+                 + (f"✅ включена ({len(await op.get_items('payout'))} каналов)"
+                    if payout_on else
+                    "⚠️ <b>выключена</b> — список каналов для вывода пуст, "
+                    "заявки проходят без подписки"))
+
+    op.forget(about)
+    own = await op.subscription_status(bot, about, fresh=True)
+    whose = "Его" if about != user_id else "Твоя"
+    lines += ["", f"{whose} подписка по мнению Telegram "
+                  f"(<code>{about}</code>): "
               + {"on": "✅ есть", "off": "❌ нет",
                  "unknown": "🤷 не удалось проверить"}[own]]
-    if own == "off":
+    if own == "off" and about == user_id:
         lines.append("Если ты точно подписана — значит, проверочным "
                      "записан не тот канал. Перешли пост из нужного.")
 
+    record = await db.sub_record(about)
+    if record is None or not record["first_ok"]:
+        lines.append("Подписки за ним ни разу не видели — бот его "
+                     "в канале не заставал.")
+    else:
+        lines.append(f"Впервые увидели подписку: {record['first_ok'][:16]}")
+        if record["leaves"]:
+            lines.append(f"Уходил из канала: {record['leaves']} раз, "
+                         f"последний — {record['left_at'][:16]}")
+
     # Частый вопрос: «отписался, а уведомления нет». Сообщение приходит
     # только когда есть что отменять — заявка на вывод в обработке.
-    waiting = user_id in await db.pending_withdrawal_users()
+    waiting = about in await db.pending_withdrawal_users()
     lines += ["", "Заявка на вывод в обработке: "
-              + ("✅ есть — если отпишешься, её отменят и напишут"
+              + ("✅ есть — если отпишется, её отменят и напишут"
                  if waiting else
                  "❌ нет. Отмена и письмо про отписку бывают только когда "
                  "заявка висит: без неё отменять нечего")]
@@ -164,9 +188,34 @@ async def diagnose(bot, user_id: int) -> str:
     return "\n".join(lines)
 
 
+async def resolve_user(bot, raw: str) -> tuple[int | None, str]:
+    """Аргумент команды → id участника. Вторым значением — что не так."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None, ""
+    if raw.lstrip("-").isdigit():
+        return int(raw), ""
+    if not raw.startswith("@"):
+        raw = "@" + raw
+    try:
+        chat = await bot.get_chat(raw)
+    except TelegramAPIError as err:
+        return None, (f"Не нашёл <code>{html.escape(raw)}</code>: "
+                      f"<code>{html.escape(str(err))}</code>\n"
+                      "По username Telegram отвечает не всегда — "
+                      "надёжнее числовой id из заявки.")
+    return chat.id, ""
+
+
 @router.message(Command("check"))
-async def check_cmd(message: Message) -> None:
-    await message.answer(await diagnose(message.bot, message.from_user.id))
+async def check_cmd(message: Message, command) -> None:
+    """/check — про себя, /check 8390008785 — про конкретного участника."""
+    about, problem = await resolve_user(message.bot, command.args or "")
+    if problem:
+        await message.answer(problem)
+        return
+    await message.answer(
+        await diagnose(message.bot, message.from_user.id, about))
 
 
 @router.message(Command("op"))
