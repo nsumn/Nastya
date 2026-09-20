@@ -81,6 +81,17 @@ POST <PUBLIC_BASE_URL>/platega/callback
 pip install -r tools/requirements.txt
 ```
 
+> **Если my.telegram.org отвечает `ERROR` или «too many attempts».** Сайт
+> часто ломается в мобильных браузерах и блокирует повторные попытки по
+> адресу в сети. У сервера адрес другой — получи ключи прямо с него:
+>
+> ```bash
+> python tools/get_api_keys.py
+> ```
+>
+> Спросит номер и код из Telegram, создаст приложение, покажет `api_id` и
+> `api_hash` и предложит сразу записать их в `.env`.
+
 В `.env` (тот же файл, что у бота):
 
 ```
@@ -172,6 +183,7 @@ bot/
   main.py        — точка входа
 tools/
   userbot_mirror.py — зеркало чужого канала от личного аккаунта (Telethon)
+  get_api_keys.py   — получение api_id/api_hash с сервера, без браузера
 ```
 
 ## Технологии
