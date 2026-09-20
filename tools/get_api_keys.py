@@ -142,32 +142,53 @@ def parse_keys(page: str) -> tuple[str, str] | None:
     return None
 
 
+def _form_fields(page: str) -> dict[str, str]:
+    """Реальные поля формы со страницы: {имя: значение}."""
+    fields: dict[str, str] = {}
+    for tag in re.findall(r"<(?:input|textarea)[^>]*>", page, re.I):
+        name = re.search(r'name="([^"]+)"', tag)
+        if not name:
+            continue
+        value = re.search(r'value="([^"]*)"', tag)
+        fields.setdefault(name.group(1), value.group(1) if value else "")
+    return fields
+
+
 def create_app(page: str) -> tuple[str, str] | None:
     """Создать приложение. Короткое имя должно быть уникальным на весь
     Telegram, поэтому при отказе пробуем другое."""
-    form_hash = re.search(r'name="hash"\s+value="([^"]+)"', page) or \
-        re.search(r'value="([^"]+)"\s+name="hash"', page)
-    if not form_hash:
+    fields = _form_fields(page)
+    if "hash" not in fields:
         _fail("не нашла форму создания приложения. Пришли мне вывод команды "
               "целиком, разберусь.")
+    print(f"Поля формы на сайте: {', '.join(sorted(fields))}")
 
-    names = ["mirrorapp"] + [f"mirror{random.randint(1000, 9999)}"
-                             for _ in range(3)]
+    action = re.search(r'<form[^>]+action="([^"]*apps/create[^"]*)"', page)
+    path = action.group(1) if action else "/apps/create"
+    if path.startswith("http"):
+        path = path.split("my.telegram.org", 1)[-1]
+
+    names = ["mirrorapp"] + [f"mirror{random.randint(1000, 9999)}"]
     for name in names:
         print(f"Создаю приложение ({name})…")
-        answer = _post("/apps/create", {
-            "hash": form_hash.group(1),
+        payload = dict(fields)          # скрытые поля отправляем как есть
+        payload.update({
             "app_title": name,
             "app_shortname": name,
-            "app_url": "https://example.com",
+            "app_url": "",
             "app_platform": "desktop",
             "app_desc": "personal use",
-        }, referer="/apps")
+        })
+        answer = _post(path, payload, referer="/apps")
         keys = parse_keys(_get("/apps"))
         if keys:
             return keys
-        print("⚠️  " + _explain(answer))
-        time.sleep(3)
+        print(f"⚠️  ответ сайта: {answer[:200] or '(пусто)'}")
+        time.sleep(5)
+
+    print("\n💡 Вход проходит, а создание приложения — нет. Так Telegram "
+          "ведёт себя, когда запрос идёт с адреса дата-центра: это и VPN, "
+          "и сервер. Нужен обычный домашний или мобильный интернет.")
     return None
 
 
@@ -190,6 +211,7 @@ def save_to_env(api_id: str, api_hash: str) -> None:
 
 def main() -> None:
     print("Получение ключей api_id / api_hash с my.telegram.org\n")
+    check_only = "--check" in sys.argv
     try:
         page = _get("/apps")
         if "send_password" in page or "Login" in page[:2000]:
@@ -198,7 +220,7 @@ def main() -> None:
         else:
             print("Использую сохранённый вход — код не нужен.\n")
         keys = parse_keys(page)
-        if not keys:
+        if not keys and not check_only:
             keys = create_app(page)
             page = _get("/apps")
         if not keys:
