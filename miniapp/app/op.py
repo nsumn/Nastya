@@ -439,6 +439,24 @@ async def subscription_status(bot: Bot | None, user_id: int,
     return "on" if ok else "off"
 
 
+async def raw_member(bot: Bot, chat_id, user_id: int) -> tuple[str, str]:
+    """Сырой ответ Telegram про участника: (status, пояснение об ошибке).
+
+    Нужен для разбирательств: когда админ уверен, что человека в канале
+    нет, а проверка говорит обратное, спорить можно только с дословным
+    ответом Telegram — именно его видит и любой другой бот.
+    """
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+    except TelegramAPIError as exc:
+        return "", str(exc)
+    status = getattr(member.status, "value", member.status)
+    if status == "restricted":
+        status += (" (в канале)" if getattr(member, "is_member", False)
+                   else " (вне канала)")
+    return status, ""
+
+
 async def is_subscribed(bot: Bot, user_id: int) -> bool:
     """Пускать ли человека дальше.
 

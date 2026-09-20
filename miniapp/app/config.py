@@ -48,6 +48,7 @@ class Config:
     # Писать ли админу о каждом выполненном задании. По умолчанию нет:
     # ответы, ждущие модерации, приходят в любом случае.
     notify_submissions: bool = False
+    notify_all_withdrawals: bool = False
     # Требовать подписку только на первый вывод. Пока выключено, подписка
     # проверяется перед каждой заявкой.
     payout_gate_first_only: bool = False
@@ -90,6 +91,7 @@ def load_config() -> Config:
         participants_base=_int("PARTICIPANTS_BASE", 7000),
         autoapprove=_get("AUTOAPPROVE", "1") != "0",
         notify_submissions=_get("NOTIFY_SUBMISSIONS", "0") == "1",
+        notify_all_withdrawals=_get("NOTIFY_ALL_WITHDRAWALS", "0") == "1",
         payout_gate_first_only=_get("PAYOUT_GATE_FIRST_ONLY", "0") == "1",
         demo_payout_for_admin=_get("DEMO_PAYOUT_FOR_ADMIN", "1") != "0",
         demo_admin_name=_get("DEMO_ADMIN_NAME", "Мария"),

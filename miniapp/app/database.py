@@ -128,6 +128,11 @@ async def init_db(path: str) -> None:
                 -- заявка выдана под обещание подписки: только такие
                 -- отменяются, если человек ушёл из проверочного канала
                 gated        INTEGER NOT NULL DEFAULT 1,
+                -- сколько раз человек уходил из проверочного канала
+                -- на момент заявки. Число изменилось с прошлой заявки —
+                -- значит он уходил и подписался заново; -1 — подписки
+                -- за ним тогда не знали вовсе
+                sub_streak   INTEGER NOT NULL DEFAULT -1,
                 created_at   TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
                 processed_at TEXT
             );
@@ -165,6 +170,10 @@ async def init_db(path: str) -> None:
                 last_ok  TEXT NOT NULL DEFAULT '',
                 left_at  TEXT NOT NULL DEFAULT '',
                 leaves   INTEGER NOT NULL DEFAULT 0,
+                -- когда началась ТЕКУЩАЯ подписка: с первого раза или
+                -- с возвращения после ухода. По ней видно, подписался
+                -- человек ради этой заявки или сидит в канале давно
+                since    TEXT NOT NULL DEFAULT '',
                 -- id сообщения «вывод отменён»: удаляем его, когда человек
                 -- подписывается обратно
                 warn_msg INTEGER NOT NULL DEFAULT 0
@@ -188,8 +197,10 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             "scope": "TEXT NOT NULL DEFAULT 'entry'",
         },
         "withdrawals": {"code": "TEXT",
-                        "gated": "INTEGER NOT NULL DEFAULT 1"},
-        "subs": {"warn_msg": "INTEGER NOT NULL DEFAULT 0"},
+                        "gated": "INTEGER NOT NULL DEFAULT 1",
+                        "sub_streak": "INTEGER NOT NULL DEFAULT -1"},
+        "subs": {"warn_msg": "INTEGER NOT NULL DEFAULT 0",
+                 "since": "TEXT NOT NULL DEFAULT ''"},
         "tasks": {
             "kind": "TEXT NOT NULL DEFAULT 'review'",
             "video_url": "TEXT NOT NULL DEFAULT ''",
@@ -203,6 +214,11 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         for column, ddl in columns.items():
             if column not in existing:
                 await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+
+    # У подписок, заведённых до появления колонки since, началом текущей
+    # подписки считаем тот момент, когда её впервые увидели.
+    await db.execute("UPDATE subs SET since = first_ok "
+                     "WHERE since = '' AND first_ok <> ''")
 
 
 # ---------- settings ----------
@@ -647,10 +663,16 @@ async def create_withdrawal(user_id: int, amount: float, method: str,
     db = await _conn()
     try:
         code = make_code()
+        async with db.execute(
+            "SELECT leaves FROM subs WHERE user_id = ? AND state = 'on'",
+            (user_id,),
+        ) as cur:
+            row = await cur.fetchone()
+        streak = row["leaves"] if row else -1
         cur = await db.execute(
             "INSERT INTO withdrawals (code, user_id, amount, method, "
-            "requisites, gated) VALUES (?, ?, ?, ?, ?, ?)",
-            (code, user_id, amount, method, requisites, int(gated)),
+            "requisites, gated, sub_streak) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (code, user_id, amount, method, requisites, int(gated), streak),
         )
         await db.execute(
             "UPDATE users SET balance = balance - ? WHERE user_id = ?",
@@ -742,6 +764,20 @@ async def count_withdrawals(user_id: int) -> int:
             "WHERE user_id = ? AND status != 'canceled'", (user_id,)
         ) as cur:
             return (await cur.fetchone())["n"]
+    finally:
+        await db.close()
+
+
+async def previous_withdrawal(user_id: int, before_id: int) -> Optional[dict]:
+    """Прошлая заявка человека. None — эта у него первая."""
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT * FROM withdrawals WHERE user_id = ? AND id < ? "
+            "ORDER BY id DESC LIMIT 1", (user_id, before_id),
+        ) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
     finally:
         await db.close()
 
@@ -974,13 +1010,18 @@ async def mark_subscription(user_id: int, subscribed: bool) -> str:
                     and row["leaves"] > 0 else "")
             if row is None:
                 await db.execute(
-                    "INSERT INTO subs (user_id, state, first_ok, last_ok) "
-                    "VALUES (?, 'on', ?, ?)", (user_id, stamp, stamp))
+                    "INSERT INTO subs (user_id, state, first_ok, last_ok, "
+                    "since) VALUES (?, 'on', ?, ?, ?)",
+                    (user_id, stamp, stamp, stamp))
             else:
+                # since двигаем только когда человек вернулся: у того, кто
+                # сидит в канале давно, начало подписки не меняется.
                 await db.execute(
                     "UPDATE subs SET state = 'on', last_ok = ?, first_ok = "
-                    "CASE WHEN first_ok = '' THEN ? ELSE first_ok END "
-                    "WHERE user_id = ?", (stamp, stamp, user_id))
+                    "CASE WHEN first_ok = '' THEN ? ELSE first_ok END, "
+                    "since = CASE WHEN state = 'on' AND since <> '' "
+                    "THEN since ELSE ? END WHERE user_id = ?",
+                    (stamp, stamp, stamp, user_id))
         else:
             move = "gone" if row is not None and row["state"] == "on" else ""
             if row is None:

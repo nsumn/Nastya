@@ -159,9 +159,20 @@ async def diagnose(bot, user_id: int, about: int | None = None) -> str:
                   f"({await _who(bot, about)}): "
               + {"on": "✅ есть", "off": "❌ нет",
                  "unknown": "🤷 не удалось проверить"}[own]]
+    # Дословный ответ Telegram: с ним спорить нельзя, и он же
+    # показывает разницу между «вышел» и «забанен».
+    raw, err = await op.raw_member(bot, chat_id, about)
+    lines.append(f"Дословный ответ Telegram: <code>"
+                 f"{html.escape(raw or err or '—')}</code>")
     if own == "off" and about == user_id:
         lines.append("Если ты точно подписана — значит, проверочным "
                      "записан не тот канал. Перешли пост из нужного.")
+    if own == "on" and about != user_id:
+        lines.append("Если в списке подписчиков канала его не видно — "
+                     "это не значит, что его там нет: Telegram показывает "
+                     "админу только часть списка, а журнал действий "
+                     "хранит около двух суток. API отвечает по всему "
+                     "каналу целиком.")
 
     record = await db.sub_record(about)
     if record is None or not record["first_ok"]:

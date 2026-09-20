@@ -154,6 +154,23 @@ async def refresh_subs(bot: Bot, user_ids, config=None) -> None:
                      config)
 
 
+async def subscribed_for_this(user_id: int, withdrawal_id: int) -> bool:
+    """Подписался ли человек ради этой заявки.
+
+    Да — если текущая подписка началась уже после прошлого вывода: либо
+    он подписался впервые, либо уходил и вернулся. Нет — если он сидит
+    в канале с прошлого раза и просто выводит снова.
+    """
+    previous = await db.previous_withdrawal(user_id, withdrawal_id)
+    if previous is None:
+        return True                 # первая заявка — про неё пишем всегда
+    current = await db.get_withdrawal(withdrawal_id)
+    # Сравниваем не время, а саму подписку: у каждой заявки записано,
+    # сколько раз человек к тому моменту уходил из канала. Совпало —
+    # значит он в канале с прошлого вывода и подписываться не ходил.
+    return (current or {}).get("sub_streak") != previous.get("sub_streak")
+
+
 async def notify_admin(bot: Bot, config, text: str, reply_markup=None) -> None:
     if not config.admin_chat_id:
         return

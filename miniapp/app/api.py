@@ -581,20 +581,32 @@ async def withdraw(request: web.Request) -> web.Response:
     # Поэтому в заявке пишем, чем проверка закончилась на самом деле —
     # платить вслепую админ не должен.
     proof = await op.subscription_status(bot, user["user_id"], fresh=True)
-    await services.notify_admin(
-        bot, config,
-        f"💸 <b>Заявка на вывод {created['code']}</b> (#{created['id']})\n"
-        f"Участник: {services.display_name(user)} "
-        f"(<code>{user['user_id']}</code>)\n"
-        f"Сумма: <b>{amount:g} ₽</b>\n"
-        f"Способ: {METHOD_TITLES[method]}\n"
-        f"Реквизиты: <code>{normalized}</code>\n"
-        f"{texts.sub_proof(proof, await op.check_title())}\n\n"
-        + ("✅ Демо: отмечена доставленной (это твоя заявка)."
-           if demo else
-           f"Подтвердить: <code>/paid {created['id']}</code>  •  "
-           f"Отклонить: <code>/reject {created['id']}</code>"),
-    )
+    fresh_sub = await services.subscribed_for_this(user["user_id"],
+                                                   created["id"])
+
+    # Писать про каждый вывод бессмысленно: постоянные участники выводят
+    # раз за разом, и уведомление перестаёт что-либо значить. Пишем, когда
+    # человек подписался ради этой заявки — впервые или вернувшись, — и
+    # всегда, когда с подпиской что-то не так.
+    if config.notify_all_withdrawals or fresh_sub or proof != "on":
+        await services.notify_admin(
+            bot, config,
+            f"💸 <b>Заявка на вывод {created['code']}</b> (#{created['id']})"
+            + ("  🆕 новая подписка" if fresh_sub else "") + "\n"
+            f"Участник: {services.display_name(user)} "
+            f"(<code>{user['user_id']}</code>)\n"
+            f"Сумма: <b>{amount:g} ₽</b>\n"
+            f"Способ: {METHOD_TITLES[method]}\n"
+            f"Реквизиты: <code>{normalized}</code>\n"
+            f"{texts.sub_proof(proof, await op.check_title())}\n\n"
+            + ("✅ Демо: отмечена доставленной (это твоя заявка)."
+               if demo else
+               f"Подтвердить: <code>/paid {created['id']}</code>  •  "
+               f"Отклонить: <code>/reject {created['id']}</code>"),
+        )
+    else:
+        log.info("Заявка %s без уведомления: подписка не новая",
+                 created["code"])
 
     return web.json_response({
         "ok": True,
