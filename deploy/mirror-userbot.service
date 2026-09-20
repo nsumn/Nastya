@@ -1,0 +1,21 @@
+# Зеркало чужого канала в свой от личного аккаунта (tools/userbot_mirror.py).
+# Ставится рядом с nastya-bot.service отдельным процессом:
+#   cp deploy/mirror-userbot.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now mirror-userbot
+# ВАЖНО: перед первым запуском залогиниться вручную (спросит код из Telegram):
+#   cd /opt/nastya-bot && .venv/bin/python tools/userbot_mirror.py --list
+[Unit]
+Description=Telegram channel mirror (userbot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/nastya-bot
+ExecStart=/opt/nastya-bot/.venv/bin/python tools/userbot_mirror.py
+Restart=always
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -1,38 +1,47 @@
 #!/usr/bin/env python3
-"""Зеркало канала через ЛИЧНЫЙ аккаунт (Telethon) — без пометки «Переслано».
+"""Зеркало ЧУЖОГО канала в свой — от личного аккаунта, без «Переслано».
 
-Когда это нужно: бота нельзя добавить администратором в чужой канал, а
-значит `bot/handlers/mirror.py` постов оттуда не увидит. Этот скрипт
-читает канал твоим личным аккаунтом (достаточно быть просто подписанным)
-и публикует посты в твой канал копией — без «Переслано из …».
+Бота нельзя сделать администратором чужого канала, а без этого Telegram не
+отдаёт боту его посты. Поэтому читает канал твой личный аккаунт (достаточно
+быть подписанным), а публикует посты в твой канал — копией, а не пересылкой:
+у читателей не видно ни «Переслано из …», ни ссылки на источник.
 
-Запуск:
+Быстрый старт:
 
-    pip install telethon
-    export TG_API_ID=... TG_API_HASH=...        # https://my.telegram.org → API development tools
-    export MIRROR_SOURCES=-1001111111111        # откуда (можно через запятую, можно @username)
-    export MIRROR_TARGETS=-1002222222222        # куда (твой канал, аккаунт должен уметь в нём писать)
-    python tools/userbot_mirror.py
+    pip install -r tools/requirements.txt
+    # TG_API_ID / TG_API_HASH — my.telegram.org → API development tools
+    # остальное — в том же .env, что и у бота (блок MIRROR_*)
+    python tools/userbot_mirror.py --list        # узнать ID каналов
+    python tools/userbot_mirror.py --dry-run     # проверить чистку текста
+    python tools/userbot_mirror.py --last 10     # скопировать 10 последних постов
+    python tools/userbot_mirror.py               # слушать канал дальше
 
-При первом запуске спросит номер телефона и код из Telegram — сессия
-сохранится в файл `mirror.session`, дальше вход не потребуется.
-
-Остальные переменные — те же, что у бота: MIRROR_DELAY, MIRROR_FOOTER,
-MIRROR_REPLACE, MIRROR_SKIP, MIRROR_REMOVE_LINKS, MIRROR_ONLY_MEDIA.
+Первый запуск спросит телефон и код из Telegram; сессия сохранится в файл
+`mirror.session`, больше вход не потребуется.
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
+import json
 import logging
 import os
 import re
 import sys
+import tempfile
+from pathlib import Path
 
 try:
     from telethon import TelegramClient, events
     from telethon.tl.types import MessageMediaWebPage
 except ImportError:  # pragma: no cover
-    sys.exit("Нужен telethon:  pip install telethon")
+    sys.exit("Нужен telethon:  pip install -r tools/requirements.txt")
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()          # берём настройки из того же .env, что и бот
+except ImportError:        # pragma: no cover
+    pass
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,6 +49,8 @@ logging.basicConfig(
 )
 log = logging.getLogger("mirror")
 
+
+# ---------- настройки ----------
 
 def _get(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
@@ -50,12 +61,14 @@ def _bool(name: str, default: str = "0") -> bool:
 
 
 def _peers(name: str) -> list:
-    """«-100123, @channel» → [-100123, "@channel"]."""
+    """«-1001234, @channel, https://t.me/channel» → [-1001234, "channel", "channel"]."""
     out = []
     for item in re.split(r"[,;]", _get(name)):
         item = item.strip()
         if not item:
             continue
+        item = re.sub(r'^https?://(?:t\.me|telegram\.me)/', '', item, flags=re.I)
+        item = item.lstrip("@").rstrip("/")
         try:
             out.append(int(item))
         except ValueError:
@@ -84,6 +97,12 @@ ONLY_MEDIA = _bool("MIRROR_ONLY_MEDIA", "0")
 FOOTER = _get("MIRROR_FOOTER").replace("\\n", "\n")
 REPLACE = _replacements()
 SKIP = [w.strip().lower() for w in re.split(r"[,;]", _get("MIRROR_SKIP")) if w.strip()]
+STATE_PATH = Path(_get("MIRROR_STATE", "mirror_state.json"))
+# Пауза между постами: с одного аккаунта частить нельзя.
+SEND_PAUSE = 1.5
+
+
+# ---------- чистка текста ----------
 
 _ANCHOR_RE = re.compile(
     r'<a\s+href="[^"]*(?:t\.me|telegram\.me|telegram\.dog)[^"]*"[^>]*>.*?</a>',
@@ -120,7 +139,7 @@ def has_media(message) -> bool:
                                                   MessageMediaWebPage)
 
 
-def skip_reason(messages, raw: str) -> str:
+def skip_reason(messages: list, raw: str) -> str:
     low = (raw or "").lower()
     for word in SKIP:
         if word in low:
@@ -132,47 +151,136 @@ def skip_reason(messages, raw: str) -> str:
     return ""
 
 
-async def republish(client: TelegramClient, messages: list) -> None:
+# ---------- память о том, что уже скопировано ----------
+
+def load_state() -> set[str]:
+    try:
+        return set(json.loads(STATE_PATH.read_text()).get("done", []))
+    except (OSError, ValueError):
+        return set()
+
+
+def save_state(done: set[str]) -> None:
+    try:
+        # держим только хвост — файл не должен расти бесконечно
+        tail = sorted(done)[-5000:]
+        STATE_PATH.write_text(json.dumps({"done": tail}, ensure_ascii=False))
+    except OSError as e:  # noqa: BLE001
+        log.warning("не смог сохранить %s: %s", STATE_PATH, e)
+
+
+_done: set[str] = set()
+
+
+def _key(message) -> str:
+    return f"{message.chat_id}:{message.id}"
+
+
+# ---------- публикация ----------
+
+async def _send(client, target, messages: list, text: str):
+    media = [m for m in messages if has_media(m)]
+    if not media:
+        return await client.send_message(target, text, parse_mode="html",
+                                         link_preview=False)
+    caption = [text] + [""] * (len(media) - 1)
+    try:
+        if len(media) > 1:
+            return await client.send_file(target, [m.media for m in media],
+                                          caption=caption, parse_mode="html")
+        return await client.send_file(target, media[0].media,
+                                      caption=text or None, parse_mode="html")
+    except Exception as e:  # noqa: BLE001
+        # напр. в источнике включена защита контента — качаем и заливаем заново
+        log.warning("отправка по ссылке не прошла (%s) — скачиваю файлы", e)
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = [await client.download_media(m, file=tmp) for m in media]
+            paths = [p for p in paths if p]
+            if not paths:
+                raise
+            if len(paths) > 1:
+                return await client.send_file(
+                    target, paths, caption=[text] + [""] * (len(paths) - 1),
+                    parse_mode="html")
+            return await client.send_file(target, paths[0],
+                                          caption=text or None,
+                                          parse_mode="html")
+
+
+async def republish(client, messages: list, dry_run: bool = False) -> None:
     head = messages[0]
-    raw = head.text or ""          # client.parse_mode = "html" → это HTML
+    key = _key(head)
+    if key in _done:
+        return                       # уже копировали — второй раз не надо
+    raw = head.text or ""            # client.parse_mode = "html" → размеченный текст
+
     reason = skip_reason(messages, raw)
     if reason:
-        log.info("пропускаю пост %s — %s", head.id, reason)
+        log.info("пост %s пропущен — %s", key, reason)
         return
 
     text = clean(raw)
+    if raw and not text and not any(has_media(m) for m in messages):
+        log.info("пост %s: после чистки ничего не осталось", key)
+        return
+
+    if dry_run:
+        print(f"\n===== пост {key} → так он будет выглядеть у тебя =====")
+        print(text or "(без текста)")
+        print(f"[медиа: {sum(1 for m in messages if has_media(m))}]")
+        return
+
     if DELAY:
         await asyncio.sleep(DELAY)
 
-    media = [m.media for m in messages if has_media(m)]
     for target in TARGETS:
         try:
-            if len(media) > 1:
-                caption = [text] + [""] * (len(media) - 1)
-                await client.send_file(target, media, caption=caption,
-                                       parse_mode="html")
-            elif media:
-                await client.send_file(target, media[0], caption=text or None,
-                                       parse_mode="html")
-            elif text:
-                await client.send_message(target, text, parse_mode="html",
-                                          link_preview=False)
-            log.info("пост %s опубликован в %s", head.id, target)
+            await _send(client, target, messages, text)
+            log.info("пост %s опубликован в %s", key, target)
         except Exception as e:  # noqa: BLE001
-            log.exception("не смог опубликовать пост %s в %s: %s",
-                          head.id, target, e)
-        await asyncio.sleep(1)     # не частим, чтобы не поймать лимит
+            log.exception("пост %s → %s не отправился: %s", key, target, e)
+            continue
+        await asyncio.sleep(SEND_PAUSE)
+
+    for m in messages:
+        _done.add(_key(m))
+    save_state(_done)
 
 
-async def main() -> None:
-    if not (API_ID and API_HASH):
-        sys.exit("Задай TG_API_ID и TG_API_HASH (my.telegram.org).")
-    if not SOURCES or not TARGETS:
-        sys.exit("Задай MIRROR_SOURCES (откуда) и MIRROR_TARGETS (куда).")
+# ---------- режимы запуска ----------
 
-    client = TelegramClient(SESSION, API_ID, API_HASH)
-    client.parse_mode = "html"     # чтобы message.text приходил размеченным
+def group_albums(messages: list) -> list[list]:
+    """Соседние части одного альбома — в один пост."""
+    groups: list[list] = []
+    for m in messages:
+        gid = getattr(m, "grouped_id", None)
+        if gid and groups and getattr(groups[-1][0], "grouped_id", None) == gid:
+            groups[-1].append(m)
+        else:
+            groups.append([m])
+    return groups
 
+
+async def show_dialogs(client) -> None:
+    print("\nТвои каналы и группы (ID для MIRROR_SOURCES / MIRROR_TARGETS):\n")
+    async for dialog in client.iter_dialogs():
+        if dialog.is_channel or dialog.is_group:
+            print(f"{dialog.id:>16}  {dialog.name}")
+    print()
+
+
+async def backfill(client, limit: int, dry_run: bool) -> None:
+    for source in SOURCES:
+        entity = await client.get_entity(source)
+        history = [m async for m in client.iter_messages(entity, limit=limit)]
+        history.reverse()            # публикуем от старых к новым
+        groups = group_albums(history)
+        log.info("канал %s: беру %d постов", source, len(groups))
+        for group in groups:
+            await republish(client, group, dry_run=dry_run)
+
+
+async def watch(client) -> None:
     @client.on(events.Album(chats=SOURCES))
     async def on_album(event) -> None:
         await republish(client, list(event.messages))
@@ -180,14 +288,56 @@ async def main() -> None:
     @client.on(events.NewMessage(chats=SOURCES))
     async def on_message(event) -> None:
         if event.message.grouped_id:
-            return                 # части альбома обрабатывает on_album
+            return                   # части альбома придут в on_album
         await republish(client, [event.message])
 
-    await client.start()
     me = await client.get_me()
     log.info("вошли как %s | слушаю %s → %s",
              me.username or me.first_name, SOURCES, TARGETS)
     await client.run_until_disconnected()
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Зеркало чужого канала в свой (без пометки «Переслано»)")
+    parser.add_argument("--list", action="store_true",
+                        help="показать ID своих каналов и выйти")
+    parser.add_argument("--last", type=int, metavar="N",
+                        help="скопировать N последних постов и выйти")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="ничего не публиковать, только показать результат")
+    args = parser.parse_args()
+
+    if not (API_ID and API_HASH):
+        sys.exit("Задай TG_API_ID и TG_API_HASH (my.telegram.org → API development tools).")
+
+    client = TelegramClient(SESSION, API_ID, API_HASH)
+    client.parse_mode = "html"       # чтобы message.text приходил с разметкой
+    await client.start()
+
+    if args.list:
+        await show_dialogs(client)
+        await client.disconnect()
+        return
+
+    if not SOURCES or not TARGETS:
+        sys.exit("Задай MIRROR_SOURCES (откуда) и MIRROR_TARGETS (куда) — "
+                 "ID можно посмотреть командой --list.")
+
+    global _done
+    _done = load_state()
+
+    if args.last:
+        await backfill(client, args.last, args.dry_run)
+        await client.disconnect()
+        return
+
+    if args.dry_run:
+        await backfill(client, 5, dry_run=True)
+        await client.disconnect()
+        return
+
+    await watch(client)
 
 
 if __name__ == "__main__":
