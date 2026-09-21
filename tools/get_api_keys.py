@@ -10,6 +10,12 @@
     cd /opt/nastya-bot
     .venv/bin/python tools/get_api_keys.py
 
+Если номер российский, а сервер стоит за границей, Telegram откажется
+создавать приложение: страна адреса должна совпадать со страной номера.
+Тогда запускай через российский прокси:
+
+    .venv/bin/python tools/get_api_keys.py --proxy http://логин:пароль@адрес:порт
+
 Скрипт спросит номер телефона, потом код (придёт сообщением от Telegram
 в само приложение, не смс), создаст приложение и покажет два ключа.
 В конце предложит сразу записать их в .env.
@@ -42,7 +48,22 @@ if SESSION_FILE.exists():
         _jar.load(ignore_discard=True, ignore_expires=True)
     except (OSError, http.cookiejar.LoadError):
         pass
-_opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(_jar))
+# Можно ходить через прокси: --proxy http://логин:пароль@адрес:порт
+# Telegram создаёт приложение только если страна адреса совпадает со
+# страной номера телефона, поэтому для российского номера нужен
+# российский адрес.
+_proxy = ""
+for _i, _arg in enumerate(sys.argv):
+    if _arg == "--proxy" and _i + 1 < len(sys.argv):
+        _proxy = sys.argv[_i + 1]
+    elif _arg.startswith("--proxy="):
+        _proxy = _arg.split("=", 1)[1]
+
+_handlers = [urllib.request.HTTPCookieProcessor(_jar)]
+if _proxy:
+    _handlers.append(urllib.request.ProxyHandler({"http": _proxy,
+                                                  "https": _proxy}))
+_opener = urllib.request.build_opener(*_handlers)
 
 
 def _save_session() -> None:
@@ -67,6 +88,12 @@ def _post(path: str, data: dict, referer: str = "/auth") -> str:
     )
     with _opener.open(req, timeout=30) as resp:
         return resp.read().decode("utf-8", "replace").strip()
+
+
+def _get_url(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    with _opener.open(req, timeout=20) as resp:
+        return resp.read().decode("utf-8", "replace")
 
 
 def _get(path: str) -> str:
@@ -218,8 +245,17 @@ def save_to_env(api_id: str, api_hash: str) -> None:
 
 def main() -> None:
     print("Получение ключей api_id / api_hash с my.telegram.org\n")
+    if _proxy:
+        host = _proxy.split("@")[-1]
+        print(f"Иду через прокси {host}")
     check_only = "--check" in sys.argv
     try:
+        try:
+            where = json.loads(_get_url("https://ipinfo.io/json"))
+            print(f"Сайт увидит адрес из страны: {where.get('country', '?')} "
+                  f"({where.get('city', '?')})\n")
+        except Exception:  # noqa: BLE001
+            pass
         page = _get("/apps")
         if "send_password" in page or "Login" in page[:2000]:
             login()          # сессии нет или протухла — входим по коду
