@@ -99,6 +99,8 @@ TG_API_ID=1234567                 # my.telegram.org → API development tools
 TG_API_HASH=abcdef...
 MIRROR_SOURCES=-1001111111111     # чужой канал (можно @username или ссылку t.me)
 MIRROR_TARGETS=-1002222222222     # твой канал
+# либо, если каналов несколько и каждый идёт в свой:
+# MIRROR_ROUTES=-1001111111111>-1002222222222,-1003333333333>-1004444444444
 MIRROR_DELAY=180                  # публиковать через 3 минуты, а не секунда в секунду
 MIRROR_REMOVE_LINKS=1             # вырезать чужие @юзернеймы и t.me-ссылки
 MIRROR_FOOTER=Подписывайся: @my_channel

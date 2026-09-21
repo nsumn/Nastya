@@ -32,7 +32,7 @@ import tempfile
 from pathlib import Path
 
 try:
-    from telethon import TelegramClient, events
+    from telethon import TelegramClient, events, utils
     from telethon.tl.types import MessageMediaWebPage
 except ImportError:  # pragma: no cover
     sys.exit("Нужен telethon:  pip install -r tools/requirements.txt")
@@ -60,20 +60,37 @@ def _bool(name: str, default: str = "0") -> bool:
     return _get(name, default).lower() in ("1", "true", "yes", "on", "да")
 
 
+def _peer(item: str):
+    """«-1001234», «@channel», «https://t.me/channel» → id или имя."""
+    item = item.strip()
+    if not item:
+        return None
+    item = re.sub(r'^https?://(?:t\.me|telegram\.me)/', '', item, flags=re.I)
+    item = item.lstrip("@").rstrip("/")
+    try:
+        return int(item)
+    except ValueError:
+        return item or None
+
+
 def _peers(name: str) -> list:
-    """«-1001234, @channel, https://t.me/channel» → [-1001234, "channel", "channel"]."""
-    out = []
-    for item in re.split(r"[,;]", _get(name)):
-        item = item.strip()
-        if not item:
+    return [p for p in (_peer(i) for i in re.split(r"[,;]", _get(name))) if p]
+
+
+def _routes(name: str) -> dict:
+    """«-100111>-100222, -100333>-100444» → {источник: [приёмники]}.
+
+    Так каждый канал-источник публикуется в свой канал, а не все во все.
+    """
+    routes: dict = {}
+    for chunk in re.split(r"[,;]", _get(name)):
+        if ">" not in chunk:
             continue
-        item = re.sub(r'^https?://(?:t\.me|telegram\.me)/', '', item, flags=re.I)
-        item = item.lstrip("@").rstrip("/")
-        try:
-            out.append(int(item))
-        except ValueError:
-            out.append(item)
-    return out
+        src, dst = chunk.split(">", 1)
+        src, dst = _peer(src), _peer(dst)
+        if src is not None and dst is not None:
+            routes.setdefault(src, []).append(dst)
+    return routes
 
 
 def _replacements() -> list[tuple[str, str]]:
@@ -89,8 +106,14 @@ def _replacements() -> list[tuple[str, str]]:
 API_ID = int(_get("TG_API_ID", "0") or "0")
 API_HASH = _get("TG_API_HASH")
 SESSION = _get("TG_SESSION", "mirror")
-SOURCES = _peers("MIRROR_SOURCES")
-TARGETS = _peers("MIRROR_TARGETS") or _peers("MIRROR_TARGET")
+ROUTES = _routes("MIRROR_ROUTES")
+SOURCES = list(ROUTES) or _peers("MIRROR_SOURCES")
+# Если заданы маршруты, общий список приёмников не используется —
+# иначе посты источника без маршрута уехали бы не туда.
+TARGETS = [] if ROUTES else (_peers("MIRROR_TARGETS")
+                             or _peers("MIRROR_TARGET"))
+# заполняется при старте: numeric id источника → его приёмники
+_targets_by_id: dict = {}
 DELAY = int(_get("MIRROR_DELAY", "0") or "0")
 REMOVE_LINKS = _bool("MIRROR_REMOVE_LINKS", "1")
 ONLY_MEDIA = _bool("MIRROR_ONLY_MEDIA", "0")
@@ -172,8 +195,13 @@ def save_state(done: set[str]) -> None:
 _done: set[str] = set()
 
 
-def _key(message) -> str:
-    return f"{message.chat_id}:{message.id}"
+def _key(message, target) -> str:
+    return f"{message.chat_id}:{message.id}>{target}"
+
+
+def targets_for(chat_id) -> list:
+    """Куда публиковать посты этого источника."""
+    return _targets_by_id.get(chat_id) or TARGETS
 
 
 # ---------- публикация ----------
@@ -207,44 +235,49 @@ async def _send(client, target, messages: list, text: str):
                                           parse_mode="html")
 
 
-async def republish(client, messages: list, dry_run: bool = False) -> None:
+async def republish(client, messages: list, targets: list | None = None,
+                    dry_run: bool = False) -> None:
     head = messages[0]
-    key = _key(head)
-    if key in _done:
-        return                       # уже копировали — второй раз не надо
+    post = f"{head.chat_id}:{head.id}"
+    targets = targets or targets_for(head.chat_id)
+    if not targets:
+        log.warning("пост %s: не знаю, куда публиковать", post)
+        return
     raw = head.text or ""            # client.parse_mode = "html" → размеченный текст
 
     reason = skip_reason(messages, raw)
     if reason:
-        log.info("пост %s пропущен — %s", key, reason)
+        log.info("пост %s пропущен — %s", post, reason)
         return
 
     text = clean(raw)
     if raw and not text and not any(has_media(m) for m in messages):
-        log.info("пост %s: после чистки ничего не осталось", key)
+        log.info("пост %s: после чистки ничего не осталось", post)
         return
 
     if dry_run:
-        print(f"\n===== пост {key} → так он будет выглядеть у тебя =====")
+        print(f"\n===== пост {post} → так он будет выглядеть в {targets} =====")
         print(text or "(без текста)")
         print(f"[медиа: {sum(1 for m in messages if has_media(m))}]")
         return
 
-    if DELAY:
-        await asyncio.sleep(DELAY)
-
-    for target in TARGETS:
+    delayed = False
+    for target in targets:
+        if _key(head, target) in _done:
+            continue                 # в этот канал уже копировали
+        if DELAY and not delayed:
+            await asyncio.sleep(DELAY)
+            delayed = True
         try:
             await _send(client, target, messages, text)
-            log.info("пост %s опубликован в %s", key, target)
+            log.info("пост %s опубликован в %s", post, target)
         except Exception as e:  # noqa: BLE001
-            log.exception("пост %s → %s не отправился: %s", key, target, e)
+            log.exception("пост %s → %s не отправился: %s", post, target, e)
             continue
+        for m in messages:
+            _done.add(_key(m, target))
+        save_state(_done)
         await asyncio.sleep(SEND_PAUSE)
-
-    for m in messages:
-        _done.add(_key(m))
-    save_state(_done)
 
 
 # ---------- режимы запуска ----------
@@ -269,15 +302,27 @@ async def show_dialogs(client) -> None:
     print()
 
 
+async def resolve_routes(client) -> None:
+    """Превратить имена/ссылки источников в numeric id."""
+    for source, dsts in ROUTES.items():
+        try:
+            entity = await client.get_entity(source)
+        except Exception as e:  # noqa: BLE001
+            log.warning("не нашла источник %s: %s", source, e)
+            continue
+        _targets_by_id[utils.get_peer_id(entity)] = dsts
+
+
 async def backfill(client, limit: int, dry_run: bool) -> None:
     for source in SOURCES:
         entity = await client.get_entity(source)
         history = [m async for m in client.iter_messages(entity, limit=limit)]
         history.reverse()            # публикуем от старых к новым
         groups = group_albums(history)
-        log.info("канал %s: беру %d постов", source, len(groups))
+        targets = ROUTES.get(source) or TARGETS
+        log.info("канал %s: беру %d постов → %s", source, len(groups), targets)
         for group in groups:
-            await republish(client, group, dry_run=dry_run)
+            await republish(client, group, targets=targets, dry_run=dry_run)
 
 
 async def watch(client) -> None:
@@ -292,8 +337,12 @@ async def watch(client) -> None:
         await republish(client, [event.message])
 
     me = await client.get_me()
-    log.info("вошли как %s | слушаю %s → %s",
-             me.username or me.first_name, SOURCES, TARGETS)
+    if _targets_by_id:
+        for src, dsts in _targets_by_id.items():
+            log.info("маршрут: %s → %s", src, dsts)
+    else:
+        log.info("маршрут: %s → %s", SOURCES, TARGETS)
+    log.info("вошли как %s, жду новые посты", me.username or me.first_name)
     await client.run_until_disconnected()
 
 
@@ -320,9 +369,11 @@ async def main() -> None:
         await client.disconnect()
         return
 
-    if not SOURCES or not TARGETS:
-        sys.exit("Задай MIRROR_SOURCES (откуда) и MIRROR_TARGETS (куда) — "
-                 "ID можно посмотреть командой --list.")
+    if not SOURCES or not (TARGETS or ROUTES):
+        sys.exit("Задай MIRROR_ROUTES («источник>приёмник») или "
+                 "MIRROR_SOURCES и MIRROR_TARGETS — ID можно посмотреть "
+                 "командой --list.")
+    await resolve_routes(client)
 
     global _done
     _done = load_state()
