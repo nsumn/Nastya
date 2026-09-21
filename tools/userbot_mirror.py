@@ -121,6 +121,10 @@ FOOTER = _get("MIRROR_FOOTER").replace("\\n", "\n")
 REPLACE = _replacements()
 SKIP = [w.strip().lower() for w in re.split(r"[,;]", _get("MIRROR_SKIP")) if w.strip()]
 STATE_PATH = Path(_get("MIRROR_STATE", "mirror_state.json"))
+# Запасной опрос каналов, секунды: если событие о новом посте не дошло,
+# он всё равно найдётся при следующем опросе. 0 — опрос выключен.
+POLL = int(_get("MIRROR_POLL", "120") or "120")
+DEBUG = _bool("MIRROR_DEBUG", "0")
 # Пауза между постами: с одного аккаунта частить нельзя.
 SEND_PAUSE = 1.5
 
@@ -325,16 +329,68 @@ async def backfill(client, limit: int, dry_run: bool) -> None:
             await republish(client, group, targets=targets, dry_run=dry_run)
 
 
-async def watch(client) -> None:
-    @client.on(events.Album(chats=SOURCES))
-    async def on_album(event) -> None:
-        await republish(client, list(event.messages))
+def _is_source(chat_id) -> bool:
+    return chat_id in _targets_by_id or chat_id in SOURCES
 
-    @client.on(events.NewMessage(chats=SOURCES))
+
+async def seed_state(client, depth: int = 20) -> None:
+    """Запомнить уже существующие посты, чтобы не копировать старое."""
+    added = 0
+    for source in SOURCES:
+        targets = ROUTES.get(source) or TARGETS
+        try:
+            async for message in client.iter_messages(source, limit=depth):
+                for target in targets:
+                    key = _key(message, target)
+                    if key not in _done:
+                        _done.add(key)
+                        added += 1
+        except Exception as e:  # noqa: BLE001
+            log.warning("не смогла просмотреть канал %s: %s", source, e)
+    if added:
+        save_state(_done)
+        log.info("запомнила %d старых постов — копировать их не буду", added)
+
+
+async def poll_loop(client) -> None:
+    """Подстраховка: вдруг событие о новом посте не пришло."""
+    while True:
+        await asyncio.sleep(POLL)
+        for source in SOURCES:
+            targets = ROUTES.get(source) or TARGETS
+            try:
+                fresh = [m async for m in client.iter_messages(source, limit=5)]
+            except Exception as e:  # noqa: BLE001
+                log.warning("опрос канала %s не удался: %s", source, e)
+                continue
+            fresh.reverse()
+            for group in group_albums(fresh):
+                if any(_key(group[0], t) not in _done for t in targets):
+                    log.info("опрос: нашла пропущенный пост %s", group[0].id)
+                    await republish(client, group, targets=targets)
+
+
+async def watch(client) -> None:
+    # Фильтруем источники сами: так надёжнее, чем полагаться на
+    # фильтр chats= — он молча отсеивает канал, если не смог его опознать.
+    @client.on(events.Album())
+    async def on_album(event) -> None:
+        if _is_source(event.chat_id):
+            await republish(client, list(event.messages))
+
+    @client.on(events.NewMessage())
     async def on_message(event) -> None:
-        if event.message.grouped_id:
+        if DEBUG:
+            log.info("апдейт из %s (%s)", event.chat_id,
+                     "источник" if _is_source(event.chat_id) else "мимо")
+        if not _is_source(event.chat_id) or event.message.grouped_id:
             return                   # части альбома придут в on_album
         await republish(client, [event.message])
+
+    await seed_state(client)
+    if POLL:
+        asyncio.create_task(poll_loop(client))
+        log.info("запасной опрос каналов: каждые %d с", POLL)
 
     me = await client.get_me()
     if _targets_by_id:
