@@ -430,7 +430,9 @@ async def main() -> None:
     if not (API_ID and API_HASH):
         sys.exit("Задай TG_API_ID и TG_API_HASH (my.telegram.org → API development tools).")
 
-    client = TelegramClient(SESSION, API_ID, API_HASH)
+    # catch_up=True — при старте и после обрывов связи Telethon сам
+    # дозапрашивает пропущенные обновления по каналам.
+    client = TelegramClient(SESSION, API_ID, API_HASH, catch_up=True)
     client.parse_mode = "html"       # чтобы message.text приходил с разметкой
     await client.start()
 
