@@ -85,6 +85,15 @@ def _source_text(message: Message) -> str:
     return message.html_text
 
 
+def _group_text(group: list[Message]) -> str:
+    """Подпись альбома: Telegram цепляет её к любому сообщению группы."""
+    for message in group:
+        text = _source_text(message)
+        if text:
+            return text
+    return ""
+
+
 def _has_media(message: Message) -> bool:
     return any((message.photo, message.video, message.animation,
                 message.document, message.audio, message.voice,
@@ -194,7 +203,7 @@ async def _publish_album(bot, group: list[Message], target: int,
 async def _deliver(bot, config: Config, group: list[Message]) -> None:
     mc = config.mirror
     head = group[0]
-    raw = _source_text(head)
+    raw = _group_text(group)
 
     reason = _skip_reason(group, raw, mc)
     if reason:

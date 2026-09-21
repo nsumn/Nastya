@@ -125,6 +125,7 @@ STATE_PATH = Path(_get("MIRROR_STATE", "mirror_state.json"))
 # он всё равно найдётся при следующем опросе. 0 — опрос выключен.
 POLL = int(_get("MIRROR_POLL", "120") or "120")
 DEBUG = _bool("MIRROR_DEBUG", "0")
+FORCE = False        # --force: копировать даже то, что уже копировали
 # Пауза между постами: с одного аккаунта частить нельзя.
 SEND_PAUSE = 1.5
 
@@ -159,6 +160,15 @@ def clean(text: str) -> str:
     if FOOTER:
         text = f"{text}\n\n{FOOTER}" if text else FOOTER
     return text
+
+
+def album_text(messages: list) -> str:
+    """Подпись альбома. Telegram цепляет её к любому файлу из группы,
+    не обязательно к первому, — поэтому берём первую непустую."""
+    for message in messages:
+        if getattr(message, "text", None):
+            return message.text
+    return ""
 
 
 def has_media(message) -> bool:
@@ -247,7 +257,7 @@ async def republish(client, messages: list, targets: list | None = None,
     if not targets:
         log.warning("пост %s: не знаю, куда публиковать", post)
         return
-    raw = head.text or ""            # client.parse_mode = "html" → размеченный текст
+    raw = album_text(messages)       # client.parse_mode = "html" → размеченный текст
 
     reason = skip_reason(messages, raw)
     if reason:
@@ -267,7 +277,7 @@ async def republish(client, messages: list, targets: list | None = None,
 
     delayed = False
     for target in targets:
-        if _key(head, target) in _done:
+        if _key(head, target) in _done and not FORCE:
             continue                 # в этот канал уже копировали
         if DELAY and not delayed:
             await asyncio.sleep(DELAY)
@@ -411,7 +421,11 @@ async def main() -> None:
                         help="скопировать N последних постов и выйти")
     parser.add_argument("--dry-run", action="store_true",
                         help="ничего не публиковать, только показать результат")
+    parser.add_argument("--force", action="store_true",
+                        help="публиковать, даже если пост уже копировался")
     args = parser.parse_args()
+    global FORCE
+    FORCE = args.force
 
     if not (API_ID and API_HASH):
         sys.exit("Задай TG_API_ID и TG_API_HASH (my.telegram.org → API development tools).")
