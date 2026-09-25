@@ -498,6 +498,29 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
 }
 .check-icon svg { width: 32px; height: 32px; }
 
+.payday {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-bottom: 14px;
+}
+.payday .check-icon { margin: 0; width: 52px; height: 52px; border-radius: 18px; }
+.payday .check-icon svg { width: 26px; height: 26px; }
+.payday__sum {
+  font-size: 40px; font-weight: 900; letter-spacing: -1px;
+  color: var(--mint); line-height: 1;
+}
+
+.stats--pair { grid-template-columns: repeat(2, 1fr); }
+
+/* ---------- опрос ---------- */
+
+.poll__q { margin-bottom: 22px; }
+.poll__q:last-of-type { margin-bottom: 8px; }
+.poll__num {
+  font-size: 11px; font-weight: 800; letter-spacing: .7px;
+  text-transform: uppercase; color: var(--brand);
+}
+.poll__title { margin: 6px 0 10px; font-size: 16px; line-height: 1.35; }
+
 .brands { display: flex; justify-content: center; align-items: center; gap: 16px;
           margin-top: 18px; opacity: .75; font-weight: 800; font-size: 15px;
           color: var(--muted); letter-spacing: .5px; }

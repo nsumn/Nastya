@@ -126,9 +126,13 @@ const CHECK_SVG = `
     <path d="M4 12.5 9.5 18 20 6.5"/>
   </svg>`;
 
-function showSuccess(title, text, buttonText, action) {
+function showSuccess(title, text, buttonText, action, gain = 0) {
+  // Галочка радует, но главное здесь — сумма: человек пришёл за ней.
   showOverlay(`
-    <div class="check-icon">${CHECK_SVG}</div>
+    <div class="payday">
+      <div class="check-icon">${CHECK_SVG}</div>
+      ${gain ? `<div class="payday__sum">+${rub(gain)}</div>` : ''}
+    </div>
     <h3>${esc(title)}</h3>
     <p>${esc(text)}</p>
     <button class="btn" data-action="${action}">${esc(buttonText)}</button>
@@ -166,7 +170,7 @@ function avatarHtml(person, cls = 'rank__ava') {
 function topbar({ back = false } = {}) {
   const brand = state.data.brand;
   const user = state.data.user;
-  // Всё прижато влево: кнопка «назад», логотип, название, баланс.
+  // Слева кнопка «назад», логотип и название; баланс — в правом углу.
   return `
     <header class="topbar">
       ${back ? `
@@ -181,12 +185,12 @@ function topbar({ back = false } = {}) {
         <div class="brand__name">${esc(brand.name)}</div>
         <div class="brand__tag">${esc(brand.tagline)}</div>
       </div>
+      <div class="topbar__spacer"></div>
       ${back ? '' : `
         <div class="balance">
           <span class="balance__label">баланс</span>
           <span class="balance__value">${rub(user.balance)}</span>
         </div>`}
-      <div class="topbar__spacer"></div>
     </header>`;
 }
 
@@ -260,22 +264,19 @@ function viewTasks() {
   return `
     ${topbar()}
     <section class="hero">
-      <h1>Выполняй задания.<br><span class="accent">Получай рубли.</span></h1>
-      <p>В сервисе собраны задачи от компаний, которым нужна честная обратная
-         связь по товарам, услугам и клиентскому опыту.</p>
+      <h1>Выполняй задания.<br><span class="accent">Получай деньги.</span></h1>
+      <p>Кафе, студии, автосервисы и магазины платят за мнение живых людей.
+         Оставьте отзыв, посмотрите ролик или пройдите опрос — и заберите
+         деньги на карту.</p>
     </section>
 
-    <section class="stats">
-      <div class="stat" style="--accent:var(--brand)">
-        <div class="stat__label">участников</div>
-        <div class="stat__value">${stats.participants.toLocaleString('ru-RU')}</div>
-      </div>
+    <section class="stats stats--pair">
       <div class="stat" style="--accent:var(--mint)">
-        <div class="stat__label">за отзыв</div>
+        <div class="stat__label">за задание</div>
         <div class="stat__value">от ${rub(stats.min_reward)}</div>
       </div>
       <div class="stat" style="--accent:var(--amber)">
-        <div class="stat__label">заданий</div>
+        <div class="stat__label">заданий сегодня</div>
         <div class="stat__value">${stats.tasks_today}</div>
       </div>
     </section>
@@ -473,9 +474,56 @@ function viewVideoTask() {
     </section>`;
 }
 
+function viewPollTask() {
+  const task = state.task;
+  const picked = state.draft.answers || [];
+  const answered = picked.filter((value) => value !== null
+                                 && value !== undefined).length;
+  const total = task.questions.length;
+
+  const blocks = task.questions.map((question, qi) => `
+    <div class="poll__q">
+      <div class="poll__num">Вопрос ${qi + 1} из ${total}</div>
+      <h4 class="poll__title">${esc(question.q)}</h4>
+      ${question.options.map((option, oi) => `
+        <div class="option ${picked[qi] === oi ? 'is-active' : ''}"
+             data-action="pick-answer" data-q="${qi}" data-o="${oi}">
+          <div style="flex:1">${esc(option)}</div>
+          <div class="option__mark"></div>
+        </div>`).join('')}
+    </div>`).join('');
+
+  return `
+    ${topbar({ back: true })}
+
+    <section class="task-hero">
+      <div class="task__emoji">${esc(task.emoji)}</div>
+      <div class="task__body">
+        <div class="task__title">${esc(task.title)}</div>
+        <div class="task__meta">
+          <span>Опрос • ${total} ${plural(total, 'вопрос', 'вопроса', 'вопросов')} • до ${esc(task.deadline)}</span>
+        </div>
+      </div>
+      <div class="reward">+${rub(task.reward)}</div>
+    </section>
+
+    <section class="card">
+      <p class="section-label">Условия задания</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.5">${esc(task.brief)}</p>
+      ${blocks}
+      <p class="hint">Отвечено ${answered} из ${total}. Правильных ответов нет —
+         компании важно ваше мнение.</p>
+      <button class="btn" data-action="submit-poll"
+              ${answered === total ? '' : 'disabled'}>
+        Отправить ответы
+      </button>
+    </section>`;
+}
+
 function viewTask() {
   const task = state.task;
   if (task.kind === 'video') return viewVideoTask();
+  if (task.kind === 'poll') return viewPollTask();
   const { draft } = state;
   const left = Math.max(0, task.min_chars - draft.text.trim().length);
   const ratingOk = !task.require_rating || draft.rating === 5;
@@ -587,7 +635,7 @@ function viewTop() {
       </section>` : ''}
 
     <section class="card">
-      <p class="section-label">Топ участников</p>
+      <p class="section-label">Рейтинг участников</p>
       ${rows || '<p class="empty">Пока никто не заработал.<br>Станьте первым 🙂</p>'}
     </section>`;
 }
@@ -1081,6 +1129,7 @@ async function submitTask() {
         text: state.draft.text.trim(),
         rating: state.draft.rating,
         token: state.draft.token || '',
+        answers: state.draft.answers || [],
       },
     });
     haptic('success');
@@ -1092,9 +1141,10 @@ async function submitTask() {
     state.top = null;
 
     const text = result.status === 'approved'
-      ? `Начислено ${rub(result.reward)}. Доступно к выводу: ${rub(result.balance)}.`
+      ? `Доступно к выводу: ${rub(result.balance)}.`
       : `Ответ отправлен на проверку. После подтверждения начислим ${rub(result.reward)}.`;
-    showSuccess('Задание выполнено', text, 'Вернуться на главную', 'to-tasks');
+    showSuccess('Задание выполнено', text, 'Вернуться на главную', 'to-tasks',
+                result.status === 'approved' ? result.reward : 0);
   } catch (err) {
     hideOverlay();
     haptic('error');
@@ -1268,7 +1318,11 @@ document.addEventListener('click', (event) => {
   if (action === 'open-task') {
     const id = Number(target.dataset.id);
     state.task = state.data.tasks.find((item) => item.id === id);
-    state.draft = { template: null, text: '', rating: 0, token: '' };
+    state.draft = {
+      template: null, text: '', rating: 0, token: '',
+      answers: (state.task && state.task.questions
+                ? state.task.questions.map(() => null) : []),
+    };
     resetWatch();
     state.view = 'task';
     haptic();
@@ -1289,6 +1343,16 @@ document.addEventListener('click', (event) => {
   }
 
   if (action === 'submit-video') { submitTask(); return; }
+
+  if (action === 'pick-answer') {
+    const qi = Number(target.dataset.q);
+    state.draft.answers[qi] = Number(target.dataset.o);
+    haptic();
+    render();
+    return;
+  }
+
+  if (action === 'submit-poll') { submitTask(); return; }
 
   if (action === 'pick-template') {
     const index = Number(target.dataset.index);

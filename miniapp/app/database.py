@@ -94,6 +94,8 @@ async def init_db(path: str) -> None:
                 kind           TEXT NOT NULL DEFAULT 'review',
                 video_url      TEXT NOT NULL DEFAULT '',
                 min_watch      INTEGER NOT NULL DEFAULT 0,
+                -- для kind='poll': JSON [{"q": "...", "options": [...]}]
+                questions      TEXT NOT NULL DEFAULT '[]',
                 templates      TEXT NOT NULL DEFAULT '[]',
                 -- 1 — задание из ежедневной ротации: показывается не каждый
                 -- день, а по очереди с остальными (см. app/rotation.py)
@@ -206,6 +208,7 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             "video_url": "TEXT NOT NULL DEFAULT ''",
             "min_watch": "INTEGER NOT NULL DEFAULT 0",
             "rotating": "INTEGER NOT NULL DEFAULT 0",
+            "questions": "TEXT NOT NULL DEFAULT '[]'",
         },
     }
     for table, columns in additions.items():
@@ -384,12 +387,16 @@ def _task_row(row: aiosqlite.Row) -> dict:
         task["templates"] = json.loads(task.get("templates") or "[]")
     except json.JSONDecodeError:
         task["templates"] = []
+    try:
+        task["questions"] = json.loads(task.get("questions") or "[]")
+    except json.JSONDecodeError:
+        task["questions"] = []
     task["require_rating"] = bool(task["require_rating"])
     task["rotating"] = bool(task.get("rotating"))
     return task
 
 
-async def tasks_for_day(day: str) -> list[dict]:
+async def tasks_for_day(day: str, newcomer: bool = False) -> list[dict]:
     """Лента дня.
 
     Закреплённые задания (привязанные к дате или ежедневные) показываются
@@ -405,16 +412,39 @@ async def tasks_for_day(day: str) -> list[dict]:
             rows = [_task_row(r) for r in await cur.fetchall()]
     finally:
         await db.close()
-    return rotation.pick(rows, day)
+    return rotation.pick(rows, day, newcomer)
 
 
-async def task_in_feed(task_id: int, day: str) -> bool:
+async def task_in_feed(task_id: int, day: str, newcomer: bool = False) -> bool:
     """Есть ли задание в сегодняшней ленте.
 
     Без этой проверки задание из ротации можно было бы сдать по прямому
     запросу в любой день — и пройти весь пул за один вечер.
     """
-    return any(task["id"] == task_id for task in await tasks_for_day(day))
+    return any(task["id"] == task_id
+               for task in await tasks_for_day(day, newcomer))
+
+
+async def refresh_templates(tasks: list[dict]) -> int:
+    """Обновить подсказки к ответам у уже заведённых демо-заданий.
+
+    Иначе на работающем сервере остались бы три готовых текста на всех,
+    и отзывы так и шли бы под копирку: новые наборы фраз доезжают только
+    к тем заданиям, которых в базе ещё не было.
+    """
+    changed = 0
+    db = await _conn()
+    try:
+        for task in tasks:
+            cur = await db.execute(
+                "UPDATE tasks SET templates = ? WHERE title = ?",
+                (json.dumps(task["templates"], ensure_ascii=False),
+                 task["title"]))
+            changed += cur.rowcount
+        await db.commit()
+        return changed
+    finally:
+        await db.close()
 
 
 async def mark_rotating(titles: list[str]) -> None:
@@ -464,20 +494,23 @@ async def add_task(*, title: str, reward: float, emoji: str = "📝",
                    templates: Optional[list[str]] = None,
                    day: Optional[str] = None, position: int = 0,
                    kind: str = "review", video_url: str = "",
-                   min_watch: int = 0, rotating: bool = False) -> int:
+                   min_watch: int = 0, rotating: bool = False,
+                   questions: Optional[list] = None) -> int:
     db = await _conn()
     try:
         cur = await db.execute(
             """
             INSERT INTO tasks (day, emoji, title, short_desc, brief, reward,
                                min_chars, deadline, require_rating, templates,
-                               position, kind, video_url, min_watch, rotating)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               position, kind, video_url, min_watch, rotating,
+                               questions)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (day, emoji, title, short_desc, brief, reward, min_chars, deadline,
              1 if require_rating else 0, json.dumps(templates or [],
                                                     ensure_ascii=False),
-             position, kind, video_url, min_watch, 1 if rotating else 0),
+             position, kind, video_url, min_watch, 1 if rotating else 0,
+             json.dumps(questions or [], ensure_ascii=False)),
         )
         await db.commit()
         return cur.lastrowid

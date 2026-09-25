@@ -16,6 +16,7 @@ from typing import Optional
 
 from aiohttp import web
 
+from . import answers
 from . import database as db
 from . import op, services, texts
 from .web_login import (COOKIE_NAME, SESSION_TTL, check_login, make_session,
@@ -81,6 +82,26 @@ def check_watch_token(secret: str, token: str, user_id: int, task_id: int,
         left = max(1, need_seconds - waited)
         return f"Досмотрите ролик — осталось около {left} с."
     return None
+
+
+def poll_answers(questions: list, raw) -> str:
+    """Ответы на опрос → строка для истории. Кидает ValueError, если кривые.
+
+    Правильных ответов у опроса нет, но ответить нужно на всё: иначе
+    заказчик получит анкету с пропусками, а человек — деньги ни за что.
+    """
+    if not questions:
+        raise ValueError("В опросе нет вопросов.")
+    if not isinstance(raw, list) or len(raw) != len(questions):
+        raise ValueError("Ответьте на все вопросы.")
+
+    lines = []
+    for question, choice in zip(questions, raw):
+        options = question.get("options") or []
+        if not isinstance(choice, int) or not 0 <= choice < len(options):
+            raise ValueError("Ответьте на все вопросы.")
+        lines.append(f"{question.get('q', '')} — {options[choice]}")
+    return "\n".join(lines)
 
 
 def _digits(value: str) -> str:
@@ -201,6 +222,15 @@ def _user_payload(user: dict, config=None) -> dict:
 
 # ---------- роуты ----------
 
+def _is_newcomer(user: dict, day: str) -> bool:
+    """Первый день человека в приложении.
+
+    Считаем по дате регистрации, а не по числу сданных заданий: иначе
+    лента перестраивалась бы прямо под руками, стоило сдать первое.
+    """
+    return (user.get("created_at") or "")[:10] == day
+
+
 async def bootstrap(request: web.Request) -> web.Response:
     """Всё, что нужно для первой отрисовки: юзер, гейт, статы, лента."""
     config = request.app["config"]
@@ -214,7 +244,8 @@ async def bootstrap(request: web.Request) -> web.Response:
     # поэтому перечитываем участника уже после неё.
     user = await db.get_user(user["user_id"]) or user
     day = db.today()
-    tasks = await db.tasks_for_day(day)
+    newcomer = _is_newcomer(user, day)
+    tasks = await db.tasks_for_day(day, newcomer)
     done = await db.done_task_ids(user["user_id"], day)
 
     payload_tasks = [
@@ -228,7 +259,9 @@ async def bootstrap(request: web.Request) -> web.Response:
             "min_chars": task["min_chars"],
             "deadline": task["deadline"],
             "require_rating": task["require_rating"],
-            "templates": task["templates"],
+            "templates": answers.variants(task["templates"],
+                                          user["user_id"], task["id"], day),
+            "questions": task.get("questions") or [],
             "kind": task.get("kind") or "review",
             "video_url": task.get("video_url") or "",
             "min_watch": task.get("min_watch") or 0,
@@ -280,7 +313,8 @@ async def start_task(request: web.Request) -> web.Response:
     if not task or not task["active"]:
         return web.json_response({"ok": False, "error": "Задание не найдено."},
                                  status=404)
-    if not await db.task_in_feed(task["id"], db.today()):
+    if not await db.task_in_feed(task["id"], db.today(),
+                                 _is_newcomer(user, db.today())):
         return web.json_response(
             {"ok": False, "error": "Этого задания сегодня нет в ленте."},
             status=404)
@@ -316,18 +350,27 @@ async def submit_task(request: web.Request) -> web.Response:
 
     # Задания меняются каждый день, и сдать можно только сегодняшние:
     # иначе прямым запросом к API можно было бы пройти весь пул разом.
-    if not await db.task_in_feed(task["id"], day):
+    if not await db.task_in_feed(task["id"], day, _is_newcomer(user, day)):
         return web.json_response(
             {"ok": False, "error": "Этого задания сегодня нет в ленте."},
             status=404)
 
-    if (task.get("kind") or "review") == "video":
+    kind = task.get("kind") or "review"
+    if kind == "video":
         need = int(task.get("min_watch") or 0)
         problem = check_watch_token(config.bot_token, str(body.get("token") or ""),
                                     user["user_id"], task["id"], day, need)
         if problem:
             return web.json_response({"ok": False, "error": problem}, status=400)
         text, rating = "Ролик просмотрен", 0
+    elif kind == "poll":
+        try:
+            text = poll_answers(task.get("questions") or [],
+                                body.get("answers"))
+        except ValueError as err:
+            return web.json_response({"ok": False, "error": str(err)},
+                                     status=400)
+        rating = 0
     else:
         if len(text) < task["min_chars"]:
             return web.json_response(

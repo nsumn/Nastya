@@ -25,6 +25,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
+from .. import answers
 from .. import database as db
 from .. import keyboards as kb
 from .. import op, services, texts
@@ -141,6 +142,16 @@ async def tasks_back(call: CallbackQuery) -> None:
     await call.answer()
 
 
+def _hints(task: dict) -> list[str]:
+    """Подсказки к отзыву — как их увидит участник.
+
+    У демо-заданий вместо готовых текстов лежат два набора фраз, из
+    которых каждому собирается свой вариант (app/answers.py). Админу
+    показываем пример такой сборки.
+    """
+    return answers.variants(task["templates"], 0, task["id"], db.today())
+
+
 @router.callback_query(F.data.startswith("adm:task:"))
 async def task_card(call: CallbackQuery) -> None:
     task = await db.get_task(int(call.data.split(":")[2]))
@@ -155,8 +166,18 @@ async def task_card(call: CallbackQuery) -> None:
                 f"Смотреть: {task['min_watch']} с\n"
                 f"До: {task['deadline']}\n\n"
                 f"Ссылка: {task['video_url']}")
+    elif (task.get("kind") or "review") == "poll":
+        questions = "\n".join(
+            f"{number}. {q.get('q', '')}\n   "
+            + " / ".join(q.get("options") or [])
+            for number, q in enumerate(task["questions"], start=1)) or "—"
+        body = (f"{task['emoji']} <b>{task['title']}</b>  🗳"
+                f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
+                f"Награда: <b>{task['reward']:g} ₽</b>\n"
+                f"Вопросов: {len(task['questions'])}\n"
+                f"До: {task['deadline']}\n\n{questions}")
     else:
-        templates = "\n".join(f"• {t}" for t in task["templates"]) or "—"
+        templates = "\n".join(f"• {t}" for t in _hints(task)) or "—"
         body = (f"{task['emoji']} <b>{task['title']}</b>"
                 f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
                 f"Награда: <b>{task['reward']:g} ₽</b>\n"

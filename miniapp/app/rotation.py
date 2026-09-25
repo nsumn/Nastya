@@ -23,6 +23,10 @@ from functools import lru_cache
 EPOCH = date(2020, 1, 1)
 
 VIDEOS_PER_DAY = 2
+POLLS_PER_DAY = 1
+# Первый день человека в приложении: показываем ровно это, без опросов.
+# Лента новичка должна выглядеть одинаково понятно у всех, кто зашёл.
+FIRST_DAY = {"review": 3, "video": 2, "poll": 0}
 # На сколько групп режем пул. Внутри круга группы идут одна за другой,
 # и это то, что разводит повторы: между двумя показами задания всегда
 # не меньше size * (GROUPS - 1) / GROUPS позиций. Для тридцати отзывов
@@ -30,21 +34,41 @@ VIDEOS_PER_DAY = 2
 GROUPS = 3
 
 
-def pick(tasks: list[dict], day: str) -> list[dict]:
-    """Лента дня: закреплённые задания + сегодняшняя выборка из ротации."""
-    fixed, reviews, videos = [], [], []
+def pick(tasks: list[dict], day: str, newcomer: bool = False) -> list[dict]:
+    """Лента дня: закреплённые задания + сегодняшняя выборка из ротации.
+
+    Виды идут не блоками, а вперемешку: три отзыва подряд, а следом два
+    ролика читаются как два разных списка. Порядок перемешан по дате,
+    так что он стабильный, но каждый день другой.
+
+    newcomer — человек первый день в приложении: ему собираем понятный
+    набор из отзывов и роликов, без опросов.
+    """
+    fixed: list[dict] = []
+    pools: dict[str, list[dict]] = {"review": [], "video": [], "poll": []}
     for task in tasks:
         if not task.get("rotating"):
             fixed.append(task)
-        elif (task.get("kind") or "review") == "video":
-            videos.append(task)
-        else:
-            reviews.append(task)
+            continue
+        kind = task.get("kind") or "review"
+        pools.get(kind, pools["review"]).append(task)
 
     index = day_index(day)
-    return (fixed
-            + _take(reviews, *_review_window(index))
-            + _take(videos, index * VIDEOS_PER_DAY, VIDEOS_PER_DAY))
+    if newcomer:
+        chosen = (_take(pools["review"], *_review_window(index, FIRST_DAY["review"]))
+                  + _take(pools["video"], index * VIDEOS_PER_DAY, FIRST_DAY["video"]))
+    else:
+        chosen = (_take(pools["review"], *_review_window(index))
+                  + _take(pools["video"], index * VIDEOS_PER_DAY, VIDEOS_PER_DAY)
+                  + _take(pools["poll"], index * POLLS_PER_DAY, POLLS_PER_DAY))
+    return fixed + _mix(chosen, index)
+
+
+def _mix(tasks: list[dict], index: int) -> list[dict]:
+    """Перемешать виды между собой — детерминированно, по номеру дня."""
+    order = list(tasks)
+    random.Random(f"jows/mix/{index}/{len(order)}").shuffle(order)
+    return order
 
 
 def day_index(day: str) -> int:
@@ -60,14 +84,15 @@ def reviews_on(index: int) -> int:
     return 2 if index % 2 == 0 else 3
 
 
-def _review_window(index: int) -> tuple[int, int]:
+def _review_window(index: int, count: int = 0) -> tuple[int, int]:
     """С какого места пула читать сегодня и сколько взять.
 
     Считается сразу, без перебора прошедших дней: пара соседних дней
-    всегда съедает 5 заданий (2 + 3).
+    всегда съедает 5 заданий (2 + 3). count задаёт своё количество —
+    так новичок получает три отзыва в любой день.
     """
     start = (index // 2) * 5 + (2 if index % 2 else 0)
-    return start, reviews_on(index)
+    return start, (count or reviews_on(index))
 
 
 def _take(pool: list[dict], start: int, count: int) -> list[dict]:
