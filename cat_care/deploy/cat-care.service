@@ -1,0 +1,15 @@
+[Unit]
+Description=Cat care Telegram mini app (Kiki, Laki, Pusya)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/cat-care/cat_care
+ExecStart=/opt/cat-care/cat_care/.venv/bin/python -m catbot.main
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

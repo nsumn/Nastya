@@ -92,3 +92,7 @@ bot/
 - [aiogram 3](https://docs.aiogram.dev/) — Telegram Bot API
 - aiohttp — приём вебхуков
 - aiosqlite — хранилище заказов и переписки
+
+## Другие проекты в репозитории
+
+- [`cat_care/`](cat_care/README.md): котохозяйство Кики, Лаки и Пуси. Telegram-мини-приложение с ачивками и вечерними напоминаниями.

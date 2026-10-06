@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Котохозяйство</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="topline">
+        <span class="date" id="date"></span>
+        <span class="chip" id="streakChip" hidden></span>
+      </div>
+      <h1>Котохозяйство</h1>
+      <div class="cats" id="cats"></div>
+      <div class="progress">
+        <div class="paw-progress" id="pawProgress"></div>
+        <div class="progress-label" id="progressLabel"></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="tab active" id="tab-today">
+        <div class="card eared litter-card">
+          <span class="ear l"><svg viewBox="0 0 56 36"><path d="M2 36L20 5q4-6 9 0l25 31z" fill="#FFF9F2"/><path d="M14 34l9-20 15 20z" fill="#FCE4EA"/></svg></span><span class="ear r"><svg viewBox="0 0 56 36"><path d="M2 36L20 5q4-6 9 0l25 31z" fill="#FFF9F2"/><path d="M14 34l9-20 15 20z" fill="#FCE4EA"/></svg></span>
+          <div class="card-head">
+            <h2>Лоток</h2><span class="count" id="litterCount"></span>
+          </div>
+          <button class="bubble bubble-xl" id="litterBtn" data-task="litter" type="button">
+            <span class="bubble-face" id="litterFace"></span>
+          </button>
+          <div class="mini-row" id="litterMini"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Водичка</h2><span class="count" id="waterCount"></span>
+          </div>
+          <div class="bubble-row" id="waterRow"></div>
+        </div>
+
+        <div class="card food-card">
+          <button class="bubble bubble-md" id="foodBtn" data-task="food" type="button"></button>
+          <div class="food-text">
+            <h2>Корм</h2>
+            <div class="food-status" id="foodStatus"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-ach">
+        <div class="section-head">
+          <h2>Ачивки</h2><span class="count" id="achCount"></span>
+        </div>
+        <div class="ach-grid" id="achGrid"></div>
+      </section>
+
+      <section class="tab" id="tab-stats">
+        <div class="tiles" id="tiles"></div>
+        <div class="card">
+          <div class="card-head"><h2>Последние 14 дней</h2></div>
+          <div class="history" id="history"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>За всё время</h2></div>
+          <div class="totals" id="totals"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Кто заботился за неделю</h2></div>
+          <div class="leaders" id="leaders"></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" id="tabbar">
+      <button class="tabbtn active" data-tab="today" type="button"><span class="tabicon" data-icon="paw"></span>Сегодня</button>
+      <button class="tabbtn" data-tab="ach" type="button"><span class="tabicon" data-icon="trophy"></span>Ачивки</button>
+      <button class="tabbtn" data-tab="stats" type="button"><span class="tabicon" data-icon="chart"></span>Статистика</button>
+    </nav>
+  </div>
+
+  <div class="fx" id="fx" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="modal" id="modal" hidden></div>
+  <div class="blocker" id="blocker" hidden></div>
+
+  <script src="static/app.js"></script>
+</body>
+</html>
