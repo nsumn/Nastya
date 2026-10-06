@@ -7,6 +7,22 @@ Telegram открывает мини-приложения только по **HT
 сервис `sslip.io` даёт бесплатный адрес вида `1-2-3-4.sslip.io`, а программа
 **Caddy** сама получит для него сертификат.
 
+## Быстрый способ (рекомендую)
+
+1. Создай бота в [@BotFather](https://t.me/BotFather) (`/newbot`) и скопируй токен.
+2. На сервере выполни:
+
+```bash
+cd /opt
+git clone -b claude/telegram-cat-care-app-8q21gh https://ghp_ТВОЙ_ТОКЕН@github.com/nsumn/Nastya.git cat-care
+cd /opt/cat-care/cat_care
+bash deploy/install.sh
+```
+
+Скрипт спросит токен бота и chat_id членов семьи, а остальное сделает сам.
+
+Ниже то же самое вручную, по шагам.
+
 ---
 
 ## Шаг 1. Создать нового бота
