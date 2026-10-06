@@ -706,7 +706,7 @@
     if (DEMO && !window.CatDemoAPI) {
       await new Promise((ok) => {
         const s = document.createElement('script');
-        s.src = 'static/demo.js';
+        s.src = `static/demo.js?v=${Date.now()}`;
         s.onload = ok;
         document.head.appendChild(s);
       });

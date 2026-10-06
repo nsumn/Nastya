@@ -84,15 +84,51 @@ async def post_new_day(request: web.Request) -> web.Response:
     return web.json_response({"ok": ok, "state": await service.build_state(config, user_id)})
 
 
-async def index(request: web.Request) -> web.FileResponse:
-    return web.FileResponse(WEBAPP_DIR / "index.html", headers={"Cache-Control": "no-cache"})
+NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
+
+def _version() -> str:
+    """Меняется при каждом обновлении файлов приложения."""
+    files = ["app.js", "style.css", "demo.js", "index.html"]
+    return str(int(max((WEBAPP_DIR / f).stat().st_mtime for f in files)))
+
+
+async def index(request: web.Request) -> web.Response:
+    # Telegram любит держать старые app.js/style.css в кэше — добавляем версию к ссылкам,
+    # чтобы после обновления приложение всегда скачивалось заново.
+    v = _version()
+    html = (WEBAPP_DIR / "index.html").read_text(encoding="utf-8")
+    html = html.replace('static/style.css"', f'static/style.css?v={v}"')
+    html = html.replace('static/app.js"', f'static/app.js?v={v}"')
+    return web.Response(text=html, content_type="text/html", headers=NO_CACHE)
+
+
+async def health(request: web.Request) -> web.Response:
+    """Служебная проверка без личных данных: время сервера, «сегодня», версия."""
+    config = _config(request)
+    now = service.now_local(config)
+    return web.json_response({
+        "ok": True,
+        "time": now.strftime("%Y-%m-%d %H:%M"),
+        "day": await service.today_str(config),
+        "version": _version(),
+    })
+
+
+@web.middleware
+async def no_cache_static(request: web.Request, handler):
+    response = await handler(request)
+    if request.path.startswith("/static/"):
+        response.headers.update(NO_CACHE)
+    return response
 
 
 def build_app(config: Config) -> web.Application:
-    app = web.Application()
+    app = web.Application(middlewares=[no_cache_static])
     app["config"] = config
     app.router.add_get("/", index)
     app.router.add_get("/api/state", get_state)
+    app.router.add_get("/api/health", health)
     app.router.add_post("/api/do", post_do)
     app.router.add_post("/api/undo", post_undo)
     app.router.add_post("/api/new_day", post_new_day)
