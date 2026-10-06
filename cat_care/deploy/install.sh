@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Установка котохозяйства на сервер одной командой.
 # Запуск (от root, из папки cat_care):  bash deploy/install.sh
+# Без вопросов:  BOT_TOKEN=123:ABC ALLOWED_USER_IDS= bash deploy/install.sh
+#   (ALLOWED_USER_IDS пустой — пускать всех)
 #
 # Что делает: ставит Python-зависимости и Caddy (HTTPS), создаёт .env,
 # настраивает адрес <IP>.sslip.io и автозапуск через systemd.
@@ -26,17 +28,23 @@ clean() {  # убрать <> и пробелы по краям (бывают п�
 echo "================ Котохозяйство: установка ================"
 echo
 
-read -rp "1) Токен НОВОГО бота от @BotFather: " BOT_TOKEN
+if [ -z "${BOT_TOKEN:-}" ]; then
+  read -rp "1) Токен НОВОГО бота от @BotFather: " BOT_TOKEN
+fi
 BOT_TOKEN="$(clean "$BOT_TOKEN")"
 if [[ ! "$BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
   echo "Похоже, это не токен бота (должен выглядеть как 123456:ABC-DEF...)."
   exit 1
 fi
 
-echo
-echo "2) chat_id всех, кто будет пользоваться, через запятую."
-echo "   Каждый может узнать свой у @userinfobot. Пусто — пускать всех."
-read -rp "   chat_id: " ALLOWED
+if [ -n "${ALLOWED_USER_IDS+set}" ]; then
+  ALLOWED="$ALLOWED_USER_IDS"
+else
+  echo
+  echo "2) chat_id всех, кто будет пользоваться, через запятую."
+  echo "   Каждый может узнать свой у @userinfobot. Пусто — пускать всех."
+  read -rp "   chat_id: " ALLOWED
+fi
 ALLOWED="$(clean "$ALLOWED" | tr -d ' ')"
 
 echo
@@ -53,7 +61,7 @@ echo "Адрес приложения: $URL"
 echo
 echo "=== Устанавливаю программы ==="
 apt-get update -q
-apt-get install -y -q python3 python3-venv python3-pip curl gpg debian-keyring debian-archive-keyring apt-transport-https
+apt-get install -y -q python3 python3-venv python3-pip curl gpg ca-certificates
 
 if ! command -v caddy >/dev/null 2>&1; then
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
