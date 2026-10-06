@@ -54,6 +54,10 @@ class Stats:
     best_streak: int = 0
     current_streak: int = 0
     solo_day: bool = False  # все дела дня — только я
+    extra_total: int = 0  # мои дела сверх нормы («Ещё раз»)
+    extra_litter: bool = False
+    extra_water: bool = False
+    extra_food: bool = False
     early_litter: bool = False
     night_owl: bool = False
     lightning: bool = False
@@ -104,6 +108,18 @@ def compute_stats(events: list[Event], today: date, user_id: int) -> Stats:
             s.night_owl = True
 
     for day, evs in per_day.items():
+        # всё, что сверх нормы дня (3-й лоток, вторая водичка в том же месте…)
+        by_task_evs: dict[str, list[Event]] = defaultdict(list)
+        for e in sorted(evs, key=lambda e: (e.ts, e.id)):
+            by_task_evs[e.task].append(e)
+        for task_id, tevs in by_task_evs.items():
+            group = TASK_BY_ID[task_id].group
+            for e in tevs[TASK_BY_ID[task_id].need:]:
+                if e.user_id != user_id:
+                    continue
+                s.extra_total += 1
+                setattr(s, f"extra_{group}", True)
+
         mine = [e for e in evs if e.user_id == user_id]
         if mine and not remaining_for_day(mine):
             s.solo_day = True
@@ -175,6 +191,16 @@ ACHIEVEMENTS: list[Achievement] = [
                 lambda s: s.by_group["food"], 30),
     Achievement("food_180", "🥫", "Шеф-повар", "Подсыпать корм 180 раз",
                 lambda s: s.by_group["food"], 180),
+    Achievement("extra_litter", "🫧", "Чистюля", "Поменять лоток больше 2 раз за день",
+                _flag("extra_litter")),
+    Achievement("extra_water", "💦", "Водопад", "Налить водичку ещё раз там, где уже налито",
+                _flag("extra_water")),
+    Achievement("extra_food", "🥣", "Добавка", "Подсыпать корм ещё раз за день",
+                _flag("extra_food")),
+    Achievement("extra_10", "🌟", "Сверх плана", "Сделать 10 дел сверх нормы",
+                lambda s: s.extra_total, 10),
+    Achievement("extra_50", "💎", "Золотые лапки", "Сделать 50 дел сверх нормы",
+                lambda s: s.extra_total, 50),
     Achievement("pops_1000", "🎉", "Тысяча попов", "Сделать 1000 дел", lambda s: s.total, 1000),
 ]
 ACH_BY_CODE = {a.code: a for a in ACHIEVEMENTS}

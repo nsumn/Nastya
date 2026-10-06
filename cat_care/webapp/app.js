@@ -42,6 +42,7 @@
       <path d="M24 42l4 3 4-3 4 3 4-3" stroke="#E2809D"/></svg>`,
     check: `<svg viewBox="0 0 64 64" fill="none" stroke="#C9617F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33l12 12 24-26"/></svg>`,
     paw: `<svg viewBox="0 0 64 64"><g fill="currentColor">${pawPath}</g></svg>`,
+    plus: `<svg viewBox="0 0 64 64" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"><circle cx="32" cy="34" r="20" fill="#FCE4EA"/><path d="M32 24v20M22 34h20" stroke="#C9617F" stroke-width="5"/></svg>`,
     trophy: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><path d="M20 8h24v14a12 12 0 0 1-24 0z" fill="currentColor"/><path d="M20 14H10c0 10 6 14 12 14M44 14h10c0 10-6 14-12 14M32 34v12M22 56h20M26 46h12"/></svg>`,
     chart: `<svg viewBox="0 0 64 64" fill="currentColor"><rect x="8" y="34" width="12" height="22" rx="5"/><rect x="26" y="20" width="12" height="36" rx="5"/><rect x="44" y="8" width="12" height="48" rx="5"/></svg>`,
   };
@@ -323,6 +324,7 @@
 
   // ---------- состояние и отрисовка ----------
   let S = null;
+  let viewDay = null; // null — сегодня, иначе 'YYYY-MM-DD' прошлого дня
   const task = (id) => S.tasks.find((t) => t.id === id);
   const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   const WEEKDAYS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -344,7 +346,10 @@
     const box = $('newDay');
     const n = S.night || {};
     let html = '';
-    if (n.can_start) {
+    if (!S.is_today) {
+      html = `<div class="past-bar">Это прошлый день: можно отметить забытое или отменить своё
+        <button class="today-btn" data-nav="today" type="button">К сегодня →</button></div>`;
+    } else if (n.can_start) {
       html = `<button class="newday-btn" data-newday="start" type="button">🌅 Начать новый день</button>
         <div class="newday-note">Сейчас ${S.now}, ещё идёт ${d.getDate()} ${MONTHS[d.getMonth()]}. Новый день начнётся сам в 5:00</div>`;
     } else if (n.can_undo) {
@@ -390,7 +395,10 @@
 
   function renderHeader() {
     const d = parseDay(S.date);
-    $('date').textContent = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}`;
+    $('date').innerHTML =
+      `<button class="navbtn" data-nav="-1" type="button" aria-label="Предыдущий день" ${S.date <= S.min_date ? 'disabled' : ''}>‹</button>` +
+      `<span>${d.getDate()} ${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}</span>` +
+      `<button class="navbtn" data-nav="1" type="button" aria-label="Следующий день" ${S.is_today ? 'disabled' : ''}>›</button>`;
     const chip = $('streakChip');
     const st = S.my.streak;
     chip.hidden = st < 1;
@@ -409,9 +417,11 @@
     $('pawProgress').innerHTML = Array.from({ length: S.total }, (_, i) =>
       `<span class="p ${i < S.done ? 'on' : ''}">${i < S.done ? pawSVG('#E2809D') : pawSVG('#FFF9F2', '#E3CDB8')}</span>`).join('');
     const left = S.total - S.done;
-    $('progressLabel').textContent = left === 0
+    const dd = parseDay(S.date);
+    const prefix = S.is_today ? '' : `${dd.getDate()} ${MONTHS[dd.getMonth()]}: `;
+    $('progressLabel').textContent = prefix + (left === 0
       ? 'Идеальный день! Котики довольны ✨'
-      : `Сделано ${S.done} из ${S.total} · осталось ${left} ${plural(left, 'дело', 'дела', 'дел')}`;
+      : `Сделано ${S.done} из ${S.total} · осталось ${left} ${plural(left, 'дело', 'дела', 'дел')}`);
   }
 
   const WATER_PLACES = { water_kitchen: 'Кухня', water_hall: 'Коридор', water_room: 'Комната' };
@@ -419,6 +429,10 @@
   // своя отметка — сразу с кнопкой отмены (на случай, если тыкнул случайно)
   const undoBtn = (e) => (e && e.mine && e.id
     ? `<button class="undo-link" data-undo="${e.id}" type="button">↩ отменить</button>` : '');
+  // сверх нормы: «＋ Ещё раз» и список дополнительных отметок
+  const againBtn = (t) => `<button class="again-btn" data-again="${t.id}" type="button">＋ Ещё раз</button>`;
+  const extras = (t) => t.events.slice(t.need).map((e) =>
+    `<span class="extra-chip">＋ ${who(e)}${e.mine && e.id ? `<button class="undo-x" data-undo="${e.id}" type="button" aria-label="Отменить">↩</button>` : ''}</span>`).join('');
 
   function renderToday() {
     const l = task('litter');
@@ -428,12 +442,13 @@
     $('litterFace').innerHTML = lDone
       ? `${ICONS.check}<span>Лоток<br>чистый!</span>`
       : `${ICONS.litter}<span>Поменять<br>лоток</span>`;
-    $('litterCount').textContent = `${Math.min(l.done, l.need)}/${l.need}`;
+    $('litterCount').textContent = `${Math.min(l.done, l.need)}/${l.need}${l.done > l.need ? ` ＋${l.done - l.need}` : ''}`;
     $('litterMini').innerHTML = Array.from({ length: l.need }, (_, i) => {
       const e = l.events[i];
       return `<div class="mini"><div class="dot ${e ? 'done' : ''}"></div>
         <div class="lbl"><b>${i + 1}-й раз</b><br>${e ? who(e) : 'ещё нет'}</div>${undoBtn(e)}</div>`;
     }).join('');
+    $('litterExtra').innerHTML = lDone ? `<div class="extras">${extras(l)}</div>${againBtn(l)}` : '';
 
     const water = S.tasks.filter((t) => t.group === 'water');
     $('waterCount').textContent = `${water.filter((t) => t.done >= t.need).length}/${water.length}`;
@@ -447,7 +462,8 @@
     water.forEach((t) => {
       const done = t.done >= t.need;
       wr.querySelector(`[data-task="${t.id}"]`).classList.toggle('done', done);
-      wr.querySelector(`[data-sub="${t.id}"]`).innerHTML = done ? `${who(t.events[0])}${undoBtn(t.events[0])}` : 'налить';
+      wr.querySelector(`[data-sub="${t.id}"]`).innerHTML = done
+        ? `${who(t.events[0])}${undoBtn(t.events[0])}<div class="extras">${extras(t)}</div>${againBtn(t)}` : 'налить';
     });
 
     const f = task('food');
@@ -455,7 +471,9 @@
     const fDone = f.done >= f.need;
     fb.classList.toggle('done', fDone);
     fb.innerHTML = fDone ? ICONS.check : ICONS.food;
-    $('foodStatus').innerHTML = fDone ? `Насыпано · ${who(f.events[0])}${undoBtn(f.events[0])}` : 'Подсыпать корм — нажми на миску';
+    $('foodStatus').innerHTML = fDone
+      ? `Насыпано · ${who(f.events[0])}${undoBtn(f.events[0])}<div class="extras">${extras(f)}</div>${againBtn(f)}`
+      : 'Подсыпать корм — нажми на миску';
   }
 
   function renderAch() {
@@ -493,8 +511,8 @@
         ${WEEKDAYS[d.getDay()]} ${d.getDate()}</div>`;
     }).join('') + '<div class="legend" style="grid-column:1/-1">Цифра — сколько дел сделал(а) ты в этот день</div>';
 
-    $('totals').innerHTML = [['litter', 'лотков'], ['water', 'водичек'], ['food', 'кормёжек']]
-      .map(([k, cap]) => `<div class="t">${ICONS[k]}<b>${M[k]}</b><span>${cap}</span></div>`).join('');
+    $('totals').innerHTML = [['litter', 'litter', 'лотков'], ['water', 'water', 'водичек'], ['food', 'food', 'кормёжек'], ['extra', 'plus', 'сверх нормы']]
+      .map(([k, icon, cap]) => `<div class="t">${ICONS[icon]}<b>${M[k] || 0}</b><span>${cap}</span></div>`).join('');
 
     const F = S.family;
     $('familyLine').innerHTML =
@@ -518,9 +536,9 @@
   }
 
   // ---------- действия ----------
-  async function doTask(id, el) {
+  async function doTask(id, el, extra = false) {
     const t = task(id);
-    if (t.done >= t.need) { offerUndo(t); return; }
+    if (t.done >= t.need && !extra) { offerUndo(t); return; }
 
     sound.pop();
     haptic('heavy');
@@ -530,18 +548,20 @@
     const wasDone = S.done;
     t.done += 1;
     t.events.push({ id: null, time: '', user: S.me || 'Я', mine: true });
-    S.done = Math.min(S.total, S.done + 1);
+    if (!extra) S.done = Math.min(S.total, S.done + 1);
     render();
 
     try {
-      const r = await api('api/do', { task: id });
+      const r = await api('api/do', { task: id, day: S.date, extra });
       S = r.state;
       render();
       if (!r.ok) {
         const last = task(id).events.slice(-1)[0];
         toast(last ? `Уже отмечено: ${last.user}, ${last.time}` : 'Уже отмечено 💕');
       } else {
-        if (S.done >= S.total && wasDone < S.total) {
+        if (extra) {
+          toast('＋1 сверх нормы! Котики в восторге 💪', 'Отменить', () => undo(r.event_id));
+        } else if (S.done >= S.total && wasDone < S.total) {
           setTimeout(() => { pawRain(50); sound.chime(); haptic('success'); toast('Идеальный день! Кики, Лаки и Пуся мурчат 💕'); }, 450);
         } else {
           toast(`${t.title} — готово!`, 'Отменить', () => undo(r.event_id));
@@ -558,16 +578,16 @@
     const mine = [...t.events].reverse().find((e) => e.mine && e.id);
     const last = t.events[t.events.length - 1];
     haptic('light');
-    if (mine) toast(`Сделано в ${mine.time}`, 'Отменить', () => undo(mine.id));
-    else if (last) toast(`Уже сделано: ${last.user}, ${last.time} 💕`);
+    const el = document.querySelector(`[data-task="${t.id}"]`);
+    if (last) toast(`Уже сделано: ${last.user}, ${last.time}${mine ? '' : ' 💕'}`, '＋ Ещё раз', () => doTask(t.id, el, true));
   }
 
   async function undo(eventId) {
     try {
-      const r = await api('api/undo', { event_id: eventId });
+      const r = await api('api/undo', { event_id: eventId, day: S.date });
       S = r.state;
       render();
-      toast(r.ok ? 'Отменено ↩ Можно отметить заново' : 'Отменить можно только свою отметку за сегодня');
+      toast(r.ok ? 'Отменено ↩ Можно отметить заново' : 'Отменить можно только свою отметку');
     } catch (e) {
       toast('Не получилось отменить 😿');
     }
@@ -605,6 +625,10 @@
     if (!S) return;
     const b = ev.target.closest('[data-task]');
     if (b) { doTask(b.dataset.task, b); return; }
+    const again = ev.target.closest('[data-again]');
+    if (again) { doTask(again.dataset.again, document.querySelector(`[data-task="${again.dataset.again}"]`), true); return; }
+    const nav = ev.target.closest('[data-nav]');
+    if (nav) { if (!nav.disabled) goDay(nav.dataset.nav); return; }
     const nd = ev.target.closest('[data-newday]');
     if (nd) {
       haptic('light');
@@ -636,13 +660,32 @@
     (state.new_achievements || []).forEach((a, i) => setTimeout(() => showAchievement(a), delay + i * 50));
   }
 
+  function shiftDay(day, n) {
+    const d = parseDay(day);
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  async function goDay(nav) {
+    haptic('light');
+    if (nav === 'today') viewDay = null;
+    else {
+      const next = shiftDay(S.date, Number(nav));
+      viewDay = next >= S.today ? null : next;
+    }
+    await load();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function load() {
     try {
-      S = await api('api/state');
+      S = await api(viewDay ? `api/state?day=${viewDay}` : 'api/state');
+      if (S.is_today) viewDay = null;
       $('blocker').hidden = true;
       render();
       announce(S, 300);
     } catch (e) {
+      if (e.status === 400 && viewDay) { viewDay = null; load(); return; } // день стал слишком старым
       if (e.status === 401) block('Открой котохозяйство из Telegram-бота 🐾');
       else if (e.status === 403) block(e.message || 'Это приложение только для нашей семьи 🐾');
       else if (!S) block('Не получилось загрузиться 😿 Проверь интернет и открой ещё раз');

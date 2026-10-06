@@ -97,7 +97,7 @@ async def add_event(task: str, day: str, ts: str, user_id: int) -> int:
 
 
 async def delete_event(event_id: int, day: str, user_id: int) -> bool:
-    """Отмена — только своих и только сегодняшних дел."""
+    """Отмена — только своих отметок и только за этот день."""
     async with _connect() as conn:
         cur = await conn.execute(
             "DELETE FROM events WHERE id = ? AND day = ? AND user_id = ?",

@@ -35,9 +35,17 @@ async def _user(request: web.Request) -> int:
     return user["id"]
 
 
+async def _day(request: web.Request, raw: str | None) -> str:
+    day = await service.resolve_day(_config(request), raw)
+    if day is None:
+        raise web.HTTPBadRequest(text="Этот день уже нельзя открыть")
+    return day
+
+
 async def get_state(request: web.Request) -> web.Response:
     user_id = await _user(request)
-    return web.json_response(await service.build_state(_config(request), user_id))
+    day = await _day(request, request.query.get("day"))
+    return web.json_response(await service.build_state(_config(request), user_id, day))
 
 
 async def post_do(request: web.Request) -> web.Response:
@@ -47,11 +55,12 @@ async def post_do(request: web.Request) -> web.Response:
     if task_id not in TASK_BY_ID:
         raise web.HTTPBadRequest(text="unknown task")
     config = _config(request)
-    event_id = await service.do_task(config, task_id, user_id)
+    day = await _day(request, body.get("day"))
+    event_id = await service.do_task(config, task_id, user_id, day, bool(body.get("extra")))
     return web.json_response({
         "ok": event_id is not None,
         "event_id": event_id,
-        "state": await service.build_state(config, user_id),
+        "state": await service.build_state(config, user_id, day),
     })
 
 
@@ -59,8 +68,9 @@ async def post_undo(request: web.Request) -> web.Response:
     user_id = await _user(request)
     body = await request.json()
     config = _config(request)
-    ok = await db.delete_event(int(body.get("event_id", 0)), await service.today_str(config), user_id)
-    return web.json_response({"ok": ok, "state": await service.build_state(config, user_id)})
+    day = await _day(request, body.get("day"))
+    ok = await db.delete_event(int(body.get("event_id", 0)), day, user_id)
+    return web.json_response({"ok": ok, "state": await service.build_state(config, user_id, day)})
 
 
 async def post_new_day(request: web.Request) -> web.Response:

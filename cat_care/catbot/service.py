@@ -14,6 +14,7 @@ from .config import Config
 from .tasks import (ACH_BY_CODE, ACHIEVEMENTS, DAY_START_HOUR, TASK_BY_ID, TASKS,
                     TOTAL_PER_DAY, compute_stats, earned_codes, remaining_for_day)
 
+EDITABLE_DAYS = 7  # на сколько дней назад можно вернуться и что-то поправить
 EARLY_DAY_KEY = "early_day"  # календарная дата, для которой новый день начали до 5 утра
 
 # двое нажали одновременно — засчитываем только одно нажатие
@@ -59,31 +60,49 @@ async def undo_new_day(config: Config) -> bool:
     return True
 
 
+async def resolve_day(config: Config, raw: str | None) -> str | None:
+    """День, с которым работаем: сегодня или один из последних 7 дней. None — нельзя."""
+    today = await current_day(config)
+    if not raw:
+        return today.isoformat()
+    try:
+        d = date.fromisoformat(raw)
+    except ValueError:
+        return None
+    if today - timedelta(days=EDITABLE_DAYS) <= d <= today:
+        return d.isoformat()
+    return None
+
+
 def _ach_public(code: str) -> dict:
     a = ACH_BY_CODE[code]
     return {"code": a.code, "icon": a.icon, "title": a.title, "desc": a.desc}
 
 
-async def do_task(config: Config, task_id: str, user_id: int) -> int | None:
-    """Отмечает дело. Возвращает id события или None, если его уже сделали."""
+async def do_task(config: Config, task_id: str, user_id: int, day: str | None = None,
+                  extra: bool = False) -> int | None:
+    """Отмечает дело. Возвращает id события или None, если его уже сделали.
+    extra=True — кнопка «Ещё раз»: можно сверх нормы."""
     async with _do_lock:
         now = now_local(config)
-        day = await today_str(config)
-        if task_id not in remaining_for_day(await db.events_for_day(day)):
+        day = day or await today_str(config)
+        if not extra and task_id not in remaining_for_day(await db.events_for_day(day)):
             return None
         return await db.add_event(task_id, day, now.isoformat(), user_id)
 
 
-async def build_state(config: Config, user_id: int) -> dict:
+async def build_state(config: Config, user_id: int, view_day: str | None = None) -> dict:
     now = now_local(config)
     today = await current_day(config)
+    view = view_day or today.isoformat()  # какой день открыт в приложении
     names = await db.user_names()
     events = await db.all_events()
     today_events = [e for e in events if e.day == today.isoformat()]
+    view_events = [e for e in events if e.day == view]
 
     tasks = []
     for t in TASKS:
-        evs = [e for e in today_events if e.task == t.id]
+        evs = [e for e in view_events if e.task == t.id]
         tasks.append({
             "id": t.id, "title": t.title, "need": t.need, "group": t.group,
             "done": len(evs),
@@ -125,7 +144,10 @@ async def build_state(config: Config, user_id: int) -> dict:
     night = now.hour < DAY_START_HOUR
     early = night and today == now.date()
     return {
-        "date": today.isoformat(),
+        "date": view,
+        "today": today.isoformat(),
+        "is_today": view == today.isoformat(),
+        "min_date": (today - timedelta(days=EDITABLE_DAYS)).isoformat(),
         "now": now.strftime("%H:%M"),
         # с 0:00 до 5:00: можно начать новый день (или вернуться, если начали случайно)
         "night": {
@@ -141,6 +163,7 @@ async def build_state(config: Config, user_id: int) -> dict:
             "best_streak": stats.best_streak,
             "care_days": len(stats.care_days),
             "total": stats.total,
+            "extra": stats.extra_total,
             **{g: stats.by_group[g] for g in ("litter", "water", "food")},
         },
         "family": {

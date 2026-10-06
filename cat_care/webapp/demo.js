@@ -29,6 +29,11 @@
     ['water_300', '🌊', 'Река жизни', 'Налить водичку 300 раз', (s) => s.g.water, 300],
     ['food_30', '🍗', 'Кормилица', 'Подсыпать корм 30 раз', (s) => s.g.food, 30],
     ['food_180', '🥫', 'Шеф-повар', 'Подсыпать корм 180 раз', (s) => s.g.food, 180],
+    ['extra_litter', '🫧', 'Чистюля', 'Поменять лоток больше 2 раз за день', (s) => +s.xg.litter, 1],
+    ['extra_water', '💦', 'Водопад', 'Налить водичку ещё раз там, где уже налито', (s) => +s.xg.water, 1],
+    ['extra_food', '🥣', 'Добавка', 'Подсыпать корм ещё раз за день', (s) => +s.xg.food, 1],
+    ['extra_10', '🌟', 'Сверх плана', 'Сделать 10 дел сверх нормы', (s) => s.extra, 10],
+    ['extra_50', '💎', 'Золотые лапки', 'Сделать 50 дел сверх нормы', (s) => s.extra, 50],
     ['pops_1000', '🎉', 'Тысяча попов', 'Сделать 1000 дел', (s) => s.total, 1000],
   ];
   const ME = 1;
@@ -82,6 +87,7 @@
 
   function stats(events, today) {
     const s = { total: 0, g: { litter: 0, water: 0, food: 0 }, care: new Set(), best: 0, cur: 0, solo: false,
+      extra: 0, xg: { litter: false, water: false, food: false },
       early: false, night: false, lightning: false, team: false, famPerfect: new Set(), famStreak: 0 };
     const per = {};
     events.forEach((e) => {
@@ -95,6 +101,10 @@
       if (h >= 23 || h < DAY_START_HOUR) s.night = true;
     });
     Object.entries(per).forEach(([day, evs]) => {
+      TASKS.forEach((t) => {
+        evs.filter((e) => e.task === t.id).sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : a.id - b.id))
+          .slice(t.need).forEach((e) => { if (e.user === ME) { s.extra++; s.xg[t.group] = true; } });
+      });
       const mine = evs.filter((e) => e.user === ME);
       if (mine.length && !remaining(mine)) s.solo = true;
       if (remaining(evs)) return;
@@ -120,12 +130,19 @@
     return dayStr(shift(now, -1));
   }
 
-  function state() {
+  function inRange(day) {
+    const today = logicalDay(clock());
+    return day >= dayStr(shift(new Date(today + 'T12:00'), -7)) && day <= today;
+  }
+
+  function state(viewDay) {
     const real = clock(), today = logicalDay(real);
+    const view = viewDay && inRange(viewDay) ? viewDay : today;
     const now = new Date(today + 'T12:00');
     const todayEv = db.events.filter((e) => e.day === today);
+    const viewEv = db.events.filter((e) => e.day === view);
     const tasks = TASKS.map((t) => {
-      const evs = todayEv.filter((e) => e.task === t.id);
+      const evs = viewEv.filter((e) => e.task === t.id);
       return { ...t, done: evs.length, events: evs.map((e) => ({ id: e.id, time: e.ts.slice(11, 16), user: 'Я', mine: true })) };
     });
     const s = stats(db.events, now);
@@ -142,11 +159,12 @@
     const night = real.getHours() < DAY_START_HOUR;
     const early = night && today === dayStr(real);
     return {
-      date: today, tasks, total: TOTAL, me: 'Я',
+      date: view, today, is_today: view === today, min_date: dayStr(shift(now, -7)),
+      tasks, total: TOTAL, me: 'Я',
       now: `${pad(real.getHours())}:${pad(real.getMinutes())}`,
       night: { can_start: night && !early, can_undo: early && !todayEv.length },
       done: tasks.reduce((n, t) => n + Math.min(t.done, t.need), 0),
-      my: { streak: s.cur, best_streak: s.best, care_days: s.care.size, total: s.total, ...s.g },
+      my: { streak: s.cur, best_streak: s.best, care_days: s.care.size, total: s.total, extra: s.extra, ...s.g },
       family: { streak: s.famStreak, perfect_days: s.famPerfect.size },
       achievements: ACH.map(([code, icon, title, desc, f, target]) => ({
         code, icon, title, desc, target, unlocked: !!db.unlocked[code],
@@ -159,22 +177,23 @@
   }
 
   window.CatDemoAPI = async (path, body) => {
-    if (path === 'api/state') return state();
+    if (path.startsWith('api/state')) return state((path.split('day=')[1] || '').slice(0, 10));
     if (path === 'api/do') {
-      const now = clock(), day = logicalDay(now), t = TASKS.find((x) => x.id === body.task);
+      const now = clock(), day = inRange(body.day) ? body.day : logicalDay(now);
+      const t = TASKS.find((x) => x.id === body.task);
       const done = db.events.filter((e) => e.day === day && e.task === t.id).length;
-      if (done >= t.need) return { ok: false, state: state() };
+      if (done >= t.need && !body.extra) return { ok: false, state: state(day) };
       const id = db.nextId++;
       db.events.push({ id, task: t.id, day, ts: tsStr(now), user: ME });
       save();
-      return { ok: true, event_id: id, state: state() };
+      return { ok: true, event_id: id, state: state(day) };
     }
     if (path === 'api/undo') {
-      const today = logicalDay(clock());
-      const i = db.events.findIndex((e) => e.id === body.event_id && e.day === today);
+      const day = inRange(body.day) ? body.day : logicalDay(clock());
+      const i = db.events.findIndex((e) => e.id === body.event_id && e.day === day);
       if (i >= 0) db.events.splice(i, 1);
       save();
-      return { ok: i >= 0, state: state() };
+      return { ok: i >= 0, state: state(day) };
     }
     if (path === 'api/new_day') {
       const now = clock(), cal = dayStr(now);
