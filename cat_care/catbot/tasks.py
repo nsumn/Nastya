@@ -43,15 +43,20 @@ class Event:
 
 @dataclass
 class Stats:
+    """Личная статистика одного человека (дела общие, а заслуги свои)."""
     total: int = 0
     by_group: dict[str, int] = field(default_factory=lambda: defaultdict(int))
-    perfect_days: set[str] = field(default_factory=set)
+    care_days: set[str] = field(default_factory=set)  # дни, когда я сделал(а) хоть что-то
     best_streak: int = 0
     current_streak: int = 0
+    solo_day: bool = False  # все дела дня — только я
     early_litter: bool = False
     night_owl: bool = False
     lightning: bool = False
     team_day: bool = False
+    # общее на семью
+    family_perfect_days: set[str] = field(default_factory=set)
+    family_streak: int = 0
 
 
 def remaining_for_day(events: list[Event]) -> dict[str, int]:
@@ -62,24 +67,49 @@ def remaining_for_day(events: list[Event]) -> dict[str, int]:
     return {t.id: t.need - counts[t.id] for t in TASKS if counts[t.id] < t.need}
 
 
-def compute_stats(events: list[Event], today: date) -> Stats:
+def _streaks(days: set[str], today: date) -> tuple[int, int]:
+    """(лучшая серия, текущая серия). Текущая может заканчиваться вчера —
+    сегодня ещё не вечер."""
+    best = run = 0
+    prev = None
+    for d in sorted(date.fromisoformat(x) for x in days):
+        run = run + 1 if prev and d - prev == timedelta(days=1) else 1
+        best = max(best, run)
+        prev = d
+    cur = 0
+    d = today if today.isoformat() in days else today - timedelta(days=1)
+    while d.isoformat() in days:
+        cur += 1
+        d -= timedelta(days=1)
+    return best, cur
+
+
+def compute_stats(events: list[Event], today: date, user_id: int) -> Stats:
     s = Stats()
     per_day: dict[str, list[Event]] = defaultdict(list)
     for e in events:
+        per_day[e.day].append(e)
+        if e.user_id != user_id:
+            continue
         s.total += 1
         s.by_group[TASK_BY_ID[e.task].group] += 1
-        per_day[e.day].append(e)
+        s.care_days.add(e.day)
         if e.task == "litter" and e.hour < 8:
             s.early_litter = True
         if e.hour >= 23:
             s.night_owl = True
 
     for day, evs in per_day.items():
-        if len({e.user_id for e in evs}) >= 2:
-            s.team_day = True
+        mine = [e for e in evs if e.user_id == user_id]
+        if mine and not remaining_for_day(mine):
+            s.solo_day = True
         if remaining_for_day(evs):
             continue
-        s.perfect_days.add(day)
+        s.family_perfect_days.add(day)
+        if not mine:
+            continue
+        if len({e.user_id for e in evs}) >= 2:
+            s.team_day = True
         # момент, когда закрыто последнее нужное дело
         by_task: dict[str, list[str]] = defaultdict(list)
         for e in evs:
@@ -88,17 +118,8 @@ def compute_stats(events: list[Event], today: date) -> Stats:
         if int(finished[11:13]) < 12:
             s.lightning = True
 
-    # серии идеальных дней
-    run, prev = 0, None
-    for d in sorted(date.fromisoformat(x) for x in s.perfect_days):
-        run = run + 1 if prev and d - prev == timedelta(days=1) else 1
-        s.best_streak = max(s.best_streak, run)
-        prev = d
-    # текущая серия: заканчивается сегодня или вчера (сегодня ещё не вечер)
-    d = today if today.isoformat() in s.perfect_days else today - timedelta(days=1)
-    while d.isoformat() in s.perfect_days:
-        s.current_streak += 1
-        d -= timedelta(days=1)
+    s.best_streak, s.current_streak = _streaks(s.care_days, today)
+    _, s.family_streak = _streaks(s.family_perfect_days, today)
     return s
 
 
@@ -117,21 +138,27 @@ def _flag(name: str) -> Callable[[Stats], int]:
 
 
 ACHIEVEMENTS: list[Achievement] = [
-    Achievement("first_pop", "🐾", "Первый поп", "Сделать самое первое дело", lambda s: s.total),
-    Achievement("perfect_day", "✨", "Идеальный день", "Закрыть все 6 дел за день",
-                lambda s: len(s.perfect_days)),
-    Achievement("streak_3", "🔥", "Три дня мурчания", "3 идеальных дня подряд",
+    Achievement("first_pop", "🐾", "Первый поп", "Сделать своё первое дело", lambda s: s.total),
+    Achievement("streak_3", "🔥", "Три дня мурчания", "Заботиться о котиках 3 дня подряд",
                 lambda s: s.best_streak, 3),
-    Achievement("streak_7", "🌈", "Неделя без косяков", "7 идеальных дней подряд",
+    Achievement("streak_7", "🌈", "Неделя заботы", "Заботиться о котиках 7 дней подряд",
                 lambda s: s.best_streak, 7),
-    Achievement("streak_30", "👑", "Кошачий рай", "30 идеальных дней подряд",
+    Achievement("streak_30", "👑", "Кошачий рай", "Заботиться о котиках 30 дней подряд",
                 lambda s: s.best_streak, 30),
-    Achievement("kiki", "🧡", "Кики довольна", "10 идеальных дней всего",
-                lambda s: len(s.perfect_days), 10),
-    Achievement("laki", "🩶", "Лаки мурчит", "25 идеальных дней всего",
-                lambda s: len(s.perfect_days), 25),
-    Achievement("pusya", "🤍", "Пуся в восторге", "50 идеальных дней всего",
-                lambda s: len(s.perfect_days), 50),
+    Achievement("kiki", "🧡", "Кики довольна", "10 дней заботы всего",
+                lambda s: len(s.care_days), 10),
+    Achievement("laki", "🩶", "Лаки мурчит", "25 дней заботы всего",
+                lambda s: len(s.care_days), 25),
+    Achievement("pusya", "🤍", "Пуся в восторге", "50 дней заботы всего",
+                lambda s: len(s.care_days), 50),
+    Achievement("solo", "✨", "Супергерой дня", "Сделать все 6 дел за день в одиночку",
+                _flag("solo_day")),
+    Achievement("team", "🤝", "Команда мечты", "Закрыть идеальный день вместе с кем-то",
+                _flag("team_day")),
+    Achievement("lightning", "⚡", "Молния", "Все дела закрыты до полудня, и одно из них твоё",
+                _flag("lightning")),
+    Achievement("early", "🌅", "Ранняя пташка", "Поменять лоток до 8 утра", _flag("early_litter")),
+    Achievement("night", "🌙", "Ночная смена", "Сделать дело после 23:00", _flag("night_owl")),
     Achievement("litter_50", "🧹", "Лоточный мастер", "Поменять лоток 50 раз",
                 lambda s: s.by_group["litter"], 50),
     Achievement("litter_300", "🏆", "Повелитель лотков", "Поменять лоток 300 раз",
@@ -144,11 +171,6 @@ ACHIEVEMENTS: list[Achievement] = [
                 lambda s: s.by_group["food"], 30),
     Achievement("food_180", "🥫", "Шеф-повар", "Подсыпать корм 180 раз",
                 lambda s: s.by_group["food"], 180),
-    Achievement("early", "🌅", "Ранняя пташка", "Поменять лоток до 8 утра", _flag("early_litter")),
-    Achievement("night", "🌙", "Ночная смена", "Сделать дело после 23:00", _flag("night_owl")),
-    Achievement("lightning", "⚡", "Молния", "Закрыть все дела дня до полудня", _flag("lightning")),
-    Achievement("team", "🤝", "Команда мечты", "Дела за день делали двое или больше",
-                _flag("team_day")),
     Achievement("pops_1000", "🎉", "Тысяча попов", "Сделать 1000 дел", lambda s: s.total, 1000),
 ]
 ACH_BY_CODE = {a.code: a for a in ACHIEVEMENTS}

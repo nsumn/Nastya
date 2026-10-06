@@ -252,8 +252,8 @@ main { margin-top: 10px; }
 }
 .hring::before { content: ""; width: 24px; height: 24px; border-radius: 50%; background: var(--card); grid-area: 1 / 1; }
 .hring svg { grid-area: 1 / 1; width: 20px; height: 20px; z-index: 1; }
-.hring.perfect { background: var(--pink-deep); }
-.hring.perfect::before { background: var(--pink-deep); }
+.hring span { grid-area: 1 / 1; z-index: 1; font-size: 13px; font-weight: 900; color: var(--ink); }
+.hring.zero span { color: var(--ink-soft); opacity: .5; }
 .hday.today { color: var(--pink-dark); font-weight: 900; }
 
 .totals { display: flex; justify-content: space-around; text-align: center; }
@@ -267,6 +267,15 @@ main { margin-top: 10px; }
 .leader .nm { font-weight: 900; font-size: 15px; }
 .leader .bar { height: 10px; margin-top: 4px; }
 .leader .cnt { font-weight: 900; color: var(--pink-dark); }
+.family-line {
+  display: flex; gap: 10px; margin-bottom: 16px;
+}
+.family-line > div {
+  flex: 1; background: var(--pink-pale); border-radius: 18px; padding: 10px 12px;
+}
+.family-line b { display: block; font-size: 22px; font-weight: 900; }
+.family-line span { font-size: 12px; color: #9A4F67; }
+.legend { margin-top: 12px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 .empty { color: var(--ink-soft); font-size: 14px; text-align: center; padding: 6px 0; }
 
 /* ---------- нижнее меню ---------- */

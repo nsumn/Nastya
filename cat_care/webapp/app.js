@@ -315,8 +315,9 @@
     const d = parseDay(S.date);
     $('date').textContent = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}`;
     const chip = $('streakChip');
-    chip.hidden = S.streak < 1;
-    chip.textContent = `🔥 ${S.streak} ${plural(S.streak, 'день', 'дня', 'дней')} подряд`;
+    const st = S.my.streak;
+    chip.hidden = st < 1;
+    chip.textContent = `🔥 ${st} ${plural(st, 'день', 'дня', 'дней')} подряд`;
 
     const m = mood();
     const cats = $('cats');
@@ -391,23 +392,31 @@
   }
 
   function renderStats() {
+    const M = S.my;
+    const days = (n) => plural(n, 'день', 'дня', 'дней');
+    $('meName').textContent = S.me;
     $('tiles').innerHTML = [
-      ['accent', S.streak, plural(S.streak, 'день', 'дня', 'дней'), 'серия сейчас 🔥'],
-      ['', S.best_streak, plural(S.best_streak, 'день', 'дня', 'дней'), 'рекордная серия'],
-      ['', S.perfect_days, '', `${plural(S.perfect_days, 'идеальный день', 'идеальных дня', 'идеальных дней')} ✨`],
-      ['', S.totals.all, '', `${plural(S.totals.all, 'дело', 'дела', 'дел')} всего 🐾`],
+      ['accent', M.streak, days(M.streak), 'моя серия 🔥'],
+      ['', M.best_streak, days(M.best_streak), 'мой рекорд'],
+      ['', M.care_days, days(M.care_days), 'заботы всего 💗'],
+      ['', M.total, '', `${plural(M.total, 'дело', 'дела', 'дел')} сделано 🐾`],
     ].map(([cls, n, unit, cap]) => `<div class="tile ${cls}"><div class="num">${n} <small>${unit}</small></div><div class="cap">${cap}</div></div>`).join('');
 
     $('history').innerHTML = S.history.map((h, i) => {
       const d = parseDay(h.day);
-      const pct = Math.round((100 * h.done) / S.total);
+      const pct = Math.round((100 * Math.min(h.mine, S.total)) / S.total);
       return `<div class="hday ${i === S.history.length - 1 ? 'today' : ''}">
-        <div class="hring ${h.perfect ? 'perfect' : ''}" style="--p:${pct}">${h.perfect ? pawSVG('#FFF9F2') : ''}</div>
+        <div class="hring ${h.mine ? '' : 'zero'}" style="--p:${pct}"><span>${h.mine}</span></div>
         ${WEEKDAYS[d.getDay()]} ${d.getDate()}</div>`;
-    }).join('');
+    }).join('') + '<div class="legend" style="grid-column:1/-1">Цифра — сколько дел сделал(а) ты в этот день</div>';
 
     $('totals').innerHTML = [['litter', 'лотков'], ['water', 'водичек'], ['food', 'кормёжек']]
-      .map(([k, cap]) => `<div class="t">${ICONS[k]}<b>${S.totals[k]}</b><span>${cap}</span></div>`).join('');
+      .map(([k, cap]) => `<div class="t">${ICONS[k]}<b>${M[k]}</b><span>${cap}</span></div>`).join('');
+
+    const F = S.family;
+    $('familyLine').innerHTML =
+      `<div><b>${F.streak} ${days(F.streak)}</b><span>идеальных дней подряд</span></div>` +
+      `<div><b>${F.perfect_days}</b><span>${plural(F.perfect_days, 'идеальный день', 'идеальных дня', 'идеальных дней')} всего</span></div>`;
 
     const medals = ['🥇', '🥈', '🥉'];
     const max = Math.max(1, ...S.leaderboard.map((l) => l.count));
@@ -445,14 +454,17 @@
       const r = await api('api/do', { task: id });
       S = r.state;
       render();
-      if (r.ok) {
+      if (!r.ok) {
+        const last = task(id).events.slice(-1)[0];
+        toast(last ? `Уже отмечено: ${last.user}, ${last.time}` : 'Уже отмечено 💕');
+      } else {
         if (S.done >= S.total && wasDone < S.total) {
           setTimeout(() => { pawRain(50); sound.chime(); haptic('success'); toast('Идеальный день! Кики, Лаки и Пуся мурчат 💕'); }, 450);
         } else {
           toast(`${t.title} — готово!`, 'Отменить', () => undo(r.event_id));
         }
       }
-      r.new_achievements.forEach((a, i) => setTimeout(() => showAchievement(a), 900 + i * 50));
+      announce(S, 900);
     } catch (e) {
       toast('Не получилось сохранить 😿 Попробуй ещё раз');
       load();
@@ -529,11 +541,16 @@
     b.hidden = false;
   }
 
+  function announce(state, delay) {
+    (state.new_achievements || []).forEach((a, i) => setTimeout(() => showAchievement(a), delay + i * 50));
+  }
+
   async function load() {
     try {
       S = await api('api/state');
       $('blocker').hidden = true;
       render();
+      announce(S, 300);
     } catch (e) {
       if (e.status === 401) block('Открой котохозяйство из Telegram-бота 🐾');
       else if (e.status === 403) block(e.message || 'Это приложение только для нашей семьи 🐾');
@@ -562,7 +579,7 @@
     }
     await load();
     // подтягиваем то, что отметили другие члены семьи
-    setInterval(() => { if (!document.hidden && !modalOpen) load(); }, 60000);
+    setInterval(() => { if (!document.hidden && !modalOpen) load(); }, 15000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
   }
 

@@ -47,11 +47,10 @@ async def post_do(request: web.Request) -> web.Response:
     if task_id not in TASK_BY_ID:
         raise web.HTTPBadRequest(text="unknown task")
     config = _config(request)
-    event_id, new = await service.do_task(config, task_id, user_id)
+    event_id = await service.do_task(config, task_id, user_id)
     return web.json_response({
         "ok": event_id is not None,
         "event_id": event_id,
-        "new_achievements": new,
         "state": await service.build_state(config, user_id),
     })
 
@@ -60,7 +59,7 @@ async def post_undo(request: web.Request) -> web.Response:
     user_id = await _user(request)
     body = await request.json()
     config = _config(request)
-    ok = await db.delete_event(int(body.get("event_id", 0)), service.today_str(config))
+    ok = await db.delete_event(int(body.get("event_id", 0)), service.today_str(config), user_id)
     return web.json_response({"ok": ok, "state": await service.build_state(config, user_id)})
 
 

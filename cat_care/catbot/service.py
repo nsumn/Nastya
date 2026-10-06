@@ -1,6 +1,11 @@
-"""Общая логика: отметить дело, собрать состояние для приложения."""
+"""Общая логика: отметить дело, собрать состояние для приложения.
+
+Дела общие на всю семью (кто-то поменял лоток — у всех отмечено),
+а статистика, серии и ачивки у каждого свои.
+"""
 from __future__ import annotations
 
+import asyncio
 from collections import Counter
 from datetime import datetime, timedelta
 
@@ -9,9 +14,16 @@ from .config import Config
 from .tasks import (ACH_BY_CODE, ACHIEVEMENTS, TASK_BY_ID, TASKS, TOTAL_PER_DAY,
                     compute_stats, earned_codes, remaining_for_day)
 
+# двое нажали одновременно — засчитываем только одно нажатие
+_do_lock = asyncio.Lock()
+
 
 def now_local(config: Config) -> datetime:
     return datetime.now(config.tz).replace(tzinfo=None, microsecond=0)
+
+
+def today_str(config: Config) -> str:
+    return now_local(config).date().isoformat()
 
 
 def _ach_public(code: str) -> dict:
@@ -19,20 +31,14 @@ def _ach_public(code: str) -> dict:
     return {"code": a.code, "icon": a.icon, "title": a.title, "desc": a.desc}
 
 
-async def do_task(config: Config, task_id: str, user_id: int) -> tuple[int | None, list[dict]]:
-    """Отмечает дело. Возвращает (id события или None, новые ачивки)."""
-    now = now_local(config)
-    day = now.date().isoformat()
-    if task_id not in remaining_for_day(await db.events_for_day(day)):
-        return None, []  # уже всё сделано
-    event_id = await db.add_event(task_id, day, now.isoformat(), user_id)
-
-    stats = compute_stats(await db.all_events(), now.date())
-    new = sorted(earned_codes(stats) - set(await db.unlocked()),
-                 key=lambda c: [a.code for a in ACHIEVEMENTS].index(c))
-    if new:
-        await db.unlock(new, now.isoformat(), user_id)
-    return event_id, [_ach_public(c) for c in new]
+async def do_task(config: Config, task_id: str, user_id: int) -> int | None:
+    """Отмечает дело. Возвращает id события или None, если его уже сделали."""
+    async with _do_lock:
+        now = now_local(config)
+        day = now.date().isoformat()
+        if task_id not in remaining_for_day(await db.events_for_day(day)):
+            return None
+        return await db.add_event(task_id, day, now.isoformat(), user_id)
 
 
 async def build_state(config: Config, user_id: int) -> dict:
@@ -53,8 +59,15 @@ async def build_state(config: Config, user_id: int) -> dict:
         })
     done_today = sum(min(t["done"], t["need"]) for t in tasks)
 
-    stats = compute_stats(events, today)
-    unlocked = await db.unlocked()
+    # личные ачивки. Новые могут появиться и от чужого действия
+    # (например «Команда мечты»), поэтому проверяем при каждой загрузке.
+    stats = compute_stats(events, today, user_id)
+    unlocked = await db.unlocked(user_id)
+    order = [a.code for a in ACHIEVEMENTS]
+    new = sorted(earned_codes(stats) - set(unlocked), key=order.index)
+    if new:
+        await db.unlock(user_id, new, now.isoformat())
+        unlocked.update({c: now.isoformat() for c in new})
     achievements = [{
         **_ach_public(a.code),
         "unlocked": a.code in unlocked,
@@ -63,15 +76,13 @@ async def build_state(config: Config, user_id: int) -> dict:
         "target": a.target,
     } for a in ACHIEVEMENTS]
 
-    # последние 14 дней: сколько дел закрыто
-    per_day = Counter()
-    for e in events:
-        per_day[e.day] += 1
+    # мои последние 14 дней: сколько дел сделал(а) я
+    mine_per_day = Counter(e.day for e in events if e.user_id == user_id)
     history = []
     for i in range(13, -1, -1):
         d = (today - timedelta(days=i)).isoformat()
-        history.append({"day": d, "done": min(per_day[d], TOTAL_PER_DAY),
-                        "perfect": d in stats.perfect_days})
+        history.append({"day": d, "mine": mine_per_day[d],
+                        "family_perfect": d in stats.family_perfect_days})
 
     week_ago = (today - timedelta(days=6)).isoformat()
     by_user = Counter(e.user_id for e in events if e.day >= week_ago)
@@ -84,14 +95,22 @@ async def build_state(config: Config, user_id: int) -> dict:
         "tasks": tasks,
         "done": done_today,
         "total": TOTAL_PER_DAY,
-        "streak": stats.current_streak,
-        "best_streak": stats.best_streak,
-        "perfect_days": len(stats.perfect_days),
-        "totals": {"all": stats.total, **{g: stats.by_group[g] for g in ("litter", "water", "food")}},
+        "me": names.get(user_id, ""),
+        "my": {
+            "streak": stats.current_streak,
+            "best_streak": stats.best_streak,
+            "care_days": len(stats.care_days),
+            "total": stats.total,
+            **{g: stats.by_group[g] for g in ("litter", "water", "food")},
+        },
+        "family": {
+            "streak": stats.family_streak,
+            "perfect_days": len(stats.family_perfect_days),
+        },
         "achievements": achievements,
+        "new_achievements": [_ach_public(c) for c in new],
         "history": history,
         "leaderboard": leaderboard,
-        "me": names.get(user_id, ""),
     }
 
 
@@ -102,8 +121,3 @@ def undone_text(remaining: dict[str, int]) -> str:
         suffix = f" (ещё {left} из {t.need})" if t.need > 1 else ""
         lines.append(f"• {t.title}{suffix}")
     return "\n".join(lines)
-
-
-def today_str(config: Config) -> str:
-    return now_local(config).date().isoformat()
-

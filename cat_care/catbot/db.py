@@ -23,10 +23,11 @@ CREATE TABLE IF NOT EXISTS events (
     user_id INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS events_day ON events(day);
-CREATE TABLE IF NOT EXISTS achievements (
-    code        TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS user_achievements (
+    user_id     INTEGER NOT NULL,
+    code        TEXT NOT NULL,
     unlocked_at TEXT NOT NULL,
-    user_id     INTEGER
+    PRIMARY KEY (user_id, code)
 );
 CREATE TABLE IF NOT EXISTS reminders_sent (
     day  TEXT NOT NULL,
@@ -104,11 +105,12 @@ async def add_event(task: str, day: str, ts: str, user_id: int) -> int:
         return cur.lastrowid
 
 
-async def delete_event(event_id: int, day: str) -> bool:
-    """Отмена — только для сегодняшних дел."""
+async def delete_event(event_id: int, day: str, user_id: int) -> bool:
+    """Отмена — только своих и только сегодняшних дел."""
     async with _connect() as conn:
         cur = await conn.execute(
-            "DELETE FROM events WHERE id = ? AND day = ?", (event_id, day))
+            "DELETE FROM events WHERE id = ? AND day = ? AND user_id = ?",
+            (event_id, day, user_id))
         await conn.commit()
         return cur.rowcount > 0
 
@@ -129,17 +131,18 @@ async def all_events() -> list[Event]:
 
 # ---------- ачивки ----------
 
-async def unlocked() -> dict[str, str]:
+async def unlocked(user_id: int) -> dict[str, str]:
     async with _connect() as conn:
-        rows = await conn.execute_fetchall("SELECT code, unlocked_at FROM achievements")
+        rows = await conn.execute_fetchall(
+            "SELECT code, unlocked_at FROM user_achievements WHERE user_id = ?", (user_id,))
     return {r[0]: r[1] for r in rows}
 
 
-async def unlock(codes: list[str], ts: str, user_id: int) -> None:
+async def unlock(user_id: int, codes: list[str], ts: str) -> None:
     async with _connect() as conn:
         await conn.executemany(
-            "INSERT OR IGNORE INTO achievements (code, unlocked_at, user_id) VALUES (?, ?, ?)",
-            [(c, ts, user_id) for c in codes])
+            "INSERT OR IGNORE INTO user_achievements (user_id, code, unlocked_at) VALUES (?, ?, ?)",
+            [(user_id, c, ts) for c in codes])
         await conn.commit()
 
 
