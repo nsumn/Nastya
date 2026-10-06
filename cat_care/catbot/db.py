@@ -28,6 +28,10 @@ CREATE TABLE IF NOT EXISTS user_achievements (
     unlocked_at TEXT NOT NULL,
     PRIMARY KEY (user_id, code)
 );
+CREATE TABLE IF NOT EXISTS app_state (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS reminder_settings (
     user_id INTEGER NOT NULL,
     slot    TEXT NOT NULL,      -- morning / day / evening
@@ -130,6 +134,25 @@ async def unlock(user_id: int, codes: list[str], ts: str) -> None:
         await conn.executemany(
             "INSERT OR IGNORE INTO user_achievements (user_id, code, unlocked_at) VALUES (?, ?, ?)",
             [(user_id, c, ts) for c in codes])
+        await conn.commit()
+
+
+# ---------- общие настройки ----------
+
+async def get_state(key: str) -> str | None:
+    async with _connect() as conn:
+        rows = await conn.execute_fetchall("SELECT value FROM app_state WHERE key = ?", (key,))
+    return rows[0][0] if rows else None
+
+
+async def set_state(key: str, value: str | None) -> None:
+    async with _connect() as conn:
+        if value is None:
+            await conn.execute("DELETE FROM app_state WHERE key = ?", (key,))
+        else:
+            await conn.execute(
+                "INSERT INTO app_state (key, value) VALUES (?, ?)"
+                " ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, value))
         await conn.commit()
 
 

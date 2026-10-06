@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import asyncio
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from . import db
 from .config import Config
-from .tasks import (ACH_BY_CODE, ACHIEVEMENTS, TASK_BY_ID, TASKS, TOTAL_PER_DAY,
-                    compute_stats, earned_codes, remaining_for_day)
+from .tasks import (ACH_BY_CODE, ACHIEVEMENTS, DAY_START_HOUR, TASK_BY_ID, TASKS,
+                    TOTAL_PER_DAY, compute_stats, earned_codes, remaining_for_day)
+
+EARLY_DAY_KEY = "early_day"  # календарная дата, для которой новый день начали до 5 утра
 
 # двое нажали одновременно — засчитываем только одно нажатие
 _do_lock = asyncio.Lock()
@@ -22,8 +24,39 @@ def now_local(config: Config) -> datetime:
     return datetime.now(config.tz).replace(tzinfo=None, microsecond=0)
 
 
-def today_str(config: Config) -> str:
-    return now_local(config).date().isoformat()
+async def current_day(config: Config) -> date:
+    """«Сегодня» для котиков: день начинается в 5:00, а не в полночь.
+    С 0:00 до 5:00 это ещё вчера — если только кто-то не нажал «Начать новый день»."""
+    now = now_local(config)
+    if now.hour >= DAY_START_HOUR:
+        return now.date()
+    if await db.get_state(EARLY_DAY_KEY) == now.date().isoformat():
+        return now.date()
+    return now.date() - timedelta(days=1)
+
+
+async def today_str(config: Config) -> str:
+    return (await current_day(config)).isoformat()
+
+
+async def start_new_day(config: Config) -> bool:
+    """Кнопка «Начать новый день» (только с 0:00 до 5:00)."""
+    now = now_local(config)
+    if now.hour >= DAY_START_HOUR:
+        return False
+    await db.set_state(EARLY_DAY_KEY, now.date().isoformat())
+    return True
+
+
+async def undo_new_day(config: Config) -> bool:
+    """Вернуться во вчерашний день — пока в новом дне ничего не отмечено."""
+    now = now_local(config)
+    day = now.date().isoformat()
+    if (now.hour >= DAY_START_HOUR or await db.get_state(EARLY_DAY_KEY) != day
+            or await db.events_for_day(day)):
+        return False
+    await db.set_state(EARLY_DAY_KEY, None)
+    return True
 
 
 def _ach_public(code: str) -> dict:
@@ -35,7 +68,7 @@ async def do_task(config: Config, task_id: str, user_id: int) -> int | None:
     """Отмечает дело. Возвращает id события или None, если его уже сделали."""
     async with _do_lock:
         now = now_local(config)
-        day = now.date().isoformat()
+        day = await today_str(config)
         if task_id not in remaining_for_day(await db.events_for_day(day)):
             return None
         return await db.add_event(task_id, day, now.isoformat(), user_id)
@@ -43,7 +76,7 @@ async def do_task(config: Config, task_id: str, user_id: int) -> int | None:
 
 async def build_state(config: Config, user_id: int) -> dict:
     now = now_local(config)
-    today = now.date()
+    today = await current_day(config)
     names = await db.user_names()
     events = await db.all_events()
     today_events = [e for e in events if e.day == today.isoformat()]
@@ -89,9 +122,16 @@ async def build_state(config: Config, user_id: int) -> dict:
     leaderboard = [{"name": names.get(uid, "?"), "count": c, "me": uid == user_id}
                    for uid, c in by_user.most_common()]
 
+    night = now.hour < DAY_START_HOUR
+    early = night and today == now.date()
     return {
         "date": today.isoformat(),
         "now": now.strftime("%H:%M"),
+        # с 0:00 до 5:00: можно начать новый день (или вернуться, если начали случайно)
+        "night": {
+            "can_start": night and not early,
+            "can_undo": early and not today_events,
+        },
         "tasks": tasks,
         "done": done_today,
         "total": TOTAL_PER_DAY,

@@ -62,7 +62,7 @@ def compose(slot_id: str, remaining: dict[str, int], config: Config) -> tuple[st
 
 async def check_once(bot: Bot, config: Config) -> None:
     now = service.now_local(config)
-    day = now.date().isoformat()
+    day = await service.today_str(config)  # день начинается в 5 утра
     minutes = now.hour * 60 + now.minute
     remaining = None
     for user_id in await db.started_users():

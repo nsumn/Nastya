@@ -59,7 +59,18 @@ async def post_undo(request: web.Request) -> web.Response:
     user_id = await _user(request)
     body = await request.json()
     config = _config(request)
-    ok = await db.delete_event(int(body.get("event_id", 0)), service.today_str(config), user_id)
+    ok = await db.delete_event(int(body.get("event_id", 0)), await service.today_str(config), user_id)
+    return web.json_response({"ok": ok, "state": await service.build_state(config, user_id)})
+
+
+async def post_new_day(request: web.Request) -> web.Response:
+    user_id = await _user(request)
+    body = await request.json()
+    config = _config(request)
+    if body.get("action") == "undo":
+        ok = await service.undo_new_day(config)
+    else:
+        ok = await service.start_new_day(config)
     return web.json_response({"ok": ok, "state": await service.build_state(config, user_id)})
 
 
@@ -74,5 +85,6 @@ def build_app(config: Config) -> web.Application:
     app.router.add_get("/api/state", get_state)
     app.router.add_post("/api/do", post_do)
     app.router.add_post("/api/undo", post_undo)
+    app.router.add_post("/api/new_day", post_new_day)
     app.router.add_static("/static/", WEBAPP_DIR)
     return app

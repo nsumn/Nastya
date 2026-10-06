@@ -8,6 +8,10 @@ from typing import Callable
 
 CATS = ["Кики", "Лаки", "Пуся"]
 
+# Мы ложимся поздно: «день» длится с 5:00 до 5:00 следующего дня.
+# До 5 утра можно начать новый день раньше кнопкой в приложении.
+DAY_START_HOUR = 5
+
 
 @dataclass(frozen=True)
 class Task:
@@ -94,9 +98,9 @@ def compute_stats(events: list[Event], today: date, user_id: int) -> Stats:
         s.total += 1
         s.by_group[TASK_BY_ID[e.task].group] += 1
         s.care_days.add(e.day)
-        if e.task == "litter" and e.hour < 8:
+        if e.task == "litter" and DAY_START_HOUR <= e.hour < 8:
             s.early_litter = True
-        if e.hour >= 23:
+        if e.hour >= 23 or e.hour < DAY_START_HOUR:
             s.night_owl = True
 
     for day, evs in per_day.items():
@@ -115,7 +119,7 @@ def compute_stats(events: list[Event], today: date, user_id: int) -> Stats:
         for e in evs:
             by_task[e.task].append(e.ts)
         finished = max(sorted(by_task[t.id])[t.need - 1] for t in TASKS)
-        if int(finished[11:13]) < 12:
+        if finished < f"{day}T12:00":  # дела после полуночи сюда не попадут
             s.lightning = True
 
     s.best_streak, s.current_streak = _streaks(s.care_days, today)

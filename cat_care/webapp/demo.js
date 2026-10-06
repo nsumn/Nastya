@@ -32,6 +32,7 @@
     ['pops_1000', '🎉', 'Тысяча попов', 'Сделать 1000 дел', (s) => s.total, 1000],
   ];
   const ME = 1;
+  const DAY_START_HOUR = 5; // день начинается в 5 утра, как на сервере
   const KEY = 'cat-care-demo-v2';
   const pad = (n) => String(n).padStart(2, '0');
   const dayStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -90,8 +91,8 @@
       s.g[TASKS.find((t) => t.id === e.task).group]++;
       s.care.add(e.day);
       const h = +e.ts.slice(11, 13);
-      if (e.task === 'litter' && h < 8) s.early = true;
-      if (h >= 23) s.night = true;
+      if (e.task === 'litter' && h >= DAY_START_HOUR && h < 8) s.early = true;
+      if (h >= 23 || h < DAY_START_HOUR) s.night = true;
     });
     Object.entries(per).forEach(([day, evs]) => {
       const mine = evs.filter((e) => e.user === ME);
@@ -101,15 +102,27 @@
       if (!mine.length) return;
       if (new Set(evs.map((e) => e.user)).size >= 2) s.team = true;
       const fin = TASKS.map((t) => evs.filter((e) => e.task === t.id).map((e) => e.ts).sort()[t.need - 1]).sort().pop();
-      if (+fin.slice(11, 13) < 12) s.lightning = true;
+      if (fin < `${day}T12:00`) s.lightning = true;
     });
     [s.best, s.cur] = streaks(s.care, today);
     s.famStreak = streaks(s.famPerfect, today)[1];
     return s;
   }
 
+  // часы для демо (window.CAT_DEMO_HOUR — чтобы проверить ночь)
+  function clock() {
+    const d = new Date();
+    if (window.CAT_DEMO_HOUR != null) d.setHours(window.CAT_DEMO_HOUR, 30, 0, 0);
+    return d;
+  }
+  function logicalDay(now) {
+    if (now.getHours() >= DAY_START_HOUR || db.early === dayStr(now)) return dayStr(now);
+    return dayStr(shift(now, -1));
+  }
+
   function state() {
-    const now = new Date(), today = dayStr(now);
+    const real = clock(), today = logicalDay(real);
+    const now = new Date(today + 'T12:00');
     const todayEv = db.events.filter((e) => e.day === today);
     const tasks = TASKS.map((t) => {
       const evs = todayEv.filter((e) => e.task === t.id);
@@ -126,8 +139,12 @@
     }
     const weekAgo = dayStr(shift(now, -6));
     const week = db.events.filter((e) => e.day >= weekAgo).length;
+    const night = real.getHours() < DAY_START_HOUR;
+    const early = night && today === dayStr(real);
     return {
       date: today, tasks, total: TOTAL, me: 'Я',
+      now: `${pad(real.getHours())}:${pad(real.getMinutes())}`,
+      night: { can_start: night && !early, can_undo: early && !todayEv.length },
       done: tasks.reduce((n, t) => n + Math.min(t.done, t.need), 0),
       my: { streak: s.cur, best_streak: s.best, care_days: s.care.size, total: s.total, ...s.g },
       family: { streak: s.famStreak, perfect_days: s.famPerfect.size },
@@ -144,20 +161,35 @@
   window.CatDemoAPI = async (path, body) => {
     if (path === 'api/state') return state();
     if (path === 'api/do') {
-      const now = new Date(), t = TASKS.find((x) => x.id === body.task);
-      const done = db.events.filter((e) => e.day === dayStr(now) && e.task === t.id).length;
+      const now = clock(), day = logicalDay(now), t = TASKS.find((x) => x.id === body.task);
+      const done = db.events.filter((e) => e.day === day && e.task === t.id).length;
       if (done >= t.need) return { ok: false, state: state() };
       const id = db.nextId++;
-      db.events.push({ id, task: t.id, day: dayStr(now), ts: tsStr(now), user: ME });
+      db.events.push({ id, task: t.id, day, ts: tsStr(now), user: ME });
       save();
       return { ok: true, event_id: id, state: state() };
     }
     if (path === 'api/undo') {
-      const today = dayStr(new Date());
+      const today = logicalDay(clock());
       const i = db.events.findIndex((e) => e.id === body.event_id && e.day === today);
       if (i >= 0) db.events.splice(i, 1);
       save();
       return { ok: i >= 0, state: state() };
+    }
+    if (path === 'api/new_day') {
+      const now = clock(), cal = dayStr(now);
+      let ok = false;
+      if (now.getHours() < DAY_START_HOUR) {
+        if (body.action === 'undo') {
+          ok = db.early === cal && !db.events.some((e) => e.day === cal);
+          if (ok) delete db.early;
+        } else {
+          ok = db.early !== cal;
+          db.early = cal;
+        }
+        save();
+      }
+      return { ok, state: state() };
     }
     throw new Error('unknown');
   };

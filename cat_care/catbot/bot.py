@@ -75,7 +75,7 @@ async def today(message: Message, config: Config, state: FSMContext) -> None:
     await state.clear()
     if not _allowed(config, message.from_user.id):
         return
-    remaining = remaining_for_day(await db.events_for_day(service.today_str(config)))
+    remaining = remaining_for_day(await db.events_for_day(await service.today_str(config)))
     if remaining:
         text = "Сегодня ещё осталось:\n" + service.undone_text(remaining)
     else:
@@ -112,7 +112,7 @@ async def _mark_past_as_sent(config: Config, user_id: int, slot_id: str, time: s
     """Если время сегодня уже прошло — первое напоминание будет завтра, а не прямо сейчас."""
     now = service.now_local(config)
     if time <= now.strftime("%H:%M"):
-        await db.mark_user_reminder(now.date().isoformat(), user_id, slot_id)
+        await db.mark_user_reminder(await service.today_str(config), user_id, slot_id)
 
 
 @router.message(Command("reminders", "settings"))

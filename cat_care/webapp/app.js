@@ -272,8 +272,8 @@
 
   const modalQueue = [];
   let modalOpen = false;
-  function showModal(html, onShow) {
-    modalQueue.push({ html, onShow });
+  function showModal(html, onShow, buttons) {
+    modalQueue.push({ html, onShow, buttons });
     if (!modalOpen) nextModal();
   }
   function nextModal() {
@@ -281,9 +281,18 @@
     const item = modalQueue.shift();
     if (!item) { modalOpen = false; m.hidden = true; return; }
     modalOpen = true;
-    m.innerHTML = `<div class="modal-card">${item.html}<button class="btn" type="button">Мур!</button></div>`;
+    const buttons = item.buttons || [{ text: 'Мур!' }];
+    m.innerHTML = `<div class="modal-card">${item.html}<div class="modal-btns">${buttons.map((b, i) =>
+      `<button class="btn ${b.secondary ? 'btn-secondary' : ''}" data-i="${i}" type="button">${b.text}</button>`).join('')}</div></div>`;
     m.hidden = false;
-    m.querySelector('.btn').onclick = () => { sound.pop(); nextModal(); };
+    m.querySelectorAll('.modal-btns .btn').forEach((el) => {
+      el.onclick = () => {
+        const b = buttons[Number(el.dataset.i)];
+        sound.pop();
+        nextModal();
+        if (b.onClick) b.onClick();
+      };
+    });
     if (item.onShow) item.onShow();
   }
   function showAchievement(a) {
@@ -330,6 +339,55 @@
     return S.done === 0 ? 'sad' : 'ok';
   }
 
+  // с 0:00 до 5:00 день ещё «вчерашний» — можно начать новый день раньше
+  function renderNight(d) {
+    const box = $('newDay');
+    const n = S.night || {};
+    let html = '';
+    if (n.can_start) {
+      html = `<button class="newday-btn" data-newday="start" type="button">🌅 Начать новый день</button>
+        <div class="newday-note">Сейчас ${S.now}, ещё идёт ${d.getDate()} ${MONTHS[d.getMonth()]}. Новый день начнётся сам в 5:00</div>`;
+    } else if (n.can_undo) {
+      html = `<div class="newday-note">Новый день начат 🌅 <button class="undo-link inline" data-newday="undo" type="button">↩ вернуться во вчера</button></div>`;
+    }
+    if (box.dataset.html !== html) {  // не перерисовываем зря, чтобы не сбить нажатие
+      box.dataset.html = html;
+      box.innerHTML = html;
+    }
+    box.hidden = !html;
+  }
+
+  function askNewDay() {
+    const left = S.total - S.done;
+    const d = parseDay(S.date);
+    const tail = left
+      ? `За ${d.getDate()} ${MONTHS[d.getMonth()]} так и останется не сделано ${left} ${plural(left, 'дело', 'дела', 'дел')}.`
+      : `${d.getDate()} ${MONTHS[d.getMonth()]} закрыт полностью ✨`;
+    showModal(
+      `<div class="badge"><span>🌅</span></div><div class="kicker">Ночь на дворе</div>
+       <h3>Начать новый день?</h3><p>${tail} Новый день начнётся у всей семьи.</p>`,
+      () => haptic('warning'),
+      [{ text: 'Да, начать 🌅', onClick: () => newDay('start') }, { text: 'Пока нет', secondary: true }]);
+  }
+
+  async function newDay(action) {
+    try {
+      const r = await api('api/new_day', { action });
+      S = r.state;
+      render();
+      if (!r.ok) {
+        toast(action === 'undo' ? 'В новом дне уже есть отметки — вернуться нельзя' : 'Новый день уже начался 🌅');
+      } else if (action === 'start') {
+        sound.chime(); haptic('success'); pawRain(30);
+        toast('Новый день начался! Котики ждут 🐾');
+      } else {
+        toast('Вернулись во вчерашний день ↩');
+      }
+    } catch (e) {
+      toast('Не получилось 😿 Попробуй ещё раз');
+    }
+  }
+
   function renderHeader() {
     const d = parseDay(S.date);
     $('date').textContent = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}`;
@@ -337,6 +395,8 @@
     const st = S.my.streak;
     chip.hidden = st < 1;
     chip.textContent = `🔥 ${st} ${plural(st, 'день', 'дня', 'дней')} подряд`;
+
+    renderNight(d);
 
     const m = mood();
     const cats = $('cats');
@@ -545,6 +605,12 @@
     if (!S) return;
     const b = ev.target.closest('[data-task]');
     if (b) { doTask(b.dataset.task, b); return; }
+    const nd = ev.target.closest('[data-newday]');
+    if (nd) {
+      haptic('light');
+      if (nd.dataset.newday === 'start') askNewDay(); else newDay('undo');
+      return;
+    }
     const u = ev.target.closest('[data-undo]');
     if (u) { haptic('light'); undo(Number(u.dataset.undo)); return; }
     const cat = ev.target.closest('[data-cat]');
