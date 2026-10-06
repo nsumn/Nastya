@@ -160,6 +160,8 @@ html, body {
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .hero p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+/* заголовок без текста под ним — отступ ни к чему */
+.hero h1:last-child { margin-bottom: 0; }
 
 /* ---------- статистика ---------- */
 
@@ -435,16 +437,6 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
          padding: 26px 10px; line-height: 1.5; }
 
 /* ---------- вывод средств ---------- */
-
-.payout-head { text-align: center; margin-bottom: 18px; }
-.payout-head__icon {
-  width: 62px; height: 62px; margin: 0 auto 14px; border-radius: 20px;
-  background: var(--brand-soft); color: var(--brand);
-  display: grid; place-items: center; font-size: 28px; font-weight: 800;
-}
-.payout-head h2 { margin: 0 0 6px; font-size: 30px; font-weight: 800;
-                  letter-spacing: -.8px; }
-.payout-head p { margin: 0; color: var(--muted); font-size: 14px; }
 
 .amount-card {
   background: var(--card); border: 1px solid var(--line);

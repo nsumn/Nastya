@@ -264,10 +264,7 @@ function viewTasks() {
   return `
     ${topbar()}
     <section class="hero">
-      <h1>Выполняй задания.<br><span class="accent">Получай деньги.</span></h1>
-      <p>Компаниям всегда нужны живые люди: написать отзыв, посмотреть
-         ролик, пройти опрос. За такие задачи они платят — здесь они
-         и собраны.</p>
+      <h1>Выполняй задания.<br><span class="accent">Получай бонусы.</span></h1>
     </section>
 
     <section class="stats stats--pair">
@@ -879,12 +876,6 @@ function viewPayout() {
 
   return `
     ${topbar({ back: true })}
-
-    <section class="payout-head">
-      <div class="payout-head__icon">₽</div>
-      <h2>Вывод средств</h2>
-      <p>Выберите способ получения</p>
-    </section>
 
     <div class="amount-card">
       <div class="amount-card__label">Доступно к выводу</div>
