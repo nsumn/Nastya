@@ -430,7 +430,8 @@
   const undoBtn = (e) => (e && e.mine && e.id
     ? `<button class="undo-link" data-undo="${e.id}" type="button">↩ отменить</button>` : '');
   // сверх нормы: «＋ Ещё раз» и список дополнительных отметок
-  const againBtn = (t) => `<button class="again-btn" data-again="${t.id}" type="button">＋ Ещё раз</button>`;
+  const againBtn = (t) => `<button class="again-btn" data-again="${t.id}" type="button" aria-label="Ещё раз">
+    <span class="bubble bubble-sm">＋</span><span class="again-lbl">ещё раз</span></button>`;
   const extras = (t) => t.events.slice(t.need).map((e) =>
     `<span class="extra-chip">＋ ${who(e)}${e.mine && e.id ? `<button class="undo-x" data-undo="${e.id}" type="button" aria-label="Отменить">↩</button>` : ''}</span>`).join('');
 
@@ -626,7 +627,7 @@
     const b = ev.target.closest('[data-task]');
     if (b) { doTask(b.dataset.task, b); return; }
     const again = ev.target.closest('[data-again]');
-    if (again) { doTask(again.dataset.again, document.querySelector(`[data-task="${again.dataset.again}"]`), true); return; }
+    if (again) { doTask(again.dataset.again, again.querySelector('.bubble'), true); return; }
     const nav = ev.target.closest('[data-nav]');
     if (nav) { if (!nav.disabled) goDay(nav.dataset.nav); return; }
     const nd = ev.target.closest('[data-newday]');

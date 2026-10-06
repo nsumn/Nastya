@@ -127,12 +127,23 @@ svg { display: block; }
   background: var(--bg-deep); border-radius: 999px; padding: 2px 8px;
 }
 .undo-x { color: var(--pink-dark); font-weight: 900; font-size: 12px; padding: 0 2px; }
+/* «＋ Ещё раз» — маленький пузырь поп-ита */
 .again-btn {
-  display: block; margin: 6px auto 0; padding: 4px 12px; border-radius: 999px;
-  border: 2px dashed var(--pink); color: var(--pink-dark); font-size: 12px; font-weight: 900;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin: 10px auto 0; padding: 0; background: none;
 }
-.food-status .again-btn { margin: 6px 0 0; }
-.again-btn:active { transform: scale(.95); background: var(--pink-pale); }
+.bubble-sm {
+  width: 46px; height: 46px; font-size: 24px; font-weight: 900; line-height: 1;
+  color: #7A3550; text-shadow: 0 1px 0 rgba(255, 255, 255, .6);
+  box-shadow: 0 5px 0 #D27392, 0 9px 14px -6px rgba(201, 97, 127, .55),
+    inset 0 -5px 9px rgba(160, 60, 95, .18), inset 0 5px 8px rgba(255, 255, 255, .65);
+}
+.again-btn:active .bubble-sm {
+  transform: translateY(4px) scale(.95);
+  box-shadow: 0 1px 0 #D27392, inset 0 6px 10px rgba(170, 70, 100, .35);
+}
+.again-lbl { font-size: 11px; font-weight: 900; color: var(--pink-dark); }
+.food-status .again-btn { margin: 10px 0 0; width: fit-content; }
 .progress { margin: 14px 0 6px; }
 .paw-progress { display: flex; justify-content: center; gap: 8px; }
 .paw-progress .p { width: 30px; height: 30px; transition: transform .3s; }
