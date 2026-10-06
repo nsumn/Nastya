@@ -43,7 +43,7 @@ async def main() -> None:
     await bot.set_my_commands([
         BotCommand(command="start", description="Открыть котохозяйство"),
         BotCommand(command="today", description="Что осталось сегодня"),
-        BotCommand(command="reminders", description="Вкл/выкл напоминания"),
+        BotCommand(command="reminders", description="Настроить напоминания"),
     ])
     if config.webapp_url.startswith("https://"):
         await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(

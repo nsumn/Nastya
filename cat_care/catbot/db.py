@@ -1,4 +1,4 @@
-"""SQLite: пользователи, выполненные дела, ачивки, отправленные напоминания."""
+"""SQLite: пользователи, выполненные дела, ачивки, настройки напоминаний."""
 from __future__ import annotations
 
 import aiosqlite
@@ -12,8 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     user_id    INTEGER PRIMARY KEY,
     name       TEXT NOT NULL,
     username   TEXT,
-    started    INTEGER NOT NULL DEFAULT 0,  -- нажимал /start, можно писать
-    notify     INTEGER NOT NULL DEFAULT 1
+    started    INTEGER NOT NULL DEFAULT 0   -- нажимал /start, можно писать
 );
 CREATE TABLE IF NOT EXISTS events (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,10 +28,18 @@ CREATE TABLE IF NOT EXISTS user_achievements (
     unlocked_at TEXT NOT NULL,
     PRIMARY KEY (user_id, code)
 );
-CREATE TABLE IF NOT EXISTS reminders_sent (
-    day  TEXT NOT NULL,
-    slot TEXT NOT NULL,
-    PRIMARY KEY (day, slot)
+CREATE TABLE IF NOT EXISTS reminder_settings (
+    user_id INTEGER NOT NULL,
+    slot    TEXT NOT NULL,      -- morning / day / evening
+    enabled INTEGER NOT NULL,
+    time    TEXT NOT NULL,      -- HH:MM
+    PRIMARY KEY (user_id, slot)
+);
+CREATE TABLE IF NOT EXISTS user_reminders_sent (
+    day     TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    slot    TEXT NOT NULL,
+    PRIMARY KEY (day, user_id, slot)
 );
 """
 
@@ -68,26 +75,6 @@ async def user_names() -> dict[int, str]:
     async with _connect() as conn:
         rows = await conn.execute_fetchall("SELECT user_id, name FROM users")
     return {r[0]: r[1] for r in rows}
-
-
-async def set_notify(user_id: int, on: bool) -> None:
-    async with _connect() as conn:
-        await conn.execute("UPDATE users SET notify = ? WHERE user_id = ?", (int(on), user_id))
-        await conn.commit()
-
-
-async def get_notify(user_id: int) -> bool:
-    async with _connect() as conn:
-        rows = await conn.execute_fetchall(
-            "SELECT notify FROM users WHERE user_id = ?", (user_id,))
-    return bool(rows and rows[0][0])
-
-
-async def notify_targets() -> list[int]:
-    async with _connect() as conn:
-        rows = await conn.execute_fetchall(
-            "SELECT user_id FROM users WHERE started = 1 AND notify = 1")
-    return [r[0] for r in rows]
 
 
 # ---------- дела ----------
@@ -148,10 +135,36 @@ async def unlock(user_id: int, codes: list[str], ts: str) -> None:
 
 # ---------- напоминания ----------
 
-async def mark_reminder(day: str, slot: str) -> bool:
-    """True, если это напоминание ещё не отправлялось (и теперь помечено)."""
+async def started_users() -> list[int]:
+    """Кто нажимал /start — им бот может писать."""
+    async with _connect() as conn:
+        rows = await conn.execute_fetchall("SELECT user_id FROM users WHERE started = 1")
+    return [r[0] for r in rows]
+
+
+async def reminder_settings(user_id: int) -> dict[str, tuple[bool, str]]:
+    """Сохранённые настройки: slot -> (включено, время). Без значений по умолчанию."""
+    async with _connect() as conn:
+        rows = await conn.execute_fetchall(
+            "SELECT slot, enabled, time FROM reminder_settings WHERE user_id = ?", (user_id,))
+    return {r[0]: (bool(r[1]), r[2]) for r in rows}
+
+
+async def save_reminder(user_id: int, slot: str, enabled: bool, time: str) -> None:
+    async with _connect() as conn:
+        await conn.execute(
+            """INSERT INTO reminder_settings (user_id, slot, enabled, time) VALUES (?, ?, ?, ?)
+               ON CONFLICT(user_id, slot) DO UPDATE SET
+                 enabled = excluded.enabled, time = excluded.time""",
+            (user_id, slot, int(enabled), time))
+        await conn.commit()
+
+
+async def mark_user_reminder(day: str, user_id: int, slot: str) -> bool:
+    """True, если это напоминание этому человеку сегодня ещё не отправлялось."""
     async with _connect() as conn:
         cur = await conn.execute(
-            "INSERT OR IGNORE INTO reminders_sent (day, slot) VALUES (?, ?)", (day, slot))
+            "INSERT OR IGNORE INTO user_reminders_sent (day, user_id, slot) VALUES (?, ?, ?)",
+            (day, user_id, slot))
         await conn.commit()
         return cur.rowcount > 0
