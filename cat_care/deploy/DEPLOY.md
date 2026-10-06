@@ -131,6 +131,13 @@ cd /opt/cat-care && git pull && systemctl restart cat-care
 Проверить, что HTTPS работает: открой `https://203-0-113-5.sslip.io/?demo=1` в
 браузере. Должно открыться приложение в демо-режиме.
 
+**Если на сервере уже есть nginx** (другие сайты на портах 80/443), Caddy
+не запустится. `install.sh` замечает это сам и настраивает HTTPS через nginx.
+Если установка уже прошла через Caddy, выполни:
+```bash
+cd /opt/cat-care && git pull && bash cat_care/deploy/nginx_https.sh
+```
+
 **Если приложение не открывается в Telegram:**
 - `systemctl status caddy`: Caddy должен работать;
 - адрес в `WEBAPP_URL` должен точно совпадать с адресом в Caddyfile и начинаться с `https://`;

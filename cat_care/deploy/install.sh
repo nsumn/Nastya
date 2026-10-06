@@ -63,7 +63,14 @@ echo "=== Устанавливаю программы ==="
 apt-get update -q
 apt-get install -y -q python3 python3-venv python3-pip curl gpg ca-certificates
 
-if ! command -v caddy >/dev/null 2>&1; then
+# На сервере уже есть nginx (другие сайты на 80/443) — работаем через него
+USE_NGINX=""
+if systemctl is-active --quiet nginx 2>/dev/null; then
+  USE_NGINX=1
+  echo "Нашёл nginx — HTTPS настрою через него, другие сайты не трогаю."
+fi
+
+if [ -z "$USE_NGINX" ] && ! command -v caddy >/dev/null 2>&1; then
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
     | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
@@ -96,6 +103,10 @@ DB_PATH=cats.db
 DEV_MODE=0
 EOF
 chmod 600 .env
+
+if [ -n "$USE_NGINX" ]; then
+  exec bash deploy/nginx_https.sh
+fi
 
 echo
 echo "=== HTTPS (Caddy) ==="
