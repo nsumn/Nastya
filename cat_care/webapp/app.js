@@ -248,7 +248,7 @@
     }
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), action ? 6000 : 2600);
+    toastTimer = setTimeout(() => t.classList.remove('show'), action ? 8000 : 2600);
   }
 
   const modalQueue = [];
@@ -335,7 +335,11 @@
       : `Сделано ${S.done} из ${S.total} · осталось ${left} ${plural(left, 'дело', 'дела', 'дел')}`;
   }
 
+  const WATER_PLACES = { water_kitchen: 'Кухня', water_hall: 'Коридор', water_room: 'Комната' };
   const who = (e) => `${esc(e.user)}, ${e.time}`;
+  // своя отметка — сразу с кнопкой отмены (на случай, если тыкнул случайно)
+  const undoBtn = (e) => (e && e.mine && e.id
+    ? `<button class="undo-link" data-undo="${e.id}" type="button">↩ отменить</button>` : '');
 
   function renderToday() {
     const l = task('litter');
@@ -349,7 +353,7 @@
     $('litterMini').innerHTML = Array.from({ length: l.need }, (_, i) => {
       const e = l.events[i];
       return `<div class="mini"><div class="dot ${e ? 'done' : ''}"></div>
-        <div class="lbl"><b>${i + 1}-й раз</b><br>${e ? who(e) : 'ещё нет'}</div></div>`;
+        <div class="lbl"><b>${i + 1}-й раз</b><br>${e ? who(e) : 'ещё нет'}</div>${undoBtn(e)}</div>`;
     }).join('');
 
     const water = S.tasks.filter((t) => t.group === 'water');
@@ -358,13 +362,13 @@
     if (!wr.children.length) {
       wr.innerHTML = water.map((t) =>
         `<div class="bubble-cell"><button class="bubble bubble-md" data-task="${t.id}" type="button">${ICONS.water}</button>
-         <div class="cell-title">${esc(t.title.replace('Водичка ', '').replace(/^(на|в) /, '').replace(/^./, (ch) => ch.toUpperCase()))}</div>
+         <div class="cell-title">${WATER_PLACES[t.id] || esc(t.title)}</div>
          <div class="cell-sub" data-sub="${t.id}"></div></div>`).join('');
     }
     water.forEach((t) => {
       const done = t.done >= t.need;
       wr.querySelector(`[data-task="${t.id}"]`).classList.toggle('done', done);
-      wr.querySelector(`[data-sub="${t.id}"]`).innerHTML = done ? who(t.events[0]) : 'налить';
+      wr.querySelector(`[data-sub="${t.id}"]`).innerHTML = done ? `${who(t.events[0])}${undoBtn(t.events[0])}` : 'налить';
     });
 
     const f = task('food');
@@ -372,7 +376,7 @@
     const fDone = f.done >= f.need;
     fb.classList.toggle('done', fDone);
     fb.innerHTML = fDone ? ICONS.check : ICONS.food;
-    $('foodStatus').innerHTML = fDone ? `Насыпано · ${who(f.events[0])}` : 'Подсыпать корм — нажми на миску';
+    $('foodStatus').innerHTML = fDone ? `Насыпано · ${who(f.events[0])}${undoBtn(f.events[0])}` : 'Подсыпать корм — нажми на миску';
   }
 
   function renderAch() {
@@ -484,7 +488,7 @@
       const r = await api('api/undo', { event_id: eventId });
       S = r.state;
       render();
-      toast(r.ok ? 'Отменено' : 'Отменить можно только сегодняшнее');
+      toast(r.ok ? 'Отменено ↩ Можно отметить заново' : 'Отменить можно только свою отметку за сегодня');
     } catch (e) {
       toast('Не получилось отменить 😿');
     }
@@ -522,6 +526,8 @@
     if (!S) return;
     const b = ev.target.closest('[data-task]');
     if (b) { doTask(b.dataset.task, b); return; }
+    const u = ev.target.closest('[data-undo]');
+    if (u) { haptic('light'); undo(Number(u.dataset.undo)); return; }
     const cat = ev.target.closest('[data-cat]');
     if (cat) { catSays(cat); return; }
     const tab = ev.target.closest('[data-tab]');
