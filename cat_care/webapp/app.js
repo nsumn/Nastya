@@ -7,9 +7,15 @@
 
   // ---------- котики (цвета можно поменять под настоящих) ----------
   const CATS = [
-    { name: 'Кики', fur: '#F4BA8A', dark: '#D98C55', pattern: 'stripes' },
-    { name: 'Лаки', fur: '#C2B7AF', dark: '#8E827B', pattern: 'muzzle' },
-    { name: 'Пуся', fur: '#FFF8F0', dark: '#E5C3A1', pattern: 'patch' },
+    // Кики — бежевая с тёмной «маской» на мордочке и тёмными ушками, голубые глаза
+    { name: 'Кики', fur: '#F0E0C8', ear: '#8A6A55', earIn: '#C9A08E', eye: '#8DB6D9', nose: '#9C7462',
+      pattern: 'point', mask: '#7A5A47' },
+    // Лаки — тёмная трёхцветная (черепаховая), янтарные глаза
+    { name: 'Лаки', fur: '#4A3A31', ear: '#4A3A31', earIn: '#B9837A', eye: '#E0AE45', nose: '#B5786E',
+      line: '#F6E8D8', outline: '#2B1F19', pattern: 'tortie', ginger: '#C9864B', black: '#231915' },
+    // Пуся — белоснежная, голубые глаза
+    { name: 'Пуся', fur: '#FFFDF9', ear: '#FFFDF9', earIn: '#F3AFC0', eye: '#86B3DD', nose: '#E2809D',
+      pattern: 'none' },
   ];
   const PAW_COLORS = ['#F3AFC0', '#E2809D', '#D9A98A', '#EE9DB4', '#E8BE9C', '#C9617F'];
 
@@ -41,41 +47,54 @@
   };
 
   function catSVG(c, mood) {
-    let pattern = '';
-    if (c.pattern === 'stripes') pattern = `<path d="M43 33l2 8M50 31v10M57 33l-2 8" stroke="${c.dark}" stroke-width="3.5" stroke-linecap="round"/>`;
-    if (c.pattern === 'muzzle') pattern = `<ellipse cx="50" cy="70" rx="17" ry="12" fill="#FFF8F0"/><path d="M50 30v9" stroke="${c.dark}" stroke-width="3.5" stroke-linecap="round"/>`;
-    if (c.pattern === 'patch') pattern = `<path d="M58 32c12 0 22 6 24 18-8 6-18 4-22-2-4-5-5-11-2-16z" fill="${c.dark}"/>`;
+    const O = c.outline || INK; // контур
+    const L = c.line || INK; // усы, рот, брови (на тёмной шерсти — светлые)
+    const id = c.name;
+    let defs = '', pattern = '';
+    if (c.pattern === 'point') {
+      defs = `<radialGradient id="m-${id}" cx="50%" cy="55%" r="50%">
+        <stop offset="0" stop-color="${c.mask}" stop-opacity=".95"/><stop offset=".55" stop-color="${c.mask}" stop-opacity=".55"/>
+        <stop offset="1" stop-color="${c.mask}" stop-opacity="0"/></radialGradient>`;
+      pattern = `<ellipse cx="50" cy="65" rx="27" ry="20" fill="url(#m-${id})"/>`;
+    }
+    if (c.pattern === 'tortie') {
+      pattern = `<path d="M14 52c3-15 16-24 32-24-2 9-9 15-16 18-6 2-11 3-16 6z" fill="${c.ginger}"/>
+        <path d="M54 30c12-1 23 6 28 17-9 2-18-1-24-6-3-3-5-7-4-11z" fill="${c.black}"/>
+        <path d="M62 72c7-6 16-7 24-3-1 9-7 15-15 17-6-3-9-8-9-14z" fill="${c.ginger}" opacity=".9"/>
+        <path d="M47 40l3-12 3 12-3 14z" fill="${c.ginger}" opacity=".85"/>`;
+    }
 
+    const iris = (cx, cy, r, pupil) =>
+      `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c.eye}" stroke="${O}" stroke-width="1.6"/>${pupil}`;
     let eyes, mouth, extra = '';
     if (mood === 'happy') {
-      eyes = `<path d="M33 57q6-8 12 0M55 57q6-8 12 0" stroke="${INK}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
-      mouth = `<path d="M44 69q6 8 12 0z" fill="#E2809D" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`;
+      eyes = `<path d="M33 57q6-8 12 0M55 57q6-8 12 0" stroke="${L}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M44 69q6 8 12 0z" fill="#E2809D" stroke="${L}" stroke-width="2.5" stroke-linejoin="round"/>`;
       extra = `<ellipse cx="29" cy="66" rx="6" ry="3.5" fill="#F3AFC0" opacity=".8"/><ellipse cx="71" cy="66" rx="6" ry="3.5" fill="#F3AFC0" opacity=".8"/>` +
         `<path class="heart" d="M84 18c0-4 6-5 7 0 1-5 7-4 7 0 0 5-7 9-7 9s-7-4-7-9z" fill="#E2809D"/>`;
     } else if (mood === 'sad') {
-      eyes = `<circle cx="39" cy="57" r="7" fill="${INK}"/><circle cx="61" cy="57" r="7" fill="${INK}"/>` +
-        `<circle cx="41.5" cy="54" r="2.6" fill="#fff"/><circle cx="63.5" cy="54" r="2.6" fill="#fff"/>` +
-        `<circle cx="37" cy="60" r="1.3" fill="#fff"/><circle cx="59" cy="60" r="1.3" fill="#fff"/>` +
-        `<path d="M30 49l10-4M70 49l-10-4" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`;
-      mouth = `<path d="M45 73q5-4 10 0" stroke="${INK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+      const pupil = (x) => `<circle cx="${x}" cy="57.5" r="4.6" fill="#1F1612"/><circle cx="${x + 2.6}" cy="54.4" r="2.4" fill="#fff"/><circle cx="${x - 2}" cy="60.5" r="1.2" fill="#fff"/>`;
+      eyes = iris(39, 57, 7.4, pupil(39)) + iris(61, 57, 7.4, pupil(61)) +
+        `<path d="M30 48l10-4M70 48l-10-4" stroke="${L}" stroke-width="3" stroke-linecap="round"/>`;
+      mouth = `<path d="M45 73q5-4 10 0" stroke="${L}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
     } else {
-      eyes = `<circle cx="39" cy="57" r="4.8" fill="${INK}"/><circle cx="61" cy="57" r="4.8" fill="${INK}"/>` +
-        `<circle cx="40.6" cy="55.2" r="1.7" fill="#fff"/><circle cx="62.6" cy="55.2" r="1.7" fill="#fff"/>`;
-      mouth = `<path d="M44 69q3 4 6 0q3 4 6 0" stroke="${INK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+      const pupil = (x) => `<ellipse cx="${x}" cy="57" rx="1.9" ry="3.8" fill="#1F1612"/><circle cx="${x + 1.9}" cy="54.8" r="1.5" fill="#fff"/>`;
+      eyes = iris(39, 57, 5.6, pupil(39)) + iris(61, 57, 5.6, pupil(61));
+      mouth = `<path d="M44 69q3 4 6 0q3 4 6 0" stroke="${L}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
     }
     return `<svg viewBox="0 0 100 92">
-      <g stroke="${INK}" stroke-width="3" stroke-linejoin="round">
-        <path d="M19 48L23 13l24 20z" fill="${c.fur}"/><path d="M81 48L77 13 53 33z" fill="${c.fur}"/>
-        <path d="M25 40l2-18 13 11z" fill="#F3AFC0" stroke="none"/><path d="M75 40l-2-18-13 11z" fill="#F3AFC0" stroke="none"/>
+      <defs>${defs}<clipPath id="h-${id}"><ellipse cx="50" cy="59" rx="35" ry="28"/></clipPath></defs>
+      <g stroke="${O}" stroke-width="3" stroke-linejoin="round">
+        <path d="M19 48L23 13l24 20z" fill="${c.ear}"/><path d="M81 48L77 13 53 33z" fill="${c.ear}"/>
+        <path d="M25 40l2-18 13 11z" fill="${c.earIn}" stroke="none"/><path d="M75 40l-2-18-13 11z" fill="${c.earIn}" stroke="none"/>
       </g>
-      <defs><clipPath id="h-${c.name}"><ellipse cx="50" cy="59" rx="35" ry="28"/></clipPath></defs>
       <ellipse cx="50" cy="59" rx="35" ry="28" fill="${c.fur}"/>
-      <g clip-path="url(#h-${c.name})">${pattern}</g>
-      <ellipse cx="50" cy="59" rx="35" ry="28" fill="none" stroke="${INK}" stroke-width="3"/>
+      <g clip-path="url(#h-${id})">${pattern}</g>
+      <ellipse cx="50" cy="59" rx="35" ry="28" fill="none" stroke="${O}" stroke-width="3"/>
       ${eyes}
-      <path d="M46.5 64h7l-3.5 3.8z" fill="#E2809D" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M46.5 64h7l-3.5 3.8z" fill="${c.nose}" stroke="${O}" stroke-width="1.8" stroke-linejoin="round"/>
       ${mouth}
-      <g stroke="${INK}" stroke-width="2" stroke-linecap="round" opacity=".75">
+      <g stroke="${L}" stroke-width="2" stroke-linecap="round" opacity=".8">
         <path d="M24 66L5 62M24 71L6 75M76 66l19-4M76 71l18 4"/>
       </g>
       ${extra}
