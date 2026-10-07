@@ -503,6 +503,65 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
 
 .stats--pair { grid-template-columns: repeat(2, 1fr); }
 
+/* ---------- лента заданий ---------- */
+
+.lead {
+  margin: 0 2px 18px; font-size: 15.5px; line-height: 1.45;
+  color: var(--ink-soft); font-weight: 600;
+}
+.dayline {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin: 0 2px 8px; font-size: 13px; color: var(--muted);
+}
+.dayline b { color: var(--ink); }
+.thinbar {
+  height: 5px; border-radius: 3px; background: var(--brand-soft);
+  overflow: hidden; margin: 0 2px 16px;
+}
+.thinbar i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  transition: width .25s ease;
+}
+
+.chips {
+  display: flex; gap: 7px; overflow-x: auto; margin: 0 0 14px;
+  padding: 0 2px 2px; scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 auto; border: 1px solid var(--line); background: var(--card);
+  border-radius: 999px; padding: 8px 14px;
+  font-size: 13.5px; font-weight: 700; color: var(--ink-soft);
+  font-family: inherit; cursor: pointer;
+}
+.chip.is-on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.chip:active { transform: scale(.96); }
+
+.row {
+  display: flex; align-items: center; gap: 13px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 18px; padding: 14px; margin-bottom: 9px;
+  box-shadow: var(--shadow); cursor: pointer;
+  transition: transform .12s ease, border-color .18s ease;
+}
+.row:active { transform: scale(.985); }
+.row.is-done { opacity: .55; }
+.row__emoji {
+  width: 46px; height: 46px; flex: 0 0 46px; border-radius: 14px;
+  background: var(--brand-soft); display: grid; place-items: center;
+  font-size: 22px;
+}
+.row__body { min-width: 0; flex: 1; }
+.row__title { font-size: 15.5px; font-weight: 750; line-height: 1.25; }
+.row__kind { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.row__side { text-align: right; flex: 0 0 auto; }
+.row__sum { font-weight: 850; font-size: 15px; color: var(--mint);
+            white-space: nowrap; }
+.row.is-done .row__sum { color: var(--muted); }
+.row__go { font-size: 12px; color: var(--muted); margin-top: 2px;
+           white-space: nowrap; }
+
 /* ---------- опрос ---------- */
 
 .poll__q { margin-bottom: 22px; }

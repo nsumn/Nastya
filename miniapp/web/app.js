@@ -10,7 +10,7 @@ const state = {
   data: null,        // ответ /api/bootstrap
   view: 'tasks',     // tasks | task | top | profile | payout | payout_confirm
   tab: 'tasks',
-  openTaskId: null,  // раскрытая карточка в ленте
+  filter: 'all',     // фильтр ленты: all | review | video | poll
   task: null,        // задание на экране выполнения
   draft: { template: null, text: '', rating: 0 },
   payout: { method: null, digits: '', error: '', preview: null },
@@ -224,73 +224,69 @@ function viewGate() {
 
 /* ---------- экран: лента заданий ---------- */
 
-function taskCard(task) {
-  const open = state.openTaskId === task.id && !task.done;
+const KIND_NAMES = { review: 'Отзыв', video: 'Ролик', poll: 'Опрос' };
+
+/** Строка ленты. Жмём — сразу открывается задание, без раскрытия. */
+function taskRow(task) {
+  const kind = KIND_NAMES[task.kind] || 'Задание';
   return `
-    <article class="task ${open ? 'is-open' : ''} ${task.done ? 'is-done' : ''}"
-             data-task="${task.id}">
-      <div class="task__head" data-action="toggle-task" data-id="${task.id}">
-        <div class="task__emoji">${esc(task.emoji)}</div>
-        <div class="task__body">
-          <div class="task__title">${esc(task.title)}</div>
-          <div class="task__meta">
-            <span>🕒</span><span>до ${esc(task.deadline)}</span>
-          </div>
-        </div>
-        <div class="reward ${task.done ? 'is-done' : ''}">
-          ${task.done ? 'Сдано' : `+${rub(task.reward)}`}
-        </div>
+    <div class="row ${task.done ? 'is-done' : ''}"
+         data-action="open-task" data-id="${task.id}">
+      <div class="row__emoji">${esc(task.emoji)}</div>
+      <div class="row__body">
+        <div class="row__title">${esc(task.title)}</div>
+        <div class="row__kind">${kind} · до ${esc(task.deadline)}</div>
       </div>
-      ${open ? `
-        <div class="task__drop">
-          <p class="section-label">Условия задания</p>
-          <h4>${esc(task.title)}</h4>
-          <p>${esc(task.short || task.brief)}</p>
-          <button class="btn" data-action="open-task" data-id="${task.id}">
-            Начать выполнение
-          </button>
-        </div>` : ''}
-    </article>`;
+      <div class="row__side">
+        <div class="row__sum">${task.done ? 'Сдано' : `+${rub(task.reward)}`}</div>
+        ${task.done ? '' : '<div class="row__go">открыть ›</div>'}
+      </div>
+    </div>`;
 }
 
-function viewTasks() {
-  const { stats, tasks, done_count: doneCount, day } = state.data;
-  const left = tasks.length - doneCount;
+const FILTERS = [
+  ['all', 'Все'], ['review', 'Отзывы'], ['video', 'Ролики'], ['poll', 'Опросы'],
+];
 
-  const segments = tasks.length
-    ? tasks.map((task) => `<div class="progress__seg ${task.done ? 'is-done' : ''}"></div>`).join('')
-    : '<div class="progress__seg"></div>';
+function viewTasks() {
+  const { tasks, done_count: doneCount, day } = state.data;
+  const moneyLeft = tasks.filter((task) => !task.done)
+    .reduce((sum, task) => sum + task.reward, 0);
+  const percent = tasks.length ? Math.round(doneCount / tasks.length * 100) : 0;
+
+  // Фильтр показываем только для тех видов, что сегодня действительно есть.
+  const chips = FILTERS
+    .map(([id, name]) => [id, name, id === 'all' ? tasks.length
+      : tasks.filter((task) => task.kind === id).length])
+    .filter(([id, , count]) => count > 0 || id === 'all')
+    .map(([id, name, count]) => `
+      <button class="chip ${state.filter === id ? 'is-on' : ''}"
+              data-action="filter" data-id="${id}">${name} ${count}</button>`)
+    .join('');
+
+  const shown = state.filter === 'all'
+    ? tasks : tasks.filter((task) => task.kind === state.filter);
 
   return `
     ${topbar()}
-    <section class="hero">
-      <h1>Выполняй задания.<br><span class="accent">Получай бонусы.</span></h1>
-    </section>
 
-    <section class="stats stats--pair">
-      <div class="stat" style="--accent:var(--mint)">
-        <div class="stat__label">за задание</div>
-        <div class="stat__value">от ${rub(stats.min_reward)}</div>
-      </div>
-      <div class="stat" style="--accent:var(--amber)">
-        <div class="stat__label">заданий сегодня</div>
-        <div class="stat__value">${stats.tasks_today}</div>
-      </div>
-    </section>
+    <p class="lead">Выполняй задания от компаний: опросы, отзывы, просмотр
+       роликов и так далее. Получай вознаграждение.</p>
 
-    <section class="card">
-      <h2 class="card__title">Задания на ${esc(day)}</h2>
-      <div class="progress">
-        <div class="progress__row">
-          <span class="progress__done">Выполнено ${doneCount} из ${tasks.length}</span>
-          <span class="progress__left">${left > 0 ? `Осталось ${left}` : 'Всё готово 🎉'}</span>
-        </div>
-        <div class="progress__bar">${segments}</div>
-      </div>
-      ${tasks.length
-        ? tasks.map(taskCard).join('')
-        : '<p class="empty">Сегодня заданий нет.<br>Загляните завтра — лента обновляется каждый день.</p>'}
-    </section>`;
+    <div class="dayline">
+      <span>Задания на ${esc(day)}</span>
+      <span><b>${doneCount} из ${tasks.length}</b>${moneyLeft
+        ? ` · ещё ${rub(moneyLeft)}` : ' · всё готово 🎉'}</span>
+    </div>
+    <div class="thinbar"><i style="width:${percent}%"></i></div>
+
+    ${tasks.length ? `<div class="chips">${chips}</div>` : ''}
+
+    ${shown.length
+      ? shown.map(taskRow).join('')
+      : `<p class="empty">${tasks.length
+          ? 'В этом разделе сегодня пусто.'
+          : 'Сегодня заданий нет.<br>Загляните завтра — лента обновляется каждый день.'}</p>`}`;
 }
 
 /* ---------- ролик ---------- */
@@ -1296,19 +1292,18 @@ document.addEventListener('click', (event) => {
 
   if (action === 'back') { haptic(); goBack(); return; }
 
-  if (action === 'toggle-task') {
-    const id = Number(target.dataset.id);
-    const task = state.data.tasks.find((item) => item.id === id);
-    if (task && task.done) { toast('Задание уже выполнено сегодня'); return; }
+  if (action === 'filter') {
+    state.filter = target.dataset.id;
     haptic();
-    state.openTaskId = state.openTaskId === id ? null : id;
     render();
     return;
   }
 
   if (action === 'open-task') {
     const id = Number(target.dataset.id);
-    state.task = state.data.tasks.find((item) => item.id === id);
+    const picked = state.data.tasks.find((item) => item.id === id);
+    if (picked && picked.done) { toast('Задание уже выполнено сегодня'); return; }
+    state.task = picked;
     state.draft = {
       template: null, text: '', rating: 0, token: '',
       answers: (state.task && state.task.questions
@@ -1415,7 +1410,6 @@ document.addEventListener('click', (event) => {
     hideOverlay();
     state.view = 'tasks';
     state.tab = 'tasks';
-    state.openTaskId = null;
     render();
     return;
   }
