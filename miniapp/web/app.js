@@ -1484,6 +1484,8 @@ function applyTheme() {
   const dark = tg ? tg.colorScheme === 'dark'
     : window.matchMedia('(prefers-color-scheme: dark)').matches;
   document.body.classList.toggle('dark', dark);
+  // И на <html> — его фоном закрашивается место под короткой страницей.
+  document.documentElement.classList.toggle('dark', dark);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', dark ? '#0e0e16' : '#f4f4fb');
   if (tg && tg.setBackgroundColor) {
