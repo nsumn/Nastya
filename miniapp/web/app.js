@@ -633,6 +633,70 @@ function viewTop() {
     </section>`;
 }
 
+/* ---------- экран: статистика ---------- */
+
+function tile(label, value, unit = '', accent = false) {
+  return `
+    <div class="tile2 ${accent ? 'is-accent' : ''}">
+      <div class="tile2__label">${esc(label)}</div>
+      <div class="tile2__value">${value}${unit
+        ? `<span class="tile2__unit">${esc(unit)}</span>` : ''}</div>
+    </div>`;
+}
+
+function viewStats() {
+  if (!state.profile) {
+    return `${topbar()}<p class="empty">Считаем…</p>`;
+  }
+  const { user, done_count: doneCount, stats } = state.profile;
+  const peak = Math.max(...stats.by_day.map((d) => d.amount), 1);
+
+  const bars = stats.by_day.map((d) => `
+    <div class="bar ${d.today ? 'is-today' : ''}">
+      <div class="bar__track">
+        <i style="height:${Math.max(3, Math.round(d.amount / peak * 100))}%"></i>
+      </div>
+      <div class="bar__day">${esc(d.label)}</div>
+    </div>`).join('');
+
+  const limitDone = stats.tasks_done_today;
+  const limitAll = stats.tasks_today;
+  const percent = limitAll ? Math.round(limitDone / limitAll * 100) : 0;
+
+  return `
+    ${topbar()}
+    <h1 class="screen-title">Статистика</h1>
+
+    <section class="tiles2">
+      ${tile('Заработано всего', rub(user.total_earned), '', true)}
+      ${tile('Заданий сегодня', limitDone, `из ${limitAll}`)}
+      ${tile('Заработано сегодня', rub(stats.earned_today))}
+      ${tile('Средняя награда', rub(stats.avg_reward))}
+    </section>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2>Заработок по дням</h2>
+        <span>Последние 7 дней</span>
+      </div>
+      <div class="chart">${bars}</div>
+    </section>
+
+    <section class="panel">
+      <div class="limit">Задания сегодня:
+        <b>${limitDone}</b> из ${limitAll}</div>
+      <div class="limit__bar"><i style="width:${percent}%"></i></div>
+      <p class="limit__note">${limitDone >= limitAll && limitAll
+        ? 'На сегодня всё. Завтра появятся новые задания.'
+        : 'Заходите каждый день — лента обновляется, задания новые.'}</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel__row"><span>Выполнено заданий</span><b>${doneCount}</b></div>
+      <div class="panel__row"><span>На балансе</span><b>${rub(user.balance)}</b></div>
+    </section>`;
+}
+
 /* ---------- экран: профиль ---------- */
 
 function viewProfile() {
@@ -956,6 +1020,7 @@ function render() {
     tasks: viewTasks,
     task: viewTask,
     top: viewTop,
+    stats: viewStats,
     profile: viewProfile,
     payout: viewPayout,
     payout_confirm: viewPayoutConfirm,
@@ -1063,7 +1128,8 @@ function goTab(tab) {
   state.tab = tab;
   state.view = tab;
   if (tab === 'top') loadTop();
-  if (tab === 'profile') loadProfile();
+  // статистика живёт в том же ответе, что и профиль
+  if (tab === 'profile' || tab === 'stats') loadProfile();
   render();
 }
 
@@ -1083,7 +1149,7 @@ async function loadTop() {
 
 async function loadProfile() {
   try { state.profile = await api('/api/profile'); } catch (err) { toast(err.message); }
-  if (state.view === 'profile') render();
+  if (state.view === 'profile' || state.view === 'stats') render();
 }
 
 async function checkGate() {

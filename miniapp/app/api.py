@@ -508,11 +508,26 @@ async def profile(request: web.Request) -> web.Response:
     user = await _auth(request)
     history = await db.user_history(user["user_id"])
     payouts = await db.user_withdrawals(user["user_id"])
+    day = db.today()
+    feed = await db.tasks_for_day(day, _is_newcomer(user, day))
+    done_today = await db.done_task_ids(user["user_id"], day)
     return web.json_response({
         "user": _user_payload(user, config),
         "done_count": await db.user_done_count(user["user_id"]),
         "min_withdraw": config.min_withdraw,
         "support": config.support_username,
+        # для вкладки статистики
+        "stats": {
+            "earned_today": _money(await db.earned_on(user["user_id"], day)),
+            "avg_reward": _money(await db.avg_reward(user["user_id"])),
+            "tasks_today": len(feed),
+            "tasks_done_today": sum(1 for task in feed
+                                    if task["id"] in done_today),
+            "by_day": [{"label": row["label"],
+                        "amount": _money(row["amount"]),
+                        "today": row["day"] == day}
+                       for row in await db.earnings_by_day(user["user_id"])],
+        },
         "history": [
             {
                 "title": row["title"] or "Задание",

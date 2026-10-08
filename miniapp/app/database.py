@@ -23,6 +23,7 @@ import aiosqlite
 from . import rotation
 
 MSK = timezone(timedelta(hours=3))
+WEEKDAYS = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 
 _DB_PATH = "jows.db"
 
@@ -634,6 +635,60 @@ async def user_history(user_id: int, limit: int = 30) -> list[dict]:
             (user_id, limit),
         ) as cur:
             return [dict(r) for r in await cur.fetchall()]
+    finally:
+        await db.close()
+
+
+async def earnings_by_day(user_id: int, days: int = 7) -> list[dict]:
+    """Заработок за последние дни — для графика на вкладке статистики.
+
+    Дни без заданий тоже возвращаем нулями: иначе график схлопнется
+    и будет врать про то, как часто человек заходит.
+    """
+    since = (datetime.now(MSK) - timedelta(days=days - 1)).strftime("%Y-%m-%d")
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT day, COALESCE(SUM(reward), 0) AS total FROM submissions "
+            "WHERE user_id = ? AND status = 'approved' AND day >= ? "
+            "GROUP BY day", (user_id, since),
+        ) as cur:
+            earned = {row["day"]: row["total"] for row in await cur.fetchall()}
+    finally:
+        await db.close()
+
+    out = []
+    for back in range(days - 1, -1, -1):
+        moment = datetime.now(MSK) - timedelta(days=back)
+        day = moment.strftime("%Y-%m-%d")
+        out.append({"day": day,
+                    "label": WEEKDAYS[moment.weekday()],
+                    "amount": earned.get(day, 0)})
+    return out
+
+
+async def avg_reward(user_id: int) -> float:
+    """Средняя награда за выполненное задание."""
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT AVG(reward) AS n FROM submissions "
+            "WHERE user_id = ? AND status = 'approved'", (user_id,),
+        ) as cur:
+            return round((await cur.fetchone())["n"] or 0, 2)
+    finally:
+        await db.close()
+
+
+async def earned_on(user_id: int, day: str) -> float:
+    db = await _conn()
+    try:
+        async with db.execute(
+            "SELECT COALESCE(SUM(reward), 0) AS n FROM submissions "
+            "WHERE user_id = ? AND day = ? AND status = 'approved'",
+            (user_id, day),
+        ) as cur:
+            return (await cur.fetchone())["n"]
     finally:
         await db.close()
 
