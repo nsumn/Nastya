@@ -513,6 +513,15 @@ function viewPollTask() {
     </section>`;
 }
 
+/** Строка проверки перед отправкой: сразу видно, чего не хватает. */
+function checkRow(done, label) {
+  return `
+    <div class="check__row ${done ? 'is-ok' : ''}">
+      <i class="check__mark">${done ? '✓' : ''}</i>
+      <span>${esc(label)}</span>
+    </div>`;
+}
+
 function viewTask() {
   const task = state.task;
   if (task.kind === 'video') return viewVideoTask();
@@ -522,12 +531,8 @@ function viewTask() {
   const ratingOk = !task.require_rating || draft.rating === 5;
   const ready = left === 0 && ratingOk;
 
-  const templates = task.templates.map((text, index) => `
-    <div class="option ${draft.template === index ? 'is-active' : ''}"
-         data-action="pick-template" data-index="${index}">
-      <div style="flex:1">${esc(text)}</div>
-      <div class="option__mark"></div>
-    </div>`).join('');
+  const variants = task.templates.length;
+  const picked = draft.template;
 
   return `
     ${topbar({ back: true })}
@@ -547,28 +552,42 @@ function viewTask() {
       <p class="section-label">Условия задания</p>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.5">${esc(task.brief)}</p>
 
-      ${task.templates.length ? `
-        <p class="section-label">Выберите один шаблон</p>
-        ${templates}` : ''}
+      <div class="gen">
+        <div class="gen__text">
+          <div class="gen__title">Ваш отзыв</div>
+          <div class="gen__note">${variants
+            ? 'Напишите сами или возьмите готовый вариант'
+            : 'Напишите своими словами'}</div>
+        </div>
+        ${variants ? `
+          <button class="gen__btn" data-action="generate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>
+            </svg>
+            ${picked === null ? 'Сгенерировать' : 'Другой'}
+          </button>` : ''}
+      </div>
 
-      <p class="section-label" style="margin-top:16px">Или напишите свой отзыв</p>
-      <textarea id="answer" placeholder="Свой отзыв…"
+      <textarea id="answer" placeholder="Напишите пару предложений…"
                 maxlength="1000">${esc(draft.text)}</textarea>
       <div class="counter">
         <span class="counter__left ${left === 0 ? 'is-ok' : ''}">
-          ${left === 0 ? 'Длина в порядке' : `Осталось: ${left} ${plural(left, 'символ', 'символа', 'символов')}`}
+          ${left === 0 ? 'Длина в порядке'
+            : `Осталось: ${left} ${plural(left, 'символ', 'символа', 'символов')}`}
         </span>
-        <span style="text-align:right">Можно выбрать шаблон<br>или написать свой отзыв</span>
+        ${picked === null ? '' :
+          `<span>Вариант ${picked + 1} из ${variants}</span>`}
       </div>
 
       ${task.require_rating ? `
-        <div class="rating-card">
-          <div class="rating-card__top">
-            <p class="section-label" style="margin:0">Оценка</p>
-            <span class="pill-required">Обязательно</span>
+        <div class="rate">
+          <div class="rate__head">
+            <span class="rate__title">Оценка</span>
+            <span class="rate__state ${ratingOk ? 'is-ok' : ''}">
+              ${draft.rating ? `${draft.rating} из 5` : 'не выбрана'}
+            </span>
           </div>
-          <h4>Выберите 5 звёзд</h4>
-          <p>Для выполнения задания необходимо поставить максимальную оценку.</p>
           <div class="stars">
             ${[1, 2, 3, 4, 5].map((value) => `
               <button class="star ${draft.rating >= value ? 'is-on' : ''}"
@@ -578,11 +597,15 @@ function viewTask() {
           </div>
         </div>` : ''}
 
-      <p class="hint">Ответ уйдёт заказчику задания.<br>
-         Проверьте текст${task.require_rating ? ' и оценку' : ''} перед отправкой.</p>
+      <div class="check">
+        ${checkRow(left === 0,
+                   `Текст от ${task.min_chars} ${plural(task.min_chars,
+                     'символа', 'символов', 'символов')}`)}
+        ${task.require_rating ? checkRow(ratingOk, 'Оценка 5 звёзд') : ''}
+      </div>
 
       <button class="btn" data-action="submit" ${ready ? '' : 'disabled'}>
-        Опубликовать
+        ${ready ? 'Отправить' : 'Заполните, что осталось'}
       </button>
     </section>`;
 }
@@ -1102,11 +1125,28 @@ function refreshTaskControls() {
     counter.classList.toggle('is-ok', left === 0);
   }
   const ratingOk = !task.require_rating || state.draft.rating === 5;
-  const button = document.querySelector('[data-action="submit"]');
-  if (button) button.disabled = !(left === 0 && ratingOk);
-  document.querySelectorAll('.option').forEach((option, index) => {
-    option.classList.toggle('is-active', state.draft.template === index);
+  const ready = left === 0 && ratingOk;
+
+  const state_ = document.querySelector('.rate__state');
+  if (state_) {
+    state_.textContent = state.draft.rating
+      ? `${state.draft.rating} из 5` : 'не выбрана';
+    state_.classList.toggle('is-ok', ratingOk);
+  }
+  // Строки проверки идут в том же порядке, что и в разметке: текст, оценка.
+  const rows = document.querySelectorAll('.check__row');
+  [left === 0, ratingOk].forEach((done, index) => {
+    const row = rows[index];
+    if (!row) return;
+    row.classList.toggle('is-ok', done);
+    row.querySelector('.check__mark').textContent = done ? '✓' : '';
   });
+
+  const button = document.querySelector('[data-action="submit"]');
+  if (button) {
+    button.disabled = !ready;
+    button.textContent = ready ? 'Отправить' : 'Заполните, что осталось';
+  }
 }
 
 function refreshPayoutControls() {
@@ -1406,14 +1446,16 @@ document.addEventListener('click', (event) => {
 
   if (action === 'submit-poll') { submitTask(); return; }
 
-  if (action === 'pick-template') {
-    const index = Number(target.dataset.index);
-    state.draft.template = index;
-    state.draft.text = state.task.templates[index];
-    const answer = document.getElementById('answer');
-    if (answer) answer.value = state.draft.text;
+  if (action === 'generate') {
+    const all = state.task.templates || [];
+    if (!all.length) return;
+    // По кругу: первое нажатие — первый вариант, дальше следующий.
+    const next = state.draft.template === null
+      ? 0 : (state.draft.template + 1) % all.length;
+    state.draft.template = next;
+    state.draft.text = all[next];
     haptic();
-    refreshTaskControls();
+    render();
     return;
   }
 
