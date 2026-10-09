@@ -11,6 +11,7 @@ const state = {
   view: 'tasks',     // tasks | task | top | profile | payout | payout_confirm
   tab: 'tasks',
   filter: 'all',     // фильтр ленты: all | review | video | poll
+  animate: false,    // следующую отрисовку показать с анимацией
   task: null,        // задание на экране выполнения
   draft: { template: null, text: '', rating: 0 },
   payout: { method: null, digits: '', error: '', preview: null },
@@ -761,24 +762,13 @@ function viewProfile() {
   return `
     ${topbar()}
 
-    <section class="profile-hero">
-      <div class="profile-hero__name">${esc(user.name)}</div>
-      <div class="profile-hero__role">исполнитель ${esc(state.data.brand.name)}</div>
-    </section>
+    <h1 class="screen-title">${esc(user.name)}</h1>
 
-    <section class="tiles">
-      <div class="tile tile--accent">
-        <div class="tile__label">доступно</div>
-        <div class="tile__value">${rub(user.balance)}</div>
-      </div>
-      <div class="tile">
-        <div class="tile__label">заработано всего</div>
-        <div class="tile__value">${rub(user.total_earned)}</div>
-      </div>
-      <div class="tile">
-        <div class="tile__label">заданий</div>
-        <div class="tile__value">${doneCount}</div>
-      </div>
+    <section class="tiles2">
+      ${tile('Доступно к выводу', rub(user.balance), '', true)}
+      ${tile('Заработано всего', rub(user.total_earned))}
+      ${tile('Выполнено заданий', doneCount)}
+      ${tile('Заявок на вывод', payouts.length)}
     </section>
 
     <button class="btn btn--wide" data-action="payout" ${canWithdraw ? '' : 'disabled'}>
@@ -1063,6 +1053,11 @@ function render() {
     if (nested) tg.BackButton.show(); else tg.BackButton.hide();
   }
 
+  // Смена вкладки — блоки всплывают по очереди. Внутри одной вкладки
+  // (фильтр, выбор звезды) ничего не анимируем, иначе экран моргает.
+  screenEl.classList.toggle('is-entering', !sameView || state.animate);
+  state.animate = false;
+
   window.scrollTo({ top: sameView ? scroll : 0 });
   lastView = state.view;
   bindInputs();
@@ -1184,12 +1179,17 @@ function goBack() {
 
 async function loadTop() {
   try { state.top = await api('/api/top'); } catch (err) { toast(err.message); }
-  if (state.view === 'top') render();
+  // Данные пришли после первой отрисовки — пусть содержимое всплывёт
+  // так же, как при открытии вкладки, а не появится рывком.
+  if (state.view === 'top') { state.animate = true; render(); }
 }
 
 async function loadProfile() {
   try { state.profile = await api('/api/profile'); } catch (err) { toast(err.message); }
-  if (state.view === 'profile' || state.view === 'stats') render();
+  if (state.view === 'profile' || state.view === 'stats') {
+    state.animate = true;
+    render();
+  }
 }
 
 async function checkGate() {
