@@ -12,6 +12,7 @@ const state = {
   tab: 'tasks',
   filter: 'all',     // фильтр ленты: all | review | video | poll
   animate: false,    // следующую отрисовку показать с анимацией
+  pending: false,    // ждём данные — заглушку показываем молча
   task: null,        // задание на экране выполнения
   draft: { template: null, text: '', rating: 0 },
   payout: { method: null, digits: '', error: '', preview: null },
@@ -1055,7 +1056,8 @@ function render() {
 
   // Смена вкладки — блоки всплывают по очереди. Внутри одной вкладки
   // (фильтр, выбор звезды) ничего не анимируем, иначе экран моргает.
-  screenEl.classList.toggle('is-entering', !sameView || state.animate);
+  screenEl.classList.toggle('is-entering',
+                            state.animate || (!sameView && !state.pending));
   state.animate = false;
 
   window.scrollTo({ top: sameView ? scroll : 0 });
@@ -1162,9 +1164,18 @@ function refreshPayoutControls() {
 function goTab(tab) {
   state.tab = tab;
   state.view = tab;
-  if (tab === 'top') loadTop();
+
+  const needsTop = tab === 'top';
   // статистика живёт в том же ответе, что и профиль
-  if (tab === 'profile' || tab === 'stats') loadProfile();
+  const needsProfile = tab === 'profile' || tab === 'stats';
+  const cached = needsTop ? state.top : needsProfile ? state.profile : true;
+
+  // Данных ещё нет — заглушку показываем без анимации: она достанется
+  // настоящему содержимому. Иначе экран всплывает дважды: сперва
+  // пустой, потом с данными, и это читается как мигание.
+  state.pending = !cached;
+  if (needsTop) loadTop();
+  if (needsProfile) loadProfile();
   render();
 }
 
@@ -1178,18 +1189,31 @@ function goBack() {
 }
 
 async function loadTop() {
-  try { state.top = await api('/api/top'); } catch (err) { toast(err.message); }
-  // Данные пришли после первой отрисовки — пусть содержимое всплывёт
-  // так же, как при открытии вкладки, а не появится рывком.
-  if (state.view === 'top') { state.animate = true; render(); }
+  let fresh;
+  try { fresh = await api('/api/top'); } catch (err) { toast(err.message); return; }
+  const same = JSON.stringify(fresh) === JSON.stringify(state.top);
+  state.top = fresh;
+  if (state.view !== 'top') return;
+  // Ничего не изменилось — экран не трогаем. Иначе вторая отрисовка
+  // обрывает начавшуюся анимацию, и открытие выглядит дёрганым.
+  if (same && !state.pending) return;
+  // Данные пришли после заглушки — пусть содержимое всплывёт так же,
+  // как при открытии вкладки, а не появится рывком.
+  state.animate = state.pending;
+  state.pending = false;
+  render();
 }
 
 async function loadProfile() {
-  try { state.profile = await api('/api/profile'); } catch (err) { toast(err.message); }
-  if (state.view === 'profile' || state.view === 'stats') {
-    state.animate = true;
-    render();
-  }
+  let fresh;
+  try { fresh = await api('/api/profile'); } catch (err) { toast(err.message); return; }
+  const same = JSON.stringify(fresh) === JSON.stringify(state.profile);
+  state.profile = fresh;
+  if (state.view !== 'profile' && state.view !== 'stats') return;
+  if (same && !state.pending) return;
+  state.animate = state.pending;
+  state.pending = false;
+  render();
 }
 
 async function checkGate() {
