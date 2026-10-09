@@ -262,11 +262,24 @@ html, body {
 .task.is-open { border-color: var(--brand); background: var(--card); }
 .task.is-done { opacity: .62; }
 .task__head { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.task__emoji {
-  width: 42px; height: 42px; flex: 0 0 42px;
-  border-radius: 13px; display: grid; place-items: center;
-  background: var(--brand-soft); font-size: 21px;
+/* Значок вида задания: тонкая линия в круге, цвет по виду. */
+.icon {
+  flex: 0 0 auto; border-radius: 50%;
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
+  color: var(--brand);
 }
+.icon svg { display: block; }
+.icon--row { width: 46px; height: 46px; }
+.icon--row svg { width: 21px; height: 21px; }
+.icon--hero { width: 42px; height: 42px; }
+.icon--hero svg { width: 19px; height: 19px; }
+.icon--small { width: 38px; height: 38px; }
+.icon--small svg { width: 17px; height: 17px; }
+.icon--video { color: #3ba0ff; }
+.icon--poll { color: var(--mint); }
+.row.is-done .icon { color: var(--muted); }
+
 .task__body { flex: 1; min-width: 0; }
 .task__title { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
 .task__meta { display: flex; align-items: center; gap: 5px; margin-top: 4px;
@@ -483,9 +496,6 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
 .op { display: flex; align-items: center; gap: 12px; padding: 11px 0;
       border-bottom: 1px solid var(--line); }
 .op:last-child { border-bottom: none; }
-.op__emoji { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px;
-             background: var(--card-2); display: grid; place-items: center;
-             font-size: 17px; }
 .op__body { flex: 1; min-width: 0; }
 .op__title { font-size: 14.5px; font-weight: 650; overflow: hidden;
              text-overflow: ellipsis; white-space: nowrap; }
@@ -666,11 +676,6 @@ input[type="tel"], input[type="text"] { font-weight: 700; letter-spacing: .5px; 
 }
 .row:active { transform: scale(.985); }
 .row.is-done { opacity: .55; }
-.row__emoji {
-  width: 46px; height: 46px; flex: 0 0 46px; border-radius: 14px;
-  background: var(--brand-soft); display: grid; place-items: center;
-  font-size: 22px;
-}
 .row__body { min-width: 0; flex: 1; }
 .row__title { font-size: 15.5px; font-weight: 750; line-height: 1.25; }
 .row__kind { font-size: 12px; color: var(--muted); margin-top: 3px; }

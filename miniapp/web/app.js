@@ -228,13 +228,35 @@ function viewGate() {
 
 const KIND_NAMES = { review: 'Отзыв', video: 'Ролик', poll: 'Опрос' };
 
+// Линейные значки вместо эмодзи: эмодзи рисуются по-разному на разных
+// телефонах и выглядят как заглушка из шаблона. Сами эмодзи остаются
+// в базе — ими пользуется бот в сообщениях админу.
+const KIND_ICONS = {
+  review: '<path d="M4 20h4L19 9a2.4 2.4 0 1 0-3.4-3.4L4.6 16.6 4 20Z"/>',
+  video: '<circle cx="12" cy="12" r="8.6"/>'
+    + '<path d="M10.4 9.2l4.6 2.8-4.6 2.8V9.2Z" fill="currentColor" stroke="none"/>',
+  poll: '<path d="M6 16v3M12 11v8M18 6v13"/>',
+};
+
+/** Кружок со значком вида задания. size: row | hero | small */
+function kindIcon(kind, size = 'row') {
+  const key = KIND_ICONS[kind] ? kind : 'review';
+  return `
+    <div class="icon icon--${size} icon--${key}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        ${KIND_ICONS[key]}
+      </svg>
+    </div>`;
+}
+
 /** Строка ленты. Жмём — сразу открывается задание, без раскрытия. */
 function taskRow(task) {
   const kind = KIND_NAMES[task.kind] || 'Задание';
   return `
     <div class="row ${task.done ? 'is-done' : ''}"
          data-action="open-task" data-id="${task.id}">
-      <div class="row__emoji">${esc(task.emoji)}</div>
+      ${kindIcon(task.kind)}
       <div class="row__body">
         <div class="row__title">${esc(task.title)}</div>
         <div class="row__kind">${kind} · до ${esc(task.deadline)}</div>
@@ -441,7 +463,7 @@ function viewVideoTask() {
     ${topbar({ back: true })}
 
     <section class="task-hero">
-      <div class="task__emoji">${esc(task.emoji)}</div>
+      ${kindIcon(task.kind, 'hero')}
       <div class="task__body">
         <div class="task__title">${esc(task.title)}</div>
         <div class="task__meta">
@@ -492,7 +514,7 @@ function viewPollTask() {
     ${topbar({ back: true })}
 
     <section class="task-hero">
-      <div class="task__emoji">${esc(task.emoji)}</div>
+      ${kindIcon(task.kind, 'hero')}
       <div class="task__body">
         <div class="task__title">${esc(task.title)}</div>
         <div class="task__meta">
@@ -540,7 +562,7 @@ function viewTask() {
     ${topbar({ back: true })}
 
     <section class="task-hero">
-      <div class="task__emoji">${esc(task.emoji)}</div>
+      ${kindIcon(task.kind, 'hero')}
       <div class="task__body">
         <div class="task__title">${esc(task.title)}</div>
         <div class="task__meta">
@@ -751,7 +773,7 @@ function viewProfile() {
       : op.status === 'rejected' ? ' • отклонено' : '';
     return `
       <div class="op">
-        <div class="op__emoji">${esc(op.emoji)}</div>
+        ${kindIcon(op.kind, 'small')}
         <div class="op__body">
           <div class="op__title">${esc(op.title)}</div>
           <div class="op__date">${esc(op.date)}${status}</div>

@@ -532,6 +532,7 @@ async def profile(request: web.Request) -> web.Response:
             {
                 "title": row["title"] or "Задание",
                 "emoji": row["emoji"] or "📝",
+                "kind": row["kind"] or "review",
                 "amount": _money(row["amount"]),
                 "status": row["status"],
                 "date": db.pretty_date(row["created_at"]),

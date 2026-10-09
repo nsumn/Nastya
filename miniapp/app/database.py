@@ -625,7 +625,7 @@ async def user_history(user_id: int, limit: int = 30) -> list[dict]:
         async with db.execute(
             """
             SELECT s.id, s.created_at, s.reward AS amount, s.status,
-                   t.title AS title, t.emoji AS emoji
+                   t.title AS title, t.emoji AS emoji, t.kind AS kind
               FROM submissions s
               LEFT JOIN tasks t ON t.id = s.task_id
              WHERE s.user_id = ?
