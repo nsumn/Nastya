@@ -42,7 +42,7 @@ def pad(notes, a, b, fa=1.0, fb=1.0, bright=1600):
 
 # ---------- roulette: wooden knocks rising in pitch with each shape (no high clicks), fork "boing", spoon "ting"
 for i, a in enumerate(ROUL[:-2]): place(a, knock(560 + 40 * i), db(-14), np.sin(i) * 0.3); place(a, marimba(72 + [0, 2, 4, 7, 9][i % 5], 0.35), db(-20))
-place(1.45, boing(300, 0.45), db(-20))                                       # the "Rocket:" gag
+whoosh(1.1, 2.4, db(-15), -0.8, 0.8, 300, 3500); place(2.3, boing(300, 0.45), db(-22))   # the meme rocket flying past
 place(FORK, knock(500), db(-12)); place(FORK + 0.05, boing(220, 0.9), db(-14))
 for k in range(5): place(FORK + 0.15 + k * 0.17, marimba(67 - k, 0.3), db(-24))
 place(LAND, bell(88, 2.5), db(-13)); place(LAND, bell(76, 2.5), db(-17)); whoosh(LAND - 0.15, 0.5, db(-12), 0.6, -0.6, 400, 6000)

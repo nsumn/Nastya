@@ -83,17 +83,29 @@ shapes.Spoon = spoonG;
   g.deleteAttribute('uv'); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const v = toScene(x, y, z + handleZ(Math.max(x, 2.6)) - 0.3); p.setXYZ(i, v.x, v.y, v.z); }
   const gn = g.toNonIndexed(); gn.computeVertexNormals(); shapes.Fork = shapeMesh(gn, 1.03);
 }
-{ // "Rocket:" — the same rocket as in the roulette (stages, fins, engine bells), only the nose is the meme head (stylised)
-  const prof = [[0.001, 6.95], [0.5, 6.85], [0.95, 6.5], [1.3, 5.95], [1.52, 5.3], [1.6, 4.7], [1.62, 4.25], [1.5, 4.05], [1.22, 3.92], [1.18, 3.6], [1.3, 3.4], [1.3, 1.2], [1.42, 1.0], [1.42, -2.2], [1.6, -2.5], [1.6, -6.0], [1.35, -6.2], [0.001, -6.2]];
-  const body = lathe(prof, 64).toNonIndexed(); body.deleteAttribute('uv');
-  const parts = [body];
-  for (let k = 0; k < 4; k++) {
-    const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(1.9, -1.4); s.lineTo(1.9, -2.6); s.lineTo(0, -1.6); s.closePath();
-    const f = new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: false }); f.translate(1.45, -3.8, -0.11); f.rotateY(k * Math.PI / 2 + Math.PI / 4); f.deleteAttribute('uv'); parts.push(f.toNonIndexed());
-  }
-  for (const [x, z] of [[0.6, 0.6], [-0.6, 0.6], [0.6, -0.6], [-0.6, -0.6], [0, 0]]) { const b = new THREE.CylinderGeometry(0.28, 0.55, 1.0, 16, 1, true); b.translate(x, -6.7, z); b.deleteAttribute('uv'); parts.push(b.toNonIndexed()); }
-  const g = mergeGeometries(parts); g.computeVertexNormals(); g.scale(1.4, 1.25, 1.4);
-  shapes.RocketHead = shapeMesh(g, 1.03);
+// ---- cameo: the original meme rocket (from parts_rocket/r_space.js) flies past behind the roulette, not part of it
+const cameoGeo = (() => {
+  const prof = [];
+  for (let i = 0; i <= 20; i++) prof.push([2.05 + 0.08 * Math.sin(i / 20 * Math.PI), -4.5 + i * 0.475]);
+  for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI / 2; prof.push([2.55 * Math.cos(a) * (i === 0 ? 0.86 : 1), 5.4 + 2.5 * Math.sin(a)]); }
+  prof.splice(21, 0, [2.4, 5.0], [2.62, 5.35]);
+  prof.unshift([0.001, -4.6]);
+  const shaft = lathe(prof, 96); shaft.deleteAttribute('uv');
+  const b1 = new THREE.SphereGeometry(2.55, 64, 40); b1.translate(-1.95, -5.4, 0.3); b1.deleteAttribute('uv');
+  const b2 = new THREE.SphereGeometry(2.55, 64, 40); b2.translate(1.95, -5.4, -0.3); b2.deleteAttribute('uv');
+  const g = mergeGeometries([shaft.toNonIndexed(), b1.toNonIndexed(), b2.toNonIndexed()]); g.computeVertexNormals();
+  return g;
+})();
+const cameo = shapeMesh(cameoGeo, 1.035);
+const cameoFlame = new THREE.Mesh(new THREE.ConeGeometry(2.4, 11, 24, 1, true), new THREE.MeshBasicMaterial({ color: '#ffc06a', transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+cameoFlame.rotation.x = Math.PI; cameoFlame.position.y = -13.5; cameo.add(cameoFlame);
+const CAMEO_T0 = 1.0, CAMEO_T1 = 3.6;
+const cameoPos = t => { const u = (t - CAMEO_T0) / (CAMEO_T1 - CAMEO_T0); return new THREE.Vector3(lerp(-62, 62, u), lerp(-27, -23, u) + 2.0 * Math.sin(u * Math.PI), -70); };
+function updateCameo(t) {
+  cameo.visible = t > CAMEO_T0 && t < CAMEO_T1; if (!cameo.visible) return;
+  const p = cameoPos(t), q = cameoPos(t + 0.02); cameo.position.copy(p); cameo.scale.setScalar(0.95);
+  const dir = q.clone().sub(p).normalize(); cameo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); cameo.rotateY(t * 2.0);
+  cameoFlame.scale.set(1, 0.8 + 0.3 * Math.sin(t * 47) * Math.sin(t * 31), 1);
 }
 // Earth to scale (6,371 km radius)
 const earthR = 6371 / KM_PER_U;

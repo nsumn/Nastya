@@ -312,17 +312,29 @@ shapes.Spoon = spoonG;
   g.deleteAttribute('uv'); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const v = toScene(x, y, z + handleZ(Math.max(x, 2.6)) - 0.3); p.setXYZ(i, v.x, v.y, v.z); }
   const gn = g.toNonIndexed(); gn.computeVertexNormals(); shapes.Fork = shapeMesh(gn, 1.03);
 }
-{ // "Rocket:" — the same rocket as in the roulette (stages, fins, engine bells), only the nose is the meme head (stylised)
-  const prof = [[0.001, 6.95], [0.5, 6.85], [0.95, 6.5], [1.3, 5.95], [1.52, 5.3], [1.6, 4.7], [1.62, 4.25], [1.5, 4.05], [1.22, 3.92], [1.18, 3.6], [1.3, 3.4], [1.3, 1.2], [1.42, 1.0], [1.42, -2.2], [1.6, -2.5], [1.6, -6.0], [1.35, -6.2], [0.001, -6.2]];
-  const body = lathe(prof, 64).toNonIndexed(); body.deleteAttribute('uv');
-  const parts = [body];
-  for (let k = 0; k < 4; k++) {
-    const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(1.9, -1.4); s.lineTo(1.9, -2.6); s.lineTo(0, -1.6); s.closePath();
-    const f = new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: false }); f.translate(1.45, -3.8, -0.11); f.rotateY(k * Math.PI / 2 + Math.PI / 4); f.deleteAttribute('uv'); parts.push(f.toNonIndexed());
-  }
-  for (const [x, z] of [[0.6, 0.6], [-0.6, 0.6], [0.6, -0.6], [-0.6, -0.6], [0, 0]]) { const b = new THREE.CylinderGeometry(0.28, 0.55, 1.0, 16, 1, true); b.translate(x, -6.7, z); b.deleteAttribute('uv'); parts.push(b.toNonIndexed()); }
-  const g = mergeGeometries(parts); g.computeVertexNormals(); g.scale(1.4, 1.25, 1.4);
-  shapes.RocketHead = shapeMesh(g, 1.03);
+// ---- cameo: the original meme rocket (from parts_rocket/r_space.js) flies past behind the roulette, not part of it
+const cameoGeo = (() => {
+  const prof = [];
+  for (let i = 0; i <= 20; i++) prof.push([2.05 + 0.08 * Math.sin(i / 20 * Math.PI), -4.5 + i * 0.475]);
+  for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI / 2; prof.push([2.55 * Math.cos(a) * (i === 0 ? 0.86 : 1), 5.4 + 2.5 * Math.sin(a)]); }
+  prof.splice(21, 0, [2.4, 5.0], [2.62, 5.35]);
+  prof.unshift([0.001, -4.6]);
+  const shaft = lathe(prof, 96); shaft.deleteAttribute('uv');
+  const b1 = new THREE.SphereGeometry(2.55, 64, 40); b1.translate(-1.95, -5.4, 0.3); b1.deleteAttribute('uv');
+  const b2 = new THREE.SphereGeometry(2.55, 64, 40); b2.translate(1.95, -5.4, -0.3); b2.deleteAttribute('uv');
+  const g = mergeGeometries([shaft.toNonIndexed(), b1.toNonIndexed(), b2.toNonIndexed()]); g.computeVertexNormals();
+  return g;
+})();
+const cameo = shapeMesh(cameoGeo, 1.035);
+const cameoFlame = new THREE.Mesh(new THREE.ConeGeometry(2.4, 11, 24, 1, true), new THREE.MeshBasicMaterial({ color: '#ffc06a', transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+cameoFlame.rotation.x = Math.PI; cameoFlame.position.y = -13.5; cameo.add(cameoFlame);
+const CAMEO_T0 = 1.0, CAMEO_T1 = 3.6;
+const cameoPos = t => { const u = (t - CAMEO_T0) / (CAMEO_T1 - CAMEO_T0); return new THREE.Vector3(lerp(-62, 62, u), lerp(-27, -23, u) + 2.0 * Math.sin(u * Math.PI), -70); };
+function updateCameo(t) {
+  cameo.visible = t > CAMEO_T0 && t < CAMEO_T1; if (!cameo.visible) return;
+  const p = cameoPos(t), q = cameoPos(t + 0.02); cameo.position.copy(p); cameo.scale.setScalar(0.95);
+  const dir = q.clone().sub(p).normalize(); cameo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); cameo.rotateY(t * 2.0);
+  cameoFlame.scale.set(1, 0.8 + 0.3 * Math.sin(t * 47) * Math.sin(t * 31), 1);
 }
 // Earth to scale (6,371 km radius)
 const earthR = 6371 / KM_PER_U;
@@ -542,8 +554,8 @@ const astro = makePerson(rnd, { skin: '#f1d2b6', top: '#f2f2ee', bottom: '#f2f2e
   const pack = mesh(new THREE.BoxGeometry(0.42, 0.55, 0.22), M('#dcdcd6')); pack.position.set(0, 1.2, -0.22); astro.root.add(pack); }
 bare.add(astro.outer);
 // =================== roulette ===================
-const ROUL = [['Sphere', 0], ['Cube', 0.3], ['Rocket', 0.55], ['Donut', 0.85], ['Tsunami', 1.15], ['RocketHead', 1.45], ['Pizza', 1.8], ['Heart', 2.1], ['Star', 2.4], ['Diamond', 2.7], ['Fork', FORK], ['Spoon', LAND]];
-const shapeLabel = { Sphere: 'Sphere', Cube: 'Cube', Rocket: 'Rocket', Donut: 'Donut', Tsunami: 'Tsunami', RocketHead: 'Rocket:', Pizza: 'Pizza slice', Heart: 'Heart', Star: 'Star', Diamond: 'Diamond', Fork: 'Fork', Spoon: 'Spoon' };
+const ROUL = [['Sphere', 0], ['Cube', 0.3], ['Rocket', 0.55], ['Donut', 0.85], ['Tsunami', 1.15], ['Pyramid', 1.45], ['Pizza', 1.8], ['Heart', 2.1], ['Star', 2.4], ['Diamond', 2.7], ['Fork', FORK], ['Spoon', LAND]];
+const shapeLabel = { Sphere: 'Sphere', Cube: 'Cube', Rocket: 'Rocket', Donut: 'Donut', Tsunami: 'Tsunami', Pyramid: 'Pyramid', Pizza: 'Pizza slice', Heart: 'Heart', Star: 'Star', Diamond: 'Diamond', Fork: 'Fork', Spoon: 'Spoon' };
 function rouletteAt(t) { let cur = ROUL[0]; ROUL.forEach(r => { if (t >= r[1]) cur = r; }); return { name: cur[0], since: t - cur[1] }; }
 const Q_BASE = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2));
 const heroQ = (yaw, pitch) => new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0)).multiply(Q_BASE);   // handle up, bowl facing the camera
@@ -560,7 +572,7 @@ function updateSpace(t) {
     if (r.name === 'Fork') { const w = Math.sin((t - FORK) * 9) * Math.exp(-(t - FORK) * 2.2); g.quaternion.copy(heroQ(0.25 + w * 0.15 + (t - FORK) * 0.2, -0.3)); popS = 0.9 * (1 + 0.15 * Math.exp(-r.since * 10) * Math.cos(r.since * 20)); g.position.set(0, 0.8, 0); }
     else if (r.name === 'Spoon') { g.quaternion.copy(heroQ(0.25 - 0.4 * Math.exp(-r.since * 5) + r.since * 0.08, -0.3)); popS = 0.9 * (1 + 0.2 * Math.exp(-r.since * 6) * Math.cos(r.since * 14)); g.position.set(0, 0.8, 0); }
     else if (r.name === 'Tsunami') { popS = 0.62; g.rotation.set(0.06, ang * 0.3, 0); g.position.set(-0.4, -1.2, 0); }
-    else { if (r.name === 'Donut') g.rotation.set(0.55, 0.35, ang); else g.rotation.set(0.35 + 0.2 * Math.sin(t * 1.3), ang, r.name.startsWith('Rocket') ? -0.25 : 0.15); g.position.set(0, 1.0, 0); }
+    else { if (r.name === 'Donut') g.rotation.set(0.55, 0.35, ang); else g.rotation.set(0.35 + 0.2 * Math.sin(t * 1.3), ang, r.name.startsWith('Rocket') ? -0.25 : 0.15); g.position.set(0, r.name === 'RocketHead' ? -1.2 : 1.0, 0); }
     g.scale.setScalar(popS);
   } else {
     const coll = t >= T_COLL;
@@ -573,11 +585,12 @@ function updateSpace(t) {
     else if (t < T_COLL && spoonMat.uniforms.uHeat.value !== 0) { spoonMat.uniforms.uHeat.value = 0; collapseSpoon(0); }
     airHalo.visible = !coll || t < T_COLL + 1.5; airHalo.material.uniforms.uA.value = coll ? 1 - smooth(T_COLL + 0.5, T_COLL + 1.5, t) : 1;
   }
+  updateCameo(t);
   deb.visible = t > T_COLL && t < T_BALL + 0.5; if (deb.visible) { updateDebris(t); deb.position.copy(spoonG.position); deb.quaternion.copy(spoonG.quaternion); deb.scale.copy(spoonG.scale); }
 }
 function spaceUniforms(t) {
   spoonMat.uniforms.uCam.value.copy(spaceCam.position); spoonMat.uniforms.uSun.value.copy(SUN_SPACE); spoonMat.uniforms.uT.value = t;
-  for (const s of [...Object.values(shapes), scaleEarth, ballSphere]) { if (!s.visible || !s.userData.mat) continue; const mat = s.userData.mat; mat.uniforms.uSun.value.copy(SUN_SPACE); mat.uniforms.uCam.value.copy(spaceCam.position); mat.uniforms.uCloudT.value = t * 0.03; if (s.userData.sh) s.userData.sh.material.uniforms.uS.value.copy(SUN_SPACE); }
+  for (const s of [...Object.values(shapes), scaleEarth, ballSphere, cameo]) { if (!s.visible || !s.userData.mat) continue; const mat = s.userData.mat; mat.uniforms.uSun.value.copy(SUN_SPACE); mat.uniforms.uCam.value.copy(spaceCam.position); mat.uniforms.uCloudT.value = t * 0.03; if (s.userData.sh) s.userData.sh.material.uniforms.uS.value.copy(SUN_SPACE); }
 }
 function spaceCamera(t) {
   let pos, look = new THREE.Vector3(0, 0.8, 0), fov = 36;
@@ -629,7 +642,7 @@ function beachCamera(t) {
 
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
-const el = Object.fromEntries(['title', 'titleEnd', 'stat', 'lab', 'val', 'sub', 'cap', 'flash', 'end', 'endT', 'endS', 'hud', 'veil', 'earthLab'].map(k => [k, $(k)]));
+const el = Object.fromEntries(['title', 'titleEnd', 'stat', 'lab', 'val', 'sub', 'cap', 'flash', 'end', 'endT', 'endS', 'hud', 'veil', 'earthLab', 'cameoLab'].map(k => [k, $(k)]));
 const fadeWin = (t, a, b, f = 0.25) => smooth(a, a + f, t) * (1 - smooth(b - f, b, t));
 const captions = [
   [5.2, 7.9, 'Same rock as Earth,<br>shaped like a tablespoon.'],
@@ -675,6 +688,9 @@ function updateDOM(t) {
   const eA = fadeWin(t, T_SIZE + 1.0, T_SEA, 0.4);
   if (eA > 0) { spaceCam.updateMatrixWorld(); const p = scaleEarth.position.clone().add(new THREE.Vector3(0, -earthR * 1.25, 0)).project(spaceCam); el.earthLab.style.left = ((p.x * 0.5 + 0.5) * W) + 'px'; el.earthLab.style.top = ((-p.y * 0.5 + 0.5) * H) + 'px'; }
   el.earthLab.style.opacity = eA;
+  const cA = fadeWin(t, CAMEO_T0 + 0.15, CAMEO_T1 - 0.1, 0.2);
+  if (cA > 0) { spaceCam.updateMatrixWorld(); const p = cameoPos(t).add(new THREE.Vector3(0, 10.5, 0)).project(spaceCam); el.cameoLab.style.left = ((p.x * 0.5 + 0.5) * W) + 'px'; el.cameoLab.style.top = ((-p.y * 0.5 + 0.5) * H) + 'px'; }
+  el.cameoLab.style.opacity = cA;
 }
 
 // =================== main ===================
