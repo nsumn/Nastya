@@ -6,7 +6,7 @@ SR = 44100; DUR = 64.0; N = int(SR * DUR)
 t = np.arange(N) / SR
 rng = np.random.default_rng(91)
 L = np.zeros(N); Rr = np.zeros(N)
-# "What if Earth was shaped like a spoon?" — built on audio_rocket.py (roulette, fake-out, boing, pads, tilt, cracks, slump) + the catchy theme of audio_fart2.py
+# "What if Earth was shaped like a spoon?" — built on audio_rocket.py (roulette, fake-out, boing, pads, tilt, cracks, slump)
 SR = 44100
 CUBE, LAND, ROUL_END, CAMEO0, CAMEO1, OCEANS, SPACE_END, DIVE_END, UP, TILT, TIP, CRACK, ROUND, TEND = 3.0, 3.95, 5.0, 6.5, 9.0, 11.0, 17.0, 21.0, 28.0, 34.0, 41.0, 47.0, 55.0, 60.0
 BACK, FALL = UP, CRACK + 2.0
@@ -117,55 +117,6 @@ for k, n in enumerate([60, 64, 67, 72]): place(ROUND + 0.4 + 0.05 * k, (np.sin(2
 place(TEND, np.sin(2 * np.pi * 41 * tt(4.5)) * np.exp(-tt(4.5) * 2.0), db(-5))
 x = tt(4.4); place(TEND + 0.1, (np.sin(2 * np.pi * 220 * x) + 0.5 * np.sin(2 * np.pi * 329.6 * x) + 0.35 * np.sin(2 * np.pi * 277.2 * x)) * np.exp(-x * 0.6) * np.clip(x / 0.4, 0, 1), db(-15))
 
-# ---------- background theme (from audio_fart2.py): chiptune-ish lead hook + oom-pah tuba + pizz + soft kick/clap, swung
-def lead(n, d, vib=0.006):
-    x = tt(d); f = hz(n) * (1 + vib * np.sin(2 * np.pi * 5.5 * x) * np.clip(x / 0.12, 0, 1))
-    ph = np.cumsum(f) / SR; sq = np.sign(np.sin(2 * np.pi * ph)) * 0.55 + 0.45 * np.sin(2 * np.pi * ph)
-    return filt(sq, 'lowpass', 3200) * np.clip(x / 0.008, 0, 1) * np.clip((d - x) / 0.03, 0, 1) * (0.75 + 0.25 * np.exp(-x * 6))
-def tubaN(n, d):
-    x = tt(d); f = hz(n); s = sum(np.sin(2 * np.pi * f * k * x) / k ** 1.2 for k in range(1, 6))
-    return s * np.clip(x / 0.015, 0, 1) * np.exp(-x * 7)
-def pizz2(n, d=0.25): x = tt(d); f = hz(n); return (np.sin(2 * np.pi * f * x) + 0.4 * np.sin(4 * np.pi * f * x)) * np.exp(-x * 18)
-def kickM(): x = tt(0.22); return np.sin(2 * np.pi * (55 * x + 70 * (1 - np.exp(-x * 40)) / 40)) * np.exp(-x * 14)
-def clapM(): x = tt(0.14); s = filt(rng.standard_normal(len(x)), 'bandpass', [1000, 4000]); return s * (np.exp(-x * 40) + 0.5 * np.exp(-np.abs(x - 0.012) * 300))
-def bellM(n, d=1.0): x = tt(d); f = hz(n); return (np.sin(2 * np.pi * f * x) + 0.3 * np.sin(2 * np.pi * f * 2.76 * x)) * np.exp(-x * 5)
-MBPM = 122; beat = 60 / MBPM; SW = 0.62
-def pos8(i): return (i // 2) * beat + (SW * beat if i % 2 else 0.0)
-HOOK_A = [(72, 1), (77, 1), (81, 1), (79, 1), (77, 2), None, (74, 1), (72, 1), None, (72, 1), (74, 1), (77, 2), None, None, None]
-HOOK_B = [(72, 1), (77, 1), (81, 1), (84, 1), (81, 2), None, (79, 1), (77, 1), (79, 1), (81, 1), (79, 1), (77, 3), None, None]
-PROG = [(53, [0, 4, 7]), (58, [0, 4, 7]), (48, [0, 4, 7, 10]), (53, [0, 4, 7])]
-SECTIONS = [(LAND + 0.4, SPACE_END - 0.1, PROG, [HOOK_A, HOOK_B], 0.8, 0.7), (DIVE_END + 0.3, TILT - 0.1, PROG, [HOOK_A, HOOK_B, HOOK_A, None], 0.7, 0.6),
-            (TILT + 0.4, TIP - 0.1, PROG, [HOOK_B, HOOK_A], 0.9, 0.7), (ROUND + 0.6, TEND - 0.1, PROG, [HOOK_A], 0.5, 0.55)]
-music2 = np.zeros(N)
-def put(at, sig, g=1.0):
-    i0 = int(at * SR)
-    if i0 >= N or i0 < 0: return
-    s = sig[:N - i0]; music2[i0:i0 + len(s)] += s * g
-for (a, b, prog, mels, dl, lg) in SECTIONS:
-    bar = 4 * beat; nb = 0; at = a
-    while at < b - 0.05:
-        root, ch = prog[nb % len(prog)]
-        for k in range(4):
-            tk = at + k * beat
-            if tk >= b - 0.02: break
-            if k % 2 == 0: put(tk, tubaN(root - 12 + (7 if k == 2 else 0), beat * 0.9), 0.85)
-            else:
-                for iv in ch: put(tk, pizz2(root + 12 + iv), 0.22)
-            if dl > 0: put(tk, kickM() if k % 2 == 0 else clapM(), (0.7 if k % 2 == 0 else 0.42) * dl)
-        mel = mels[(nb // 2) % len(mels)]
-        if mel is not None and lg > 0:
-            half = (nb % 2) * 8
-            for i in range(8):
-                ev = mel[half + i] if half + i < len(mel) else None
-                if ev is None: continue
-                n, ln = ev; t0 = at + pos8(i); t1 = at + pos8(i + ln)
-                if t0 < b - 0.05: put(t0, lead(n, (t1 - t0) * 0.92), lg * 0.5)
-        if nb % 4 == 0: put(at, bellM(84), 0.18)
-        at += bar; nb += 1
-mduck = np.ones(N)
-for (a, b, d) in [(CAMEO0, CAMEO1, 0.55), (DIVE_END - 0.8, DIVE_END + 0.6, 0.3), (TILT, TILT + 1.6, 0.5)]:
-    mduck *= 1 - (1 - d) * ramp(a, b, 0.15, 0.3)
-add(norm(music2) * mduck, db(-17))
 
 out = np.stack([L, Rr], 1)
 out = sosfilt(butter(2, 70, 'highpass', fs=SR, output='sos'), out.T).T
