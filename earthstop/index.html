@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/cormorant-garamond/500.css">
+<link rel="stylesheet" href="node_modules/@fontsource/cormorant-garamond/500-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/600.css">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  .ov{position:absolute;left:0;right:0;pointer-events:none}
+  #title{top:520px;text-align:center;font-family:'Cormorant Garamond';font-weight:500;color:#fff;
+    font-size:84px;line-height:1.08;text-shadow:0 2px 18px rgba(0,0,0,.45),0 0 3px rgba(0,0,0,.3)}
+  #hud{left:70px;top:900px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+  #slow{font-family:'JetBrains Mono';font-size:24px;letter-spacing:.14em;opacity:.85;height:30px}
+  #slow b{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff3b30;margin-right:12px;vertical-align:1px}
+  #lab{font-family:'JetBrains Mono';font-weight:600;font-size:28px;letter-spacing:.1em}
+  #val{font-family:'Cormorant Garamond';font-weight:500;font-size:96px;line-height:1;margin-top:4px}
+  #sub{font-family:'JetBrains Mono';font-size:22px;letter-spacing:.1em;opacity:.75;margin-top:10px}
+  #cap{top:1240px;text-align:center;font-family:'Cormorant Garamond';font-style:italic;font-weight:500;
+    color:#fff;font-size:58px;line-height:1.15;padding:0 90px;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+  #shade{top:0;bottom:0;background:radial-gradient(ellipse 70% 30% at 25% 52%,rgba(0,0,0,.32),transparent 70%),linear-gradient(to bottom,rgba(0,0,0,.18),transparent 18%,transparent 80%,rgba(0,0,0,.25))}
+  #flash{top:0;bottom:0;background:#fff;opacity:0}
+  #end{top:0;bottom:0;background:#151515;opacity:0}
+  #endT{top:780px;text-align:center;font-family:'Cormorant Garamond';font-weight:500;color:#f2f0ea;font-size:80px;line-height:1.1;opacity:0}
+  #endS{top:1010px;text-align:center;font-family:'JetBrains Mono';color:#9a978f;font-size:26px;letter-spacing:.1em;line-height:1.75;opacity:0;padding:0 90px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div id="shade" class="ov"></div>
+  <div id="flash" class="ov"></div>
+  <div id="title" class="ov">Что если Земля<br>остановится на 1 секунду?</div>
+  <div id="hud" class="ov"><div id="slow"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="cap" class="ov"></div>
+  <div id="end" class="ov"></div>
+  <div id="endT" class="ov">Что если Земля<br>остановится на 1 секунду?</div>
+  <div id="endS" class="ov">МОСКВА НЕСЁТСЯ ВОКРУГ ЗЕМНОЙ ОСИ<br>СО СКОРОСТЬЮ 942 КМ/Ч.<br>МЫ ЭТОГО НЕ ЗАМЕЧАЕМ — ПОКА ЗЕМЛЯ<br>КРУТИТСЯ ВМЕСТЕ С НАМИ.</div>
+</div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js"}}</script>
+<script type="module" src="scene.js"></script>
+</body>
+</html>

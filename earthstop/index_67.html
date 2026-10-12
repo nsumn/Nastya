@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  .ov{position:absolute;left:0;right:0;pointer-events:none}
+  .hl{color:#f6b23e}
+  #gl{position:absolute;left:0;top:0}
+  #title{top:340px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#fff;
+    font-size:90px;line-height:1.1;padding:0 100px;text-shadow:0 2px 18px rgba(0,0,0,.6),0 0 3px rgba(0,0,0,.4)}
+  #hud{left:100px;top:900px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.7),0 0 2px rgba(0,0,0,.5)}
+  #stat{font-family:'Inter';font-weight:600;font-size:23px;letter-spacing:.18em;opacity:.92;height:34px}
+  #stat b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff3b30;margin-right:12px;vertical-align:1px}
+  #lab{font-family:'Inter';font-weight:600;font-size:27px;letter-spacing:.16em}
+  #val{font-family:'Source Serif 4';font-weight:400;font-size:98px;line-height:1.02;margin-top:2px}
+  #sub{font-family:'Inter';font-weight:500;font-size:22px;letter-spacing:.14em;opacity:.85;margin-top:14px;max-width:760px}
+  #cap{top:1250px;text-align:center;font-family:'Source Serif 4';font-style:italic;font-weight:400;
+    color:#fff;font-size:54px;line-height:1.2;padding:0 200px 0 110px;text-shadow:0 2px 14px rgba(0,0,0,.75),0 0 3px rgba(0,0,0,.5)}
+  #shade{top:0;bottom:0;background:radial-gradient(ellipse 70% 26% at 22% 52%,rgba(0,0,0,.30),transparent 70%),linear-gradient(to bottom,rgba(0,0,0,.22),transparent 16%,transparent 60%,rgba(0,0,0,.32));}
+  #vig{top:0;bottom:0;background:radial-gradient(ellipse 85% 70% at 50% 50%,transparent 60%,rgba(0,0,0,.35))}
+  #dim{top:0;bottom:0;background:#05060c;opacity:0}
+  #ptable{position:absolute;left:90px;top:360px;width:900px;height:520px;opacity:0}
+  .pc{position:absolute;width:48px;height:48px;border-radius:6px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);
+      color:#e8ecf4;font-family:'Inter';font-weight:600;font-size:19px;line-height:54px;text-align:center;box-sizing:border-box}
+  .pc i{position:absolute;left:4px;top:-20px;font-style:normal;font-size:11px;font-weight:500;opacity:.7}
+  .pc.s{background:rgba(255,120,90,.16)} .pc.d{background:rgba(120,170,255,.14)} .pc.p{background:rgba(140,230,170,.14)} .pc.f{background:rgba(220,160,255,.16)}
+  .pc.ho{background:#f6b23e;color:#1a1306;border-color:#ffd88a;box-shadow:0 0 24px rgba(246,178,62,.8)}
+  #flash{top:0;bottom:0;background:#fff;opacity:0}
+  #cracks{top:0;bottom:0;opacity:0}
+  #end{top:0;bottom:0;background:#141414;opacity:0}
+  #endT{top:740px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#f2f0ea;font-size:86px;line-height:1.12;opacity:0;padding:0 120px}
+  #endS{top:1000px;text-align:center;font-family:'Inter';font-weight:500;color:#9a978f;font-size:22px;letter-spacing:.1em;line-height:1.9;opacity:0;padding:0 200px 0 110px}
+  /* render passes: scene (3D + graphics) and text (transparent overlay) */
+  .pass-scene .txt{visibility:hidden!important}
+  .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
+  html.pass-text,html.pass-text body{background:transparent!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <canvas id="gl" width="1080" height="1920"></canvas>
+  <div id="vig" class="ov gfx"></div>
+  <div id="shade" class="ov gfx"></div>
+  <div id="dim" class="ov gfx"></div>
+  <div id="ptable" class="gfx"></div>
+  <svg id="cracks" class="ov gfx" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="flash" class="ov gfx"></div>
+  <div id="title" class="ov txt">What if <span class="hl">67</span><br>got deleted?</div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="cap" class="ov txt"></div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">What if <span class="hl">67</span><br>got deleted?</div>
+  <div id="endS" class="ov txt">“6-7” WAS DICTIONARY.COM’S 2025 WORD OF THE YEAR.<br>SUPER BOWL I: PACKERS 35, CHIEFS 10 · JAN 15, 1967.<br>ELEMENT 67, HOLMIUM, HAS THE STRONGEST<br>MAGNETIC MOMENT OF ANY NATURAL ELEMENT.</div>
+</div>
+<script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="scene_67.js"></script>
+</body>
+</html>

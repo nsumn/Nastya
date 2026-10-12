@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  .ov{position:absolute;left:0;right:0;pointer-events:none}
+  .hl{color:#f6b23e}
+  /* TikTok safe zones: top < 320, right column x > 900 (y 950-1670), bottom > 1650, ~57px side crop */
+  #title{top:345px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#fff;
+    font-size:82px;line-height:1.12;padding:0 100px;text-shadow:0 2px 18px rgba(0,0,0,.6),0 0 3px rgba(0,0,0,.4)}
+  #hud{left:100px;top:900px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.65),0 0 2px rgba(0,0,0,.4)}
+  #stat{font-family:'Inter';font-weight:600;font-size:23px;letter-spacing:.18em;opacity:.92;height:34px}
+  #stat b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff3b30;margin-right:12px;vertical-align:1px}
+  #lab{font-family:'Inter';font-weight:600;font-size:27px;letter-spacing:.16em}
+  #val{font-family:'Source Serif 4';font-weight:400;font-size:98px;line-height:1.02;margin-top:2px;white-space:nowrap}
+  #sub{font-family:'Inter';font-weight:500;font-size:22px;letter-spacing:.14em;opacity:.85;margin-top:14px;max-width:760px}
+  #cap{top:1250px;text-align:center;font-family:'Source Serif 4';font-style:italic;font-weight:400;
+    color:#fff;font-size:52px;line-height:1.2;padding:0 190px;text-shadow:0 2px 14px rgba(0,0,0,.75),0 0 3px rgba(0,0,0,.45)}
+  #shade{top:0;bottom:0;background:radial-gradient(ellipse 70% 26% at 26% 52%,rgba(0,0,0,.30),transparent 70%),radial-gradient(ellipse 80% 13% at 50% 23%,rgba(0,0,0,.55),transparent 80%),radial-gradient(ellipse 75% 8% at 50% 68%,rgba(0,0,0,.4),transparent 80%),linear-gradient(to bottom,rgba(0,0,0,.25),transparent 16%,transparent 60%,rgba(0,0,0,.32));}
+  #vig{top:0;bottom:0;background:radial-gradient(ellipse 85% 70% at 50% 50%,transparent 60%,rgba(0,0,0,.35))}
+  #veil{top:0;bottom:0;background:#e8eef6;opacity:0}
+  #flash{top:0;bottom:0;background:#ffffff;opacity:0}
+  #cracks{top:0;bottom:0;opacity:0}
+  #lead{top:0;opacity:0}
+  .sclab{position:absolute;left:0;right:auto;transform:translateX(-50%);font-family:'Inter';font-weight:600;font-size:34px;letter-spacing:.14em;color:#fff;white-space:nowrap;text-align:center;opacity:0;text-shadow:0 1px 10px rgba(0,0,0,.8)}
+  .sclab.small{font-size:22px;transform:none;text-align:left;line-height:1.35}
+  #labels{top:0;bottom:0}
+  .lbl{position:absolute;transform:translate(-50%,-50%);font-family:'Inter';font-weight:600;font-size:24px;letter-spacing:.16em;color:#fff;white-space:nowrap;
+    text-shadow:0 1px 8px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.6)}
+  .lbl.small{font-size:20px;letter-spacing:.14em;opacity:.9}
+  .lbl.you{color:#9fd4ff;font-size:28px}
+  .lbl.blue{color:#8cc4ff;font-size:21px}.lbl.orange{color:#ffb878;font-size:21px}
+  .lbl.big{font-family:'Source Serif 4';font-weight:400;font-size:40px;letter-spacing:0}
+  /* switch */
+  #sw{top:560px;text-align:center;opacity:0;font-family:'Inter';color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+  #sw .t{font-weight:600;font-size:30px;letter-spacing:.2em;margin-bottom:22px}
+  #sw .pill{display:inline-block;position:relative;width:250px;height:116px;border-radius:58px;background:#34c759;box-shadow:0 6px 30px rgba(0,0,0,.45),inset 0 0 0 4px rgba(255,255,255,.25);transition:none}
+  #sw .knob{position:absolute;top:8px;left:142px;width:100px;height:100px;border-radius:50%;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.35)}
+  #sw.off .pill{background:#ff3b30}
+  #sw.off .knob{left:8px}
+  #sw .st{font-weight:600;font-size:44px;letter-spacing:.12em;margin-top:18px}
+  #sw .s{font-weight:500;font-size:20px;letter-spacing:.14em;opacity:.85;margin-top:8px}
+  #end{top:0;bottom:0;background:#141414;opacity:0}
+  #endT{top:740px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#f2f0ea;font-size:78px;line-height:1.12;opacity:0;padding:0 120px}
+  #endS{top:1000px;text-align:center;font-family:'Inter';font-weight:500;color:#9a978f;font-size:22px;letter-spacing:.1em;line-height:1.9;opacity:0;padding:0 190px}
+  .pass-scene .txt{visibility:hidden!important}
+  .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
+  html.pass-text,html.pass-text body{background:transparent!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div id="vig" class="ov gfx"></div>
+  <div id="shade" class="ov gfx"></div>
+  <svg id="lead" class="ov txt" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="labels" class="ov txt"></div>
+  <div id="veil" class="ov gfx"></div>
+  <svg id="cracks" class="ov gfx" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="flash" class="ov gfx"></div>
+  <div id="title" class="ov txt">What if a <span class="hl">1-mile asteroid</span><br>hit <span class="hl">Times Square?</span></div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="cap" class="ov txt"></div>
+  <div id="scl1" class="ov txt sclab">1 MILE WIDE</div><div id="scl2" class="ov txt sclab small">EMPIRE STATE<br>BUILDING · 1,454 FT</div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">What if a <span class="hl">1-mile asteroid</span><br>hit <span class="hl">Times Square?</span></div>
+  <div id="endS" class="ov txt">226,000 MEGATONS · 13-MILE CRATER<br>ROCKS THIS BIG HIT EARTH ABOUT<br>ONCE EVERY 1.5 MILLION YEARS<br>NASA TRACKS ~95% OF THEM<br>NONE ARE ON A COLLISION COURSE<br><span style="opacity:.6">MODEL: IMPACT: EARTH! (IMPERIAL COLLEGE)</span></div>
+</div>
+<script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
+<script src="node_modules/topojson-client/dist/topojson-client.min.js"></script>
+<script src="node_modules/d3-array/dist/d3-array.min.js"></script>
+<script src="node_modules/d3-geo/dist/d3-geo.min.js"></script>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="scene_asteroid.js"></script>
+</body>
+</html>
