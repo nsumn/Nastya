@@ -49,10 +49,10 @@ const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'fla
 const fadeWin = (t, a, b, f = 0.25) => smooth(a, a + f, t) * (1 - smooth(b - f, b, t));
 const captions = [
   [3.3, 5.6, 'Problem one: there are<br>5 Americans for every Brit.'],
-  [5.8, 7.8, 'And Britain is smaller<br>than Oregon.'],
+  [5.8, 7.8, 'And the UK is smaller<br>than Oregon.'],
   [8.3, 10.9, 'By plane? Every airliner on Earth<br>would need a month.'],
   [11.1, 13.8, "So let's say everyone<br>teleports at midnight."],
-  [16.6, 20.8, 'Britain gets denser<br>than Bangladesh.'],
+  [16.6, 20.8, 'The UK gets denser<br>than Bangladesh.'],
   [21.0, 25.6, '11 Americans in every<br>British home.'],
   [26.3, 29.8, 'And they all drive<br>on the left.'],
   [30.0, 33.7, 'Good news: the road signs<br>are still in miles.'],
@@ -78,7 +78,7 @@ function hudAt(t) {
   else if (t < T_AIR) { stat = '<b></b>🇺🇸 342M · 🇬🇧 69M'; lab = 'AMERICANS PER BRIT'; val = '4.9'; sub = 'UK: 93,410 SQ MI · OREGON: 95,988'; }
   else if (t < T_TELE) { const d = Math.max(1, Math.ceil(31 * smooth(T_AIR + 0.3, T_TELE - 1.2, t))); stat = '<b></b>EVERY AIRLINE ON EARTH'; lab = 'AIRLIFT'; val = 'Day ' + d; sub = '13.4M PASSENGERS A DAY'; }
   else if (t < T_UKMAP + 0.3) show = 0;
-  else if (t < T_LONDON) { const k = smooth(T_UKMAP + 1.6, T_UKMAP + 7.2, t); stat = '<b></b>🇬🇧 GREAT BRITAIN'; lab = 'PEOPLE / SQ MI'; val = fmtInt(lerp(741, 3659, k)); sub = 'BANGLADESH: 3,417'; }
+  else if (t < T_LONDON) { const k = smooth(T_UKMAP + 1.6, T_UKMAP + 7.2, t); stat = '<b></b>🇬🇧 UK'; lab = 'PEOPLE / SQ MI'; val = fmtInt(lerp(741, 3659, k)); sub = 'BANGLADESH: 3,417'; }
   else if (t < T_SHOP) { stat = '<b></b>🇬🇧 LONDON'; lab = 'AMERICAN DRIVERS'; val = '237.7M'; sub = 'FOR 41.7M UK VEHICLES'; }
   else if (t < T_TIMES) { stat = '<b></b>MODEL'; lab = 'FOOD'; val = '1 in 8'; sub = 'UK GROWS ~60% OF ITS OWN FOOD'; }
   else if (t < T_USMAP) { stat = '<b></b>🇺🇸 TIMES SQUARE'; lab = 'BRITS'; val = '69M'; sub = 'IN A COUNTRY BUILT FOR 342M'; }
