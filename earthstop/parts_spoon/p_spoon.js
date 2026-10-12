@@ -83,10 +83,17 @@ shapes.Spoon = spoonG;
   g.deleteAttribute('uv'); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const v = toScene(x, y, z + handleZ(Math.max(x, 2.6)) - 0.3); p.setXYZ(i, v.x, v.y, v.z); }
   const gn = g.toNonIndexed(); gn.computeVertexNormals(); shapes.Fork = shapeMesh(gn, 1.03);
 }
-{ // "Rocket:" — only the nose of the meme rocket (rounded, stylised)
-  const prof = [[0.001, 6.6], [1.2, 6.35], [2.3, 5.6], [3.0, 4.5], [3.25, 3.3], [3.35, 2.5], [3.5, 2.0], [3.15, 1.6], [2.6, 1.3], [2.5, -1.2], [2.5, -4.5], [0.001, -4.5]];
-  const g = lathe(prof, 72).toNonIndexed(); g.deleteAttribute('uv'); g.computeVertexNormals(); g.scale(1.1, 1.1, 1.1);
-  shapes.RocketHead = shapeMesh(g, 1.035);
+{ // "Rocket:" — the same rocket as in the roulette (stages, fins, engine bells), only the nose is the meme head (stylised)
+  const prof = [[0.001, 6.95], [0.5, 6.85], [0.95, 6.5], [1.3, 5.95], [1.52, 5.3], [1.6, 4.7], [1.62, 4.25], [1.5, 4.05], [1.22, 3.92], [1.18, 3.6], [1.3, 3.4], [1.3, 1.2], [1.42, 1.0], [1.42, -2.2], [1.6, -2.5], [1.6, -6.0], [1.35, -6.2], [0.001, -6.2]];
+  const body = lathe(prof, 64).toNonIndexed(); body.deleteAttribute('uv');
+  const parts = [body];
+  for (let k = 0; k < 4; k++) {
+    const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(1.9, -1.4); s.lineTo(1.9, -2.6); s.lineTo(0, -1.6); s.closePath();
+    const f = new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: false }); f.translate(1.45, -3.8, -0.11); f.rotateY(k * Math.PI / 2 + Math.PI / 4); f.deleteAttribute('uv'); parts.push(f.toNonIndexed());
+  }
+  for (const [x, z] of [[0.6, 0.6], [-0.6, 0.6], [0.6, -0.6], [-0.6, -0.6], [0, 0]]) { const b = new THREE.CylinderGeometry(0.28, 0.55, 1.0, 16, 1, true); b.translate(x, -6.7, z); b.deleteAttribute('uv'); parts.push(b.toNonIndexed()); }
+  const g = mergeGeometries(parts); g.computeVertexNormals(); g.scale(1.4, 1.25, 1.4);
+  shapes.RocketHead = shapeMesh(g, 1.03);
 }
 // Earth to scale (6,371 km radius)
 const earthR = 6371 / KM_PER_U;
