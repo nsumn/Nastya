@@ -48,10 +48,14 @@ function spaceCamera(t) {
 }
 const TILT_MAX = 54 * Math.PI / 180;
 function tiltAngle(t) { return TILT_MAX * ease((t - TILT - 0.6) / 2.4); }
+const BEACH_T = 24.6;
 function cityCamera(t) {
   let pos, look, fov = 62, up = new THREE.Vector3(0, 1, 0);
-  if (t < UP) { const u = t - DIVE_END; const yaw = lerp(-0.12, 0.12, ease(u / (UP - DIVE_END))); pos = new THREE.Vector3(2 + u * 1.2, lerp(6.5, 12, ease(u / 7)), -0.5); look = pos.clone().add(new THREE.Vector3(Math.cos(yaw) * 100, lerp(14, 30, smooth(DIVE_END, DIVE_END + 3.5, t)), Math.sin(yaw) * 100)); fov = 70; }
-  else if (t < TILT) { const u = (t - UP) / (TILT - UP); const k = ease(clamp(u * 1.4, 0, 1)); pos = new THREE.Vector3(14 + u * 4, lerp(7, 60, k), -0.5); look = pos.clone().add(new THREE.Vector3(100, lerp(22, 60, k), lerp(0, -10, k))); fov = lerp(66, 76, k); }
+  if (t < BEACH_T) { const u = (t - DIVE_END) / (BEACH_T - DIVE_END); const k = 0.25 * u + 0.75 * ease(u);   // fly down the street to the shore
+    pos = new THREE.Vector3(lerp(-20, 200, k), lerp(10, 6, k), lerp(-0.5, -1.5, k)); look = pos.clone().add(new THREE.Vector3(100, lerp(-5, -7, k), lerp(0, -2, k))); fov = 68; }
+  else if (t < UP) { const u = (t - BEACH_T) / (UP - BEACH_T); const k = ease(u);      // on the beach: look up at the walls
+    pos = new THREE.Vector3(200 + u * 4, lerp(6, 4.5, k), -1.5); look = pos.clone().add(new THREE.Vector3(100, lerp(-7, 40, k), -2)); fov = lerp(68, 66, k); }
+  else if (t < TILT) { const u = (t - UP) / (TILT - UP); const k = ease(clamp(u * 1.4, 0, 1)); pos = new THREE.Vector3(204 + u * 4, lerp(4.5, 60, k), -1.5); look = pos.clone().add(new THREE.Vector3(100, lerp(40, 60, k), lerp(-2, -10, k))); fov = lerp(66, 76, k); }
   else { const u = t - TILT; const a = tiltAngle(t); pos = new THREE.Vector3(48 + u * 0.4, 3.0, -4.5); look = new THREE.Vector3(48 + u * 0.4, 3.0, 12); up = new THREE.Vector3(Math.sin(a), Math.cos(a), 0); fov = 70; }
   cam.fov = fov; cam.updateProjectionMatrix(); cam.position.copy(pos); cam.up.copy(up); cam.lookAt(look);
 }
@@ -106,8 +110,10 @@ function updateCity(t) {
     if (c.cross) continue;
     const tt = t < TILT ? t : Math.min(t, TILT + 0.8); let x = wrapR(c.x0 + c.dir * c.speed * tt, -220, 760);
     if (t >= TILT) { const t0 = TILT + 0.8 + (c.x0 % 1 + 1) % 1 * 0.6; x -= slide(t0, 6.5); }
-    c.g.position.set(x, 0, c.lane); c.g.rotation.set(0, c.dir > 0 ? 0 : Math.PI, 0);
-    c.g.visible = Math.hypot(x - cam.position.x, c.lane - cam.position.z) > 7;
+    let z = c.lane, ry = c.dir > 0 ? 0 : Math.PI;
+    if (t < TILT && x > 158) { const ex = x - 158; x = 165 + (c.dir > 0 ? -1.75 : 1.75); z = c.lane + Math.sign(c.lane) * ex; ry = Math.PI / 2 * (c.dir > 0 ? 1 : -1); }   // turn onto the beach road
+    c.g.position.set(x, 0, z); c.g.rotation.set(0, ry, 0);
+    c.g.visible = Math.hypot(x - cam.position.x, z - cam.position.z) > 7;
   }
   for (const P of people) {
     const o = P.p.outer;
@@ -120,8 +126,9 @@ function updateCity(t) {
     const gy = Math.abs(z) > 7 ? 0.18 : 0;
     o.position.set(x, gy + 0.95, z); o.rotation.order = 'ZYX'; o.rotation.set(0, ry, -tl * 0.5);
     if (t >= TILT + 1.2) poseFlail(P.p, t, P.ph); else if (P.kind === 'idle') poseIdle(P.p, t, P.ph); else poseWalk(P.p, t * 1.3 * 4.4 + P.ph);
-    o.visible = Math.hypot(x - cam.position.x, z - cam.position.z) > 2.5;
+    o.visible = Math.hypot(x - cam.position.x, z - cam.position.z) > 2.5 && !(t < TILT && x > BEACH_X - 1);
   }
+  const onShore = t < TILT; beach.visible = onShore; for (const o of beachHide) o.visible = !onShore; if (onShore) waveBeachPeople(t);
   ball.visible = false;
 }
 
@@ -135,8 +142,8 @@ const captions = [
   [11.2, 14.0, 'Every ocean drains<br>into the bowl…'],
   [14.3, 16.9, '…one round sea,<br>77 miles deep.'],
   [17.3, 20.6, 'Everyone lives on the shore<br>at the very bottom.'],
-  [21.2, 24.4, "From the beach, the bowl's<br>walls rise on every side…"],
-  [24.6, 27.8, '…2,000 miles high.'],
+  [21.2, 24.4, 'Every street runs<br>down to the beach.'],
+  [24.8, 27.8, 'From here, the walls rise<br>2,000 miles on every side.'],
   [28.3, 33.8, 'And past the far rim, the handle<br>runs 23,700 miles into space.'],
   [34.3, 37.6, 'Halfway up the wall,<br>"down" tilts 54°.'],
   [37.8, 40.8, 'Everything slides<br>into the sea.'],

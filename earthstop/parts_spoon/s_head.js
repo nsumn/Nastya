@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makePerson, poseWalk, poseIdle, poseFlail } from './people.js';
+import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js';
 
 // "What if Earth was shaped like a spoon?" — roulette (tsunami fake-out) -> a spoon with Earth's volume & mass (SPOON_BRIEF.md).
 // physics (tools/spoon_phys.py, Monte-Carlo gravity; 1 shape unit = 3,469 km): 40,100 mi long; all oceans + air pool on the bowl floor

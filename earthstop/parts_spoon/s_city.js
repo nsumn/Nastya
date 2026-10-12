@@ -261,7 +261,7 @@ function person(o) {
 // ---- populate props
 for (const side of [-1, 1]) for (let x = -160; x < 1300; x += 30) { if (CROSS.some(c => Math.abs(x - c) < 10)) continue; streetLamp(x, side * 7.6, side); }
 for (const side of [-1, 1]) for (let x = -150; x < 1300; x += R(11, 16)) { if (CROSS.some(c => Math.abs(x - c) < 10)) continue; if (side < 0 && x > 37 && x < 62) continue; palm(x, side * R(8.0, 8.5), R(7.5, 11.5)); }
-for (const cx of [30, 165, 300]) { trafficLight(cx - 8.2, -8.0, -1, 7.5); trafficLight(cx + 8.2, 8.0, 1, 7.5); }
+for (const cx of [30, 300]) { trafficLight(cx - 8.2, -8.0, -1, 7.5); trafficLight(cx + 8.2, 8.0, 1, 7.5); }
 for (let i = 0; i < 46; i++) { const dir = rnd() < 0.5 ? 1 : -1; const lane = dir > 0 ? pick([-1.75, -5.25]) : pick([1.75, 5.25]); car(lane, dir, R(-200, 700), R(8, 13)); }
 for (let i = 0; i < 18; i++) { const side = rnd() < 0.5 ? -1 : 1; const g = new THREE.Group(); city.add(g); const dirZ = side; cars.push({ g, cross: true }); g.visible = false; }
 // parked/benches/bins
@@ -293,6 +293,55 @@ for (let i = 0; i < 22; i++) {
   s.position.set(Math.cos(ang) * dist, R(250, 520), Math.sin(ang) * dist); const sc = R(1300, 2400); s.scale.set(sc, sc * 0.38, 1);
   city.add(s); clouds.push(s);
 }
+
+// ---- the beach: the street ends at the shore of the one sea (+x = toward the sea). Shown only in the shore shots (t < TILT).
+const BEACH_X = 172, WATER_X = 236, SAND_Y = 0.42, WATER_Y = 0.3;
+const beachHide = [];
+for (const ch of city.children) { if (ch.isLight || ch.isSprite) continue; const bb = new THREE.Box3().setFromObject(ch); if (!bb.isEmpty() && bb.min.x > BEACH_X - 0.5) beachHide.push(ch); }
+const beach = new THREE.Group(); city.add(beach);
+const sandTex = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#e6d09a'; g.fillRect(0, 0, w, h); speckle(g, w, h, 6000, ['#efdcae', '#d9c086', '#f3e6c0', '#cfb57c'], 2); }, [40, 200]);
+const sand = mesh(new THREE.BoxGeometry(WATER_X + 30 - BEACH_X, 1.2, 1600), M('#ffffff', { map: sandTex, roughness: 1 }), false, true);
+sand.position.set((BEACH_X + WATER_X + 30) / 2, SAND_Y - 0.6, 0); beach.add(sand);
+const wet = mesh(new THREE.PlaneGeometry(14, 1600), M('#b89a62', { roughness: 0.5 }), false, true); wet.rotation.x = -Math.PI / 2; wet.position.set(WATER_X - 4, SAND_Y + 0.005, 0); beach.add(wet);
+const waterMat = new THREE.MeshStandardMaterial({ color: '#1f73a6', roughness: 0.12, metalness: 0.1 });
+const water = mesh(new THREE.PlaneGeometry(9000, 18000), waterMat, false, true); water.rotation.x = -Math.PI / 2; water.position.set(WATER_X + 4500, SAND_Y + 0.01, 0); beach.add(water);
+const foamMat = new THREE.MeshBasicMaterial({ color: '#f4f8fa', transparent: true, opacity: 0.85 });
+const foams = [0, 1, 2].map(k => { const f = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1600), foamMat); f.rotation.x = -Math.PI / 2; beach.add(f); return f; });
+// promenade: low white wall with a gap for the street, boardwalk strip
+for (const s of [-1, 1]) box(0.6, 0.9, 790, '#e9e4d8', BEACH_X + 0.3, 0.45, s * (10 + 395), beach);
+box(8, 0.06, 1600, '#b88a5a', BEACH_X + 4.6, SAND_Y + 0.03, 0, beach);
+for (let z = -300; z <= 300; z += 13) { if (Math.abs(z) < 9) continue; palm(BEACH_X + 2.5, z + R(-2, 2), R(8, 12)); const P = palms[palms.length - 1]; P.g.position.y = SAND_Y; beach.add(P.g); }
+// umbrellas + towels
+const UMB = ['#e8483a', '#f2c12e', '#2d8fd6', '#ffffff', '#3cb371', '#ff7f50', '#9b59b6'];
+const umbGeo = new THREE.ConeGeometry(1.5, 0.55, 10, 1, true), poleGeo = new THREE.CylinderGeometry(0.04, 0.04, 2.3, 5);
+const spots = [];
+const bz = () => (rnd() < 0.75 ? R(-1, 1) * R(0.3, 1) * 70 : R(-260, 260));
+for (let i = 0; i < 300; i++) { const x = R(BEACH_X + 12, WATER_X - 8), z = bz(); if (Math.abs(z) < 4 && x < BEACH_X + 20) continue; if (Math.abs(z + 1.5) < 7 && x > 188 && x < 218) continue; spots.push([x, z]); }
+spots.forEach(([x, z], i) => {
+  if (i % 2 === 0) { const g = new THREE.Group(); g.position.set(x, SAND_Y, z); beach.add(g); const pole = mesh(poleGeo, M('#f0f0f0')); pole.position.y = 1.15; g.add(pole);
+    const c = mesh(umbGeo, M(pick(UMB), { roughness: 0.7, side: THREE.DoubleSide })); c.position.y = 2.35; c.rotation.z = R(-0.15, 0.15); g.add(c); }
+  box(1.8, 0.03, 0.9, pick(UMB), x + R(-1, 1), SAND_Y + 0.02, z + R(1, 2), beach).rotation.y = R(-0.4, 0.4);
+});
+// people on the beach: sitting, standing, strolling along the water, wading
+const beachPeople = [];
+for (let i = 0; i < 300; i++) {
+  const kind = i < 110 ? 'sit' : i < 170 ? 'stand' : i < 230 ? 'stroll' : 'wade';
+  const p = makePerson(rnd, { shorts: rnd() < 0.6, longSleeve: false }); beach.add(p.outer);
+  const x = kind === 'wade' ? R(WATER_X + 2, WATER_X + 18) : kind === 'stroll' ? R(WATER_X - 9, WATER_X - 2) : R(BEACH_X + 12, WATER_X - 8);
+  beachPeople.push({ p, kind, x, z: kind === 'stroll' ? R(-200, 200) : bz(), v: (rnd() < 0.5 ? 1 : -1) * R(0.9, 1.4), ry: R(0, 6.28), ph: R(0, 6) });
+}
+const waveBeachPeople = t => {
+  for (const B of beachPeople) {
+    const o = B.p.outer; let z = B.z, y = SAND_Y + 0.95, ry = B.ry;
+    if (B.kind === 'sit') { y = SAND_Y + 0.2; poseSit(B.p); }
+    else if (B.kind === 'stroll') { z = wrapR(B.z + B.v * t, -200, 200); ry = B.v > 0 ? 0 : Math.PI; poseWalk(B.p, t * 4.4 + B.ph); }
+    else if (B.kind === 'wade') { y = SAND_Y + 0.95 - 0.45 - 0.08 * Math.sin(t * 1.5 + B.ph); poseIdle(B.p, t, B.ph); }
+    else poseIdle(B.p, t, B.ph);
+    o.position.set(B.x, y, z); o.rotation.set(0, ry, 0);
+  }
+  foams.forEach((f, k) => { const w = (t * 0.25 + k / 3) % 1; f.position.set(WATER_X + 6 - w * 7, SAND_Y + 0.02, 0); f.scale.x = 1 + w; });
+  foamMat.opacity = 0.7;
+};
 
 
 const hzC = new THREE.Color();
