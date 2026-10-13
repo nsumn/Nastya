@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  .ov{position:absolute;left:0;right:0;pointer-events:none}
+  .hl{color:#ffd98a;text-shadow:0 2px 16px rgba(40,15,0,.85),0 0 4px rgba(40,15,0,.8)}
+  .bl{color:#9cc2ff;text-shadow:0 2px 18px rgba(0,10,40,.8),0 0 4px rgba(0,10,40,.7)}
+  .lb{position:absolute;transform:translate(-50%,-100%);font-family:'Inter';font-weight:600;font-size:26px;letter-spacing:.16em;color:#fff;white-space:nowrap;text-shadow:0 1px 10px rgba(0,0,0,.75)}
+  /* TikTok safe zones: top < 320, right column x > 900 (y 950-1670), bottom > 1650, ~57px side crop */
+  #title{top:345px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#fff;
+    font-size:82px;line-height:1.12;padding:0 100px;text-shadow:0 2px 18px rgba(0,0,0,.6),0 0 4px rgba(0,0,0,.5)}
+  #hud{left:100px;top:900px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.65),0 0 2px rgba(0,0,0,.4)}
+  #stat{font-family:'Inter';font-weight:600;font-size:23px;letter-spacing:.18em;opacity:.92;height:34px}
+  #stat b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff3b30;margin-right:12px;vertical-align:1px}
+  #lab{font-family:'Inter';font-weight:600;font-size:27px;letter-spacing:.16em}
+  #val{font-family:'Source Serif 4';font-weight:400;font-size:98px;line-height:1.02;margin-top:2px}
+  #sub{font-family:'Inter';font-weight:500;font-size:22px;letter-spacing:.14em;opacity:.85;margin-top:14px;max-width:760px}
+  #cap{top:1250px;text-align:center;font-family:'Source Serif 4';font-style:italic;font-weight:400;
+    color:#fff;font-size:52px;line-height:1.2;padding:0 190px;text-shadow:0 2px 14px rgba(0,0,0,.7),0 0 3px rgba(0,0,0,.4)}
+  #shade{top:0;bottom:0;background:radial-gradient(ellipse 70% 26% at 26% 52%,rgba(0,0,0,.30),transparent 70%),linear-gradient(to bottom,rgba(0,0,0,.22),transparent 16%,transparent 60%,rgba(0,0,0,.32));}
+  #vig{top:0;bottom:0;background:radial-gradient(ellipse 85% 70% at 50% 50%,transparent 60%,rgba(0,0,0,.35))}
+  #veil{top:0;bottom:0;background:#eef3f8;opacity:0}
+  #flash{top:0;bottom:0;background:#ffffff;opacity:0}
+  #cracks{top:0;bottom:0;opacity:0}
+  #end{top:0;bottom:0;background:#141414;opacity:0}
+  #endT{top:740px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#f2f0ea;font-size:78px;line-height:1.12;opacity:0;padding:0 120px}
+  #endS{top:1000px;text-align:center;font-family:'Inter';font-weight:500;color:#9a978f;font-size:22px;letter-spacing:.1em;line-height:1.9;opacity:0;padding:0 190px}
+  .pass-scene .txt{visibility:hidden!important}
+  .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
+  html.pass-text,html.pass-text body{background:transparent!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div id="shade" class="ov gfx"></div>
+  <div id="veil" class="ov gfx"></div>
+  <svg id="cracks" class="ov gfx" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="flash" class="ov gfx"></div>
+  <div id="title" class="ov txt">What if you were<br>a <span class="hl">cat</span> for one day?</div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="cap" class="ov txt"></div>
+  <div id="labels" class="ov txt" style="top:0;bottom:0"></div>
+  <div id="split" class="ov txt" style="top:0;bottom:0;opacity:0">
+    <div style="position:absolute;left:100px;top:360px;font-family:'Inter';font-weight:600;font-size:30px;letter-spacing:.2em;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.8)">YOU</div>
+    <div style="position:absolute;left:100px;top:1000px;font-family:'Inter';font-weight:600;font-size:30px;letter-spacing:.2em;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.8)">CAT</div>
+  </div>
+  <div id="rb" class="ov gfx" style="top:0;bottom:0;opacity:0">
+    <div style="position:absolute;left:100px;right:190px;top:410px;height:22px;border-radius:13px;background:linear-gradient(90deg,#7a00ff,#0050ff,#00c8ff,#00d040,#e8e800,#ff9000,#ff1a00)"></div>
+    <div id="rbCat" style="position:absolute;left:100px;right:190px;top:1050px;height:22px;border-radius:13px"></div>
+  </div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">What if you were<br>a <span class="hl">cat</span> for one day?</div>
+  <div id="endS" class="ov txt">CATS SEE BLUE AND YELLOW BEST AND BARELY SEE RED.<br>THEY HEAR SOUNDS ABOUT 3× HIGHER THAN WE DO.<br>THEY CAN'T TASTE SWEET AT ALL.</div>
+</div>
+<script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="scene_cat2.js"></script>
+</body>
+</html>

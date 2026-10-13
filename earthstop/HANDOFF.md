@@ -14,7 +14,8 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Visual continuity matters**: if we dive toward water, the next shot must lead to that water (spoon: street now runs down to a crowded beach).
 - **Series style** for the shape videos: Earth planet shader on the shape + the signature roulette and its sound (from `parts_rocket`). Follow a brief she uploads (e.g. `SPOON_BRIEF.md`) exactly.
 - Never write the word "penis" anywhere (the meme rocket appears only as a background cameo labelled "Rocket?").
-- **The blue-star video looked ugly to her ("некрасивым")** — the low-poly cartoon look is out. She now wants **realistic** visuals → see the realistic pipeline below. Show her 2–3 look-test frames before a full build.
+- **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
+- TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add film grain.
 
 ## Finished videos (engine parts in the repo)
 Asteroid on Times Square, US↔UK swap, Earth shaped like a spoon (`parts_spoon/`, per `SPOON_BRIEF.md`), Sun as a blue star (`parts_blue/`, low-poly — she disliked the look).
