@@ -60,7 +60,7 @@ const GRAIN_SHADER = {
       c.rgb*=1.0-uVig*smoothstep(0.18,0.75,length(q)*1.35);
       float l=dot(c.rgb,vec3(0.299,0.587,0.114)); c.rgb=mix(vec3(l),c.rgb,uSat); c.rgb=(c.rgb-0.5)*uCon+0.5;
       c.rgb+=(h(vUv*vec2(1080.0,1920.0))-0.5)*uGrain;
-      float lid=smoothstep(uLid-0.06,uLid,abs(vUv.y-0.5)*2.0*(1.0+0.15*q.x*q.x)); c.rgb*=1.0-lid*smoothstep(0.0,0.02,uLid);   // eyelids closing
+      float op=1.0-uLid; float lid=smoothstep(op-0.06,op,abs(vUv.y-0.5)*2.0*(1.0+0.15*q.x*q.x)); c.rgb*=1.0-lid*smoothstep(0.0,0.02,uLid);   // eyelids closing
       gl_FragColor=c; }`,
 };
 function makeComp(w, h, toScreen) {
