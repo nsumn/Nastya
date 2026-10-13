@@ -53,7 +53,7 @@ const captions = [
   [27.3, 29.6, "That's the deepest hole ever.<br>0.1% of the way."],
   [29.8, 31.9, 'At that pace: 20,000 years<br>to dig through.'],
   [32.3, 35.3, 'Now jump into a magic tube<br>all the way through.'],
-  [35.5, 38.6, "The mantle isn't lava.<br>It's solid rock that slowly flows."],
+  [35.5, 38.6, "The mantle isn't lava.<br>It's solid rock that flows."],
   [38.8, 40.8, 'Then: a sea of liquid iron.'],
   [41.0, 43.6, "The core: 10,800°F.<br>As hot as the Sun's surface."],
   [43.8, 47.4, 'Weightless at the center,<br>flying 22,000 mph.'],
