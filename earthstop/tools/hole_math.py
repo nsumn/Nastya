@@ -29,3 +29,9 @@ for name, km in [("crust (continent)", 35), ("mantle base", 2891), ("outer core 
     j = int((RE - km * 1e3) / dr); print(f"{name}: depth {km} km = {km/1.609:,.0f} mi, g {g[j]/g[-1]:.2f} G, speed {v[j]*2.23694:,.0f} mph, time {np.sum(dr/np.maximum((v[j:-1]+v[j+1:])/2,1e-6)[:])/60:.1f} min after start")
 print(f"Kola 12,262 m = {12262/0.3048:,.0f} ft = {12.262/1.609:.1f} mi = {12.262/12742*100:.2f}% of the diameter")
 print(f"diameter {2*RE/1609:,.0f} mi")
+# pressure (hydrostatic, PREM density) at depth; temperatures from the geotherm (approximate, textbook values)
+P = np.cumsum((rh * g)[::-1])[::-1] * dr                     # Pa, integrated from the surface down
+for name, km in [("Kola 12.3 km", 12.262), ("crust base 40 km", 40), ("core-mantle 2891 km", 2891), ("center", 6371)]:
+    j = max(0, int((RE - km * 1e3) / dr)); print(f"pressure at {name}: {P[j]/101325:,.0f} atm")
+print(f"rock temp at 1 mi with 25 C/km from 15 C: {15+25*1.609:.0f} C = {(15+25*1.609)*9/5+32:.0f} F")
+print(f"Kola pace: 12.262 km in 19 yr -> through Earth {12742/12.262*19:,.0f} yr")
