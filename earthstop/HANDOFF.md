@@ -20,7 +20,7 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 Asteroid on Times Square, US↔UK swap, Earth shaped like a spoon (`parts_spoon/`, per `SPOON_BRIEF.md`), Sun as a blue star (`parts_blue/`, low-poly — she disliked the look).
 
 ## CURRENT TASK: "What if you dug a hole through the Earth?" (`parts_hole/`, `index_hole.html`, `scene_hole.js`)
-Status: script approved ("да"); **3 look-test frames sent (yard / Earth cutaway / ocean) — waiting for her verdict on the realistic style.** Then build the full ~64 s video.
+Status: she asked for a continuous ride down the hole with the real problems at each depth (new script approved: 811/gas line, groundwater, limestone fossils, rock bursts, heat/squeeze at Kola, cutaway, PREM fall with live speed/G, Indian Ocean). Full build done in `parts_hole/`, audio `audio_hole.py`; first full render in progress. Captions/HUD live in `h_main.js`.
 
 Numbers (`tools/hole_math.py`, PREM density): 7,919 mi through; evacuated tunnel fall **38.1 min** (Klotz 2015: ~38 min); **22,188 mph** at the center after 19 min; gravity **rises to 1.09 G** at the core–mantle boundary (1,797 mi down), then 0 at the center. Kola Superdeep Borehole 7.6 mi (12,262 m, 1989, ~180 °C/356 °F) = 0.1% of the way. Mponeng mine ~2.5 mi, rock ~140 °F. Core ~6,000 °C (~10,800 °F, ESRF/Anzellini 2013), ~3.3 million atm. Kansas (38.5 N, 98 W) → antipode 38.5 S, 82 E = Indian Ocean, not China.
 

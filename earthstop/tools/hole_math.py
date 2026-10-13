@@ -35,3 +35,11 @@ for name, km in [("Kola 12.3 km", 12.262), ("crust base 40 km", 40), ("core-mant
     j = max(0, int((RE - km * 1e3) / dr)); print(f"pressure at {name}: {P[j]/101325:,.0f} atm")
 print(f"rock temp at 1 mi with 25 C/km from 15 C: {15+25*1.609:.0f} C = {(15+25*1.609)*9/5+32:.0f} F")
 print(f"Kola pace: 12.262 km in 19 yr -> through Earth {12742/12.262*19:,.0f} yr")
+# fall table for the video: time (min) -> depth (km), speed (mph), g (G), surface to surface
+import json
+depth = (RE - r)[::-1] / 1e3; vv = v[::-1]; gg = g[::-1] / g[-1]           # from the surface (depth 0) to the center
+dtm = np.concatenate([[0], np.cumsum(dr / np.maximum((vv[1:] + vv[:-1]) / 2, 1e-3))]) / 60
+k = np.linspace(0, len(depth) - 1, 400).astype(int)
+half = {'t': dtm[k].round(4).tolist(), 'd': depth[k].round(2).tolist(), 'mph': (vv[k] * 2.23694).round(0).tolist(), 'g': gg[k].round(3).tolist()}
+json.dump(half, open(__file__.replace('tools/hole_math.py', 'data/hole_fall.json'), 'w'))
+print('fall table: half time', round(dtm[-1], 2), 'min')

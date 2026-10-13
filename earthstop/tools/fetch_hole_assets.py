@@ -12,7 +12,7 @@ def api(id): return json.load(urllib.request.urlopen(f'https://api.polyhaven.com
 for hid in ['grasslands_sunset', 'kloppenheim_06_puresky']:
     for res in ['2k', '4k']: get(api(hid)['hdri'][res]['hdr']['url'], f'hdri/{hid}_{res}.hdr')
 # PBR textures (2k): diffuse, normal (GL), roughness / arm
-for tid in ['excavated_soil_wall', 'brown_mud_02', 'rock_face', 'dark_rock', 'leafy_grass', 'aerial_grass_rock', 'rocky_terrain_02', 'forest_ground_04']:
+for tid in ['excavated_soil_wall', 'brown_mud_02', 'rock_face', 'dark_rock', 'leafy_grass', 'aerial_grass_rock', 'rocky_terrain_02', 'forest_ground_04', 'cliff_side', 'dark_rock_02', 'rock_06', 'quarry_wall', 'granite_wall', 'marble_cliff_03']:
     try: d = api(tid)
     except Exception as e: print('skip', tid, e); continue
     for key, nm in [('Diffuse', 'diff'), ('nor_gl', 'nor'), ('Rough', 'rough'), ('arm', 'arm'), ('Displacement', 'disp')]:
