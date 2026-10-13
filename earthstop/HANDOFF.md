@@ -47,7 +47,11 @@ Audio plan: realistic (spade/dirt, wind, a few birds, deep but phone-audible rum
 - Look-test frames render at t = 2 / 21 / 53 (`PAGE=index_hole.html node render.mjs out/hotest 0 0 30 2,21,53`), ~5–15 s each on llvmpipe.
 - Still to do: shaft shot (excavated_soil_wall → rock → glowing rock, depth counter), fall POV inside the tunnel, rise + zoom to the Indian Ocean, pop-out from under the water, HUD/captions/DOM labels, `audio_hole.py`, end card, full render, encode, deliver. Known nit: the orange part of the title blends into the sunset — give it a stronger dark shadow.
 
+## Cat video ("What if you were a cat for one day?")
+Realistic pipeline (`parts_cat/`, assets via `python3 earthstop/tools/fetch_ph.py cat hdri:lythwood_room hdri:grasslands_sunset hdri:suburban_garden@4k hdri:street_lamp tex:diagonal_parquet tex:fabric_pattern_05 tex:clay_plaster tex:leafy_grass model:sofa_02 model:modern_coffee_table_01 model:potted_plant_02 model:throw_pillows_01 model:side_table_01 model:rubber_duck_toy model:wooden_bookshelf_worn model:modern_arm_chair_01 model:street_rat model:food_apple_01 model:food_lime_01 model:lemon model:strawberry_chocolate_cake model:wooden_bowl_01 model:grass_medium_01 model:grass_medium_02` — grasslands_sunset is copied from assets/hole). She asked for a dynamic start (mouse: ultrasonic squeak → chase → miss), colour vision emphasised (split YOU/CAT with fruit + rainbow bars), then the street. Approved script is in `parts_cat/c_main.js` captions.
+
 ## Queued
+- The hole video was posted in the realistic version (description included the Solar System Scope CC BY credit).
 - "What if you dropped a penny from the Empire State Building?" — she said "пока делай", then switched topics. Math ready in `tools/penny_math.py` (terminal ~25 mph after ~50 ft / 2 s; vacuum 177 mph from 1,050 ft; 0.16 J ≈ a flick; MythBusters busted it in 2003). Script table was sent, not yet approved. If done, do it in the new realistic style.
 
 ## Setup in a fresh session

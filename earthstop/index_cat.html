@@ -41,10 +41,25 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="1080" height="1920"></canvas>
-  <svg id="wh" class="ov gfx" style="position:absolute;top:0;left:0;opacity:0" width="1080" height="1920" viewBox="0 0 1080 1920"><g fill="none" stroke="rgba(255,255,255,.75)" stroke-linecap="round" style="filter:blur(3px)">
-    <path d="M-20 1500 Q 260 1380 520 1420" stroke-width="5"/><path d="M-30 1580 Q 250 1500 500 1530" stroke-width="4"/><path d="M-20 1680 Q 240 1640 470 1650" stroke-width="4"/>
-    <path d="M1100 1500 Q 820 1380 560 1420" stroke-width="5"/><path d="M1110 1580 Q 830 1500 580 1530" stroke-width="4"/><path d="M1100 1680 Q 840 1640 610 1650" stroke-width="4"/></g></svg>
-  <div id="lbl" class="ov txt" style="top:900px;left:100px;right:auto;font-family:'Inter';font-weight:600;font-size:27px;letter-spacing:.16em;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.7)"></div>
+  <div id="shade" class="ov gfx"></div>
+  <div id="veil" class="ov gfx"></div>
+  <svg id="cracks" class="ov gfx" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="flash" class="ov gfx"></div>
+  <div id="title" class="ov txt">What if you were<br>a <span class="hl">cat</span> for one day?</div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="cap" class="ov txt"></div>
+  <div id="labels" class="ov txt" style="top:0;bottom:0"></div>
+  <div id="split" class="ov txt" style="top:0;bottom:0;opacity:0">
+    <div style="position:absolute;left:100px;top:360px;font-family:'Inter';font-weight:600;font-size:30px;letter-spacing:.2em;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.8)">YOU</div>
+    <div style="position:absolute;left:100px;top:1000px;font-family:'Inter';font-weight:600;font-size:30px;letter-spacing:.2em;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.8)">CAT</div>
+  </div>
+  <div id="rb" class="ov gfx" style="top:0;bottom:0;opacity:0">
+    <div style="position:absolute;left:100px;right:190px;top:410px;height:22px;border-radius:13px;background:linear-gradient(90deg,#7a00ff,#0050ff,#00c8ff,#00d040,#e8e800,#ff9000,#ff1a00)"></div>
+    <div id="rbCat" style="position:absolute;left:100px;right:190px;top:1050px;height:22px;border-radius:13px"></div>
+  </div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">What if you were<br>a <span class="hl">cat</span> for one day?</div>
+  <div id="endS" class="ov txt">CATS SEE BLUE AND YELLOW BEST AND BARELY SEE RED.<br>THEY HEAR SOUNDS ABOUT 3× HIGHER THAN WE DO.<br>THEY CAN'T TASTE SWEET AT ALL.</div>
 </div>
 <script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
