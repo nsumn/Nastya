@@ -170,8 +170,8 @@ const cloudTex = canvasTex(256, 128, (g, w, h) => {
 const mClouds = [];
 for (let i = 0; i < 16; i++) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, fog: false, transparent: true, depthWrite: false, opacity: 0.85 }));
-  let a; do { a = R(-1.2, 1.2); } while (Math.abs(a - 0.16) < 0.3 || Math.abs(a + 0.3) < 0.3);   // keep clear of the sunrise / sunset
-  const d = R(1800, 3600); s.position.set(Math.sin(a) * d, d * Math.tan(R(12, 26) * Math.PI / 180), -Math.cos(a) * d); const sc = R(900, 1800); s.scale.set(sc, sc * 0.33, 1);
+  const a = rnd() < 0.5 ? R(0.6, 1.3) : -R(0.8, 1.3);                     // well clear of the sunrise (0.16) and sunset/noon (-0.3) directions
+  const d = R(2400, 3600); s.position.set(Math.sin(a) * d, d * Math.tan(R(10, 24) * Math.PI / 180), -Math.cos(a) * d); const sc = R(600, 1100); s.scale.set(sc, sc * 0.33, 1);
   s.userData.x0 = s.position.x; meadow.add(s); mClouds.push(s);
 }
 // ---- birds (far silhouettes) and butterflies (near)

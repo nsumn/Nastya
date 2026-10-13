@@ -311,8 +311,8 @@ const cloudTex = canvasTex(256, 128, (g, w, h) => {
 const mClouds = [];
 for (let i = 0; i < 16; i++) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, fog: false, transparent: true, depthWrite: false, opacity: 0.85 }));
-  let a; do { a = R(-1.2, 1.2); } while (Math.abs(a - 0.16) < 0.3 || Math.abs(a + 0.3) < 0.3);   // keep clear of the sunrise / sunset
-  const d = R(1800, 3600); s.position.set(Math.sin(a) * d, d * Math.tan(R(12, 26) * Math.PI / 180), -Math.cos(a) * d); const sc = R(900, 1800); s.scale.set(sc, sc * 0.33, 1);
+  const a = rnd() < 0.5 ? R(0.6, 1.3) : -R(0.8, 1.3);                     // well clear of the sunrise (0.16) and sunset/noon (-0.3) directions
+  const d = R(2400, 3600); s.position.set(Math.sin(a) * d, d * Math.tan(R(10, 24) * Math.PI / 180), -Math.cos(a) * d); const sc = R(600, 1100); s.scale.set(sc, sc * 0.33, 1);
   s.userData.x0 = s.position.x; meadow.add(s); mClouds.push(s);
 }
 // ---- birds (far silhouettes) and butterflies (near)
@@ -454,7 +454,7 @@ const ST = {
     light: '#ffc890', sunI: 2.4, hemiSky: '#a8c4e8', hemiGnd: '#5a6a35', hemiI: 0.9, fog: '#f0d2b8', cloud: '#ffe4cf', exp: 1.0, shadowR: 3 },
   swap: { el: 6.5, az: 0.16, zen: '#2f5fe0', hor: '#8fb0ff', glow: '#6f9cff', glowK: 4, glowI: 1.0, horGlow: 0.8, disc: '#8fb2ff', discR: 0.0085 * 7.5, discI: 6, glare: 0.5,
     light: '#b0c8ff', sunI: 5.0, hemiSky: '#9fb8ff', hemiGnd: '#506070', hemiI: 1.6, fog: '#a8c0f0', cloud: '#e8f0ff', exp: 1.1, shadowR: 3 },
-  far: { el: 22, az: -0.34, zen: '#2140c4', hor: '#8ea6ee', glow: '#9ab8ff', glowK: 60, glowI: 0.45, horGlow: 0.25, disc: '#dfe9ff', discR: 0.0016, discI: 420, glare: 1.3,
+  far: { el: 22, az: -0.34, zen: '#2140c4', hor: '#8ea6ee', glow: '#9ab8ff', glowK: 60, glowI: 0.45, horGlow: 0.25, disc: '#dfe9ff', discR: 0.0026, discI: 260, glare: 1.6,
     light: '#c8d8ff', sunI: 2.0, hemiSky: '#7d98ee', hemiGnd: '#4a5a48', hemiI: 1.25, fog: '#9fb2ea', cloud: '#e6ecff', exp: 0.95, shadowR: 0.6 },
   low: { el: 10, az: -0.29, zen: '#2a3aa8', hor: '#f3b08a', glow: '#ffb070', glowK: 7, glowI: 0.7, horGlow: 1.1, disc: '#ffd0a0', discR: 0.0024, discI: 40, glare: 1.0,
     light: '#ffb070', sunI: 1.3, hemiSky: '#5466c0', hemiGnd: '#3a3a40', hemiI: 0.6, fog: '#c09090', cloud: '#ffc8b0', exp: 1.0, shadowR: 0.8 },
@@ -497,7 +497,7 @@ function lineupCamera(t) {
     look = new THREE.Vector3(-11.5, -0.9, 0).lerp(new THREE.Vector3(-3.0, -8.6, 0), u);
   } else {   // aging + supernova: Spica in the upper half, slow push, then pull back for the blast
     const u = (t - AGE) / (T_END - AGE); const back = smooth(SN, SN + 4.5, t);
-    pos = new THREE.Vector3(3.0 + 6 * u, lerp(-12, -7, back), lerp(52, 190, back) - 4 * u); look = new THREE.Vector3(3.0, lerp(-10, -7, back), 0);
+    pos = new THREE.Vector3(3.0 + 6 * u, lerp(-14, -7, back), lerp(64, 190, back) - 4 * u); look = new THREE.Vector3(3.0, lerp(-10, -7, back), 0);
   }
   spaceCam.fov = fov; spaceCam.updateProjectionMatrix(); spaceCam.position.copy(pos); spaceCam.lookAt(look);
 }
@@ -514,7 +514,7 @@ function updateLineup(t) {
   sunStar.visible = t < HOT;
   if (t >= AGE) {    // ageing time-lapse: swells and cools before the end
     const a = smooth(AGE + 2.0, SN - 0.3, t);
-    spica.scale.setScalar(SPICA_R * (1 + 1.6 * a));
+    spica.scale.setScalar(SPICA_R * (1 + 0.55 * a));
     spica.userData.mat.uniforms.uCol.value.copy(col3('#6f9cff', '#ff8a4a', a)); spica.userData.glow.material.color.copy(col3('#4f7dff', '#ff6a30', a));
     spica.userData.mat.uniforms.uBoil.value = 0.35 + 0.5 * a; spica.userData.mat.uniforms.uT.value = t * (1 + 3 * a);
     const pre = smooth(SN - 0.6, SN, t); spica.userData.mat.uniforms.uI.value = 1.1 + 30 * pre;
@@ -555,7 +555,7 @@ const captions = [
   [6.3, 9.6, 'Swap our Sun for Spica,<br>a real blue star.'],
   [10.3, 13.3, "It's 7.5 times wider<br>and 10 times heavier…"],
   [13.5, 16.8, '…and 20,500 times brighter.'],
-  [17.3, 20.6, 'At our distance, Earth would get<br>20,500 times the sunlight.'],
+  [17.3, 20.6, 'At our distance, Earth would<br>get 20,500× the sunlight.'],
   [20.8, 23.8, 'Its rocks would melt.'],
   [24.3, 27.4, 'To feel like home, Earth<br>would have to move away…'],
   [27.6, 30.8, '…143 times farther.<br>Almost 5× past Neptune.'],
