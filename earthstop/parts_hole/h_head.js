@@ -16,7 +16,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 // Numbers: tools/hole_math.py (PREM): 7,919 mi through, 38.1 min fall, 22,188 mph at the center, 1.09 G at the core boundary.
 // Assets: python3 tools/fetch_hole_assets.py  (-> assets/hole/, git-ignored)
 // =================== timeline ===================
-const DIG = 0.0, SHAFT = 4.0, CUT = 27.0, FALL = 32.0, OCEAN = 52.0, T_END = 60.0;
+const DIG = 0.0, SHAFT = 4.0, CUT = 27.0, FALL = 32.0, OCEAN = 52.0, DRAIN = 58.0, WAVE = 62.0, T_END = 66.5;
 const A = 'assets/hole/';
 // =================== rng / helpers ===================
 let seed = 7741;

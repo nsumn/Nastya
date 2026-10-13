@@ -34,9 +34,11 @@ function oceanCamera(t) {
   const sh = new THREE.Vector3(OSUN.x, 0, OSUN.z).normalize(), side = new THREE.Vector3(-sh.z, 0, sh.x);
   const rise = smooth(OCEAN, OCEAN + 1.35, t); const bob = 0.12 * Math.sin((t - OCEAN) * 1.7) * smooth(OCEAN + 1.4, OCEAN + 2.4, t);
   const y = lerp(-3.2, 0.45, ease(rise)) + bob + 0.4 * smooth(OCEAN + 1.3, OCEAN + 1.5, t) * (1 - smooth(OCEAN + 1.5, OCEAN + 2.3, t));
-  oCam.position.set(0, y, 0);
+  const wl = seaLevel(t); oCam.position.set(0, t > DRAIN ? lerp(y, 1.6, smooth(DRAIN, DRAIN + 1.2, t)) : y, 0);
   const lookUp = lerp(30, 4, smooth(OCEAN + 0.6, OCEAN + 1.6, t));
-  oCam.lookAt(sh.clone().multiplyScalar(100).addScaledVector(side, 30).setY(lookUp));
+  const lookAtV = sh.clone().multiplyScalar(100).addScaledVector(side, 30).setY(lookUp);
+  if (t > DRAIN) { const dk = smooth(DRAIN + 0.4, DRAIN + 1.4, t) * (1 - smooth(WAVE - 0.6, WAVE + 0.4, t)); lookAtV.lerp(sh.clone().multiplyScalar(9 * 7).setY(-60), dk * 0.45); lookAtV.y += smooth(WAVE + 1.5, WAVE + 4.0, t) * 22; }
+  oCam.lookAt(lookAtV);
 }
 
 // =================== HUD / captions ===================
@@ -58,8 +60,12 @@ const captions = [
   [41.0, 43.6, "The core: 10,800°F.<br>As hot as the Sun's surface."],
   [43.8, 47.4, 'Weightless at the center,<br>flying 22,000 mph.'],
   [47.6, 51.8, '38 minutes later…'],
-  [53.6, 56.2, 'Not China.'],
-  [56.4, 59.8, "From Kansas, you'd pop out<br>in the Indian Ocean."],
+  [53.6, 55.4, 'Not China.'],
+  [55.5, 57.9, "From Kansas, you'd pop out<br>in the Indian Ocean."],
+  [58.2, 60.4, 'Wait… where is<br>the water going?'],
+  [60.5, 62.3, 'Down your hole.'],
+  [62.5, 64.4, 'And when the sea pulls back…'],
+  [64.5, 66.3, '…a tsunami comes.'],
 ];
 const rockF = d => d < 4000 ? lerp(55, 140, d / 4000) : lerp(140, 356, (d - 4000) / 8262);
 function depthStr(m) { const ft = m / 0.3048; return ft < 5280 ? fmt(ft) + ' ft' : (ft / 5280).toFixed(ft < 52800 ? 1 : 0) + ' mi'; }
@@ -73,7 +79,9 @@ function hudAt(t, S) {
   }
   else if (t < FALL) { lab = 'DEEPEST HOLE EVER'; val = '7.6 mi'; sub = 'OF 7,900 MILES · 19 YEARS OF DRILLING'; if (t > 29.8) { stat = '<b></b>MODEL'; } }
   else if (t < OCEAN) { const f = S.f; stat = '<b></b>MODEL · NO AIR, HEAT-PROOF TUBE'; lab = 'SPEED'; val = fmt(f.mph) + ' mph'; sub = `${Math.floor(f.min)} MIN · GRAVITY ${f.g.toFixed(2)} G`; }
-  else if (t < T_END) { if (t < OCEAN + 1.4) show = 0; lab = 'YOU COME OUT IN'; val = 'Indian Ocean'; sub = '38°S 82°E · OPPOSITE KANSAS'; }
+  else if (t < DRAIN) { if (t < OCEAN + 1.4) show = 0; lab = 'YOU COME OUT IN'; val = 'Indian Ocean'; sub = '38°S 82°E · OPPOSITE KANSAS'; }
+  else if (t < WAVE) { stat = '<b></b>MODEL'; lab = 'SEA LEVEL'; { const k = smooth(DRAIN + 0.2, WAVE - 0.2, t); val = '−' + fmt(12990 * k * k) + ' ft'; } sub = 'DRAINING INTO YOUR HOLE'; }
+  else if (t < T_END) { lab = 'INDIAN OCEAN, 2004'; val = '100 ft waves'; sub = 'THE SEA PULLED BACK FIRST'; }
   else show = 0;
   return { stat, lab, val, sub, show };
 }
@@ -84,7 +92,7 @@ function updateDOM(t, S) {
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.3) : 0;
   const dip = Math.max(fadeWin(t, SHAFT - 0.18, SHAFT + 0.18, 0.18), fadeWin(t, CUT - 0.3, CUT + 0.3, 0.3), fadeWin(t, FALL - 0.3, FALL + 0.25, 0.25));
   el.veil.style.background = '#000000'; el.veil.style.opacity = dip;
-  el.flash.style.opacity = Math.max(0.85 * fadeWin(t, OCEAN + 1.2, OCEAN + 1.75, 0.2), 0.6 * fadeWin(t, OCEAN - 0.35, OCEAN + 0.15, 0.2), 0.35 * fadeWin(t, 18.72, 19.05, 0.12));
+  el.flash.style.opacity = Math.max(0.9 * fadeWin(t, T_END - 0.6, T_END + 0.2, 0.25), 0.85 * fadeWin(t, OCEAN + 1.2, OCEAN + 1.75, 0.2), 0.6 * fadeWin(t, OCEAN - 0.35, OCEAN + 0.15, 0.2), 0.35 * fadeWin(t, 18.72, 19.05, 0.12));
   // mini-map of the cut Earth with your position during the fall
   const mA = smooth(FALL + 0.2, FALL + 0.8, t) * (1 - smooth(OCEAN - 0.6, OCEAN - 0.2, t)); el.mini.style.opacity = mA;
   if (mA > 0) { const f = S.f || fallState(t); el.miniDot.setAttribute('cy', (20 + 200 * f.depthKm / 12742).toFixed(1)); }
@@ -105,7 +113,7 @@ window.renderAt = (t) => {
   else if (t < FALL) { earthCamera(t); layerU.uT.value = t; traveler.visible = false; travGlow.visible = false;
     tunnel.visible = t > FALL - 2.2; tunnel.scale.y = smooth(FALL - 2.2, FALL - 0.4, t); tunnel.position.y = 1 - tunnel.scale.y;
     post(space, eCam, { bloom: 0.45, bloomR: 0.5, bloomT: 1.1, exp: 1.0, con: 1.05, sat: 1.1 }); }
-  else { oceanCamera(t); updateOcean(t); water.material.uniforms.time.value = t * 0.6;
+  else { updateSea(t); oceanCamera(t); updateOcean(t); water.material.uniforms.time.value = t * 0.6;
     post(ocean, oCam, oCam.position.y < 0 ? { bloom: 0.3, bloomT: 1.2, exp: 0.55, con: 1.12, sat: 1.2 } : { bloom: 0.2, bloomR: 0.4, bloomT: 4.0, exp: 0.5, con: 1.16, sat: 1.22 }); }
   composer.render();
   updateDOM(t, S);

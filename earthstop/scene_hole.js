@@ -16,7 +16,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 // Numbers: tools/hole_math.py (PREM): 7,919 mi through, 38.1 min fall, 22,188 mph at the center, 1.09 G at the core boundary.
 // Assets: python3 tools/fetch_hole_assets.py  (-> assets/hole/, git-ignored)
 // =================== timeline ===================
-const DIG = 0.0, SHAFT = 4.0, CUT = 27.0, FALL = 32.0, OCEAN = 52.0, T_END = 60.0;
+const DIG = 0.0, SHAFT = 4.0, CUT = 27.0, FALL = 32.0, OCEAN = 52.0, DRAIN = 58.0, WAVE = 62.0, T_END = 66.5;
 const A = 'assets/hole/';
 // =================== rng / helpers ===================
 let seed = 7741;
@@ -450,6 +450,57 @@ async function buildOcean() {
   const wn = await texP('water/waternormals.jpg', false); wn.wrapS = wn.wrapT = THREE.RepeatWrapping;
   water = new Water(new THREE.PlaneGeometry(20000, 20000), { textureWidth: 1024, textureHeight: 1024, waterNormals: wn, sunDirection: OSUN.clone(), sunColor: 0xfff0d8, waterColor: 0x0a2a3c, distortionScale: 3.7, fog: false });
   water.material.uniforms.size.value = 2.0; water.rotation.x = -Math.PI / 2; ocean.add(water);
+  // the sea floor that shows up when the water drains away
+  const sd = await pbrSet('damp_beach_sand', [1, 1]); for (const t of [sd.map, sd.nor, sd.arm]) t.repeat.set(400, 400);
+  const bed = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshStandardMaterial({ map: sd.map, normalMap: sd.nor, roughnessMap: sd.arm, roughness: 1, color: new THREE.Color('#b8a890') }));
+  bed.rotation.x = -Math.PI / 2; bed.position.y = SEABED; bed.receiveShadow = true; ocean.add(bed);
+  const sunL = new THREE.DirectionalLight(0xfff0d8, 2.5); sunL.position.copy(OSUN).multiplyScalar(100); ocean.add(sunL);
+}
+const SEABED = -4.0;
+// the drain: a swirling funnel where the sea pours into your hole
+const vortexMat = new THREE.ShaderMaterial({ uniforms: { uT: { value: 0 }, uA: { value: 0 } }, transparent: true, side: THREE.DoubleSide, depthWrite: false, depthTest: false,
+  vertexShader: 'varying vec2 vUv; varying vec3 vW; void main(){ vUv=uv; vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
+  fragmentShader: `uniform float uT, uA; varying vec2 vUv; varying vec3 vW;
+    void main(){ float a=vUv.x*6.2831853, r=vUv.y; float sw=a*3.0+r*14.0-uT*5.0;
+      float streak=pow(0.5+0.5*sin(sw),6.0)+0.5*pow(0.5+0.5*sin(sw*2.3+1.0),10.0);
+      vec3 deep=vec3(0.02,0.12,0.17), foam=vec3(0.85,0.93,0.95);
+      vec3 c=mix(deep*(0.8+1.2*r), foam, streak*(0.45+0.5*r)); float al=uA*(0.75+0.25*r)*(1.0-smoothstep(0.82,1.0,r));
+      gl_FragColor=vec4(c,al);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }` });
+const vortex = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 0.3, 3.0, 96, 24, true), vortexMat); vortex.position.set(0, -1.5, -8); vortex.renderOrder = 10; ocean.add(vortex); vortex.visible = false;
+// the tsunami: a tall curling wall of water rolling in from the horizon
+const waveGeo = (() => { const g = new THREE.PlaneGeometry(1600, 1, 200, 60); const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), v = p.getY(i) + 0.5; const h = 34 * Math.pow(v, 0.9); const curl = 9 * Math.pow(v, 3.0); p.setXYZ(i, x, h, -curl + 2.0 * Math.sin(x * 0.02)); }
+  g.computeVertexNormals(); return g; })();
+const waveMat = new THREE.ShaderMaterial({ uniforms: { uT: { value: 0 }, uSun: { value: new THREE.Vector3() } }, side: THREE.DoubleSide,
+  vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vW; void main(){ vUv=uv; vN=normalize(mat3(modelMatrix)*normal); vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
+  fragmentShader: `uniform float uT; uniform vec3 uSun; varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+    float hh(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+    float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(hh(i),hh(i+vec2(1,0)),f.x),mix(hh(i+vec2(0,1)),hh(i+vec2(1,1)),f.x),f.y); }
+    void main(){ float v=vUv.y; float n=vn(vec2(vUv.x*240.0, v*14.0-uT*1.5))*0.6+vn(vec2(vUv.x*900.0, v*40.0-uT*3.0))*0.4;
+      vec3 deep=vec3(0.015,0.09,0.12), mid=vec3(0.05,0.30,0.33);
+      vec3 c=mix(deep, mid, smoothstep(0.1,0.85,v)*(0.7+0.5*n));
+      float foam=smoothstep(0.78,0.95,v+n*0.12); c=mix(c, vec3(0.92,0.96,0.97), foam);
+      vec3 N=normalize(vN); vec3 V=normalize(cameraPosition-vW); if(dot(N,V)<0.0) N=-N; c*=0.6+0.6*max(dot(N,uSun),0.0); c+=pow(1.0-max(dot(N,V),0.0),4.0)*vec3(0.15,0.25,0.28);
+      gl_FragColor=vec4(c,1.0);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }` });
+const tsunami = new THREE.Mesh(waveGeo, waveMat); tsunami.frustumCulled = false; ocean.add(tsunami); tsunami.visible = false;
+const spray = []; { const tex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,0.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+  for (let i = 0; i < 80; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.7 })); tsunami.add(s); s.position.set(R(-500, 500), R(30, 40), R(-12, -6)); s.scale.setScalar(R(8, 22)); spray.push(s); } }
+function seaLevel(t) { return lerp(0, SEABED + 0.3, ease(smooth(DRAIN + 0.2, WAVE - 0.2, t))); }
+function updateSea(t) {
+  const wl = seaLevel(t); water.position.y = wl;
+  const vOn = t > DRAIN && t < WAVE + 1.5; vortex.visible = vOn; vortexMat.uniforms.uT.value = t; vortexMat.uniforms.uA.value = smooth(DRAIN + 0.3, DRAIN + 1.3, t) * (1 - smooth(WAVE + 0.4, WAVE + 1.4, t));
+  { const shv = new THREE.Vector3(OSUN.x, 0, OSUN.z).normalize(); vortex.position.set(shv.x * 9, wl - 1.5 + 0.05, shv.z * 9); } vortex.rotation.y = -t * 1.2;
+  const wOn = t > WAVE - 0.2; tsunami.visible = wOn; const kk = clamp((t - WAVE) / 4.2, 0, 1); const k = kk * kk * (0.4 + 0.6 * kk);
+  const sh = new THREE.Vector3(OSUN.x, 0, OSUN.z).normalize();
+  tsunami.position.copy(sh.clone().multiplyScalar(lerp(520, -4, k))); tsunami.position.y = SEABED + 0.2; tsunami.lookAt(0, SEABED + 0.2, 0); tsunami.scale.set(1, lerp(0.35, 1.0, smooth(WAVE, WAVE + 2.5, t)), 1);
+  waveMat.uniforms.uT.value = t; waveMat.uniforms.uSun.value.copy(OSUN);
+  for (const s of spray) s.material.opacity = 0.6 * smooth(WAVE + 0.8, WAVE + 2.0, t);
 }
 // under the surface: the bright, rippling ceiling seen from below + rising bubbles
 const uwMat = new THREE.ShaderMaterial({ uniforms: { uT: { value: 0 } }, side: THREE.DoubleSide, transparent: false,
@@ -465,7 +516,7 @@ const bubTex = (() => { const c = document.createElement('canvas'); c.width = c.
 const bubbles = []; for (let i = 0; i < 70; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubTex, transparent: true, depthWrite: false })); ocean.add(s); bubbles.push({ s, x: R(-1.2, 1.2), z: R(-2.5, -0.4), y0: R(-6, -1), sp: R(0.8, 2.2), r: R(0.015, 0.06) }); }
 const uwFog = new THREE.FogExp2('#0b3d55', 0.22);
 function updateOcean(t) {
-  const under = oCam.position.y < 0;
+  const under = oCam.position.y < water.position.y - 0.02;
   uwCeil.visible = under; water.visible = !under; ocean.fog = under ? uwFog : null; ocean.background = under ? new THREE.Color('#0b3d55') : ocean.userData.hdr;
   uwMat.uniforms.uT.value = t;
   for (const b of bubbles) { b.s.visible = under; const y = b.y0 + ((t - OCEAN) * b.sp) % 6; b.s.position.set(b.x + 0.05 * Math.sin(t * 3 + b.y0), Math.min(y, -0.03), b.z); b.s.scale.setScalar(b.r); }
@@ -506,9 +557,11 @@ function oceanCamera(t) {
   const sh = new THREE.Vector3(OSUN.x, 0, OSUN.z).normalize(), side = new THREE.Vector3(-sh.z, 0, sh.x);
   const rise = smooth(OCEAN, OCEAN + 1.35, t); const bob = 0.12 * Math.sin((t - OCEAN) * 1.7) * smooth(OCEAN + 1.4, OCEAN + 2.4, t);
   const y = lerp(-3.2, 0.45, ease(rise)) + bob + 0.4 * smooth(OCEAN + 1.3, OCEAN + 1.5, t) * (1 - smooth(OCEAN + 1.5, OCEAN + 2.3, t));
-  oCam.position.set(0, y, 0);
+  const wl = seaLevel(t); oCam.position.set(0, t > DRAIN ? lerp(y, 1.6, smooth(DRAIN, DRAIN + 1.2, t)) : y, 0);
   const lookUp = lerp(30, 4, smooth(OCEAN + 0.6, OCEAN + 1.6, t));
-  oCam.lookAt(sh.clone().multiplyScalar(100).addScaledVector(side, 30).setY(lookUp));
+  const lookAtV = sh.clone().multiplyScalar(100).addScaledVector(side, 30).setY(lookUp);
+  if (t > DRAIN) { const dk = smooth(DRAIN + 0.4, DRAIN + 1.4, t) * (1 - smooth(WAVE - 0.6, WAVE + 0.4, t)); lookAtV.lerp(sh.clone().multiplyScalar(9 * 7).setY(-60), dk * 0.45); lookAtV.y += smooth(WAVE + 1.5, WAVE + 4.0, t) * 22; }
+  oCam.lookAt(lookAtV);
 }
 
 // =================== HUD / captions ===================
@@ -530,8 +583,12 @@ const captions = [
   [41.0, 43.6, "The core: 10,800°F.<br>As hot as the Sun's surface."],
   [43.8, 47.4, 'Weightless at the center,<br>flying 22,000 mph.'],
   [47.6, 51.8, '38 minutes later…'],
-  [53.6, 56.2, 'Not China.'],
-  [56.4, 59.8, "From Kansas, you'd pop out<br>in the Indian Ocean."],
+  [53.6, 55.4, 'Not China.'],
+  [55.5, 57.9, "From Kansas, you'd pop out<br>in the Indian Ocean."],
+  [58.2, 60.4, 'Wait… where is<br>the water going?'],
+  [60.5, 62.3, 'Down your hole.'],
+  [62.5, 64.4, 'And when the sea pulls back…'],
+  [64.5, 66.3, '…a tsunami comes.'],
 ];
 const rockF = d => d < 4000 ? lerp(55, 140, d / 4000) : lerp(140, 356, (d - 4000) / 8262);
 function depthStr(m) { const ft = m / 0.3048; return ft < 5280 ? fmt(ft) + ' ft' : (ft / 5280).toFixed(ft < 52800 ? 1 : 0) + ' mi'; }
@@ -545,7 +602,9 @@ function hudAt(t, S) {
   }
   else if (t < FALL) { lab = 'DEEPEST HOLE EVER'; val = '7.6 mi'; sub = 'OF 7,900 MILES · 19 YEARS OF DRILLING'; if (t > 29.8) { stat = '<b></b>MODEL'; } }
   else if (t < OCEAN) { const f = S.f; stat = '<b></b>MODEL · NO AIR, HEAT-PROOF TUBE'; lab = 'SPEED'; val = fmt(f.mph) + ' mph'; sub = `${Math.floor(f.min)} MIN · GRAVITY ${f.g.toFixed(2)} G`; }
-  else if (t < T_END) { if (t < OCEAN + 1.4) show = 0; lab = 'YOU COME OUT IN'; val = 'Indian Ocean'; sub = '38°S 82°E · OPPOSITE KANSAS'; }
+  else if (t < DRAIN) { if (t < OCEAN + 1.4) show = 0; lab = 'YOU COME OUT IN'; val = 'Indian Ocean'; sub = '38°S 82°E · OPPOSITE KANSAS'; }
+  else if (t < WAVE) { stat = '<b></b>MODEL'; lab = 'SEA LEVEL'; { const k = smooth(DRAIN + 0.2, WAVE - 0.2, t); val = '−' + fmt(12990 * k * k) + ' ft'; } sub = 'DRAINING INTO YOUR HOLE'; }
+  else if (t < T_END) { lab = 'INDIAN OCEAN, 2004'; val = '100 ft waves'; sub = 'THE SEA PULLED BACK FIRST'; }
   else show = 0;
   return { stat, lab, val, sub, show };
 }
@@ -556,7 +615,7 @@ function updateDOM(t, S) {
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.3) : 0;
   const dip = Math.max(fadeWin(t, SHAFT - 0.18, SHAFT + 0.18, 0.18), fadeWin(t, CUT - 0.3, CUT + 0.3, 0.3), fadeWin(t, FALL - 0.3, FALL + 0.25, 0.25));
   el.veil.style.background = '#000000'; el.veil.style.opacity = dip;
-  el.flash.style.opacity = Math.max(0.85 * fadeWin(t, OCEAN + 1.2, OCEAN + 1.75, 0.2), 0.6 * fadeWin(t, OCEAN - 0.35, OCEAN + 0.15, 0.2), 0.35 * fadeWin(t, 18.72, 19.05, 0.12));
+  el.flash.style.opacity = Math.max(0.9 * fadeWin(t, T_END - 0.6, T_END + 0.2, 0.25), 0.85 * fadeWin(t, OCEAN + 1.2, OCEAN + 1.75, 0.2), 0.6 * fadeWin(t, OCEAN - 0.35, OCEAN + 0.15, 0.2), 0.35 * fadeWin(t, 18.72, 19.05, 0.12));
   // mini-map of the cut Earth with your position during the fall
   const mA = smooth(FALL + 0.2, FALL + 0.8, t) * (1 - smooth(OCEAN - 0.6, OCEAN - 0.2, t)); el.mini.style.opacity = mA;
   if (mA > 0) { const f = S.f || fallState(t); el.miniDot.setAttribute('cy', (20 + 200 * f.depthKm / 12742).toFixed(1)); }
@@ -577,7 +636,7 @@ window.renderAt = (t) => {
   else if (t < FALL) { earthCamera(t); layerU.uT.value = t; traveler.visible = false; travGlow.visible = false;
     tunnel.visible = t > FALL - 2.2; tunnel.scale.y = smooth(FALL - 2.2, FALL - 0.4, t); tunnel.position.y = 1 - tunnel.scale.y;
     post(space, eCam, { bloom: 0.45, bloomR: 0.5, bloomT: 1.1, exp: 1.0, con: 1.05, sat: 1.1 }); }
-  else { oceanCamera(t); updateOcean(t); water.material.uniforms.time.value = t * 0.6;
+  else { updateSea(t); oceanCamera(t); updateOcean(t); water.material.uniforms.time.value = t * 0.6;
     post(ocean, oCam, oCam.position.y < 0 ? { bloom: 0.3, bloomT: 1.2, exp: 0.55, con: 1.12, sat: 1.2 } : { bloom: 0.2, bloomR: 0.4, bloomT: 4.0, exp: 0.5, con: 1.16, sat: 1.22 }); }
   composer.render();
   updateDOM(t, S);

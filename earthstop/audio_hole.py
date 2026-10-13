@@ -4,11 +4,11 @@ from scipy.io import wavfile
 
 # "What if you dug a hole through the Earth?" — realistic sound design: evening yard, the shaft (drips, pipe clank, rock burst,
 # groaning hot rock), the fall (wind roar following the PREM speed), weightless hush, splash out into the Indian Ocean.
-SR = 44100; DUR = 65.0; N = int(SR * DUR)
+SR = 44100; DUR = 71.5; N = int(SR * DUR)
 t = np.arange(N) / SR
 rng = np.random.default_rng(7741)
 L = np.zeros(N); Rr = np.zeros(N)
-SHAFT, CUT, FALL, OCEAN, TEND = 4.0, 27.0, 32.0, 52.0, 60.0
+SHAFT, CUT, FALL, OCEAN, DRAIN, WAVE, TEND = 4.0, 27.0, 32.0, 52.0, 58.0, 62.0, 66.5
 FALL_LEN, FALL_MIN = 20.0, 38.1
 
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
@@ -112,13 +112,27 @@ for k in range(28):
     at = OCEAN + rng.uniform(0, 1.25); f0 = rng.uniform(250, 700); x = tt(0.06)
     place(at, np.sin(2 * np.pi * f0 * (x + 6 * x * x)) * np.sin(np.pi * x / 0.06), db(-24), rng.uniform(-0.6, 0.6))
 x = tt(1.4); place(OCEAN + 1.3, noise(1.4, 400, 7000) * np.exp(-x * 3.5) * np.clip(x / 0.01, 0, 1), db(-9))       # splash
-waves = np.zeros(N); sea = ramp(OCEAN + 1.3, DUR, 0.3, 2.0)
+waves = np.zeros(N); sea = ramp(OCEAN + 1.3, DRAIN + 1.5, 0.3, 1.5)
 wn = norm(filt(rng.standard_normal(N), 'bandpass', [150, 2500]))
 for k in range(9):
     a = OCEAN + 1.6 + k * 1.15 + rng.uniform(-0.2, 0.2); e = np.clip((t - a) / 0.6, 0, 1) * np.exp(-np.clip(t - a - 0.6, 0, None) * 1.8) * (t > a)
     waves += wn * e * rng.uniform(0.6, 1.0)
 add(waves * sea, db(-18)); add(norm(filt(rng.standard_normal(N), 'bandpass', [300, 1500])) * sea, db(-30))
-add(pad([50, 57, 62, 66], OCEAN + 1.6, TEND + 1.0, 1.5, 1.0), db(-28))
+add(pad([50, 57, 62, 66], OCEAN + 1.6, DRAIN + 0.6, 1.5, 0.6), db(-28))
+# ---------- 58-62: the sea drains into your hole — swirling gurgle, bubbles, one huge slurp
+dr = ramp(DRAIN, WAVE + 0.5, 0.8, 0.6)
+swirl = norm(filt(rng.standard_normal(N), 'bandpass', [120, 900])) * (0.6 + 0.4 * np.sin(2 * np.pi * (1.2 + 0.8 * np.clip((t - DRAIN) / 4, 0, 1)) * t))
+add(swirl * dr, db(-14))
+for k in range(60):
+    at = DRAIN + rng.uniform(0.2, 4.2); f0 = rng.uniform(150, 500); x = tt(0.09)
+    place(at, np.sin(2 * np.pi * f0 * (x + 5 * x * x)) * np.sin(np.pi * x / 0.09), db(-20), rng.uniform(-0.7, 0.7))
+x = tt(1.4); place(60.4, np.sin(2 * np.pi * np.cumsum(420 * np.exp(-x * 2.2) + 60) / SR) * np.sin(np.pi * x / 1.4) ** 0.7, db(-11))   # the big slurp
+x = tt(4); place(DRAIN + 0.2, (np.sin(2 * np.pi * hz(57) * x) + np.sin(2 * np.pi * hz(60) * x) + 0.6 * np.sin(2 * np.pi * hz(63) * x)) * np.sin(np.pi * x / 4) ** 2, db(-26))  # uneasy chord
+# ---------- 62-66.5: the tsunami — a growing roar (mids so phones hear it), then the hit
+x = tt(TEND - WAVE); roar = norm(filt(rng.standard_normal(len(x)), 'bandpass', [90, 2500])) * (x / x[-1]) ** 2.2
+place(WAVE, roar, db(-6)); place(WAVE, norm(filt(rng.standard_normal(len(x)), 'bandpass', [2500, 7000])) * (x / x[-1]) ** 3, db(-16))
+place(WAVE, np.sin(2 * np.pi * 55 * x) * (x / x[-1]) ** 2 + 0.6 * np.sin(2 * np.pi * 110 * x) * (x / x[-1]) ** 2, db(-12))
+x = tt(2.0); place(TEND - 0.35, norm(filt(rng.standard_normal(len(x)), 'lowpass', 2500)) * np.exp(-x * 2.5) * np.clip(x / 0.01, 0, 1), db(-4))
 # end card: warm chord
 x = tt(5); place(TEND + 0.2, sum(np.sin(2 * np.pi * hz(n) * x) * a for n, a in [(45, 1), (52, 0.6), (61, 0.5), (64, 0.3)]) * np.exp(-x * 0.55) * np.clip(x / 0.4, 0, 1), db(-15))
 
