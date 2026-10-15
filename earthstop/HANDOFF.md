@@ -17,6 +17,9 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add film grain.
 
+## Latest: spam calls video (`parts_spam/`, `index_spam.html`, `scene_spam.js`, `audio_spam.py`)
+"What if spam calls were missing people calling for help?" — classic low-poly, 64 s. TikTok-safety choices: no real missing persons, MODEL labels, explicit "In real life, spam calls are just spam" + "Don't call back unknown numbers. But if someone needs help — call 911.", no emergency-alert sounds, creepy but no horror. Numbers in `tools/spam_math.py` (YouMail 52.5 B/yr, NCIC 93,447, FCC 212.9 M 911 calls, Pew ~80% ignore unknown numbers).
+
 ## Finished videos (engine parts in the repo)
 Asteroid on Times Square, US↔UK swap, Earth shaped like a spoon (`parts_spoon/`, per `SPOON_BRIEF.md`), Sun as a blue star (`parts_blue/`, low-poly — she disliked the look).
 
