@@ -5,7 +5,7 @@ function cityCamera(t, shot) {
     else { const s = CHASE.state(t); cam.fov = 62; cam.position.set(s.x - 11, 3.0, s.z + 5.0); cam.lookAt(s.x + 8, 0.8, s.z - 0.5); } }
   else if (shot === 'jam') { const u = (t - JAM) / (SKY - JAM); cam.fov = 58; cam.position.set(380 - 4 * u, 6.5, 6.0); cam.lookAt(lerp(334, 344, u), 4.2, -3.5); }
   else if (shot === 'sky') { const u = (t - SKY) / (AIR - SKY); cam.fov = 58; cam.position.set(lerp(20, 52, u), lerp(11, 15, u), -3.0); cam.lookAt(lerp(70, 105, u), 1, 0); }
-  else { const u = (t - BUMP) / (REAL - BUMP); cam.fov = 58; cam.position.set(142 - 2 * u, 2.6, 5.5); cam.lookAt(118, lerp(4.4, 3.8, u), -1.75); }
+  else { const u = (t - BUMP) / (REAL - BUMP); cam.fov = 46; cam.position.set(135 - 2 * u, 2.4, 4.4); cam.lookAt(119, lerp(3.3, 3.0, u), -1.6); }
 }
 function cityLook(t, shot) {
   // traffic lights: red until GREEN, then green
@@ -13,9 +13,10 @@ function cityLook(t, shot) {
   for (const P of people) if (P.kind === 'cross') P.p.outer.visible = false;
   if (shot === 'bump') { sunL.color.set('#ffb070'); sunL.intensity = 2.4; sunL.position.copy(cam.position).add(V3(120, 55, 70)); sunL.target.position.copy(cam.position).add(V3(-30, 0, -8)); sunL.target.updateMatrixWorld(); hemi.color.set('#ffd2a8'); hemi.intensity = 0.85;
     cityDome.material.uniforms.uTop.value.set('#4f62b0'); cityDome.material.uniforms.uBot.value.set('#ffb07a'); city.fog.color.set('#f2b48a'); for (const m of winMats) m.emissiveIntensity = 0.45; for (const m of lampHeads) m.emissiveIntensity = 1.2;
-    for (const c of clouds) c.material.color.set('#ffc8a8'); smokeMat.uniforms.uTint.value.set('#ffe2cc'); }
-  else { for (const c of clouds) c.material.color.set('#ffffff'); smokeMat.uniforms.uTint.value.set('#ffffff'); }
+    for (const c of clouds) c.material.color.set('#ffc8a8'); smokeMat.uniforms.uTint.value.set('#ffe2cc'); bumpFill.position.copy(cam.position).add(V3(-8, 6, -2)); bumpFill.intensity = 110; }
+  else { bumpFill.intensity = 0; for (const c of clouds) c.material.color.set('#ffffff'); smokeMat.uniforms.uTint.value.set('#ffffff'); }
 }
+const bumpFill = new THREE.PointLight(0xffdcc0, 0, 80, 1.0); city.add(bumpFill);
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'flash', 'end', 'endT', 'endS', 'hud', 'veil'].map(k => [k, $(k)]));
