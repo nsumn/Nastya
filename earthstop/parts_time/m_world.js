@@ -18,53 +18,61 @@ function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - x
 function fbm(x, y, o = 4) { let a = 0, s = 1, f = 1, n = 0; for (let i = 0; i < o; i++) { a += vnoise(x * f, y * f) * s; n += s; s *= 0.5; f *= 2.03; } return a / n; }
 const near = (x, z, r0, r1) => smooth(r0, r1, Math.hypot(x, z - 0));
 const terMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95 });
-function terrain(parent, hf, cf, o = {}) { const w = o.w || 2400, d = o.d || 2400, seg = o.seg || 150, cz = o.cz ?? -900;
-  const g = new THREE.PlaneGeometry(w, d, seg, Math.round(seg * d / w)); g.rotateX(-Math.PI / 2); g.translate(o.cx || 0, 0, cz);
-  const p = g.attributes.position, col = new Float32Array(p.count * 3); const c = new THREE.Color();
-  for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), y = o.raw ? hf(x, z) : lerp(-0.4 + (fbm(x * 0.08, z * 0.08, 2) - 0.5) * 0.5, hf(x, z), near(x, z, 10, 80)); p.setY(i, y); cf(c, x, y, z); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
-  const m = mesh(g, terMat, false, true); parent.add(m); return m; }
-function waterPlane(parent, color, y, o = {}) { const g = new THREE.PlaneGeometry(o.w || 3000, o.d || 3000, o.seg || 80, o.seg || 80); g.rotateX(-Math.PI / 2); g.translate(0, y, o.cz ?? -1100);
-  const m = mesh(g, new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? 0.25, metalness: 0.1, flatShading: true, transparent: o.alpha !== undefined, opacity: o.alpha ?? 1 }), false, true); m.userData.base = g.attributes.position.array.slice(); parent.add(m); return m; }
+// ONE ground for all eras: every era stores heights + colours on the same grid, the frame blends between neighbours
+const GW = 3200, GSEG = 220, GCZ = -1300;
+const groundGeo = new THREE.PlaneGeometry(GW, GW, GSEG, GSEG); groundGeo.rotateX(-Math.PI / 2); groundGeo.translate(0, 0, GCZ);
+groundGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(groundGeo.attributes.position.count * 3), 3));
+const ground = mesh(groundGeo, terMat, false, true); world.add(ground);
+const GX = [], GZ = []; { const p = groundGeo.attributes.position; for (let i = 0; i < p.count; i++) { GX.push(p.getX(i)); GZ.push(p.getZ(i)); } }
+const KF = {};      // era -> { h: Float32Array, c: Float32Array }
+let curDef = '';
+function terrain(parent, hf, cf, o = {}) { const n = GX.length, h = new Float32Array(n), col = new Float32Array(n * 3); const c = new THREE.Color();
+  for (let i = 0; i < n; i++) { const x = GX[i], z = GZ[i], y = o.raw ? hf(x, z) : lerp(-0.4 + (fbm(x * 0.08, z * 0.08, 2) - 0.5) * 0.5, hf(x, z), near(x, z, 10, 80)); h[i] = y; cf(c, x, y, z); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  KF[curDef] = { h, c: col }; return { scale: new THREE.Vector3() }; }
+// ONE water surface too (level / colour / wave height per era); hidden eras keep it far below
+const WKF = {};
+const water = mesh(new THREE.PlaneGeometry(3400, 3400, 90, 90).rotateX(-Math.PI / 2).translate(0, 0, -1300), new THREE.MeshStandardMaterial({ color: '#2b5866', roughness: 0.25, metalness: 0.1, flatShading: true }), false, true);
+water.userData.base = water.geometry.attributes.position.array.slice(); world.add(water);
+function waterPlane(parent, color, y, o = {}) { WKF[curDef] = { level: y, color: new THREE.Color(color), amp: o.amp ?? 1.0 }; return water; }
 function waves(m, t, amp = 1, k = 1) { const p = m.geometry.attributes.position, b = m.userData.base;
   for (let i = 0; i < p.count; i++) { const x = b[i * 3], z = b[i * 3 + 2]; p.array[i * 3 + 1] = b[i * 3 + 1] + amp * (0.6 * Math.sin(x * 0.045 * k + t * 1.3) + 0.5 * Math.sin(z * 0.06 * k - t * 1.7 + x * 0.02) + 0.3 * Math.sin((x + z) * 0.11 * k + t * 2.3)) * smooth(0, 30, Math.hypot(x, z)) ; }
   p.needsUpdate = true; m.geometry.computeVertexNormals(); }
 const puffs = makeSmoke(world, 3500);
-const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); g.visible = false; world.add(g); ERA[name] = { g }; return g; };
+const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.add(g); ERA[name] = { g }; curDef = name; return g; };
 // =================== LAVA (4.5 billion years ago) ===================
 { const g = eraGroup('lava');
   terrain(g, (x, z) => { const n = fbm(x * 0.012 + 3, z * 0.012, 5); return lerp(-3, (n - 0.56) * 60 + 50 * smooth(700, 1500, -z) * fbm(x * 0.003, z * 0.003), near(x, z, 30, 110)); },
     (c, x, y) => c.set(y < 1.5 ? '#6a2a12' : y < 8 ? '#3a302c' : '#4c4038').offsetHSL(0, 0, (hash(x * 0.3 + y) - 0.5) * 0.05), { raw: true, seg: 300 });
-  const ledge = mesh(new THREE.DodecahedronGeometry(5, 0), M('#3a302c', { flatShading: true })); ledge.scale.set(1.0, 0.35, 0.8); ledge.position.set(0, -0.2, 5.5); g.add(ledge);
-  const lavaMat = new THREE.ShaderMaterial({ fog: false, uniforms: { uT: { value: 0 } }, vertexShader: 'varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
-    fragmentShader: `uniform float uT; varying vec3 vW; float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+  const lavaMat = new THREE.ShaderMaterial({ fog: false, uniforms: { uT: { value: 0 }, uCool: { value: 0 } }, vertexShader: 'varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
+    fragmentShader: `uniform float uT, uCool; varying vec3 vW; float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
       float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y); }
       void main(){ vec2 p=vW.xz*0.03; float a=n(p+vec2(uT*0.2,uT*0.1))*0.6+n(p*3.0-uT*0.3)*0.4; float crust=smoothstep(0.42,0.62,a);
-        vec3 c=mix(vec3(1.9,0.5,0.08),vec3(2.6,1.3,0.3),n(p*6.0+uT));  c=mix(c,vec3(0.10,0.04,0.03),crust*0.9); float d=length(vW.xz); c=mix(c,vec3(0.9,0.25,0.06),smoothstep(800.0,2400.0,d));
+        vec3 c=mix(vec3(1.9,0.5,0.08),vec3(2.6,1.3,0.3),n(p*6.0+uT));  c=mix(c,vec3(0.10,0.04,0.03),crust*0.9); float d=length(vW.xz); c=mix(c,vec3(0.9,0.25,0.06),smoothstep(800.0,2400.0,d)); c=mix(c,vec3(0.07,0.06,0.06),uCool);
         gl_FragColor=vec4(c,1.0); }` });
-  const lava = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 1, 1).rotateX(-Math.PI / 2), lavaMat); lava.position.set(0, 0.6, -1500); g.add(lava); ERA.lava.lavaMat = lavaMat;
+  const lava = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 1, 1).rotateX(-Math.PI / 2), lavaMat); lava.position.set(0, 0.6, -1500); lava.userData.noGrow = true; world.add(lava); ERA.lava.plane = lava; ERA.lava.lavaMat = lavaMat;
   ERA.lava.meteors = [];
   for (let i = 0; i < 7; i++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.0, 7, 260, 8).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.8, 0.8), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    const fl = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 2.4, 1.0), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); g.add(m, fl);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 2.4, 1.0), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); m.userData.noGrow = fl.userData.noGrow = true; g.add(m, fl);
     ERA.lava.meteors.push({ m, fl, t0: LAVA + 0.3 + i * 0.68 + hash(i) * 0.2, hit: V3(R(-180, 180), 0, R(-700, -300)), dir: V3(R(-0.5, 0.5), -0.55, R(0.2, 0.6)).normalize() }); }
   ERA.lava.look = { top: '#140406', bot: '#ff5018', sunDir: V3(0.4, 0.05, -1), sunCol: '#ff8a40', sunSize: 0.0, fog: '#601a0a', fogN: 150, fogF: 2600, hemiS: '#a85040', hemiG: '#ff7030', hemiI: 1.6, sunC: '#ff9050', sunI: 1.6, sunPos: V3(300, 200, -600), exp: 1.1, camY: 3.0 }; }
 // =================== OCEAN (~4 billion years ago) ===================
-{ const g = eraGroup('ocean'); ERA.ocean.sea = waterPlane(g, '#2b5866', 0, { seg: 90 });
+{ const g = eraGroup('ocean'); waterPlane(g, '#2b5866', 0, { amp: 1.3 });
+  terrain(g, (x, z) => -16 + Math.max(0, fbm(x * 0.004 + 11, z * 0.004, 4) - 0.6) * 260 * smooth(200, 600, -z), (c, x, y) => c.set(y > 0 ? '#3e3834' : '#2a2a2c'), { raw: true });
   for (const [x, z, s] of [[-420, -1200, 60], [380, -900, 38], [900, -1600, 90], [-120, -1900, 50]]) { const r = mesh(new THREE.IcosahedronGeometry(s, 0), M('#3a3634', { flatShading: true })); r.scale.y = 0.45; r.position.set(x, 0, z); g.add(r); }
   ERA.ocean.look = { top: '#6c7686', bot: '#d0b49a', sunDir: V3(-0.3, 0.12, -1), sunCol: '#ffd8a0', sunSize: 0.004, fog: '#a8a49e', fogN: 300, fogF: 2600, hemiS: '#c8ccd4', hemiG: '#3a4a50', hemiI: 1.1, sunC: '#ffe0c0', sunI: 2.0, sunPos: V3(-200, 120, -600), exp: 1.0, camY: 3.2 }; }
 // =================== GRENVILLE MOUNTAINS (1.1 billion years ago) ===================
 { const g = eraGroup('gren');
   const ridge = (x, z) => { let a = 0, s = 1, f = 0.0022; for (let i = 0; i < 5; i++) { a += s * (1 - Math.abs(vnoise(x * f + 7, z * f) * 2 - 1)); s *= 0.5; f *= 2.1; } return a; };
-  ERA.gren.t = terrain(g, (x, z) => ridge(x, z) * 260 * smooth(150, 700, -z) + fbm(x * 0.03, z * 0.03, 3) * 6, (c, x, y) => c.set(y > 300 ? '#8c8a88' : y > 120 ? '#6e625a' : '#7c6a58').offsetHSL(0, 0, (hash(x + y) - 0.5) * 0.05));
+  terrain(g, (x, z) => ridge(x, z) * 260 * smooth(150, 700, -z) + fbm(x * 0.03, z * 0.03, 3) * 6, (c, x, y) => c.set(y > 300 ? '#8c8a88' : y > 120 ? '#6e625a' : '#7c6a58').offsetHSL(0, 0, (hash(x + y) - 0.5) * 0.05));
   ERA.gren.look = { top: '#5f8fc8', bot: '#d8e2ea', sunDir: V3(0.5, 0.35, -1), sunCol: '#fff4e0', sunSize: 0.003, fog: '#c8d4de', fogN: 400, fogF: 3200, hemiS: '#cfe0ff', hemiG: '#6a5a4a', hemiI: 1.0, sunC: '#fff0dc', sunI: 3.0, sunPos: V3(300, 260, -300), exp: 1.0, camY: 2.0 }; }
 // =================== TACONIC COLLISION (450 million years ago, near the equator) ===================
-{ const g = eraGroup('taco'); ERA.taco.sea = waterPlane(g, '#2ea6ae', 0, { seg: 70, rough: 0.2 });
+{ const g = eraGroup('taco'); waterPlane(g, '#2ea6ae', 0, { amp: 0.35 });
   terrain(g, (x, z) => (x < -60 ? (fbm(x * 0.006, z * 0.006, 4) * 140 - 20) * smooth(-60, -300, x) : -12) + (x < -60 ? 3 : 0), (c, x, y) => c.set(y < 2 ? '#c8b48a' : '#6a5a4c'), { cx: -900 });
   ERA.taco.volcs = [];
   for (const [x, z, h, r] of [[430, -620, 330, 330], [700, -900, 440, 420], [260, -1150, 280, 300], [900, -1300, 380, 380]]) { const vg = new THREE.Group(); g.add(vg);
     const cone = mesh(new THREE.ConeGeometry(r, h, 10, 3), M('#4a3e38', { flatShading: true })); cone.position.y = h / 2 - 10; vg.add(cone);
     const glow = mesh(new THREE.CircleGeometry(r * 0.12, 10).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.2, 0.3), fog: false })); glow.position.y = h - 10.5; vg.add(glow);
-    ERA.taco.volcs.push({ vg, x, z, h, ph: R(0, 6) }); }
+    vg.userData.anim = true; ERA.taco.volcs.push({ vg, x, z, h, ph: R(0, 6) }); }
   ERA.taco.look = { top: '#2f6fd8', bot: '#cfe6f6', sunDir: V3(0.1, 1.0, -0.2), sunCol: '#fffbe8', sunSize: 0.004, fog: '#d6e8f2', fogN: 500, fogF: 3600, hemiS: '#d8ecff', hemiG: '#3a8a8a', hemiI: 1.1, sunC: '#fffaf0', sunI: 3.4, sunPos: V3(40, 400, -40), exp: 1.0, camY: 2.6 }; }
 // =================== PANGAEA (~300-250 million years ago) ===================
 { const g = eraGroup('pang');
@@ -76,7 +84,7 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); g.visibl
 { const g = eraGroup('rift');
   terrain(g, (x, z) => { const valley = -6 + Math.abs(x + 200 + 20 * Math.sin(z * 0.004)) * 0.05; const cliff = 90 * smooth(120, 170, x) + 60 * smooth(-200, -260, -x) * 0; return Math.min(valley + fbm(x * 0.02, z * 0.02) * 4, 40) * 0.6 + cliff + fbm(x * 0.004, z * 0.004) * 30 * smooth(300, 900, -z); },
     (c, x, y) => c.set(y > 60 ? '#3a3a40' : y < -1 ? '#7a3a2a' : '#9a4a34').offsetHSL(0, 0, (hash(x * 0.9 + y) - 0.5) * 0.05));
-  ERA.rift.lake = waterPlane(g, '#3a6a6a', -1.2, { seg: 60, rough: 0.15 });
+  waterPlane(g, '#3a6a6a', -1.2, { amp: 0.12 });
   // conifers + ferns
   const coneG = new THREE.ConeGeometry(2.6, 11, 7), trunkG = new THREE.CylinderGeometry(0.35, 0.45, 3, 6), fernG = new THREE.ConeGeometry(1.6, 1.2, 6);
   for (let i = 0; i < 160; i++) { const x = R(-90, 140), z = R(-600, -40); if (Math.abs(x) < 25 && z > -120) continue; const s = R(0.8, 1.8);
@@ -92,7 +100,7 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); g.visibl
     const neck = mesh(new THREE.CylinderGeometry(0.18, 0.3, 1.1, 6), skin); neck.position.set(0.9, 2.1, 0); neck.rotation.z = -0.7; d.add(neck);
     const head = mesh(new THREE.BoxGeometry(0.75, 0.3, 0.3), skin); head.position.set(1.45, 2.55, 0); d.add(head);
     const legs = [-0.25, 0.25].map(zz => { const L = new THREE.Group(); L.position.set(0.1, 1.4, zz); d.add(L); const th = mesh(new THREE.CylinderGeometry(0.16, 0.1, 1.4, 5), skin); th.position.y = -0.7; L.add(th); const ft = mesh(new THREE.BoxGeometry(0.4, 0.08, 0.2), M('#4a4030')); ft.position.set(0.12, -1.4, 0); L.add(ft); return L; });
-    d.scale.setScalar(s); g.add(d); ERA.rift.dinos.push({ d, legs, x0: -32 + i * 7 + R(-2, 2), z: -16 - i * 4.5 + R(-1, 1), v: R(2.2, 3.2), ph: R(0, 6), s }); }
+    d.scale.setScalar(s); d.userData.anim = true; g.add(d); ERA.rift.dinos.push({ d, legs, x0: -32 + i * 7 + R(-2, 2), z: -16 - i * 4.5 + R(-1, 1), v: R(2.2, 3.2), ph: R(0, 6), s }); }
   ERA.rift.look = { top: '#6f9ac8', bot: '#e8dcc0', sunDir: V3(0.6, 0.3, -1), sunCol: '#fff0d0', sunSize: 0.004, fog: '#d8d0b8', fogN: 300, fogF: 2600, hemiS: '#e0ecff', hemiG: '#6a4a30', hemiI: 1.0, sunC: '#fff0dc', sunI: 3.0, sunPos: V3(250, 220, -200), exp: 1.0, camY: 2.0 }; }
 // =================== ICE (~20,000 years ago): the wall of ice rolls over, then melts back ===================
 { const g = eraGroup('ice');
@@ -102,11 +110,11 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); g.visibl
   const fg = new THREE.PlaneGeometry(3600, 305, 70, 12); const fp = fg.attributes.position;
   for (let i = 0; i < fp.count; i++) { const x = fp.getX(i), y = fp.getY(i); fp.setZ(i, (fbm(x * 0.01, y * 0.02, 3) - 0.5) * 60 + (y + 152) * 0.15); fp.setY(i, y + (fbm(x * 0.02, 9) - 0.5) * 18 * smooth(100, 152, y)); }
   fg.computeVertexNormals(); const iceM = new THREE.MeshStandardMaterial({ color: '#e6f2fb', emissive: '#6a9ac0', emissiveIntensity: 0.12, roughness: 0.5, flatShading: true });
-  const ice = new THREE.Group(); g.add(ice); const front = mesh(fg, iceM, false, true); front.position.y = 152; ice.add(front);
+  const ice = new THREE.Group(); ice.userData.noGrow = true; g.add(ice); const front = mesh(fg, iceM, false, true); front.position.y = 152; ice.add(front);
   const topS = mesh(new THREE.BoxGeometry(3600, 10, 4000), iceM, false, true); topS.position.set(0, 300, -2000); ice.add(topS);
   ERA.ice.ice = ice;
   // the Empire State Building as a ghost for scale (roof 1,250 ft = 381 m; tip 1,454 ft = 443 m)
-  const ghost = new THREE.Group(); ghost.position.set(-120, 0, -760); g.add(ghost); const gm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, depthWrite: false, fog: false });
+  const ghost = new THREE.Group(); ghost.position.set(-120, 0, -760); ghost.userData.noGrow = true; g.add(ghost); const gm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, depthWrite: false, fog: false });
   for (const [w, h, y] of [[56, 22, 11], [44, 250, 147], [34, 60, 302], [24, 40, 352], [14, 20, 372], [4, 62, 412]]) { const b = mesh(BOX, gm, false, false); b.scale.set(w, h, w * 0.7); b.position.y = y; ghost.add(b); }
   const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(44, 250, 31)), new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, fog: false })); edges.position.y = 147; ghost.add(edges);
   ERA.ice.ghost = ghost;
