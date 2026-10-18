@@ -23,16 +23,16 @@ function buildings(g, old) {
       const mat = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85, emissive: old ? '#000000' : '#ffffff', emissiveMap: old ? null : tx, emissiveIntensity: old ? 0 : 0.35 });
       const b = mesh(BOX, mat); b.scale.set(d, h, len - 0.6); b.position.set(x, h / 2, cz); g.add(b);
       if (old) { bx(d + 0.8, 0.8, len - 0.2, '#d8c8a8', x, h, cz, g); if (rnd() < 0.35) { const sg = canvasTex(256, 64, (gg, w, hh) => { gg.fillStyle = pick(['#f2e8d0', '#2a3a2a', '#5a2a1a']); gg.fillRect(0, 0, w, hh); gg.fillStyle = gg.fillStyle === '#f2e8d0' ? '#3a2a1a' : '#f2e8d0'; gg.font = '700 30px "Source Serif 4"'; gg.textAlign = 'center'; gg.fillText(pick(['HOTEL', 'THEATRE', 'CIGARS', 'OYSTERS', 'HARDWARE', 'CAFE']), w / 2, 44); });
-          const p = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(12, len - 2), 3), new THREE.MeshStandardMaterial({ map: sg })); p.position.set(s * (STREET_W / 2 - 0.05), R(4.5, 8), cz); p.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(p); } }
+          const p = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(12, len - 2), 3), new THREE.MeshStandardMaterial({ map: sg })); p.position.set(s * (STREET_W / 2 - 0.3), R(4.5, 8), cz); p.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(p); } }
       else { const nB = 1 + Math.floor(rnd() * 3); for (let k = 0; k < nB; k++) { const bw = Math.min(len - 2, R(9, 20)), bh = R(8, 26), y = R(7, Math.min(h - bh / 2 - 2, 80)); if (y < bh / 2 + 4) continue;
-          const p = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), pick(bbMats)); p.position.set(s * (STREET_W / 2 - 0.1 - k * 0.02), y, cz + R(-1, 1)); p.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(p); } }
+          const p = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), pick(bbMats)); p.position.set(s * (STREET_W / 2 - 0.35 - k * 0.25), y, cz + R(-1, 1)); p.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(p); } }
       z -= len; } }
   // the tower at the end of the square (One Times Square / the 1904 Times Building), splitting the street
   const tw = new THREE.Group(); tw.position.set(0, 0, -190); g.add(tw);
   if (old) { const tx = facadeTex('#d8ccb0', '#4a4438', 0.0, 4, 26); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; const b = mesh(BOX, new THREE.MeshStandardMaterial({ map: tx, roughness: 0.8 })); b.scale.set(16, 111, 22); b.position.y = 55.5; tw.add(b);
-    bx(17, 3, 23, '#c8bca0', 0, 111, 0, tw); bx(0.4, 14, 0.4, '#3a3a3a', 0, 118, 0, tw); const flag = bx(5, 3, 0.1, '#c83a2a', 2.6, 123, 0, tw); }
+    bx(17, 3, 23, '#c8bca0', 0, 112.6, 0, tw); bx(0.4, 14, 0.4, '#3a3a3a', 0, 118, 0, tw); const flag = bx(5, 3, 0.1, '#c83a2a', 2.6, 123, 0, tw); }
   else { const b = mesh(BOX, M('#2a2c32')); b.scale.set(16, 111, 22); b.position.y = 55.5; tw.add(b);
-    for (let k = 0; k < 6; k++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(15, 14), pick(bbMats)); p.position.set(0, 14 + k * 15, 11.05); tw.add(p); }
+    for (let k = 0; k < 6; k++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(15, 14), pick(bbMats)); p.position.set(0, 14 + k * 15, 11.45); tw.add(p); }
     bx(0.6, 12, 0.6, '#9a9a9a', 0, 117, 0, tw); const ball = mesh(new THREE.IcosahedronGeometry(2.2, 1), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 2.2, 2.6), fog: false })); ball.position.y = 124; tw.add(ball); }
 }
 function crowd(g, n, old) { const list = [];

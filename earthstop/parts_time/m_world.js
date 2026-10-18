@@ -1,6 +1,6 @@
 // =================== one world, one camera at Broadway & 7th Ave (origin, looking north = -z); each era is a group ===================
 const world = new THREE.Scene();
-const cam = new THREE.PerspectiveCamera(62, W / H, 0.1, 9000);
+const cam = new THREE.PerspectiveCamera(62, W / H, 0.6, 9000);
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0); world.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 3.0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -120, right: 120, top: 120, bottom: -120, near: 1, far: 900 }); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;

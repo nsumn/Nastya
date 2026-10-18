@@ -24,7 +24,7 @@ const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s
 const fmt = n => Math.round(n).toLocaleString('en-US');
 // =================== renderer ===================
 const W = 1080, H = 1920;
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
 renderer.setPixelRatio(1); renderer.setSize(W, H, false);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace;
