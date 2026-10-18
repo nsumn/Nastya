@@ -276,7 +276,7 @@ function blendLook(E) { const i = Math.min(8, Math.floor(E)), f = E - i; const A
   hemi.color.copy(C(A.hemiS, B.hemiS)); hemi.groundColor.copy(C(A.hemiG, B.hemiG)); hemi.intensity = lerp(A.hemiI, B.hemiI, f);
   sun.color.copy(C(A.sunC, B.sunC)); sun.intensity = lerp(A.sunI, B.sunI, f); sun.position.copy(A.sunPos).lerp(B.sunPos, f);
   const wa = WKF[NAMES[i]], wb = WKF[NAMES[i + 1]];
-  if (wa || wb) { const A_ = wa || { level: wb.level - 30, color: wb.color, amp: wb.amp }, B_ = wb || { level: wa.level - 30, color: wa.color, amp: wa.amp }; const g = smooth(0.15, 0.85, f);
+  if (wa || wb) { const A_ = wa || { level: wb.level - 6, color: wb.color, amp: wb.amp }, B_ = wb || { level: wa.level - 6, color: wa.color, amp: wa.amp }; const g = smooth(0.15, 0.85, f);
     water.visible = true; water.position.y = lerp(A_.level, B_.level, g); water.material.color.copy(A_.color).lerp(B_.color, g); water.userData.amp = lerp(A_.amp, B_.amp, g); }
   else water.visible = false;
   return lerp(A.exp, B.exp, f); }
