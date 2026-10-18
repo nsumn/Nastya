@@ -7,7 +7,7 @@ from scipy.io import wavfile
 # ice creaks and cracks, 1609 forest birds and a stream, 1904 hooves + trolley bell, today's crowd. Mostly 200 Hz - 3 kHz; no ticking.
 SR = 44100; DUR = 64.5; N = int(SR * DUR); t = np.arange(N) / SR
 rng = np.random.default_rng(1609); L = np.zeros(N); Rr = np.zeros(N)
-REW, LAVA, OCEAN, GREN, TACO, PANG, RIFT, ICE, WOODS, OLD, NOW, TEND = 3.5, 4.3, 9.0, 14.0, 19.0, 26.0, 31.5, 37.5, 43.5, 49.5, 55.5, 58.5
+REW, LAVA, OCEAN, GREN, TACO, PANG, RIFT, ICE, WOODS, OLD, NOW, TEND = 2.7, 4.3, 9.0, 14.0, 19.0, 26.0, 31.5, 37.5, 43.5, 49.5, 55.5, 58.5
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
 def db(x): return 10 ** (x / 20)
 def ramp(a, b, fa=0.15, fb=0.15): return np.clip((t - a) / max(fa, 1e-3), 0, 1) * np.clip((b - t) / max(fb, 1e-3), 0, 1)

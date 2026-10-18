@@ -6,7 +6,7 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // Facts (all sourced, see HANDOFF): Earth 4.54 Ga; Fordham gneiss ~1.1 Ga; Manhattan schist ~450 Ma (Taconic), Laurentia near the equator;
 // Pangaea (mountains ~Andes scale); Palisades ~201 Ma + Riker Hill dinosaur tracks; ~1,000 ft of ice (NYC Parks); 1609 forest + Wickquasgeck trail = Broadway; Times Square named April 1904.
 // =================== timeline ===================
-const REW = 3.5, LAVA = 4.3, OCEAN = 9.0, GREN = 14.0, TACO = 19.0, PANG = 26.0, RIFT = 31.5, ICE = 37.5, WOODS = 43.5, OLD = 49.5, NOW = 55.5, T_END = 58.5;
+const REW = 2.7, LAVA = 4.3, OCEAN = 9.0, GREN = 14.0, TACO = 19.0, PANG = 26.0, RIFT = 31.5, ICE = 37.5, WOODS = 43.5, OLD = 49.5, NOW = 55.5, T_END = 58.5;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
 let seed = 4540;

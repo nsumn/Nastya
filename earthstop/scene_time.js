@@ -6,7 +6,7 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // Facts (all sourced, see HANDOFF): Earth 4.54 Ga; Fordham gneiss ~1.1 Ga; Manhattan schist ~450 Ma (Taconic), Laurentia near the equator;
 // Pangaea (mountains ~Andes scale); Palisades ~201 Ma + Riker Hill dinosaur tracks; ~1,000 ft of ice (NYC Parks); 1609 forest + Wickquasgeck trail = Broadway; Times Square named April 1904.
 // =================== timeline ===================
-const REW = 3.5, LAVA = 4.3, OCEAN = 9.0, GREN = 14.0, TACO = 19.0, PANG = 26.0, RIFT = 31.5, ICE = 37.5, WOODS = 43.5, OLD = 49.5, NOW = 55.5, T_END = 58.5;
+const REW = 2.7, LAVA = 4.3, OCEAN = 9.0, GREN = 14.0, TACO = 19.0, PANG = 26.0, RIFT = 31.5, ICE = 37.5, WOODS = 43.5, OLD = 49.5, NOW = 55.5, T_END = 58.5;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
 let seed = 4540;
@@ -83,7 +83,7 @@ function terrain(parent, hf, cf, o = {}) { const n = GX.length, h = new Float32A
   KF[curDef] = { h, c: col }; return { scale: new THREE.Vector3() }; }
 // ONE water surface too (level / colour / wave height per era); hidden eras keep it far below
 const WKF = {};
-const water = mesh(new THREE.PlaneGeometry(3400, 3400, 90, 90).rotateX(-Math.PI / 2).translate(0, 0, -1300), new THREE.MeshStandardMaterial({ color: '#2b5866', roughness: 0.25, metalness: 0.1, flatShading: true }), false, true);
+const water = mesh(new THREE.PlaneGeometry(3400, 3400, 200, 200).rotateX(-Math.PI / 2).translate(0, 0, -1300), new THREE.MeshStandardMaterial({ color: '#2b5866', roughness: 0.5, metalness: 0.1, flatShading: true }), false, true);
 water.userData.base = water.geometry.attributes.position.array.slice(); world.add(water);
 function waterPlane(parent, color, y, o = {}) { WKF[curDef] = { level: y, color: new THREE.Color(color), amp: o.amp ?? 1.0 }; return water; }
 function waves(m, t, amp = 1, k = 1) { const p = m.geometry.attributes.position, b = m.userData.base;
@@ -166,9 +166,9 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.ad
   const topS = mesh(new THREE.BoxGeometry(3600, 10, 4000), iceM, false, true); topS.position.set(0, 300, -2000); ice.add(topS);
   ERA.ice.ice = ice;
   // the Empire State Building as a ghost for scale (roof 1,250 ft = 381 m; tip 1,454 ft = 443 m)
-  const ghost = new THREE.Group(); ghost.position.set(-120, 0, -760); ghost.userData.noGrow = true; g.add(ghost); const gm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, depthWrite: false, fog: false });
+  const ghost = new THREE.Group(); ghost.position.set(-120, 0, -760); ghost.userData.noGrow = true; g.add(ghost); const gm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, depthWrite: false, fog: false }); ERA.ice.gm = gm;
   for (const [w, h, y] of [[56, 22, 11], [44, 250, 147], [34, 60, 302], [24, 40, 352], [14, 20, 372], [4, 62, 412]]) { const b = mesh(BOX, gm, false, false); b.scale.set(w, h, w * 0.7); b.position.y = y; ghost.add(b); }
-  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(44, 250, 31)), new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, fog: false })); edges.position.y = 147; ghost.add(edges);
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(44, 250, 31)), new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, fog: false })); ERA.ice.em = edges.material; edges.position.y = 147; ghost.add(edges);
   ERA.ice.ghost = ghost;
   ERA.ice.look = { top: '#7ea6d0', bot: '#e4ecf2', sunDir: V3(0.6, 0.25, -1), sunCol: '#fff8ec', sunSize: 0.003, fog: '#dfe8ef', fogN: 400, fogF: 3600, hemiS: '#e8f2ff', hemiG: '#6a6a5a', hemiI: 1.1, sunC: '#fff6ec', sunI: 2.6, sunPos: V3(300, 200, 100), exp: 1.0, camY: 1.8 }; }
 // =================== 1609: fall forest, a stream and the Wickquasgeck trail (future Broadway) ===================
@@ -297,7 +297,7 @@ function updateEras(E, t) {
   if (p(5) > 0) { smokeMat.uniforms.uTint.value.set('#6a6460');
     for (const d of ERA.rift.dinos) { const x = d.x0 + d.v * (t - RIFT), ph = (t * d.v * 1.6 / d.s) + d.ph; d.d.position.set(x, -0.3 + Math.abs(Math.sin(ph)) * 0.08 * d.s, d.z); d.legs[0].rotation.z = Math.sin(ph) * 0.6; d.legs[1].rotation.z = -Math.sin(ph) * 0.6; }
     for (let k = 0; k < 18; k++) { const age = ((t * 0.12 + k / 18) % 1); _p.set(-500 + k * 55, 10 + age * 300, -1300 + age * 40); puffs.add(_p, 80 + age * 260, 0.45 * (1 - age) * p(5)); } }
-  if (p(6) > 0) { const back = ease((t - (ICE + 4.2)) / 1.6), a2 = clamp((t - (ICE - 1.0)) / 4.6, 0, 1); ERA.ice.ice.position.z = t < ICE + 4.2 ? lerp(-2200, 12, Math.min(1, a2 * a2 * 1.12)) : lerp(12, -2400, back); ERA.ice.ghost.visible = t > ICE - 0.5 && t < ICE + 3.3; }
+  if (p(6) > 0) { const back = ease((t - (ICE + 4.2)) / 1.6), a2 = clamp((t - (ICE - 1.0)) / 4.6, 0, 1); ERA.ice.ice.position.z = t < ICE + 4.2 ? lerp(-2200, 12, Math.min(1, a2 * a2 * 1.12)) : lerp(12, -2400, back); const gk = smooth(ICE - 0.5, ICE + 0.3, t) * (1 - smooth(ICE + 2.6, ICE + 3.3, t)); ERA.ice.ghost.visible = gk > 0.01; ERA.ice.gm.opacity = 0.28 * gk; ERA.ice.em.opacity = 0.7 * gk; }
   if (p(7) > 0) for (const d of ERA.woods.deer) d.children[2].position.y = 1.85 - 0.5 * smooth(0.4, 0.6, (Math.sin(t * 0.9 + d.position.x) + 1) / 2);
   if (p(8) > 0) { poseCrowd(ERA.old.crowd, t); for (const c of ERA.old.carts) { const z = wrapR(c.z0 + c.v * t, -320, 20); c.g.position.set(c.x, 0, z); c.g.rotation.y = c.v > 0 ? -Math.PI / 2 : Math.PI / 2; c.legs.forEach((l, i) => l.rotation.z = Math.sin(t * 7 + i * 1.6) * 0.4); } ERA.old.trolley.position.set(-3.3, 0, -80 + 2.5 * (t - OLD)); }
   if (p(9) > 0) { poseCrowd(ERA.now.crowd, t); for (const c of ERA.now.taxis) { const dir = c.x > 0 ? 1 : -1; c.g.position.set(c.x, 0, wrapR(c.z0 + dir * c.v * t, -500, 20)); c.g.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2; } }
@@ -342,7 +342,7 @@ const captions = [
   [56.2, 58.4, 'Same spot.<br>4.5 billion years.'],
 ];
 function updateDOM(t, E) {
-  el.title.style.opacity = 1 - smooth(3.0, 3.5, t);
+  el.title.style.opacity = 1 - smooth(2.2, 2.7, t);
   const show = t >= REW && t < T_END; el.stat.innerHTML = '<b></b>THIS SPOT · BROADWAY & 7TH AVE'; el.lab.textContent = ''; el.val.textContent = yearsText(E); el.sub.textContent = t >= LAVA ? SUBS[Math.round(E)] : '';
   el.hud.style.opacity = show ? 1 - smooth(T_END, T_END + 0.4, t) : 0; el.val.style.fontSize = el.val.textContent.length > 16 ? '66px' : '98px';
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.25) : 0;

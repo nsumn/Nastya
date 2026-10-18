@@ -31,7 +31,7 @@ function terrain(parent, hf, cf, o = {}) { const n = GX.length, h = new Float32A
   KF[curDef] = { h, c: col }; return { scale: new THREE.Vector3() }; }
 // ONE water surface too (level / colour / wave height per era); hidden eras keep it far below
 const WKF = {};
-const water = mesh(new THREE.PlaneGeometry(3400, 3400, 90, 90).rotateX(-Math.PI / 2).translate(0, 0, -1300), new THREE.MeshStandardMaterial({ color: '#2b5866', roughness: 0.25, metalness: 0.1, flatShading: true }), false, true);
+const water = mesh(new THREE.PlaneGeometry(3400, 3400, 200, 200).rotateX(-Math.PI / 2).translate(0, 0, -1300), new THREE.MeshStandardMaterial({ color: '#2b5866', roughness: 0.5, metalness: 0.1, flatShading: true }), false, true);
 water.userData.base = water.geometry.attributes.position.array.slice(); world.add(water);
 function waterPlane(parent, color, y, o = {}) { WKF[curDef] = { level: y, color: new THREE.Color(color), amp: o.amp ?? 1.0 }; return water; }
 function waves(m, t, amp = 1, k = 1) { const p = m.geometry.attributes.position, b = m.userData.base;
@@ -114,9 +114,9 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.ad
   const topS = mesh(new THREE.BoxGeometry(3600, 10, 4000), iceM, false, true); topS.position.set(0, 300, -2000); ice.add(topS);
   ERA.ice.ice = ice;
   // the Empire State Building as a ghost for scale (roof 1,250 ft = 381 m; tip 1,454 ft = 443 m)
-  const ghost = new THREE.Group(); ghost.position.set(-120, 0, -760); ghost.userData.noGrow = true; g.add(ghost); const gm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, depthWrite: false, fog: false });
+  const ghost = new THREE.Group(); ghost.position.set(-120, 0, -760); ghost.userData.noGrow = true; g.add(ghost); const gm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, depthWrite: false, fog: false }); ERA.ice.gm = gm;
   for (const [w, h, y] of [[56, 22, 11], [44, 250, 147], [34, 60, 302], [24, 40, 352], [14, 20, 372], [4, 62, 412]]) { const b = mesh(BOX, gm, false, false); b.scale.set(w, h, w * 0.7); b.position.y = y; ghost.add(b); }
-  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(44, 250, 31)), new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, fog: false })); edges.position.y = 147; ghost.add(edges);
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(44, 250, 31)), new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, fog: false })); ERA.ice.em = edges.material; edges.position.y = 147; ghost.add(edges);
   ERA.ice.ghost = ghost;
   ERA.ice.look = { top: '#7ea6d0', bot: '#e4ecf2', sunDir: V3(0.6, 0.25, -1), sunCol: '#fff8ec', sunSize: 0.003, fog: '#dfe8ef', fogN: 400, fogF: 3600, hemiS: '#e8f2ff', hemiG: '#6a6a5a', hemiI: 1.1, sunC: '#fff6ec', sunI: 2.6, sunPos: V3(300, 200, 100), exp: 1.0, camY: 1.8 }; }
 // =================== 1609: fall forest, a stream and the Wickquasgeck trail (future Broadway) ===================

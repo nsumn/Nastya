@@ -49,7 +49,7 @@ function updateEras(E, t) {
   if (p(5) > 0) { smokeMat.uniforms.uTint.value.set('#6a6460');
     for (const d of ERA.rift.dinos) { const x = d.x0 + d.v * (t - RIFT), ph = (t * d.v * 1.6 / d.s) + d.ph; d.d.position.set(x, -0.3 + Math.abs(Math.sin(ph)) * 0.08 * d.s, d.z); d.legs[0].rotation.z = Math.sin(ph) * 0.6; d.legs[1].rotation.z = -Math.sin(ph) * 0.6; }
     for (let k = 0; k < 18; k++) { const age = ((t * 0.12 + k / 18) % 1); _p.set(-500 + k * 55, 10 + age * 300, -1300 + age * 40); puffs.add(_p, 80 + age * 260, 0.45 * (1 - age) * p(5)); } }
-  if (p(6) > 0) { const back = ease((t - (ICE + 4.2)) / 1.6), a2 = clamp((t - (ICE - 1.0)) / 4.6, 0, 1); ERA.ice.ice.position.z = t < ICE + 4.2 ? lerp(-2200, 12, Math.min(1, a2 * a2 * 1.12)) : lerp(12, -2400, back); ERA.ice.ghost.visible = t > ICE - 0.5 && t < ICE + 3.3; }
+  if (p(6) > 0) { const back = ease((t - (ICE + 4.2)) / 1.6), a2 = clamp((t - (ICE - 1.0)) / 4.6, 0, 1); ERA.ice.ice.position.z = t < ICE + 4.2 ? lerp(-2200, 12, Math.min(1, a2 * a2 * 1.12)) : lerp(12, -2400, back); const gk = smooth(ICE - 0.5, ICE + 0.3, t) * (1 - smooth(ICE + 2.6, ICE + 3.3, t)); ERA.ice.ghost.visible = gk > 0.01; ERA.ice.gm.opacity = 0.28 * gk; ERA.ice.em.opacity = 0.7 * gk; }
   if (p(7) > 0) for (const d of ERA.woods.deer) d.children[2].position.y = 1.85 - 0.5 * smooth(0.4, 0.6, (Math.sin(t * 0.9 + d.position.x) + 1) / 2);
   if (p(8) > 0) { poseCrowd(ERA.old.crowd, t); for (const c of ERA.old.carts) { const z = wrapR(c.z0 + c.v * t, -320, 20); c.g.position.set(c.x, 0, z); c.g.rotation.y = c.v > 0 ? -Math.PI / 2 : Math.PI / 2; c.legs.forEach((l, i) => l.rotation.z = Math.sin(t * 7 + i * 1.6) * 0.4); } ERA.old.trolley.position.set(-3.3, 0, -80 + 2.5 * (t - OLD)); }
   if (p(9) > 0) { poseCrowd(ERA.now.crowd, t); for (const c of ERA.now.taxis) { const dir = c.x > 0 ? 1 : -1; c.g.position.set(c.x, 0, wrapR(c.z0 + dir * c.v * t, -500, 20)); c.g.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2; } }
@@ -94,7 +94,7 @@ const captions = [
   [56.2, 58.4, 'Same spot.<br>4.5 billion years.'],
 ];
 function updateDOM(t, E) {
-  el.title.style.opacity = 1 - smooth(3.0, 3.5, t);
+  el.title.style.opacity = 1 - smooth(2.2, 2.7, t);
   const show = t >= REW && t < T_END; el.stat.innerHTML = '<b></b>THIS SPOT · BROADWAY & 7TH AVE'; el.lab.textContent = ''; el.val.textContent = yearsText(E); el.sub.textContent = t >= LAVA ? SUBS[Math.round(E)] : '';
   el.hud.style.opacity = show ? 1 - smooth(T_END, T_END + 0.4, t) : 0; el.val.style.fontSize = el.val.textContent.length > 16 ? '66px' : '98px';
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.25) : 0;
