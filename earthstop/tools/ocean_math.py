@@ -7,3 +7,6 @@ print(f"salt in the ocean: {salt:.2e} kg = {vol_salt:.2e} m^3")
 print(f"left on the dry seafloor: {vol_salt / A_ocean:.0f} m = {vol_salt / A_ocean * 3.281:.0f} ft thick")
 print(f"spread over all land: {vol_salt / A_land:.0f} m = {vol_salt / A_land * 3.281:.0f} ft thick")
 print(f"ocean water spread over land: {V / A_land / 1000:.1f} km deep")
+# the biggest US aquarium vs the ocean (Georgia Aquarium: >11 million US gallons)
+gal = 321e6 * 1.101e12      # cubic miles -> US gallons
+print(f"ocean: {gal:.2e} gallons; Georgia Aquarium share: {11e6 / gal * 100:.1e} %  (= 1 part in {gal / 11e6:.1e})")
