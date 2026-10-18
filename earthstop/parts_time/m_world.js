@@ -27,7 +27,7 @@ const GX = [], GZ = []; { const p = groundGeo.attributes.position; for (let i = 
 const KF = {};      // era -> { h: Float32Array, c: Float32Array }
 let curDef = '';
 function terrain(parent, hf, cf, o = {}) { const n = GX.length, h = new Float32Array(n), col = new Float32Array(n * 3); const c = new THREE.Color();
-  for (let i = 0; i < n; i++) { const x = GX[i], z = GZ[i], y = o.raw ? hf(x, z) : lerp(-0.4 + (fbm(x * 0.08, z * 0.08, 2) - 0.5) * 0.5, hf(x, z), near(x, z, 10, 80)); h[i] = y; cf(c, x, y, z); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  for (let i = 0; i < n; i++) { const x = GX[i], z = GZ[i], y = o.raw ? hf(x, z) : lerp(-0.6 + (fbm(x * 0.03, z * 0.03, 2) - 0.5) * 2.6, hf(x, z), near(x, z, 10, 80)); h[i] = y; cf(c, x, y, z); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
   KF[curDef] = { h, c: col }; return { scale: new THREE.Vector3() }; }
 // ONE water surface too (level / colour / wave height per era); hidden eras keep it far below
 const WKF = {};
@@ -41,7 +41,7 @@ const puffs = makeSmoke(world, 3500);
 const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.add(g); ERA[name] = { g }; curDef = name; return g; };
 // =================== LAVA (4.5 billion years ago) ===================
 { const g = eraGroup('lava');
-  terrain(g, (x, z) => { const n = fbm(x * 0.012 + 3, z * 0.012, 5); return lerp(-3, (n - 0.56) * 60 + 50 * smooth(700, 1500, -z) * fbm(x * 0.003, z * 0.003), near(x, z, 30, 110)); },
+  terrain(g, (x, z) => { const n = fbm(x * 0.012 + 3, z * 0.012, 5); return lerp(-3 + (fbm(x * 0.03, z * 0.03, 2) - 0.5) * 5, (n - 0.56) * 60 + 50 * smooth(700, 1500, -z) * fbm(x * 0.003, z * 0.003), near(x, z, 30, 110)); },
     (c, x, y) => c.set(y < 1.5 ? '#6a2a12' : y < 8 ? '#3a302c' : '#4c4038').offsetHSL(0, 0, (hash(x * 0.3 + y) - 0.5) * 0.05), { raw: true, seg: 300 });
   const lavaMat = new THREE.ShaderMaterial({ fog: false, uniforms: { uT: { value: 0 }, uCool: { value: 0 } }, vertexShader: 'varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
     fragmentShader: `uniform float uT, uCool; varying vec3 vW; float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
@@ -57,7 +57,7 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.ad
   ERA.lava.look = { top: '#140406', bot: '#ff5018', sunDir: V3(0.4, 0.05, -1), sunCol: '#ff8a40', sunSize: 0.0, fog: '#601a0a', fogN: 150, fogF: 2600, hemiS: '#a85040', hemiG: '#ff7030', hemiI: 1.6, sunC: '#ff9050', sunI: 1.6, sunPos: V3(300, 200, -600), exp: 1.1, camY: 3.0 }; }
 // =================== OCEAN (~4 billion years ago) ===================
 { const g = eraGroup('ocean'); waterPlane(g, '#2b5866', 0, { amp: 1.3 });
-  terrain(g, (x, z) => -16 + Math.max(0, fbm(x * 0.004 + 11, z * 0.004, 4) - 0.6) * 260 * smooth(200, 600, -z), (c, x, y) => c.set(y > 0 ? '#3e3834' : '#2a2a2c'), { raw: true });
+  terrain(g, (x, z) => -16 + (fbm(x * 0.02, z * 0.02, 2) - 0.5) * 12 + Math.max(0, fbm(x * 0.004 + 11, z * 0.004, 4) - 0.6) * 260 * smooth(200, 600, -z), (c, x, y) => c.set(y > 0 ? '#3e3834' : '#2a2a2c'), { raw: true });
   for (const [x, z, s] of [[-420, -1200, 60], [380, -900, 38], [900, -1600, 90], [-120, -1900, 50]]) { const r = mesh(new THREE.IcosahedronGeometry(s, 0), M('#3a3634', { flatShading: true })); r.scale.y = 0.45; r.position.set(x, 0, z); g.add(r); }
   ERA.ocean.look = { top: '#6c7686', bot: '#d0b49a', sunDir: V3(-0.3, 0.12, -1), sunCol: '#ffd8a0', sunSize: 0.004, fog: '#a8a49e', fogN: 300, fogF: 2600, hemiS: '#c8ccd4', hemiG: '#3a4a50', hemiI: 1.1, sunC: '#ffe0c0', sunI: 2.0, sunPos: V3(-200, 120, -600), exp: 1.0, camY: 3.2 }; }
 // =================== GRENVILLE MOUNTAINS (1.1 billion years ago) ===================
@@ -67,7 +67,7 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.ad
   ERA.gren.look = { top: '#5f8fc8', bot: '#d8e2ea', sunDir: V3(0.5, 0.35, -1), sunCol: '#fff4e0', sunSize: 0.003, fog: '#c8d4de', fogN: 400, fogF: 3200, hemiS: '#cfe0ff', hemiG: '#6a5a4a', hemiI: 1.0, sunC: '#fff0dc', sunI: 3.0, sunPos: V3(300, 260, -300), exp: 1.0, camY: 2.0 }; }
 // =================== TACONIC COLLISION (450 million years ago, near the equator) ===================
 { const g = eraGroup('taco'); waterPlane(g, '#2ea6ae', 0, { amp: 0.35 });
-  terrain(g, (x, z) => lerp(-1.6, (x < -60 ? (fbm(x * 0.006, z * 0.006, 4) * 140 - 20) * smooth(-60, -300, x) : -12) + (x < -60 ? 3 : 0), near(x, z, 10, 80)), (c, x, y) => c.set(y < 2 ? '#c8b48a' : '#6a5a4c'), { raw: true });
+  terrain(g, (x, z) => lerp(-1.6 + (fbm(x * 0.03, z * 0.03, 2) - 0.5) * 1.6, (x < -60 ? (fbm(x * 0.006, z * 0.006, 4) * 140 - 20) * smooth(-60, -300, x) : -12) + (x < -60 ? 3 : 0), near(x, z, 10, 80)), (c, x, y) => c.set(y < 2 ? '#c8b48a' : '#6a5a4c'), { raw: true });
   ERA.taco.volcs = [];
   for (const [x, z, h, r] of [[430, -620, 330, 330], [700, -900, 440, 420], [260, -1150, 280, 300], [900, -1300, 380, 380]]) { const vg = new THREE.Group(); g.add(vg);
     const cone = mesh(new THREE.ConeGeometry(r, h, 10, 3), M('#4a3e38', { flatShading: true })); cone.position.y = h / 2 - 10; vg.add(cone);

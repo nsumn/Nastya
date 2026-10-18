@@ -99,7 +99,7 @@ function updateDOM(t, E) {
   el.hud.style.opacity = show ? 1 - smooth(T_END, T_END + 0.4, t) : 0; el.val.style.fontSize = el.val.textContent.length > 16 ? '66px' : '98px';
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.25) : 0;
   el.flash.style.opacity = 0;
-  const inIce = fadeWin(t, ICE + 3.45, ICE + 5.0, 0.4); el.veil.style.background = 'linear-gradient(180deg,#bfe0f4,#e8f4fb 60%,#cfe6f2)'; el.veil.style.opacity = inIce;
+  const inIce = fadeWin(t, ICE + 2.85, ICE + 5.0, 0.4); el.veil.style.background = 'linear-gradient(180deg,#bfe0f4,#e8f4fb 60%,#cfe6f2)'; el.veil.style.opacity = inIce;
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t);
 }
 // =================== render ===================
