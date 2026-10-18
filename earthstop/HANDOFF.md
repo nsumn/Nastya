@@ -18,7 +18,10 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add film grain.
 
-## Latest: Tesla Roadster video (`parts_tesla/`, `index_tesla.html`, `scene_tesla.js`, `audio_tesla.py`)
+## Latest: Times Square through time (`parts_time/`, `index_time.html`, `scene_time.js`, `audio_time.py`)
+"What if you watched Times Square since Earth was born?" Facts checked before the script (sources in the chat): Fordham gneiss ~1.1 Ga, Manhattan schist ~450 Ma (Taconic), Laurentia near the equator, Pangaea mountains ~Andes scale (Himalaya claim is disputed), Palisades ~201 Ma, Riker Hill dinosaur tracks (NJ), ice ~1,000 ft over NYC (NYC Parks), 1609 forest at Times Square (Mannahatta), Broadway = Wickquasgeck trail, renamed Times Square April 1904.
+
+## Tesla Roadster video (`parts_tesla/`, `index_tesla.html`, `scene_tesla.js`, `audio_tesla.py`)
 "What if everyone had the new Tesla Roadster?" (reveal of 2026-10-15). She asked for the car to look exactly like the real one — reference photos were from Electrek; the model is in `parts_tesla/t_car.js`. No Musk on screen (no real celebrities). Numbers in `tools/roadster_math.py` (Thrust 0-60 0.9 s = 3 G = Shuttle max; 298 M vehicles FHWA 2024; MODEL hover ~1.2 s and ~9 kWh refill with an assumed 100 L tank at 4,500 psi).
 
 ## Spam calls video (`parts_spam/`, `index_spam.html`, `scene_spam.js`, `audio_spam.py`)
