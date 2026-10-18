@@ -27,15 +27,17 @@ function blendLook(E) { const i = Math.min(8, Math.floor(E)), f = E - i; const A
   world.fog.color.copy(C(A.fog, B.fog)); world.fog.near = lerp(A.fogN, B.fogN, f); world.fog.far = lerp(A.fogF, B.fogF, f);
   hemi.color.copy(C(A.hemiS, B.hemiS)); hemi.groundColor.copy(C(A.hemiG, B.hemiG)); hemi.intensity = lerp(A.hemiI, B.hemiI, f);
   sun.color.copy(C(A.sunC, B.sunC)); sun.intensity = lerp(A.sunI, B.sunI, f); sun.position.copy(A.sunPos).lerp(B.sunPos, f);
-  const WA = WKF[NAMES[i]] || { ...WHIDE, color: (WKF[NAMES[i + 1]] || WHIDE).color }, WB = WKF[NAMES[i + 1]] || { ...WHIDE, color: WA.color };
-  const lvl = lerp(WA.level, WB.level, f); water.visible = lvl > -60; water.position.y = lvl; water.material.color.copy(WA.color).lerp(WB.color, f); water.userData.amp = lerp(WA.amp, WB.amp, f);
+  const wa = WKF[NAMES[i]], wb = WKF[NAMES[i + 1]];
+  if (wa || wb) { const A_ = wa || { level: wb.level - 30, color: wb.color, amp: wb.amp }, B_ = wb || { level: wa.level - 30, color: wa.color, amp: wa.amp }; const g = smooth(0.15, 0.85, f);
+    water.visible = true; water.position.y = lerp(A_.level, B_.level, g); water.material.color.copy(A_.color).lerp(B_.color, g); water.userData.amp = lerp(A_.amp, B_.amp, g); }
+  else water.visible = false;
   return lerp(A.exp, B.exp, f); }
 // ---- per-era motion (runs for every era that is at least partly present)
 const _p = new THREE.Vector3();
 function updateEras(E, t) {
   puffs.begin();
   const p = i => pE(E, i);
-  ERA.lava.lavaMat.uniforms.uT.value = t; ERA.lava.lavaMat.uniforms.uCool.value = smooth(0.05, 0.75, E); ERA.lava.plane.visible = E < 1.4; ERA.lava.plane.position.y = lerp(0.6, -12, smooth(0.15, 1.2, E));
+  ERA.lava.lavaMat.uniforms.uT.value = t; ERA.lava.lavaMat.uniforms.uCool.value = smooth(0.0, 0.5, E); ERA.lava.plane.visible = E < 1.2; ERA.lava.plane.position.y = lerp(0.6, -40, smooth(0.0, 0.7, E));
   if (water.visible) waves(water, t, water.userData.amp, 1);
   if (p(0) > 0) { smokeMat.uniforms.uTint.value.set('#5a3a30');
     for (const M_ of ERA.lava.meteors) { const ok = p(0) > 0.5; const k = (t - M_.t0) / 0.5; M_.m.visible = ok && k > 0 && k < 1; if (M_.m.visible) { M_.m.position.copy(M_.hit).addScaledVector(M_.dir, -(1 - k) * 1100 - 130); M_.m.lookAt(M_.m.position.clone().add(M_.dir)); }
@@ -47,7 +49,7 @@ function updateEras(E, t) {
   if (p(5) > 0) { smokeMat.uniforms.uTint.value.set('#6a6460');
     for (const d of ERA.rift.dinos) { const x = d.x0 + d.v * (t - RIFT), ph = (t * d.v * 1.6 / d.s) + d.ph; d.d.position.set(x, -0.3 + Math.abs(Math.sin(ph)) * 0.08 * d.s, d.z); d.legs[0].rotation.z = Math.sin(ph) * 0.6; d.legs[1].rotation.z = -Math.sin(ph) * 0.6; }
     for (let k = 0; k < 18; k++) { const age = ((t * 0.12 + k / 18) % 1); _p.set(-500 + k * 55, 10 + age * 300, -1300 + age * 40); puffs.add(_p, 80 + age * 260, 0.45 * (1 - age) * p(5)); } }
-  if (p(6) > 0) { const back = ease((t - (ICE + 4.7)) / 1.3), a2 = clamp((t - (ICE - 1.0)) / 4.6, 0, 1); ERA.ice.ice.position.z = t < ICE + 4.7 ? lerp(-2200, 12, a2 * a2) : lerp(12, -2400, back); ERA.ice.ghost.visible = t > ICE - 0.5 && t < ICE + 3.3; }
+  if (p(6) > 0) { const back = ease((t - (ICE + 4.2)) / 1.6), a2 = clamp((t - (ICE - 1.0)) / 4.6, 0, 1); ERA.ice.ice.position.z = t < ICE + 4.2 ? lerp(-2200, 12, Math.min(1, a2 * a2 * 1.12)) : lerp(12, -2400, back); ERA.ice.ghost.visible = t > ICE - 0.5 && t < ICE + 3.3; }
   if (p(7) > 0) for (const d of ERA.woods.deer) d.children[2].position.y = 1.85 - 0.5 * smooth(0.4, 0.6, (Math.sin(t * 0.9 + d.position.x) + 1) / 2);
   if (p(8) > 0) { poseCrowd(ERA.old.crowd, t); for (const c of ERA.old.carts) { const z = wrapR(c.z0 + c.v * t, -320, 20); c.g.position.set(c.x, 0, z); c.g.rotation.y = c.v > 0 ? -Math.PI / 2 : Math.PI / 2; c.legs.forEach((l, i) => l.rotation.z = Math.sin(t * 7 + i * 1.6) * 0.4); } ERA.old.trolley.position.set(-3.3, 0, -80 + 2.5 * (t - OLD)); }
   if (p(9) > 0) { poseCrowd(ERA.now.crowd, t); for (const c of ERA.now.taxis) { const dir = c.x > 0 ? 1 : -1; c.g.position.set(c.x, 0, wrapR(c.z0 + dir * c.v * t, -500, 20)); c.g.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2; } }
@@ -97,7 +99,7 @@ function updateDOM(t, E) {
   el.hud.style.opacity = show ? 1 - smooth(T_END, T_END + 0.4, t) : 0; el.val.style.fontSize = el.val.textContent.length > 16 ? '66px' : '98px';
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.25) : 0;
   el.flash.style.opacity = 0;
-  const inIce = fadeWin(t, ICE + 3.45, ICE + 4.85, 0.3); el.veil.style.background = 'linear-gradient(180deg,#bfe0f4,#e8f4fb 60%,#cfe6f2)'; el.veil.style.opacity = inIce;
+  const inIce = fadeWin(t, ICE + 3.45, ICE + 5.0, 0.4); el.veil.style.background = 'linear-gradient(180deg,#bfe0f4,#e8f4fb 60%,#cfe6f2)'; el.veil.style.opacity = inIce;
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t);
 }
 // =================== render ===================

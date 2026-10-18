@@ -67,7 +67,7 @@ const ERA = {}; const eraGroup = name => { const g = new THREE.Group(); world.ad
   ERA.gren.look = { top: '#5f8fc8', bot: '#d8e2ea', sunDir: V3(0.5, 0.35, -1), sunCol: '#fff4e0', sunSize: 0.003, fog: '#c8d4de', fogN: 400, fogF: 3200, hemiS: '#cfe0ff', hemiG: '#6a5a4a', hemiI: 1.0, sunC: '#fff0dc', sunI: 3.0, sunPos: V3(300, 260, -300), exp: 1.0, camY: 2.0 }; }
 // =================== TACONIC COLLISION (450 million years ago, near the equator) ===================
 { const g = eraGroup('taco'); waterPlane(g, '#2ea6ae', 0, { amp: 0.35 });
-  terrain(g, (x, z) => (x < -60 ? (fbm(x * 0.006, z * 0.006, 4) * 140 - 20) * smooth(-60, -300, x) : -12) + (x < -60 ? 3 : 0), (c, x, y) => c.set(y < 2 ? '#c8b48a' : '#6a5a4c'), { cx: -900 });
+  terrain(g, (x, z) => lerp(-1.6, (x < -60 ? (fbm(x * 0.006, z * 0.006, 4) * 140 - 20) * smooth(-60, -300, x) : -12) + (x < -60 ? 3 : 0), near(x, z, 10, 80)), (c, x, y) => c.set(y < 2 ? '#c8b48a' : '#6a5a4c'), { raw: true });
   ERA.taco.volcs = [];
   for (const [x, z, h, r] of [[430, -620, 330, 330], [700, -900, 440, 420], [260, -1150, 280, 300], [900, -1300, 380, 380]]) { const vg = new THREE.Group(); g.add(vg);
     const cone = mesh(new THREE.ConeGeometry(r, h, 10, 3), M('#4a3e38', { flatShading: true })); cone.position.y = h / 2 - 10; vg.add(cone);
