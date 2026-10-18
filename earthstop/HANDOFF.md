@@ -18,7 +18,10 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add film grain.
 
-## Latest: Times Square through time (`parts_time/`, `index_time.html`, `scene_time.js`, `audio_time.py`)
+## Latest: ocean drained (`parts_ocean/`, `index_ocean.html`, `scene_ocean.js`, `audio_ocean.py`)
+She pushed for CONSEQUENCES, not just visuals (fish + buckets, ships, empty shelves, internet cables explained, salt storms like the Aral Sea, no hurricanes but no rain, rivers pouring into empty basins then drying, bottled water = springs/taps refilled by rain, Antarctica ice = the new gold, Mediterranean dried 6 Ma). Lesson: always think through a causal chain of consequences for a what-if.
+
+## Times Square through time (`parts_time/`, `index_time.html`, `scene_time.js`, `audio_time.py`)
 "What if you watched Times Square since Earth was born?" Facts checked before the script (sources in the chat): Fordham gneiss ~1.1 Ga, Manhattan schist ~450 Ma (Taconic), Laurentia near the equator, Pangaea mountains ~Andes scale (Himalaya claim is disputed), Palisades ~201 Ma, Riker Hill dinosaur tracks (NJ), ice ~1,000 ft over NYC (NYC Parks), 1609 forest at Times Square (Mannahatta), Broadway = Wickquasgeck trail, renamed Times Square April 1904.
 
 ## Tesla Roadster video (`parts_tesla/`, `index_tesla.html`, `scene_tesla.js`, `audio_tesla.py`)
