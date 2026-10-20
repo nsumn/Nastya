@@ -6,7 +6,8 @@ from scipy.io import wavfile
 # body (heartbeat, a fizz of boiling spit, a creak of swelling); heartbeat slows into the blackout; rescue radio, airlock air rushing back,
 # a gasp, one gentle theme. Mostly 200 Hz - 3 kHz. No steady high ticks.
 SR = 44100; DUR = 64.5; N = int(SR * DUR); t = np.arange(N) / SR
-rng = np.random.default_rng(87); L = np.zeros(N); Rr = np.zeros(N)
+V2 = len(sys.argv) > 2 and sys.argv[2] == '2'   # re-upload variant: other noise seed, other melody/key, a space shimmer in the opening
+rng = np.random.default_rng(2024 if V2 else 87); L = np.zeros(N); Rr = np.zeros(N)
 OFF, EXHALE, SPIT, SWELL, SUNB, FADE, DARK, RESCUE, LOCK, BACK, TEND = 4.0, 5.2, 9.0, 15.0, 21.0, 27.0, 36.0, 40.0, 48.0, 54.0, 60.0
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
 def db(x): return 10 ** (x / 20)
@@ -85,13 +86,14 @@ while at < TEND - 1.0:
 cough(LOCK + 3.0, db(-18), 0.05); cough(LOCK + 3.45, db(-21), 0.05); cough(LOCK + 5.6, db(-22)); gulp(LOCK + 7.4, db(-22))
 
 # ---- one theme: gentle piano, A minor -> C major; out during the silence
-beat_s = 60 / 70; mel = [69, 72, 76, 74, 72, 71, 69, 64, 69, 72, 76, 79, 77, 76, 74, 72]
+beat_s = 60 / (76 if V2 else 70); mel = [64, 71, 69, 67, 66, 67, 62, 64, 67, 71, 74, 72, 71, 69, 67, 66] if V2 else [69, 72, 76, 74, 72, 71, 69, 64, 69, 72, 76, 79, 77, 76, 74, 72]
 def theme(a, z, lv):
     k = 0; at = a
     while at < z: place(at, piano(mel[k % 16]), db(lv), 0.15 if k % 2 else -0.15); at += beat_s; k += 1
 theme(0.3, OFF - 0.2, -27); theme(EXHALE + 1.0, FADE, -29); theme(LOCK + 2.5, TEND + 0.5, -24)
-add(pad([57, 64, 69], EXHALE, DARK - 0.5, 2.0, 1.5), db(-40)); add(pad([48, 55, 64, 67], LOCK + 2, DUR, 2.0, 2.5) * (1 - 0.55 * ramp(LOCK + 2, TEND, 1.0, 1.5)), db(-34))
-place(TEND + 0.2, sum(piano(n, 5.0, 0.5) * a for n, a in [(48, 1), (55, 0.7), (64, 0.6), (67, 0.5), (72, 0.4)]), db(-20))
+add(pad([52, 59, 64] if V2 else [57, 64, 69], EXHALE, DARK - 0.5, 2.0, 1.5), db(-40)); add(pad([43, 50, 59, 62] if V2 else [48, 55, 64, 67], LOCK + 2, DUR, 2.0, 2.5) * (1 - 0.55 * ramp(LOCK + 2, TEND, 1.0, 1.5)), db(-34))
+place(TEND + 0.2, sum(piano(n, 5.0, 0.5) * a for n, a in ([(43, 1), (50, 0.7), (59, 0.6), (62, 0.5), (67, 0.4)] if V2 else [(48, 1), (55, 0.7), (64, 0.6), (67, 0.5), (72, 0.4)])), db(-20))
+if V2: add(pad([64, 71, 76, 83], 0, OFF + 0.1, 0.8, 0.15, lp=3200) * (0.75 + 0.25 * np.sin(2 * np.pi * 0.35 * t)), db(-37))   # soft space shimmer while you look at the Milky Way
 out = np.stack([L, Rr], 1); out = sosfilt(butter(2, 60, 'highpass', fs=SR, output='sos'), out.T).T
 out *= np.clip((DUR - t) / 0.8, 0, 1)[:, None] * np.clip(t / 0.05, 0, 1)[:, None]
 out = np.tanh(out * 1.2) / np.tanh(1.2); out /= np.abs(out).max() / 0.92

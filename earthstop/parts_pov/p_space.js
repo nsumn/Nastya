@@ -20,17 +20,17 @@ const MW_Q = new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), MW_N);
   const gb = new THREE.BufferGeometry(); gb.setAttribute('position', new THREE.BufferAttribute(pb, 3)); gb.setAttribute('color', new THREE.BufferAttribute(cb, 3));
   bg.add(new THREE.Points(gb, new THREE.PointsMaterial({ size: 3.2, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false })));
   const glow = canvasTex(2048, 1024, (g2, w, h) => { g2.fillStyle = '#000'; g2.fillRect(0, 0, w, h); g2.globalCompositeOperation = 'lighter';
-      for (let i = 0; i < 5000; i++) { const x = R(0, w), core = Math.exp(-Math.pow(((x / w * 6.283 - 0.6 + 9.42) % 6.283 - 3.14) / 0.8, 2)); const y = h / 2 + (R(-1, 1) + R(-1, 1) + R(-1, 1)) * h * 0.05 * (1 + core * 0.8), r = R(10, 46) * (1 + core);
+      for (let i = 0; i < 5000; i++) { const x = R(0, w), core = Math.exp(-Math.pow(Math.atan2(Math.sin(x / w * 6.283 - 0.6), Math.cos(x / w * 6.283 - 0.6)) / 0.8, 2)); const y = h / 2 + (R(-1, 1) + R(-1, 1) + R(-1, 1)) * h * 0.05 * (1 + core * 0.8), r = R(10, 46) * (1 + core);
         const gr = g2.createRadialGradient(x, y, 0, x, y, r); const hue = core > 0.4 && rnd() < 0.6 ? `rgba(255,${Math.floor(R(170, 215))},${Math.floor(R(120, 170))},` : rnd() < 0.18 ? 'rgba(200,120,190,' : 'rgba(150,175,255,';
-        gr.addColorStop(0, hue + (0.05 + 0.07 * core) + ')'); gr.addColorStop(1, hue + '0)'); g2.fillStyle = gr; g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); }
-      g2.globalCompositeOperation = 'multiply'; for (let i = 0; i < 900; i++) { const x = R(0, w), y = h / 2 + R(-1, 1) * h * 0.018 + Math.sin(x / w * 25) * h * 0.008, r = R(6, 22); const gr = g2.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(40,30,40,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,1)'); g2.fillStyle = gr; g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); } });
-  const band = new THREE.Mesh(new THREE.SphereGeometry(49000, 64, 32), new THREE.MeshBasicMaterial({ map: glow, side: THREE.BackSide, fog: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending, color: new THREE.Color(1.6, 1.6, 1.6) }));
+        gr.addColorStop(0, hue + (0.016 + 0.026 * core) + ')'); gr.addColorStop(1, hue + '0)'); g2.fillStyle = gr; for (const sx of [-w, 0, w]) { g2.save(); g2.translate(sx, 0); g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); g2.restore(); } }
+      g2.globalCompositeOperation = 'multiply'; for (let i = 0; i < 900; i++) { const x = R(0, w), y = h / 2 + R(-1, 1) * h * 0.018 + Math.sin(x / w * 25) * h * 0.008, r = R(6, 22); const gr = g2.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(70,58,72,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,1)'); g2.fillStyle = gr; for (const sx of [-w, 0, w]) { g2.save(); g2.translate(sx, 0); g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); g2.restore(); } } });
+  const band = new THREE.Mesh(new THREE.SphereGeometry(49000, 64, 32), new THREE.MeshBasicMaterial({ map: glow, side: THREE.BackSide, fog: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending, color: new THREE.Color(1.1, 1.1, 1.1) }));
   band.quaternion.copy(MW_Q); bg.add(band); }
 const moon = new THREE.Group(); { const mg = new THREE.IcosahedronGeometry(1, 3); const p = mg.attributes.position, mc = new Float32Array(p.count * 3), c = new THREE.Color(), v = new THREE.Vector3();
   const craters = Array.from({ length: 14 }, () => [V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize(), R(0.15, 0.45)]);
   for (let f = 0; f < p.count; f += 3) { v.set(0, 0, 0); for (let k = 0; k < 3; k++) v.add(new THREE.Vector3().fromBufferAttribute(p, f + k)); v.normalize(); let d = 0.78 + R(-0.05, 0.05); for (const [cn, r] of craters) if (v.distanceTo(cn) < r) d -= 0.22; c.setRGB(d, d, d * 0.98); for (let k = 0; k < 3; k++) mc.set([c.r, c.g, c.b], (f + k) * 3); }
   mg.setAttribute('color', new THREE.BufferAttribute(mc, 3)); const mm = new THREE.Mesh(mg, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 })); mm.scale.setScalar(620); moon.add(mm);
-  moon.position.copy(V3(0.42, Math.sin(0.62), -Math.cos(0.62)).normalize().multiplyScalar(30000)); bg.add(moon); }
+  moon.position.copy(V3(-0.12, Math.sin(0.78), -Math.cos(0.78)).normalize().multiplyScalar(30000)); bg.add(moon); }
 const sunDisc = new THREE.Mesh(new THREE.CircleGeometry(900, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(6, 5.6, 5), fog: false })); sunDisc.position.copy(SUN_DIR).multiplyScalar(45000); sunDisc.lookAt(0, 0, 0); bg.add(sunDisc);
 const earth = new THREE.Group(); const EA = 0.62; earth.position.set(0, -(RE + ALT) * Math.cos(EA), -(RE + ALT) * Math.sin(EA)); bg.add(earth);
 async function buildEarth() {
@@ -40,7 +40,7 @@ async function buildEarth() {
     for (const poly of polys) for (const ring of poly) { let prev = ring[0][0], off = 0; const pts = []; for (const [lo, la] of ring) { if (lo - prev > 180) off -= 360; else if (prev - lo > 180) off += 360; prev = lo; pts.push([lo + off, la]); }
       for (const sh of [-360, 0, 360]) { g.beginPath(); pts.forEach(([lo, la], i) => { const x = (lo + sh + 180) / 360 * MW, y = (90 - la) / 180 * MH; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill('evenodd'); } } }
   const img = g.getImageData(0, 0, MW, MH).data; const land = (lat, lon) => { const x = ((Math.floor((lon + 180) / 360 * MW) % MW) + MW) % MW, y = clamp(Math.floor((90 - lat) / 180 * MH), 0, MH - 1); return img[(y * MW + x) * 4] > 128; };
-  const n0 = V3(0, Math.cos(EA), Math.sin(EA)).normalize(), la0 = (VAR === 2 ? 34 : 35) * Math.PI / 180, lo0 = (VAR === 2 ? -79 : -62) * Math.PI / 180;   // v2: the US East Coast under the station
+  const n0 = V3(0, Math.cos(EA), Math.sin(EA)).normalize(), la0 = (VAR === 2 ? 27 : 35) * Math.PI / 180, lo0 = (VAR === 2 ? -71 : -62) * Math.PI / 180;   // v2: the US East Coast under the station
   const EQ = new THREE.Quaternion().setFromUnitVectors(n0, V3(Math.cos(la0) * Math.cos(lo0), Math.sin(la0), -Math.cos(la0) * Math.sin(lo0)));
   const geo = new THREE.IcosahedronGeometry(RE, 90); const p = geo.attributes.position; const cols = new Float32Array(p.count * 3); const c = new THREE.Color(), v = new THREE.Vector3(), w = new THREE.Vector3();
   for (let f = 0; f < p.count; f += 3) { v.set(0, 0, 0); for (let k = 0; k < 3; k++) v.add(w.fromBufferAttribute(p, f + k)); v.normalize();
