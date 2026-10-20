@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html
 import logging
+import secrets
 import time
 
 from aiogram import F, Router
@@ -228,6 +229,107 @@ async def mark_sent(message: Message, command) -> None:
            "\n⚠️ Ссылка не отправлена — задай её командой /maplink."))
 
 
+def _who(r: dict) -> str:
+    return (f"@{r['tg_username']}" if r.get("tg_username")
+            else r.get("tg_name") or str(r["user_id"]))
+
+
+def _winners_text(rows: list[dict]) -> str:
+    total = sum(int(r["prize"]) for r in rows)
+    lines = [f"🏆 <b>Победители: {len(rows)}</b> · всего к начислению: "
+             f"<b>{total}</b> робуксов", ""]
+    for r in rows:
+        lines.append(f"№{r['ticket']} — <b>{html.escape(r['roblox_username'])}</b>"
+                     f" — {r['prize']} R$ — {html.escape(_who(r))}")
+    return "\n".join(lines)
+
+
+@router.message(Command("raffle"))
+async def raffle_info(message: Message) -> None:
+    """Сводка по розыгрышу."""
+    c = await db.raffle_counts()
+    n = await op.raffle_winners_count()
+    date = await op.raffle_date()
+    await message.answer(
+        "🎃 <b>Розыгрыш</b>\n\n"
+        f"Сделали выбор: <b>{c['started']}</b>\n"
+        f"Подписались и получили номер: <b>{c['joined']}</b>\n"
+        f"Уже выбрано победителей: <b>{c['winners']}</b>\n\n"
+        f"Победителей по условиям: <b>{n}</b> — /rafflewinners число\n"
+        f"Дата: <b>{html.escape(date) if date else '⚠️ не задана'}</b> — "
+        "/raffledate текст\n\n"
+        f"Провести розыгрыш: /draw\n"
+        "Посмотреть победителей: /winners")
+
+
+@router.message(Command("raffledate"))
+async def raffle_set_date(message: Message, command) -> None:
+    text = (command.args or "").strip()
+    if not text:
+        await message.answer("Формат: <code>/raffledate 20 ноября в 18:00 "
+                             "в канале @мойканал</code>")
+        return
+    await op.set_raffle_date(text)
+    await message.answer(f"✅ Дата розыгрыша: {html.escape(text)}")
+
+
+@router.message(Command("rafflewinners"))
+async def raffle_set_winners(message: Message, command) -> None:
+    arg = (command.args or "").strip()
+    if not arg.isdigit() or not 1 <= int(arg) <= 100:
+        await message.answer("Формат: <code>/rafflewinners 7</code>")
+        return
+    await op.set_raffle_winners_count(int(arg))
+    await message.answer(f"✅ Победителей: {arg}")
+
+
+@router.message(Command("draw"))
+async def raffle_draw(message: Message, command) -> None:
+    """Случайно выбирает победителей среди тех, кто всё ещё подписан."""
+    already = await db.raffle_winners()
+    want = await op.raffle_winners_count()
+    arg = (command.args or "").strip()
+    if arg.isdigit():
+        want = len(already) + int(arg)       # /draw 1 — добрать ещё одного
+    elif already:
+        await message.answer(
+            _winners_text(already) + "\n\nРозыгрыш уже проведён. Добрать ещё "
+            "победителя вместо выбывшего: <code>/draw 1</code>")
+        return
+    need = want - len(already)
+    if need <= 0:
+        await message.answer(_winners_text(already))
+        return
+
+    pool = await db.raffle_participants(only_new=True)
+    secrets.SystemRandom().shuffle(pool)
+    picked, skipped = [], 0
+    for row in pool:
+        if len(picked) >= need:
+            break
+        # честно: выигрывает только тот, кто до сих пор подписан
+        if not await op.is_subscribed(message.bot, row["user_id"]):
+            skipped += 1
+            continue
+        await db.mark_raffle_winner(row["user_id"])
+        picked.append(row)
+
+    if not picked:
+        await message.answer("Некого выбирать: нет участников с номером.")
+        return
+    note = (f"\n\nПропущено отписавшихся: {skipped}" if skipped else "")
+    if len(picked) < need:
+        note += f"\n⚠️ Участников хватило только на {len(picked)}."
+    await message.answer(_winners_text(await db.raffle_winners()) + note)
+
+
+@router.message(Command("winners"))
+async def raffle_show_winners(message: Message) -> None:
+    rows = await db.raffle_winners()
+    await message.answer(_winners_text(rows) if rows
+                         else "Розыгрыш ещё не проводился — /draw")
+
+
 @router.message(Command("maplink"))
 async def set_map(message: Message, command) -> None:
     """/maplink <ссылка> — приглашение на карту, которое выдаётся после подписки."""
@@ -302,7 +404,7 @@ async def set_button(message: Message, command, config: Config) -> None:
         current = await op.button_text()
         await message.answer(
             "🔘 Подпись кнопки, которая открывает мини-приложение.\n\n"
-            f"Сейчас: <i>{html.escape(current) if current else kb.BTN_ROBLOX}</i>\n\n"
+            f"Сейчас: <i>{html.escape(current) if current else kb.default_button_label(config)}</i>\n\n"
             "Изменить: <code>/button твой текст</code>\n"
             "После смены пришли себе /start, чтобы увидеть новую кнопку.")
         return

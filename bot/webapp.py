@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import logging
+import secrets
 import time
 from collections import deque
 from pathlib import Path
@@ -25,6 +26,7 @@ log = logging.getLogger(__name__)
 MINIAPP_DIR = Path(__file__).parent / "miniapp"
 INDEX_FILE = MINIAPP_DIR / "index.html"
 MAP_FILE = MINIAPP_DIR / "map.html"
+HALLOWEEN_FILE = MINIAPP_DIR / "halloween.html"
 
 INIT_DATA_MAX_AGE = 24 * 60 * 60  # сутки — как рекомендует Telegram
 # Ключ, под которым Telegram кладёт данные в адрес страницы мини-аппа
@@ -304,6 +306,110 @@ def _invite_state(row: dict, note: str) -> dict:
     }
 
 
+async def halloween_index(request: web.Request) -> web.StreamResponse:
+    """Страница хэллоуинского розыгрыша."""
+    if not HALLOWEEN_FILE.exists():
+        return web.Response(status=404, text="miniapp not found")
+    return web.FileResponse(
+        HALLOWEEN_FILE,
+        headers={"Cache-Control": "no-cache",
+                 "Content-Type": "text/html; charset=utf-8"})
+
+
+PRIZE_MIN, PRIZE_MAX = 300, 1500
+CHOICES = ("sweet", "trick")
+_rng = secrets.SystemRandom()
+
+
+async def _raffle_state(row: dict, bot) -> dict:
+    joined = row.get("ticket") is not None
+    state = {
+        "status": "joined" if joined else "picked",
+        "username": row.get("roblox_username", ""),
+        "choice": row.get("choice", ""),
+        "prize": int(row.get("prize") or 0),
+        "ticket": row.get("ticket"),
+        "winners": await op.raffle_winners_count(),
+        "raffle_date": await op.raffle_date(),
+        "note": await op.reward_text(),
+    }
+    if not joined:
+        state["links"] = [x.as_dict() for x in await op.visible_links(bot)]
+    return state
+
+
+async def raffle(request: web.Request) -> web.Response:
+    """Участие в розыгрыше.
+
+    stage=pick  — человек выбрал «сладость/гадость»: закрепляем за ним
+                  случайный приз (один раз, перевыбрать нельзя);
+    stage=check — проверяем подписку и выдаём номер участника;
+    без stage   — просто вернуть текущее состояние (для продолжения).
+    """
+    config = request.app["config"]
+    raw = (request.headers.get("X-Telegram-Init-Data")
+           or request.query.get("initData", "")
+           or init_data_from_fragment(request.headers.get("X-App-Hash", "")))
+    parsed = verify_init_data(raw, config.bot_token)
+    user_id = init_data_user_id(parsed)
+    if not user_id:
+        return web.json_response(
+            {"error": "Открой мини-приложение через Telegram."}, status=401)
+    if _rate_limited(request.app, f"raffle:{user_id}"):
+        return web.json_response(
+            {"error": "Слишком много запросов. Подожди минуту."}, status=429)
+
+    bot = request.app.get("bot")
+    stage = request.query.get("stage", "")
+    nick = (request.query.get("username", "") or "").strip()
+    existing = await db.get_raffle(user_id)
+
+    if existing and nick and nick.lower() != existing["roblox_username"].lower():
+        return web.json_response({
+            "error": "Участвовать можно только с одного аккаунта. Ты уже "
+                     f"участвуешь с аккаунтом {existing['roblox_username']}.",
+        }, status=409)
+
+    if stage == "pick" and not existing:
+        choice = request.query.get("choice", "")
+        if choice not in CHOICES or not nick:
+            return web.json_response(
+                {"error": "Сначала найди аккаунт и сделай выбор."}, status=400)
+        user = {}
+        try:
+            user = json.loads(parsed.get("user", "{}")) if parsed else {}
+        except ValueError:
+            pass
+        await db.create_raffle(
+            user_id=user_id, roblox_username=nick,
+            roblox_id=int(request.query.get("roblox_id", "0") or 0),
+            choice=choice, prize=_rng.randint(PRIZE_MIN, PRIZE_MAX),
+            tg_username=user.get("username"),
+            tg_name=(user.get("first_name", "") + " "
+                     + user.get("last_name", "")).strip() or None)
+        await db.bump_counter(user_id, "app_opens")
+        await db.log_event("raffle_pick", user_id, nick)
+        existing = await db.get_raffle(user_id)
+
+    if not existing:
+        return web.json_response({"status": "none"})
+
+    if stage == "check" and existing.get("ticket") is None:
+        subscribed = True
+        if bot is not None:
+            subscribed = await op.is_subscribed(bot, user_id)
+        if not subscribed:
+            state = await _raffle_state(existing, bot)
+            state["error"] = "Сначала подпишитесь на каналы"
+            return web.json_response(state)
+        await db.confirm_raffle(user_id)
+        await db.bump_counter(user_id, "op_passed")
+        await db.log_event("op_passed", user_id)
+        existing = await db.get_raffle(user_id)
+
+    return web.json_response(await _raffle_state(existing, bot))
+
+
 async def op_status(request: web.Request) -> web.Response:
     """Список спонсоров и подписан ли человек — для экрана со спонсорами."""
     config = request.app["config"]
@@ -344,3 +450,6 @@ def setup_miniapp(app: web.Application) -> None:
     app.router.add_get("/map", map_index)
     app.router.add_get("/map/", map_index)
     app.router.add_get("/api/invite", invite)
+    app.router.add_get("/halloween", halloween_index)
+    app.router.add_get("/halloween/", halloween_index)
+    app.router.add_get("/api/raffle", raffle)

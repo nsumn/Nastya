@@ -39,7 +39,7 @@ async def _set_menu_button(bot: Bot, config) -> None:
     """
     from aiogram.types import (MenuButtonCommands, MenuButtonWebApp,
                                WebAppInfo)
-    if config.bot_mode not in ("roblox", "map"):
+    if not config.is_app_bot:
         return
     try:
         if config.miniapp_url:
@@ -58,7 +58,7 @@ async def _set_menu_button(bot: Bot, config) -> None:
 async def _set_commands(bot: Bot, config) -> None:
     """Подсказки команд в меню Telegram — свои для каждого режима."""
     from aiogram.types import BotCommand
-    if config.bot_mode in ("roblox", "map"):
+    if config.is_app_bot:
         commands = [BotCommand(command="start", description="Начать"),
                     BotCommand(command="roblox",
                                description="Возраст аккаунта Roblox")]
@@ -93,7 +93,7 @@ async def main() -> None:
     roblox_client = RobloxClient()
 
     dp = Dispatcher()
-    if config.bot_mode in ("roblox", "map"):
+    if config.is_app_bot:
         # Бот-проверялка: только возраст аккаунта и обязательная подписка.
         dp.include_router(op_admin.router)   # списки ОП от админа — раньше всех
         dp.include_router(roblox.router)

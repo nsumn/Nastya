@@ -107,6 +107,99 @@ async def init_db(path: str) -> None:
             )
             """
         )
+        # Хэллоуинский розыгрыш: приз закрепляется за человеком сразу после
+        # выбора, номер участника выдаётся только после проверки подписки.
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS raffle (
+                user_id         INTEGER PRIMARY KEY,
+                tg_username     TEXT,
+                tg_name         TEXT,
+                roblox_username TEXT NOT NULL,
+                roblox_id       INTEGER,
+                choice          TEXT NOT NULL,
+                prize           INTEGER NOT NULL,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now', '+3 hours')),
+                ticket          INTEGER UNIQUE,
+                joined_at       TEXT,
+                winner          INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        await db.commit()
+
+
+# ---------- хэллоуинский розыгрыш ----------
+
+async def get_raffle(user_id: int) -> Optional[dict]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM raffle WHERE user_id = ?", (user_id,)
+        ) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
+
+
+async def create_raffle(user_id: int, roblox_username: str, roblox_id: int,
+                        choice: str, prize: int,
+                        tg_username: Optional[str] = None,
+                        tg_name: Optional[str] = None) -> None:
+    """Запись создаётся один раз: приз потом не перевыбирается."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "INSERT OR IGNORE INTO raffle (user_id, tg_username, tg_name, "
+            "roblox_username, roblox_id, choice, prize) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (user_id, tg_username, tg_name, roblox_username, roblox_id,
+             choice, prize),
+        )
+        await db.commit()
+
+
+async def confirm_raffle(user_id: int) -> None:
+    """Выдаёт следующий по порядку номер участника (если ещё не выдан)."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "UPDATE raffle SET "
+            "ticket = (SELECT COALESCE(MAX(ticket), 0) + 1 FROM raffle), "
+            "joined_at = datetime('now', '+3 hours') "
+            "WHERE user_id = ? AND ticket IS NULL", (user_id,))
+        await db.commit()
+
+
+async def raffle_counts() -> dict:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        async with db.execute(
+            "SELECT COUNT(*), COUNT(ticket), SUM(winner) FROM raffle") as cur:
+            row = await cur.fetchone() or (0, 0, 0)
+    return {"started": row[0] or 0, "joined": row[1] or 0,
+            "winners": row[2] or 0}
+
+
+async def raffle_participants(only_new: bool = True) -> list[dict]:
+    """Участники с номером; only_new — ещё не выигравшие."""
+    sql = "SELECT * FROM raffle WHERE ticket IS NOT NULL"
+    if only_new:
+        sql += " AND winner = 0"
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(sql + " ORDER BY ticket") as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def raffle_winners() -> list[dict]:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM raffle WHERE winner = 1 ORDER BY ticket") as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+
+async def mark_raffle_winner(user_id: int) -> None:
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute("UPDATE raffle SET winner = 1 WHERE user_id = ?",
+                         (user_id,))
         await db.commit()
 
 

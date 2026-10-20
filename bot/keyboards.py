@@ -13,12 +13,13 @@ BTN_PROFILE = "👤 Мой профиль"
 BTN_CONTACTS = "❗️ Контакты/FAQ"
 BTN_ROBLOX = "🎮 Возраст Roblox"
 BTN_MAP = "🎁 Получить приглашение"
+BTN_HALLOWEEN = "Открыть 🎁"
 
 
 def default_button_label(config: Config | None) -> str:
     """Что написано на кнопке запуска, если владелец не задал своё."""
-    return (BTN_MAP if getattr(config, "bot_mode", "") == "map"
-            else BTN_ROBLOX)
+    mode = getattr(config, "bot_mode", "")
+    return {"map": BTN_MAP, "halloween": BTN_HALLOWEEN}.get(mode, BTN_ROBLOX)
 
 
 def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
@@ -35,7 +36,7 @@ def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
 def main_reply_kb(config: Config | None = None,
                   label: str = "") -> ReplyKeyboardMarkup:
     """Постоянное меню снизу, у поля ввода."""
-    if getattr(config, "bot_mode", "payments") in ("roblox", "map"):
+    if getattr(config, "is_app_bot", False):
         rows = [[_roblox_button(config, label)]]
     else:
         rows = [
@@ -96,7 +97,7 @@ ADM_BTN_SPONSORS = "📢 Спонсоры (ОП)"  # обрабатываетс�
 
 def admin_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     """Нижнее меню администратора."""
-    if getattr(config, "bot_mode", "payments") in ("roblox", "map"):
+    if getattr(config, "is_app_bot", False):
         # В Roblox-боте продавать нечего — только обязательная подписка.
         return ReplyKeyboardMarkup(
             keyboard=[[KeyboardButton(text=ADM_BTN_SPONSORS)]],

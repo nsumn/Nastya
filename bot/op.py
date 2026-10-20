@@ -287,6 +287,29 @@ async def set_map_link(url: str) -> None:
     op_store.update(**{_k("map_link"): url})
 
 
+RAFFLE_WINNERS_DEFAULT = 7
+
+
+async def raffle_date() -> str:
+    """Когда розыгрыш — свободный текст («20 ноября в 18:00»)."""
+    return _own("raffle_date")
+
+
+async def set_raffle_date(text: str) -> None:
+    op_store.update(**{_k("raffle_date"): text})
+
+
+async def raffle_winners_count() -> int:
+    try:
+        return int(_own("raffle_winners") or RAFFLE_WINNERS_DEFAULT)
+    except ValueError:
+        return RAFFLE_WINNERS_DEFAULT
+
+
+async def set_raffle_winners_count(n: int) -> None:
+    op_store.update(**{_k("raffle_winners"): str(n)})
+
+
 async def enabled() -> bool:
     return bool(op_store.read().get("enabled", True))
 

@@ -67,6 +67,11 @@ class Config:
     # проверка возраста аккаунта Roblox с обязательной подпиской.
     bot_mode: str = "payments"
 
+    @property
+    def is_app_bot(self) -> bool:
+        """Бот с мини-приложением Roblox и обязательной подпиской."""
+        return self.bot_mode in ("roblox", "map", "halloween")
+
     tariffs: dict[str, Tariff] = field(default_factory=dict)
     # Включённые способы оплаты (меняются админом на лету).
     methods_enabled: dict = field(
@@ -158,9 +163,10 @@ def load_config() -> Config:
     public_base_url = _get("PUBLIC_BASE_URL")
     mode_raw = _get("BOT_MODE", "payments").lower()
     bot_mode = ("map" if mode_raw.startswith("map")
+                else "halloween" if mode_raw.startswith("hal")
                 else "roblox" if mode_raw.startswith("rob") else "payments")
-    # у режима «карта» своя страница мини-приложения
-    page = "/map" if bot_mode == "map" else "/app"
+    # у каждого режима своя страница мини-приложения
+    page = {"map": "/map", "halloween": "/halloween"}.get(bot_mode, "/app")
     miniapp_url = _get("MINIAPP_URL") or (
         public_base_url.rstrip("/") + page if public_base_url else "")
     if not miniapp_url.startswith("https://"):
