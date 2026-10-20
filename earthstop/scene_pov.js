@@ -10,7 +10,9 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 const OFF = 4.0, EXHALE = 5.2, SPIT = 9.0, SWELL = 15.0, SUNB = 21.0, FADE = 27.0, DARK = 36.0, RESCUE = 40.0, LOCK = 48.0, BACK = 54.0, T_END = 60.0;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
-let seed = 1966;
+// ?v=2: re-upload variant (different Earth view, cloud/star layout, wording, grade)
+const VAR = +(new URLSearchParams(location.search).get('v') || 1);
+let seed = VAR === 2 ? 2024 : 1966;
 function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 const R = (a, b) => a + (b - a) * rnd();
 const pick = a => a[Math.floor(rnd() * a.length)];
@@ -96,7 +98,7 @@ async function buildEarth() {
     for (const poly of polys) for (const ring of poly) { let prev = ring[0][0], off = 0; const pts = []; for (const [lo, la] of ring) { if (lo - prev > 180) off -= 360; else if (prev - lo > 180) off += 360; prev = lo; pts.push([lo + off, la]); }
       for (const sh of [-360, 0, 360]) { g.beginPath(); pts.forEach(([lo, la], i) => { const x = (lo + sh + 180) / 360 * MW, y = (90 - la) / 180 * MH; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill('evenodd'); } } }
   const img = g.getImageData(0, 0, MW, MH).data; const land = (lat, lon) => { const x = ((Math.floor((lon + 180) / 360 * MW) % MW) + MW) % MW, y = clamp(Math.floor((90 - lat) / 180 * MH), 0, MH - 1); return img[(y * MW + x) * 4] > 128; };
-  const n0 = V3(0, Math.cos(EA), Math.sin(EA)).normalize(), la0 = 35 * Math.PI / 180, lo0 = -62 * Math.PI / 180;
+  const n0 = V3(0, Math.cos(EA), Math.sin(EA)).normalize(), la0 = (VAR === 2 ? 34 : 35) * Math.PI / 180, lo0 = (VAR === 2 ? -79 : -62) * Math.PI / 180;   // v2: the US East Coast under the station
   const EQ = new THREE.Quaternion().setFromUnitVectors(n0, V3(Math.cos(la0) * Math.cos(lo0), Math.sin(la0), -Math.cos(la0) * Math.sin(lo0)));
   const geo = new THREE.IcosahedronGeometry(RE, 90); const p = geo.attributes.position; const cols = new Float32Array(p.count * 3); const c = new THREE.Color(), v = new THREE.Vector3(), w = new THREE.Vector3();
   for (let f = 0; f < p.count; f += 3) { v.set(0, 0, 0); for (let k = 0; k < 3; k++) v.add(w.fromBufferAttribute(p, f + k)); v.normalize();
@@ -289,7 +291,22 @@ function updateLock(t) { const u = t - LOCK;
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'flash', 'end', 'endT', 'endS', 'hud', 'veil'].map(k => [k, $(k)]));
-const captions = [
+const captions = VAR === 2 ? [
+  [4.2, 6.6, 'And just like that —<br>total silence.'],
+  [6.7, 8.9, 'Let the air OUT.<br>Holding your breath would rip your lungs.'],
+  [9.3, 11.9, 'Look — your spit is boiling.'],
+  [12.0, 14.8, 'Not from heat. With almost no pressure,<br>water boils at 98 °F.'],
+  [15.3, 20.8, 'Your body puffs up…<br>but your skin is tough enough. No explosion.'],
+  [21.3, 23.9, 'You won\'t freeze solid —<br>there\'s no air to steal your heat.'],
+  [24.0, 26.8, 'The Sun is the real danger:<br>raw UV, instant sunburn.'],
+  [27.3, 31.4, 'About 10 seconds in,<br>your blood has no oxygen left.'],
+  [31.5, 35.6, 'The world goes gray…<br>and closes in.'],
+  [36.4, 39.8, 'Around 15 seconds — lights out.<br>The clock: ~90 seconds to save you.'],
+  [40.4, 47.6, 'Your crewmate drags you<br>back to the airlock.'],
+  [48.6, 53.8, 'Pressure comes back.<br>You open your eyes. You made it.'],
+  [54.2, 57.0, 'Real story: 1966, Houston. NASA engineer<br>Jim LeBlanc\'s suit lost pressure in a test chamber.'],
+  [57.1, 59.9, 'He remembered his saliva bubbling.<br>He woke up 87 seconds later — and was fine.'],
+] : [
   [4.2, 6.6, 'Instantly: silence.<br>No air, no sound.'],
   [6.7, 8.9, 'Breathe OUT —<br>holding it would tear your lungs.'],
   [9.3, 11.9, 'Your spit starts to boil…'],
@@ -313,6 +330,7 @@ function hudAt(t) { let stat = '', lab = '', val = '', sub = '', show = 1;
   else show = 0;
   return { stat, lab, val, sub, show }; }
 const blur = t => t < DARK ? 2.2 * smooth(FADE + 3, DARK - 1, t) : t < LOCK ? 3.5 : lerp(9, 0, smooth(LOCK, LOCK + 3.2, t));
+if (VAR === 2) { el.title.innerHTML = 'POV: you take off<br>your <span class="hl">helmet</span> in space'; el.endT.innerHTML = 'POV: you take off your <span class="hl">helmet</span> in space'; }
 function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.0, 3.6, t);
   const h = hudAt(t); el.stat.innerHTML = h.stat; el.lab.textContent = h.lab; el.val.textContent = h.val; el.sub.textContent = h.sub; el.hud.style.opacity = h.show * (1 - smooth(BACK - 0.4, BACK, t));
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.25) : 0;
@@ -331,7 +349,7 @@ function postFX(t, inLock) { const u = compMat.uniforms;
   const hyp = smooth(FADE + 1, DARK - 1, t) * (t < LOCK ? 1 : 0); const res = t >= DARK && t < LOCK ? 1 : 0;
   u.uGhostA.value = Math.max(hyp, 0.6 * res); u.uGhost.value.set(0.012 * Math.sin(t * 1.3) + 0.006, 0.006 * Math.cos(t * 1.7));
   u.uSat.value = t < LOCK ? lerp(1, 0.12, Math.max(hyp, res)) : lerp(0.35, 1, smooth(LOCK, LOCK + 4, t));
-  const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn);
+  const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn); if (VAR === 2) u.uTint.value.multiply(V3(0.97, 1.0, 1.06));
   u.uVig.value = t < LOCK ? lerp(3, 0.42, smooth(FADE + 0.5, DARK - 0.8, t) * (1 - 0.35 * res)) + 0.06 * u.uPulse.value : lerp(0.8, 3, smooth(LOCK, LOCK + 3, t));
   u.uLid.value = lidAt(t);
   u.uFlash.value = inLock ? 0.7 * (1 - smooth(LOCK + 0.2, LOCK + 3.0, t)) * (1 - u.uLid.value) : 0;
@@ -339,7 +357,7 @@ function postFX(t, inLock) { const u = compMat.uniforms;
   // sun glare where the Sun is on screen
   const sp = SUN_DIR.clone().multiplyScalar(1000).project(bgCam); const inView = (!inLock && sp.z < 1 ? 1 : 0) * smooth(2.2, 1.1, Math.abs(sp.x)) * smooth(1.9, 1.1, Math.abs(sp.y));
   u.uSunUV.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView * (1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8));
-  u.uExpA.value = (inLock ? 1.05 : 1.0) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
+  u.uExpA.value = (inLock ? 1.05 : 1.0) * (VAR === 2 ? 1.08 : 1) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
 // =================== render ===================
 window.renderAt = (t) => {
   const inLock = t >= LOCK;

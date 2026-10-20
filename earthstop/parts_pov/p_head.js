@@ -10,7 +10,9 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 const OFF = 4.0, EXHALE = 5.2, SPIT = 9.0, SWELL = 15.0, SUNB = 21.0, FADE = 27.0, DARK = 36.0, RESCUE = 40.0, LOCK = 48.0, BACK = 54.0, T_END = 60.0;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
-let seed = 1966;
+// ?v=2: re-upload variant (different Earth view, cloud/star layout, wording, grade)
+const VAR = +(new URLSearchParams(location.search).get('v') || 1);
+let seed = VAR === 2 ? 2024 : 1966;
 function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 const R = (a, b) => a + (b - a) * rnd();
 const pick = a => a[Math.floor(rnd() * a.length)];
