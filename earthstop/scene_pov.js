@@ -263,12 +263,12 @@ function updateRescue(t) { you.head.visible = false; you.g.visible = false; mirr
   const u = smooth(RESCUE + 1.6, LOCK - 0.1, t) * 0.97; const eye = PATH.curve.getPointAt(u), tan = PATH.curve.getTangentAt(Math.min(0.99, u + 0.02));
   // the crewmate: first facing you up close, then ahead of you on the route, towing you by the arm
   mate.g.visible = true; const grab = smooth(RESCUE, RESCUE + 1.4, t);
-  if (t < RESCUE + 1.9) { const q = new THREE.Quaternion().setFromEuler(_e.set(0, Math.PI + 0.3, 0)); const f = V3(0, 0, 1).applyQuaternion(q);
+  if (t < RESCUE + 2.35) { const q = new THREE.Quaternion().setFromEuler(_e.set(0, Math.PI + 0.3, 0)); const f = V3(0, 0, 1).applyQuaternion(q);
     const mh = eye.clone().add(V3(-0.35, 0.05, -lerp(1.6, 0.75, grab))); mate.g.position.copy(mh).sub(V3(0, 1.86, 0)); mate.g.rotation.set(0, 0.35, 0); poseAstro(mate, { aR: -1.5 + 0.2 * grab, eR: -0.3, aL: -0.5, zR: 0.1 }); }
   else { const u2 = Math.min(1, u + 0.07), p2 = PATH.curve.getPointAt(u2), d = PATH.curve.getTangentAt(u2); mate.g.position.copy(p2).add(V3(0.0, -1.6, 0.0)).addScaledVector(d, 0.35);
     mate.g.rotation.set(0.9, Math.atan2(d.x, d.z), 0); poseAstro(mate, { aR: 1.2, eR: -0.2, aL: -2.4, eL: -0.6, lL: 0.4, lR: -0.2 }); }
   let look;
-  if (t < RESCUE + 2.2) look = mate.head.localToWorld(V3(0, 0, 0));
+  if (t < RESCUE + 2.35) look = mate.head.localToWorld(V3(0, 0, 0));
   else if (t < RESCUE + 4.9) look = eye.clone().addScaledVector(tan, 1.0).add(V3(0, -1.1, 0.35));
   else look = V3(6.83, -3.0, 2.0);
   cam.position.copy(eye); cam.up.set(0, 1, 0); cam.lookAt(look); cam.rotateZ(0.25 * Math.sin(t * 0.7)); cam.fov = 62;
@@ -334,11 +334,11 @@ function postFX(t, inLock) { const u = compMat.uniforms;
   const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn);
   u.uVig.value = t < LOCK ? lerp(3, 0.42, smooth(FADE + 0.5, DARK - 0.8, t) * (1 - 0.35 * res)) + 0.06 * u.uPulse.value : lerp(0.8, 3, smooth(LOCK, LOCK + 3, t));
   u.uLid.value = lidAt(t);
-  u.uFlash.value = inLock ? 0.7 * (1 - smooth(LOCK + 0.2, LOCK + 3.0, t)) : 0;
+  u.uFlash.value = inLock ? 0.7 * (1 - smooth(LOCK + 0.2, LOCK + 3.0, t)) * (1 - u.uLid.value) : 0;
   u.uBright.value = 1;
   // sun glare where the Sun is on screen
-  const sp = SUN_DIR.clone().multiplyScalar(1000).project(bgCam); const inView = !inLock && sp.z < 1 && Math.abs(sp.x) < 1.6 && Math.abs(sp.y) < 1.4;
-  u.uSunUV.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView ? 1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8) : 0;
+  const sp = SUN_DIR.clone().multiplyScalar(1000).project(bgCam); const inView = (!inLock && sp.z < 1 ? 1 : 0) * smooth(2.2, 1.1, Math.abs(sp.x)) * smooth(1.9, 1.1, Math.abs(sp.y));
+  u.uSunUV.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView * (1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8));
   u.uExpA.value = (inLock ? 1.05 : 1.0) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
 // =================== render ===================
 window.renderAt = (t) => {
