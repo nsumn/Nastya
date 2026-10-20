@@ -226,14 +226,14 @@ const captions = [
   [57.3, 60.8, 'So… keep your helmet on.'],
 ];
 function hudAt(t) { let stat = '', lab = '', val = '', sub = '', show = 1; if (t < OFF || t >= BACK) show = 0;
-  else { const s = (t - OFF) * (t < DARK ? 2.0 : 1.0) + (t >= DARK ? (DARK - OFF) * 1.0 : 0); const secs = t < DARK ? Math.min(15, Math.floor((t - OFF) * 15 / (DARK - OFF))) : Math.floor(15 + (t - DARK) * 15); const shown = t < LOCK ? secs : 87;
+  else { const s = (t - OFF) * (t < DARK ? 2.0 : 1.0) + (t >= DARK ? (DARK - OFF) * 1.0 : 0); const secs = t < DARK ? Math.min(15, Math.floor((t - OFF) * 15 / (DARK - OFF))) : Math.floor(15 + (t - DARK) * 72 / (LOCK - DARK)); const shown = t < LOCK ? secs : 87;
     stat = '<b></b>NO HELMET'; lab = 'TIME IN VACUUM'; val = 'T+' + shown + ' s'; sub = t < SPIT ? 'EXHALE!' : t < SWELL ? 'SALIVA BOILING' : t < SUNB ? 'SWELLING (EBULLISM)' : t < FADE ? 'UV BURN' : t < DARK ? 'LOSING CONSCIOUSNESS' : t < LOCK ? 'UNCONSCIOUS · ~90 s WINDOW' : 'REPRESSURIZED'; }
   return { stat, lab, val, sub, show }; }
 function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.0, 3.6, t);
   const h = hudAt(t); el.stat.innerHTML = h.stat; el.lab.textContent = h.lab; el.val.textContent = h.val; el.sub.textContent = h.sub; el.hud.style.opacity = h.show * (1 - smooth(T_END, T_END + 0.4, t));
   const c = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = c ? c[2] : ''; el.cap.style.opacity = c ? fadeWin(t, c[0], c[1], 0.25) : 0;
-  const tv = smooth(FADE, DARK - 0.6, t) * (1 - smooth(RESCUE - 0.3, RESCUE + 0.6, t)); const r = lerp(85, 0, tv);
-  tunnel.style.background = tv > 0.001 ? `radial-gradient(ellipse ${r}% ${r * 0.62}% at 50% 48%, rgba(0,0,0,0) 40%, rgba(0,0,0,1) 100%)` : 'none';
+  const tvA = smooth(FADE, FADE + 1.5, t) * (1 - smooth(RESCUE - 0.3, RESCUE + 1.2, t)); const r = lerp(85, 0, smooth(FADE, DARK - 0.6, t) * (1 - smooth(RESCUE - 0.3, RESCUE + 1.2, t)));
+  tunnel.style.background = tvA > 0.001 ? `radial-gradient(ellipse ${r}% ${r * 0.62}% at 50% 48%, rgba(0,0,0,0) 40%, rgba(0,0,0,1) 100%)` : 'none'; tunnel.style.opacity = tvA;
   el.veil.style.background = '#000'; el.veil.style.opacity = smooth(DARK - 1.0, DARK - 0.2, t) * (1 - smooth(RESCUE - 0.4, RESCUE + 0.6, t));
   $('c').style.filter = t > LOCK && t < LOCK + 3 ? `blur(${lerp(6, 0, smooth(LOCK, LOCK + 3, t)).toFixed(1)}px)` : 'none';
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t); }
