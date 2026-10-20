@@ -408,7 +408,7 @@ async def submit_task(request: web.Request) -> web.Response:
             f"📝 <b>Новый ответ #{sub_id}</b>\n"
             f"Участник: {services.display_name(fresh)} "
             f"(<code>{fresh['user_id']}</code>)\n"
-            f"Задание: {task['emoji']} {task['title']} — {reward:g} ₽\n"
+            f"Задание: {task['emoji']} {task['title']} — {reward:g} р\n"
             f"Оценка: {'⭐' * rating if rating else '—'}\n"
             f"Статус: {'начислено' if status == 'approved' else 'на модерации'}\n\n"
             f"<i>{text[:600]}</i>",
@@ -654,7 +654,7 @@ async def withdraw(request: web.Request) -> web.Response:
             + ("  🆕 новая подписка" if fresh_sub else "") + "\n"
             f"Участник: {services.display_name(user)} "
             f"(<code>{user['user_id']}</code>)\n"
-            f"Сумма: <b>{amount:g} ₽</b>\n"
+            f"Сумма: <b>{amount:g} р</b>\n"
             f"Способ: {METHOD_TITLES[method]}\n"
             f"Реквизиты: <code>{normalized}</code>\n"
             f"{texts.sub_proof(proof, await op.check_title())}\n"

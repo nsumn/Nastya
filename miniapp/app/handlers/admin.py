@@ -162,7 +162,7 @@ async def task_card(call: CallbackQuery) -> None:
     if (task.get("kind") or "review") == "video":
         body = (f"{task['emoji']} <b>{task['title']}</b>  🎬"
                 f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
-                f"Награда: <b>{task['reward']:g} ₽</b>\n"
+                f"Награда: <b>{task['reward']:g} р</b>\n"
                 f"Смотреть: {task['min_watch']} с\n"
                 f"До: {task['deadline']}\n\n"
                 f"Ссылка: {task['video_url']}")
@@ -173,14 +173,14 @@ async def task_card(call: CallbackQuery) -> None:
             for number, q in enumerate(task["questions"], start=1)) or "—"
         body = (f"{task['emoji']} <b>{task['title']}</b>  🗳"
                 f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
-                f"Награда: <b>{task['reward']:g} ₽</b>\n"
+                f"Награда: <b>{task['reward']:g} р</b>\n"
                 f"Вопросов: {len(task['questions'])}\n"
                 f"До: {task['deadline']}\n\n{questions}")
     else:
         templates = "\n".join(f"• {t}" for t in _hints(task)) or "—"
         body = (f"{task['emoji']} <b>{task['title']}</b>"
                 f"{'  🔄 в ротации' if task['rotating'] else ''}\n"
-                f"Награда: <b>{task['reward']:g} ₽</b>\n"
+                f"Награда: <b>{task['reward']:g} р</b>\n"
                 f"Минимум символов: {task['min_chars']}\n"
                 f"До: {task['deadline']}\n"
                 f"Оценка 5★ обязательна: "
@@ -282,7 +282,7 @@ async def video_watch(message: Message, state: FSMContext) -> None:
     )
     await message.answer(
         f"✅ Ролик #{task_id} добавлен: смотреть {raw} с, награда "
-        f"{data['reward']:g} ₽.\n\nОткрой приложение и проверь, что видео "
+        f"{data['reward']:g} р.\n\nОткрой приложение и проверь, что видео "
         f"проигрывается.",
         reply_markup=kb.admin_reply_kb())
 
@@ -372,7 +372,7 @@ async def subs(message: Message) -> None:
         await message.answer(
             f"#{sub['id']} • {services.display_name(user or {})} "
             f"(<code>{sub['user_id']}</code>)\n"
-            f"{(task or {}).get('title', 'задание')} — {sub['reward']:g} ₽\n"
+            f"{(task or {}).get('title', 'задание')} — {sub['reward']:g} р\n"
             f"Оценка: {'⭐' * sub['rating'] if sub['rating'] else '—'}\n\n"
             f"<i>{sub['text'][:600]}</i>",
             reply_markup=kb.submission_actions(sub["id"]))
@@ -426,7 +426,7 @@ async def withdrawals(message: Message) -> None:
             f"{wd['code'] or '#' + str(wd['id'])} (#{wd['id']}) • "
             f"{services.display_name(user or {})} "
             f"(<code>{wd['user_id']}</code>)\n"
-            f"Сумма: <b>{wd['amount']:g} ₽</b>\n"
+            f"Сумма: <b>{wd['amount']:g} р</b>\n"
             f"Способ: {wd['method']}\n"
             f"Реквизиты: <code>{wd['requisites']}</code>",
             reply_markup=kb.withdrawal_actions(wd["id"]))
@@ -571,8 +571,8 @@ async def cmd_demo(message: Message, command=None) -> None:
 
     await message.answer(
         "🎬 <b>Демо готово.</b>\n\n"
-        "В профиле: заработано всего <b>4850 ₽</b>, доступно "
-        "<b>450 ₽</b> (вернулись после отклонённой заявки).\n\n"
+        "В профиле: заработано всего <b>4850 р</b>, доступно "
+        "<b>450 р</b> (вернулись после отклонённой заявки).\n\n"
         "История вывода — пять заявок: три <b>выплачено</b>, одна "
         "<b>в обработке</b>, одна с <b>ошибкой</b>. Нажми на любую, "
         "чтобы показать детали.\n\n"
@@ -595,6 +595,6 @@ async def cmd_give(message: Message, command) -> None:
         return
     await db.upsert_user(user_id)
     await db.add_balance(user_id, amount)
-    await message.answer(f"Начислено {amount:g} ₽ пользователю {user_id}.")
+    await message.answer(f"Начислено {amount:g} р пользователю {user_id}.")
     await services.notify_user(message.bot, user_id,
                                f"💰 Вам начислено {amount:g} ₽.")

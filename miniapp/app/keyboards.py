@@ -119,7 +119,7 @@ def tasks_list(tasks: list[dict]) -> InlineKeyboardMarkup:
         cycle = "🔄" if task.get("rotating") else ""
         builder.row(InlineKeyboardButton(
             text=f"{mark}{cycle} {task['emoji']} {task['title']} "
-                 f"— {task['reward']:g} ₽",
+                 f"— {task['reward']:g} р",
             callback_data=f"adm:task:{task['id']}"))
     builder.row(InlineKeyboardButton(text="➕ Добавить задание",
                                      callback_data="adm:task_add"))

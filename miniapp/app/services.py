@@ -119,7 +119,7 @@ async def cancel_for_unsubscribe(bot: Bot, user_id: int,
             f"🚫 <b>Вывод отменён: отписка</b>\n"
             f"Участник: {display_name(user)} (<code>{user_id}</code>)\n"
             f"Заявки: {codes}\n"
-            f"Сумма: <b>{total:g} ₽</b> — вернулась на баланс.")
+            f"Сумма: <b>{total:g} р</b> — вернулась на баланс.")
     return canceled
 
 

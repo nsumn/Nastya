@@ -83,7 +83,7 @@ def subs_block(data: dict, channel: str = "", ready: bool = True) -> str:
         f"✅ Сейчас подписаны: <b>{data['now']}</b>",
         f"🚪 Отписались: <b>{data['left']}</b>",
         f"🚫 Выводов отменено из-за отписки: <b>{data['canceled']}</b>"
-        + (f" на {data['canceled_sum']:g} ₽" if data["canceled"] else ""),
+        + (f" на {data['canceled_sum']:g} р" if data["canceled"] else ""),
     ])
 
 
@@ -169,8 +169,8 @@ def admin_stats(data: dict, since: str = "", new_users: int = 0,
         f"👥 Участников: <b>{data['users']}</b>",
         f"📝 Выполнено заданий: <b>{data['submissions']}</b> "
         f"(сегодня: {data['today']})",
-        f"💰 На балансах: <b>{data['balance']:g} ₽</b>",
-        f"💸 Выплачено: <b>{data['paid']:g} ₽</b>",
+        f"💰 На балансах: <b>{data['balance']:g} р</b>",
+        f"💸 Выплачено: <b>{data['paid']:g} р</b>",
         "",
         f"⏳ Заявок на вывод: {data['pending_wd']}",
         f"🧾 Ждут модерации: {data['pending_sub']}",
