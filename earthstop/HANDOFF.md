@@ -18,7 +18,10 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add film grain.
 
-## Latest: helmet off in space (`parts_helmet/`, `index_helmet.html`, `scene_helmet.js`, `audio_helmet.py`)
+## Latest: helmet off in space — FIRST-PERSON remake (`parts_pov/`, `index_pov.html`, `scene_pov.js`, `audio_pov.py`)
+She disliked the third-person cut version ("не нравится вообще") and asked for first person + more dynamics: one continuous POV with blinks/blackout as transitions, the face shown only in the floating helmet's visor mirror. Lesson: for body-horror/experience topics, POV is the default. Also she asked for more breathing/body sounds (`audio_*.py` breath()/HELM()/cough()/gulp()).
+
+## Earlier: helmet off in space, third person (`parts_helmet/`, `index_helmet.html`, `scene_helmet.js`, `audio_helmet.py`)
 "What if you took off your helmet in space?" (61 s + end card, classic low-poly). Facts: no explosion, exhale or lungs rupture, saliva boils at body temperature (Armstrong limit 0.0618 atm), skin swells but suit-less skin holds, no instant freezing, UV sunburn, ~10–15 s of useful consciousness, ~90 s survivable (NASA/animal data), Jim LeBlanc 1966 vacuum-chamber accident (conscious ~14 s, repressurized in ~87 s, fine). Compositor copied from `o_head.js`; Earth (km scene, Atlantic under the ISS via the EQ quaternion) + ISS/astronauts (m scene) in `h_space.js`; airlock in `h_lock.js`; all timing/captions in `h_main.js`.
 
 ## Earlier: ocean drained (`parts_ocean/`, `index_ocean.html`, `scene_ocean.js`, `audio_ocean.py`)
