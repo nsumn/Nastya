@@ -287,6 +287,35 @@ async def set_map_link(url: str) -> None:
     op_store.update(**{_k("map_link"): url})
 
 
+async def app_texts() -> dict:
+    """Всё, что владелец поменял в мини-приложении (тексты, цвета, числа).
+
+    Ключи — как в странице мини-аппа; чего здесь нет, берётся по умолчанию.
+    """
+    data = op_store.read().get(_k("app_texts"))
+    return dict(data) if isinstance(data, dict) else {}
+
+
+async def set_app_texts(changes: dict) -> dict:
+    """Применяет правки: строка — новое значение, None — вернуть как было."""
+    data = await app_texts()
+    for key, value in changes.items():
+        if value is None:
+            data.pop(key, None)
+        else:
+            data[key] = value
+    op_store.update(**{_k("app_texts"): data})
+    return data
+
+
+async def app_number(key: str, default: int) -> int:
+    """Число из настроек мини-аппа (призы, часы таймера)."""
+    try:
+        return int(str((await app_texts()).get(key, default)).strip())
+    except ValueError:
+        return default
+
+
 RAFFLE_WINNERS_DEFAULT = 7
 
 

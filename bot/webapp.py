@@ -12,6 +12,7 @@ import logging
 import secrets
 import time
 from collections import deque
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote
 
@@ -19,6 +20,7 @@ from aiohttp import web
 
 from . import database as db
 from . import op
+from . import op_store
 from .roblox import BadUsername, RobloxError, UserNotFound
 
 log = logging.getLogger(__name__)
@@ -317,12 +319,31 @@ async def halloween_index(request: web.Request) -> web.StreamResponse:
 
 
 PRIZE_MIN, PRIZE_MAX = 300, 1500
+WAIT_HOURS = 24          # через столько часов после подписки «придут робуксы»
 CHOICES = ("sweet", "trick")
 _rng = secrets.SystemRandom()
 
 
+async def _prize_range() -> tuple[int, int]:
+    lo = max(0, await op.app_number("cfg.prize_min", PRIZE_MIN))
+    hi = max(lo, await op.app_number("cfg.prize_max", PRIZE_MAX))
+    return lo, hi
+
+
+def _msk_ts(value: str | None) -> int:
+    """Время из БД (записано по Москве) → секунды Unix."""
+    try:
+        return int(datetime.strptime(value or "", "%Y-%m-%d %H:%M:%S")
+                   .replace(tzinfo=op_store.MSK).timestamp())
+    except ValueError:
+        return 0
+
+
 async def _raffle_state(row: dict, bot) -> dict:
     joined = row.get("ticket") is not None
+    hours = await op.app_number("cfg.hours", WAIT_HOURS)
+    started = _msk_ts(row.get("joined_at")) or int(time.time())
+    lo, hi = await _prize_range()
     state = {
         "status": "joined" if joined else "picked",
         "username": row.get("roblox_username", ""),
@@ -332,6 +353,11 @@ async def _raffle_state(row: dict, bot) -> dict:
         "winners": await op.raffle_winners_count(),
         "raffle_date": await op.raffle_date(),
         "note": await op.reward_text(),
+        "hours": hours,
+        "deadline_ts": started + hours * 3600 if joined else 0,
+        "now_ts": int(time.time()),
+        "prize_min": lo,
+        "prize_max": hi,
     }
     if not joined:
         state["links"] = [x.as_dict() for x in await op.visible_links(bot)]
@@ -383,7 +409,7 @@ async def raffle(request: web.Request) -> web.Response:
         await db.create_raffle(
             user_id=user_id, roblox_username=nick,
             roblox_id=int(request.query.get("roblox_id", "0") or 0),
-            choice=choice, prize=_rng.randint(PRIZE_MIN, PRIZE_MAX),
+            choice=choice, prize=_rng.randint(*await _prize_range()),
             tg_username=user.get("username"),
             tg_name=(user.get("first_name", "") + " "
                      + user.get("last_name", "")).strip() or None)
@@ -408,6 +434,59 @@ async def raffle(request: web.Request) -> web.Response:
         existing = await db.get_raffle(user_id)
 
     return web.json_response(await _raffle_state(existing, bot))
+
+
+def _verified_user(request: web.Request) -> int:
+    config = request.app["config"]
+    raw = (request.headers.get("X-Telegram-Init-Data")
+           or request.query.get("initData", "")
+           or init_data_from_fragment(request.headers.get("X-App-Hash", "")))
+    return init_data_user_id(verify_init_data(raw, config.bot_token))
+
+
+TEXT_KEYS_MAX = 300
+TEXT_KEY_LEN = 64
+TEXT_VALUE_LEN = 3000
+
+
+async def app_texts_get(request: web.Request) -> web.Response:
+    """Правки владельца для страницы + может ли смотрящий их менять."""
+    config = request.app["config"]
+    user_id = _verified_user(request)
+    return web.json_response({
+        "texts": await op.app_texts(),
+        "admin": bool(user_id and user_id == config.admin_chat_id),
+    })
+
+
+async def app_texts_save(request: web.Request) -> web.Response:
+    """Сохранить правки из режима редактирования (только администратор)."""
+    config = request.app["config"]
+    user_id = _verified_user(request)
+    if not user_id or user_id != config.admin_chat_id:
+        return web.json_response(
+            {"error": "Менять мини-приложение может только администратор."},
+            status=403)
+    try:
+        body = await request.json()
+    except ValueError:
+        body = None
+    changes = body.get("texts") if isinstance(body, dict) else None
+    if not isinstance(changes, dict):
+        return web.json_response({"error": "Нет правок."}, status=400)
+    clean = {}
+    for key, value in changes.items():
+        if not isinstance(key, str) or not 0 < len(key) <= TEXT_KEY_LEN:
+            continue
+        if value is not None and not isinstance(value, str):
+            continue
+        clean[key] = None if value is None else value[:TEXT_VALUE_LEN]
+    current = await op.app_texts()
+    if len({**current, **clean}) > TEXT_KEYS_MAX:
+        return web.json_response({"error": "Слишком много правок."}, status=400)
+    data = await op.set_app_texts(clean)
+    log.info("Мини-приложение: администратор сохранил %d правок", len(clean))
+    return web.json_response({"texts": data, "admin": True})
 
 
 async def op_status(request: web.Request) -> web.Response:
@@ -453,3 +532,5 @@ def setup_miniapp(app: web.Application) -> None:
     app.router.add_get("/halloween", halloween_index)
     app.router.add_get("/halloween/", halloween_index)
     app.router.add_get("/api/raffle", raffle)
+    app.router.add_get("/api/app/texts", app_texts_get)
+    app.router.add_post("/api/app/texts", app_texts_save)

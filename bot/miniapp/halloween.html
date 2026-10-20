@@ -8,7 +8,8 @@
 <style>
   :root{
     --ink:#0b0b0f; --grey:#8a8a93; --soft:#f2f1f6; --card:#e6e5ec; --line:#dcdbe3;
-    --red:#e5484d;
+    --red:#e5484d; --btn:#0b0b0f; --btn-tx:#fff;
+    --sky1:#120c24; --sky2:#2a1a33; --acc1:#ff8a00; --acc2:#8b3fd9;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{margin:0; height:100%}
@@ -17,13 +18,16 @@
          Helvetica, Arial, sans-serif;
     color:var(--ink); background:var(--soft); overflow-x:hidden;
   }
+  [data-t]{white-space:pre-line}
   .screen{display:none; min-height:100vh; min-height:100dvh}
   .screen.on{display:block; animation:fade .35s ease-out}
   @keyframes fade{from{opacity:0}to{opacity:1}}
 
   /* ---------- 1. ночная улица ---------- */
   #s-nick{position:relative; overflow:hidden; color:#fff;
-    background:linear-gradient(180deg,#120c24 0%,#2a1d4a 38%,#3a2752 60%,#2a1a33 100%)}
+    background:linear-gradient(180deg,var(--sky1) 0%,#2a1d4a 38%,#3a2752 60%,var(--sky2) 100%);
+    background-size:cover; background-position:center}
+  #s-nick.pic .sky{display:none}
   .sky{position:absolute; inset:0; pointer-events:none}
   .star{position:absolute; width:2px; height:2px; background:#fff; border-radius:50%;
         opacity:.7; animation:tw 3s ease-in-out infinite}
@@ -67,7 +71,7 @@
 
   .dock{position:fixed; left:0; right:0; bottom:0; padding:12px 14px 18px; z-index:5}
   .btn{width:100%; height:48px; border:0; border-radius:12px; cursor:pointer;
-    font:inherit; font-size:15px; font-weight:700; background:var(--ink); color:#fff;
+    font:inherit; font-size:15px; font-weight:700; background:var(--btn); color:var(--btn-tx);
     display:flex; align-items:center; justify-content:center; gap:8px}
   .btn:active{transform:scale(.985)}
   .btn.ghost{background:rgba(255,255,255,.14); color:rgba(255,255,255,.75);
@@ -87,6 +91,7 @@
     text-align:center; margin:44px 0 18px}
   .choice .pic{font-size:74px; line-height:1; margin-top:-34px; height:92px;
     display:flex; align-items:flex-end; justify-content:center}
+  .pic img{max-height:92px; max-width:140px; object-fit:contain}
   .choice.trick .pic{filter:drop-shadow(0 6px 10px rgba(80,200,60,.45))}
   .choice.sweet .pic{filter:drop-shadow(0 6px 10px rgba(255,120,200,.4))}
   .choice h4{margin:10px 0 4px; font-size:19px; font-weight:800}
@@ -110,7 +115,7 @@
   .pop .fine{font-size:11px; color:#6b6b74; background:var(--soft); border-radius:10px;
              padding:8px 10px; margin-bottom:12px}
 
-  /* участие: подписки */
+  /* подписки */
   .sum{display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px;
        padding:12px 14px; margin-bottom:16px}
   .sum .lbl{font-size:10px; color:var(--grey)}
@@ -121,7 +126,7 @@
   .bar{display:flex; align-items:center; gap:10px; margin-bottom:14px; font-size:11px;
        font-weight:700}
   .bar .t{flex:1; height:5px; border-radius:3px; background:var(--line); overflow:hidden}
-  .bar .f{height:100%; width:0; background:var(--ink); transition:width .3s}
+  .bar .f{height:100%; width:0; background:var(--btn); transition:width .3s}
   .row{display:flex; align-items:center; gap:10px; background:#fff; border-radius:14px;
        padding:10px 10px 10px 12px; margin-bottom:8px}
   .row .av{width:34px; height:34px; flex:none; border-radius:50%; color:#fff;
@@ -131,28 +136,88 @@
   .row .n{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden;
           text-overflow:ellipsis}
   .row .s{font-size:10px; color:var(--grey)}
-  .row button{border:0; border-radius:8px; background:var(--ink); color:#fff;
+  .row button{border:0; border-radius:8px; background:var(--btn); color:var(--btn-tx);
     font:inherit; font-size:11px; font-weight:700; padding:8px 10px; cursor:pointer}
   .row.done button{background:var(--soft); color:var(--ink)}
   .dock.light{background:linear-gradient(180deg,rgba(242,241,246,0),var(--soft) 30%)}
   .cap{text-align:center; font-size:11px; color:var(--grey); margin-top:8px}
   .cap.bad{color:var(--red)}
 
-  /* итог */
+  /* итог: таймер */
   .ticket{background:#fff; border-radius:18px; padding:22px 16px; text-align:center;
           margin-top:10px; position:relative; overflow:hidden}
   .ticket:before{content:""; position:absolute; inset:0 0 auto 0; height:6px;
-    background:linear-gradient(90deg,#ff8a00,#8b3fd9)}
-  .ticket .no{font-size:12px; color:var(--grey); margin-top:4px}
-  .ticket .num{font-size:52px; font-weight:900; letter-spacing:-1px; line-height:1.05}
+    background:linear-gradient(90deg,var(--acc1),var(--acc2))}
   .ticket img{width:72px; height:72px; border-radius:50%; background:var(--soft);
-              object-fit:cover; margin:12px 0 4px}
-  .ticket .who{font-weight:800; font-size:16px}
-  .ticket .ch{font-size:12px; color:var(--grey); margin-bottom:12px}
+              object-fit:cover; margin:4px 0 4px}
+  .ticket .who{font-weight:800; font-size:16px; margin-bottom:8px}
+  .ticket .wait{font-size:12px; color:var(--grey); margin-top:16px}
+  .clock{display:flex; justify-content:center; gap:6px; margin-top:6px}
+  .clock div{min-width:64px; background:var(--soft); border-radius:12px; padding:8px 4px 6px}
+  .clock b{display:block; font-size:30px; font-weight:900; line-height:1.1;
+           font-variant-numeric:tabular-nums}
+  .clock span{font-size:10px; color:var(--grey)}
+  .clock i{align-self:center; font-style:normal; font-size:24px; font-weight:900;
+           color:var(--grey); margin-top:-14px}
   .ticket .fine{font-size:12px; color:#55545c; background:var(--soft); border-radius:10px;
-                padding:10px; margin-top:12px}
+                padding:10px; margin-top:14px}
+  .ticket.ready .clock b{color:#2f9e44}
   .note{background:#fff; border-radius:14px; padding:14px; margin-top:12px;
         font-size:14px; white-space:pre-line}
+
+  /* ---------- режим редактирования (видит только администратор) ---------- */
+  #ed-fab{position:fixed; top:10px; right:10px; z-index:30; display:none;
+    width:38px; height:38px; border-radius:50%; border:0; cursor:pointer;
+    background:rgba(255,255,255,.92); box-shadow:0 4px 14px rgba(0,0,0,.25); font-size:18px}
+  body.admin #ed-fab{display:block}
+  body.edit #ed-fab{display:none}
+  #ed-bar{position:fixed; top:0; left:0; right:0; z-index:40; display:none;
+    background:#111018; color:#fff; padding:8px 10px 10px; font-size:12px;
+    box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  body.edit #ed-bar{display:block}
+  body.edit{padding-top:96px}
+  body.edit .screen{min-height:calc(100dvh - 96px)}
+  .ed-row{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none}
+  .ed-row::-webkit-scrollbar{display:none}
+  .ed-row + .ed-row{margin-top:8px}
+  .ed-chip{flex:none; border:0; border-radius:999px; padding:7px 11px; cursor:pointer;
+    font:inherit; font-size:12px; font-weight:600; background:#2a2833; color:#fff}
+  .ed-chip.on{background:#fff; color:#111}
+  .ed-chip.save{background:#2f9e44}
+  .ed-chip.save.dirty{background:#f08c00}
+  .ed-hint{opacity:.6; margin:0 0 6px}
+  body.edit [data-t]{outline:1.5px dashed rgba(240,140,0,.9); outline-offset:2px;
+    border-radius:4px; cursor:text}
+  body.edit [data-t]:empty{display:inline-block; min-width:40px; min-height:14px}
+  #ed-sheet{position:fixed; inset:0; z-index:50; display:none;
+    background:rgba(10,10,15,.5); align-items:flex-end}
+  #ed-sheet.on{display:flex}
+  .ed-box{background:#fff; width:100%; max-height:86vh; overflow:auto;
+    border-radius:18px 18px 0 0; padding:16px 14px 20px; animation:slide .25s ease-out}
+  @keyframes slide{from{transform:translateY(40px); opacity:0}to{transform:none; opacity:1}}
+  .ed-box h4{margin:0 0 4px; font-size:16px}
+  .ed-box .ed-sub{font-size:11px; color:var(--grey); margin-bottom:10px}
+  .ed-box textarea, .ed-box input[type=text], .ed-box input[type=number]{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px;
+    font:inherit; font-size:15px; resize:vertical; color:#111; background:#fff}
+  .ed-box textarea{min-height:80px}
+  .ed-box input[type=color]{width:56px; height:36px; border:0; padding:0; background:none}
+  .ed-btns{display:flex; gap:8px; margin-top:12px}
+  .ed-btns .btn{height:44px; font-size:14px; background:#0b0b0f; color:#fff}
+  .ed-btns .btn.outline{background:#fff; color:#0b0b0f}
+  .ed-group{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--grey); margin:18px 0 8px}
+  .ed-item{margin-bottom:10px}
+  .ed-item label{display:block; font-size:12px; font-weight:600; margin-bottom:4px}
+  .ed-item textarea{min-height:44px}
+  .ed-line{display:flex; align-items:center; gap:10px}
+  .ed-line input[type=text]{flex:1}
+  .ed-reset{border:0; background:none; color:var(--grey); font:inherit; font-size:11px;
+    cursor:pointer; padding:2px 0; text-decoration:underline}
+  #ed-toast{position:fixed; left:50%; bottom:90px; transform:translateX(-50%); z-index:60;
+    background:#111018; color:#fff; border-radius:10px; padding:10px 14px; font-size:13px;
+    display:none}
+  #ed-toast.on{display:block; animation:fade .2s}
 </style>
 </head>
 <body>
@@ -188,113 +253,130 @@
     </div>
   </div>
 
-  <div class="brand"><div class="rb">ROBLOX</div><div class="hw">HALLOWEEN</div></div>
+  <div class="brand"><div class="rb" data-t="brand_top"></div><div class="hw" data-t="brand_sub"></div></div>
 
   <div class="nick-card">
-    <h3>Введите ник в Roblox</h3>
-    <p class="sub">С этим аккаунтом ты участвуешь в розыгрыше «Сладость или гадость»</p>
+    <h3 data-t="nick_title"></h3>
+    <p class="sub" data-t="nick_sub"></p>
     <label class="field"><span>@</span>
-      <input id="nick" placeholder="Например, ShadowFox_27" maxlength="30"
+      <input id="nick" data-t="nick_ph" data-attr="placeholder" maxlength="30"
              autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
     </label>
     <div class="found" id="found"><img id="found-img" alt=""><b id="found-name"></b></div>
     <div class="err" id="nick-err"></div>
   </div>
 
-  <div class="dock"><button class="btn ghost" id="b-find">Продолжить</button></div>
+  <div class="dock"><button class="btn ghost" id="b-find" data-t="nick_btn"></button></div>
 </section>
 
 <!-- 2. выбор -->
 <section id="s-pick" class="screen">
-  <div class="top">Halloween</div>
+  <div class="top" data-t="pick_top"></div>
   <div class="pad">
     <div class="choice trick">
-      <div class="pic">🎃</div>
-      <h4>Гадость</h4>
-      <p>Будь внимателен!<br>Изменить выбор будет невозможно</p>
-      <button class="btn" data-choice="trick">Выбрать</button>
+      <div class="pic" data-t="trick_pic"></div>
+      <h4 data-t="trick_title"></h4>
+      <p data-t="trick_desc"></p>
+      <button class="btn" data-choice="trick" data-t="pick_btn"></button>
     </div>
     <div class="choice sweet">
-      <div class="pic">🍭</div>
-      <h4>Сладость</h4>
-      <p>Будь внимателен!<br>Изменить выбор будет невозможно</p>
-      <button class="btn" data-choice="sweet">Выбрать</button>
+      <div class="pic" data-t="sweet_pic"></div>
+      <h4 data-t="sweet_title"></h4>
+      <p data-t="sweet_desc"></p>
+      <button class="btn" data-choice="sweet" data-t="pick_btn"></button>
     </div>
   </div>
 </section>
 
 <!-- 3. подтверждение -->
 <section id="s-sure" class="screen">
-  <div class="top">Halloween</div>
+  <div class="top" data-t="sure_top"></div>
   <div class="pad">
     <div class="confirm-h">
-      <h3>Вы точно уверены в выборе?</h3>
-      <p>Отменить действие будет невозможно!</p>
+      <h3 data-t="sure_title"></h3>
+      <p data-t="sure_sub"></p>
     </div>
     <div class="choice" id="sure-card">
       <div class="pic" id="sure-pic"></div>
       <h4 id="sure-title"></h4>
-      <p>Будь внимателен!<br>Изменить выбор будет невозможно</p>
-      <button class="btn" id="b-sure">Точно уверен(а)</button>
+      <p data-t="sure_desc"></p>
+      <button class="btn" id="b-sure" data-t="sure_btn"></button>
     </div>
   </div>
-  <div class="dock"><button class="btn outline" id="b-cancel">Отменить выбор</button></div>
+  <div class="dock"><button class="btn outline" id="b-cancel" data-t="sure_cancel"></button></div>
 </section>
 
 <!-- 4. подписки -->
 <section id="s-subs" class="screen">
-  <div class="top">Участие в розыгрыше</div>
+  <div class="top" data-t="subs_top"></div>
   <div class="pad">
     <div class="sum">
       <svg class="rbx" width="30" height="30" viewBox="0 0 24 24"></svg>
-      <div><div class="lbl">Возможный приз</div><div class="val" id="sum-prize"></div></div>
-      <div class="r"><div class="lbl">Аккаунт</div><div class="val" id="sum-acc"></div></div>
+      <div><div class="lbl" data-t="subs_prize_lbl"></div><div class="val" id="sum-prize"></div></div>
+      <div class="r"><div class="lbl" data-t="subs_acc_lbl"></div><div class="val" id="sum-acc"></div></div>
     </div>
     <div class="step">
-      <h3>Последний шаг</h3>
-      <p>Подпишитесь на все каналы партнёров и нажмите «Проверить подписку».
-        После проверки вы получите номер участника розыгрыша.</p>
+      <h3 data-t="subs_title"></h3>
+      <p data-t="subs_text"></p>
     </div>
     <div class="bar"><div class="t"><div class="f" id="bar"></div></div><span id="pct">0%</span></div>
     <div id="rows"></div>
   </div>
   <div class="dock light">
-    <button class="btn" id="b-check">Проверить подписку</button>
+    <button class="btn" id="b-check" data-t="subs_btn"></button>
     <div class="cap" id="cap"></div>
   </div>
 </section>
 
-<!-- 5. номер участника -->
+<!-- 5. отсчёт до зачисления -->
 <section id="s-done" class="screen">
-  <div class="top">Ты участвуешь 🎃</div>
+  <div class="top" data-t="done_top"></div>
   <div class="pad">
-    <div class="ticket">
-      <div class="no">Номер участника</div>
-      <div class="num" id="t-num"></div>
+    <div class="ticket" id="ticket">
       <img id="t-img" alt="">
       <div class="who" id="t-who"></div>
-      <div class="ch" id="t-choice"></div>
       <div class="prize"><svg class="rbx" width="28" height="28" viewBox="0 0 24 24"></svg>
         <span id="t-prize"></span></div>
-      <div class="fine" id="t-fine"></div>
+      <div class="wait" id="t-wait" data-t="done_wait"></div>
+      <div class="clock">
+        <div><b id="c-h">24</b><span data-t="done_h"></span></div><i>:</i>
+        <div><b id="c-m">00</b><span data-t="done_m"></span></div><i>:</i>
+        <div><b id="c-s">00</b><span data-t="done_s"></span></div>
+      </div>
+      <div class="fine" data-t="done_fine"></div>
     </div>
     <div class="note" id="t-note"></div>
   </div>
-  <div class="dock light"><button class="btn" id="b-close">Закрыть</button></div>
+  <div class="dock light"><button class="btn" id="b-close" data-t="done_btn"></button></div>
 </section>
 
-<!-- всплывающее окно с призом -->
+<!-- всплывающее окно с робуксами -->
 <div class="veil" id="veil">
   <div class="pop">
-    <h3 id="pop-title">Отличный выбор!</h3>
-    <div class="lead">Вы можете получить</div>
+    <h3 data-t="pop_title"></h3>
+    <div class="lead" data-t="pop_lead"></div>
     <div class="prize"><svg class="rbx" width="32" height="32" viewBox="0 0 24 24"></svg>
       <span id="pop-prize">0</span></div>
-    <div class="acc">на аккаунт <b id="pop-acc"></b></div>
-    <div class="fine" id="pop-fine"></div>
-    <button class="btn" id="b-take">Участвовать</button>
+    <div class="acc" data-t="pop_acc"></div>
+    <div class="fine" data-t="pop_fine"></div>
+    <button class="btn" id="b-take" data-t="pop_btn"></button>
   </div>
 </div>
+
+<!-- редактор (только администратор) -->
+<button id="ed-fab" title="Редактировать">✏️</button>
+<div id="ed-bar">
+  <div class="ed-hint">Режим редактирования — нажми на любой текст или картинку, чтобы изменить</div>
+  <div class="ed-row" id="ed-screens"></div>
+  <div class="ed-row">
+    <button class="ed-chip" id="ed-all">📝 Все тексты</button>
+    <button class="ed-chip" id="ed-design">🎨 Цвета и числа</button>
+    <button class="ed-chip save" id="ed-save">💾 Сохранить</button>
+    <button class="ed-chip" id="ed-exit">✕ Выйти</button>
+  </div>
+</div>
+<div id="ed-sheet"><div class="ed-box" id="ed-box"></div></div>
+<div id="ed-toast"></div>
 
 <script>
 (function () {
@@ -305,14 +387,142 @@
   }
   var el = function (id) { return document.getElementById(id); };
   var SCREENS = ['s-nick', 's-pick', 's-sure', 's-subs', 's-done'];
-  var CH = { trick: { pic: '🎃', title: 'Гадость' }, sweet: { pic: '🍭', title: 'Сладость' } };
-  var st = { user: null, choice: '', data: null, opened: {} };
+  var st = { user: null, choice: '', data: null, opened: {}, screen: 's-nick', offset: 0 };
+
+  // ---------- все тексты страницы: [ключ, по умолчанию, подпись, раздел] ----------
+  // {acc} — ник, {prize} — сумма, {hours} — часы ожидания, {k}/{n} — открыто/всего
+  var G1 = '1. Ввод ника', G2 = '2. Выбор', G3 = '3. Подтверждение', G4 = 'Окно с робуксами',
+      G5 = '4. Подписки', G6 = '5. Таймер 24 часа', G7 = 'Сообщения', GC = 'Цвета и числа';
+  var DEF = [
+    ['brand_top', 'ROBLOX', 'Заголовок сверху', G1],
+    ['brand_sub', 'HALLOWEEN', 'Подзаголовок сверху', G1],
+    ['nick_title', 'Введите ник в Roblox', 'Заголовок карточки', G1],
+    ['nick_sub', 'На этот аккаунт придут робуксы', 'Текст под заголовком', G1],
+    ['nick_ph', 'Например, ShadowFox_27', 'Подсказка в поле ввода', G1],
+    ['nick_btn', 'Продолжить', 'Кнопка', G1],
+    ['nick_busy', 'Ищем аккаунт…', 'Кнопка во время поиска', G1],
+    ['nick_found', '✓ Аккаунт найден', 'Кнопка, когда аккаунт найден', G1],
+
+    ['pick_top', 'Halloween', 'Заголовок экрана', G2],
+    ['trick_pic', '🎃', 'Левый вариант: картинка (эмодзи или ссылка на картинку)', G2],
+    ['trick_title', 'Гадость', 'Левый вариант: название', G2],
+    ['trick_desc', 'Будь внимателен!\nИзменить выбор будет невозможно', 'Левый вариант: текст', G2],
+    ['sweet_pic', '🍭', 'Правый вариант: картинка (эмодзи или ссылка на картинку)', G2],
+    ['sweet_title', 'Сладость', 'Правый вариант: название', G2],
+    ['sweet_desc', 'Будь внимателен!\nИзменить выбор будет невозможно', 'Правый вариант: текст', G2],
+    ['pick_btn', 'Выбрать', 'Кнопка выбора', G2],
+
+    ['sure_top', 'Halloween', 'Заголовок экрана', G3],
+    ['sure_title', 'Вы точно уверены в выборе?', 'Вопрос', G3],
+    ['sure_sub', 'Отменить действие будет невозможно!', 'Текст под вопросом', G3],
+    ['sure_desc', 'Будь внимателен!\nИзменить выбор будет невозможно', 'Текст в карточке', G3],
+    ['sure_btn', 'Точно уверен(а)', 'Кнопка подтверждения', G3],
+    ['sure_cancel', 'Отменить выбор', 'Кнопка отмены', G3],
+
+    ['pop_title', 'Отличный выбор!', 'Заголовок', G4],
+    ['pop_lead', 'Вам начислено', 'Текст над суммой', G4],
+    ['pop_acc', 'на аккаунт {acc}', 'Текст под суммой', G4],
+    ['pop_fine', 'Чтобы получить робуксы, подпишитесь на каналы партнёров', 'Серая плашка', G4],
+    ['pop_btn', 'Забрать', 'Кнопка', G4],
+
+    ['subs_top', 'Получение робуксов', 'Заголовок экрана', G5],
+    ['subs_prize_lbl', 'Начислено', 'Подпись над суммой', G5],
+    ['subs_acc_lbl', 'Аккаунт', 'Подпись над ником', G5],
+    ['subs_title', 'Последний шаг', 'Заголовок', G5],
+    ['subs_text', 'Подпишитесь на все каналы партнёров и нажмите «Проверить подписку». ' +
+      'После проверки робуксы отправятся на ваш аккаунт.', 'Текст', G5],
+    ['subs_row_go', 'Подписаться', 'Кнопка у канала', G5],
+    ['subs_row_done', '✓ Открыто', 'Кнопка у открытого канала', G5],
+    ['subs_row_sub', 'подписаться', 'Подпись под каналом', G5],
+    ['subs_row_start', 'нажать старт', 'Подпись под ботом', G5],
+    ['subs_count', 'Открыто {k} из {n}', 'Счётчик под кнопкой', G5],
+    ['subs_btn', 'Проверить подписку', 'Кнопка', G5],
+    ['subs_busy', 'Проверяем подписку', 'Кнопка во время проверки', G5],
+    ['subs_fail', 'Сначала подпишитесь на каналы', 'Если подписки нет', G5],
+
+    ['done_top', 'Робуксы в пути 🎃', 'Заголовок экрана', G6],
+    ['done_wait', 'До зачисления осталось', 'Текст над таймером', G6],
+    ['done_ready', 'Робуксы отправлены на ваш аккаунт ✅', 'Текст, когда таймер дошёл до нуля', G6],
+    ['done_h', 'час.', 'Подпись под часами', G6],
+    ['done_m', 'мин.', 'Подпись под минутами', G6],
+    ['done_s', 'сек.', 'Подпись под секундами', G6],
+    ['done_fine', 'Робуксы придут на аккаунт {acc} в течение {hours} часов. ' +
+      'Не отписывайтесь от каналов до зачисления.', 'Серая плашка', G6],
+    ['done_btn', 'Закрыть', 'Кнопка', G6],
+
+    ['err_net', 'Ошибка сети.', 'Нет интернета', G7],
+    ['err_retry', 'Не получилось, попробуй ещё раз.', 'Общая ошибка', G7],
+
+    ['cfg.prize_min', '300', 'Сумма робуксов: от', GC, 'number'],
+    ['cfg.prize_max', '1500', 'Сумма робуксов: до', GC, 'number'],
+    ['cfg.hours', '24', 'Таймер: сколько часов ждать', GC, 'number'],
+    ['cfg.c_btn', '#0b0b0f', 'Цвет кнопок', GC, 'color'],
+    ['cfg.c_btn_tx', '#ffffff', 'Цвет текста на кнопках', GC, 'color'],
+    ['cfg.c_ink', '#0b0b0f', 'Цвет текста', GC, 'color'],
+    ['cfg.c_bg', '#f2f1f6', 'Фон светлых экранов', GC, 'color'],
+    ['cfg.c_card', '#e6e5ec', 'Фон карточек выбора', GC, 'color'],
+    ['cfg.c_sky1', '#120c24', 'Первый экран: цвет неба сверху', GC, 'color'],
+    ['cfg.c_sky2', '#2a1a33', 'Первый экран: цвет внизу', GC, 'color'],
+    ['cfg.c_acc1', '#ff8a00', 'Полоска на таймере: цвет слева', GC, 'color'],
+    ['cfg.c_acc2', '#8b3fd9', 'Полоска на таймере: цвет справа', GC, 'color'],
+    ['cfg.bg_img', '', 'Первый экран: своя картинка фона (ссылка, пусто — ночная улица)', GC, 'url']
+  ];
+  var META = {};
+  DEF.forEach(function (d) { META[d[0]] = d; });
+  var TX = {};          // сохранённые правки владельца
+  var dirty = {};       // несохранённые правки (null — вернуть по умолчанию)
+  var admin = false, editing = false;
+
+  function T(key) {
+    if (Object.prototype.hasOwnProperty.call(dirty, key)) {
+      if (dirty[key] !== null) return dirty[key];
+    } else if (Object.prototype.hasOwnProperty.call(TX, key)) return TX[key];
+    return META[key] ? META[key][1] : '';
+  }
+  function num(key) { var n = parseInt(T(key), 10); return isNaN(n) ? +META[key][1] : n; }
+  function hours() { return !editing && st.data && st.data.hours != null ? st.data.hours : num('cfg.hours'); }
+  function fmt(text, extra) {
+    var v = Object.assign({ acc: shownName(), prize: st.data ? st.data.prize : '', hours: hours() },
+                          extra || {});
+    return String(text).replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; });
+  }
+  function isUrl(v) { return /^https?:\/\/\S+$/i.test(String(v).trim()); }
+  function setPic(node, value) {
+    node.textContent = '';
+    if (isUrl(value)) {
+      var img = document.createElement('img'); img.src = String(value).trim(); img.alt = '';
+      node.appendChild(img);
+    } else node.textContent = value;
+  }
+  // расставить все тексты и цвета по местам
+  function paint(root) {
+    Array.prototype.forEach.call((root || document).querySelectorAll('[data-t]'), function (n) {
+      var key = n.dataset.t, val = fmt(T(key), n._vars);
+      if (n.dataset.attr) n.setAttribute(n.dataset.attr, val);
+      else if (n.classList.contains('pic')) setPic(n, T(key));
+      else n.textContent = val;
+    });
+    var css = document.documentElement.style;
+    [['--btn', 'cfg.c_btn'], ['--btn-tx', 'cfg.c_btn_tx'], ['--ink', 'cfg.c_ink'],
+     ['--soft', 'cfg.c_bg'], ['--card', 'cfg.c_card'], ['--sky1', 'cfg.c_sky1'],
+     ['--sky2', 'cfg.c_sky2'], ['--acc1', 'cfg.c_acc1'], ['--acc2', 'cfg.c_acc2']
+    ].forEach(function (p) { css.setProperty(p[0], T(p[1]) || META[p[1]][1]); });
+    var bg = T('cfg.bg_img'), nickScr = el('s-nick');
+    nickScr.classList.toggle('pic', isUrl(bg));
+    nickScr.style.backgroundImage = isUrl(bg) ? 'url("' + bg.trim().replace(/"/g, '%22') + '")' : '';
+    if (st.choice && CH[st.choice]) {
+      setPic(el('sure-pic'), T(st.choice + '_pic'));
+      el('sure-title').textContent = T(st.choice + '_title');
+    }
+    if (st.screen === 's-nick') document.body.style.background = T('cfg.c_sky1') || '#1a1030';
+  }
+  var CH = { trick: 1, sweet: 1 };
 
   // значок робукса
   Array.prototype.forEach.call(document.querySelectorAll('svg.rbx'), function (s) {
-    s.innerHTML = '<path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="none" stroke="#0b0b0f" ' +
+    s.innerHTML = '<path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linejoin="round"/><rect x="8.3" y="8.3" width="7.4" ' +
-      'height="7.4" rx="1.2" fill="none" stroke="#0b0b0f" stroke-width="2.2"/>';
+      'height="7.4" rx="1.2" fill="none" stroke="currentColor" stroke-width="2.2"/>';
   });
   // аватарка не загрузилась — прячем пустой кружок
   ['found-img', 't-img'].forEach(function (id) {
@@ -337,9 +547,12 @@
   function haptic(k) { try { tg.HapticFeedback.notificationOccurred(k); } catch (e) {} }
   function tap() { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} }
   function show(id) {
+    st.screen = id;
     SCREENS.forEach(function (s) { el(s).classList.toggle('on', s === id); });
-    document.body.style.background = id === 's-nick' ? '#1a1030' : '';
+    document.body.style.background = id === 's-nick' ? (T('cfg.c_sky1') || '#1a1030') : '';
     window.scrollTo(0, 0);
+    paint();
+    if (editing) markScreen();
   }
   function err(id, text) { var n = el(id); n.textContent = text || ''; n.classList.toggle('on', !!text); }
   function openLink(url) {
@@ -353,17 +566,21 @@
     var m = /[#&?]tgWebAppData=([^&]*)/.exec((location.hash || '') + (location.search || ''));
     return m ? decodeURIComponent(m[1]) : '';
   }
-  async function api(url) {
-    var res = await fetch(url, { headers: {
+  function headers() {
+    return {
       'X-Telegram-Init-Data': initData(),
       'X-App-Hash': encodeURIComponent((location.hash || '') + (location.search || ''))
-    }});
+    };
+  }
+  async function api(url, body) {
+    var opts = { headers: headers() };
+    if (body) {
+      opts.method = 'POST'; opts.body = JSON.stringify(body);
+      opts.headers['Content-Type'] = 'application/json';
+    }
+    var res = await fetch(url, opts);
     var data = await res.json().catch(function () { return {}; });
     return { status: res.status, data: data };
-  }
-  function fine(d) {
-    return 'Розыгрыш' + (d.raffle_date ? ' ' + d.raffle_date : '') + ' · ' + d.winners +
-      ' победителей. Если ваш номер выиграет — получите именно эту сумму.';
   }
   function shownName() {
     return (st.user && (st.user.display_name || st.user.username)) || (st.data && st.data.username) || '';
@@ -385,35 +602,34 @@
     if (!nick || busy) return;
     busy = true; err('nick-err', '');
     find.disabled = true; find.className = 'btn ghost';
-    find.innerHTML = '<span class="spin"></span> Ищем аккаунт…';
+    find.innerHTML = '<span class="spin"></span> ' + esc(T('nick_busy'));
     try {
       var r = await api('api/roblox/user?username=' + encodeURIComponent(nick));
       if (r.status >= 400) {
-        haptic('error'); err('nick-err', r.data.error || 'Аккаунт не найден.');
-        find.textContent = 'Продолжить'; find.className = 'btn white';
+        haptic('error'); err('nick-err', r.data.error || T('err_retry'));
+        find.textContent = T('nick_btn'); find.className = 'btn white';
         return;
       }
       st.user = r.data;
       el('found-img').src = r.data.avatar_url || '';
       el('found-name').textContent = r.data.display_name || r.data.username;
       el('found').classList.add('on');
-      find.innerHTML = '✓ Аккаунт найден';
+      find.textContent = T('nick_found');
       haptic('success');
       setTimeout(function () { show('s-pick'); }, 900);
     } catch (e) {
-      err('nick-err', 'Ошибка сети.'); find.textContent = 'Продолжить'; find.className = 'btn white';
+      err('nick-err', T('err_net')); find.textContent = T('nick_btn'); find.className = 'btn white';
     } finally { busy = false; find.disabled = false; }
   }
 
   // ---------- 2–3. выбор ----------
+  function pickChoice(choice) {
+    st.choice = choice;
+    el('sure-card').className = 'choice ' + choice;
+    show('s-sure');
+  }
   Array.prototype.forEach.call(document.querySelectorAll('[data-choice]'), function (b) {
-    b.addEventListener('click', function () {
-      tap(); st.choice = b.dataset.choice;
-      var c = CH[st.choice];
-      el('sure-card').className = 'choice ' + st.choice;
-      el('sure-pic').textContent = c.pic; el('sure-title').textContent = c.title;
-      show('s-sure');
-    });
+    b.addEventListener('click', function () { tap(); pickChoice(b.dataset.choice); });
   });
   el('b-cancel').addEventListener('click', function () { tap(); show('s-pick'); });
   el('b-sure').addEventListener('click', async function () {
@@ -425,28 +641,32 @@
         '&roblox_id=' + encodeURIComponent(u.id || ''));
       if (r.status >= 400) {
         haptic('error'); show('s-nick');
-        err('nick-err', r.data.error || 'Не получилось, попробуй ещё раз.');
+        err('nick-err', r.data.error || T('err_retry'));
         return;
       }
-      st.data = r.data;
+      setData(r.data);
       if (r.data.status === 'joined') { done(); return; }
       popup();
-    } catch (e) { show('s-nick'); err('nick-err', 'Ошибка сети.'); }
-    finally { b.disabled = false; b.textContent = 'Точно уверен(а)'; }
+    } catch (e) { show('s-nick'); err('nick-err', T('err_net')); }
+    finally { b.disabled = false; b.textContent = T('sure_btn'); }
   });
+  function setData(d) {
+    st.data = d;
+    if (d && d.now_ts) st.offset = d.now_ts - Date.now() / 1000;
+  }
 
-  // ---------- всплывающее окно ----------
-  function popup() {
+  // ---------- всплывающее окно: начисление ----------
+  function popup(still) {
     var d = st.data;
-    el('pop-acc').textContent = shownName();
-    el('pop-fine').textContent = fine(d);
+    paint(el('veil'));
     el('veil').classList.add('on');
+    if (still) { el('pop-prize').textContent = d.prize; return; }
     haptic('success');
-    var start = performance.now(), from = 300, to = d.prize;
+    var start = performance.now(), lo = d.prize_min || 300, hi = d.prize_max || 1500, to = d.prize;
     (function roll(t) {
       var k = Math.min(1, (t - start) / 1400), e = 1 - Math.pow(1 - k, 3);
       el('pop-prize').textContent = k < 1
-        ? Math.round(from + (1500 - from) * Math.random() * (1 - e) + (to - from) * e)
+        ? Math.round(lo + (hi - lo) * Math.random() * (1 - e) + (to - lo) * e)
         : to;
       if (k < 1) requestAnimationFrame(roll);
     })(start);
@@ -456,9 +676,7 @@
   });
 
   // ---------- 4. подписки ----------
-  function subtitle(url) {
-    return /[?&]start=|bot\/?$|bot\?/i.test(url || '') ? 'нажать старт' : 'подписаться';
-  }
+  function isBot(url) { return /[?&]start=|bot\/?$|bot\?/i.test(url || ''); }
   function subs() {
     var d = st.data, links = d.links || [];
     el('sum-prize').textContent = d.prize;
@@ -467,14 +685,15 @@
       var name = String(c.title || 'Канал').replace(/^[^\p{L}\p{N}]+/u, '') || 'Канал';
       return '<div class="row' + (st.opened[i] ? ' done' : '') + '" data-i="' + i + '">' +
         '<div class="av">' + esc(name.charAt(0).toUpperCase()) + '</div>' +
-        '<div class="tx"><div class="n">' + esc(name) + '</div><div class="s">' +
-        subtitle(c.url) + '</div></div><button>' +
-        (st.opened[i] ? '✓ Открыто' : 'Подписаться') + '</button></div>';
+        '<div class="tx"><div class="n">' + esc(name) + '</div><div class="s" data-t="' +
+        (isBot(c.url) ? 'subs_row_start' : 'subs_row_sub') + '"></div></div>' +
+        '<button data-t="' + (st.opened[i] ? 'subs_row_done' : 'subs_row_go') + '"></button></div>';
     }).join('');
     Array.prototype.forEach.call(el('rows').querySelectorAll('.row button'), function (b) {
       b.addEventListener('click', function () {
         var row = b.parentNode, i = +row.dataset.i;
-        st.opened[i] = true; row.classList.add('done'); b.textContent = '✓ Открыто';
+        st.opened[i] = true; row.classList.add('done'); b.dataset.t = 'subs_row_done';
+        b.textContent = T('subs_row_done');
         tap(); progress(); openLink((links[i] || {}).url);
       });
     });
@@ -486,49 +705,259 @@
     var p = n ? Math.round(k / n * 100) : 0;
     el('bar').style.width = p + '%'; el('pct').textContent = p + '%';
     var cap = el('cap');
-    cap.textContent = bad || ('Открыто ' + k + ' из ' + n);
+    cap.removeAttribute('data-t');
+    if (bad) cap.textContent = bad;
+    else { cap.dataset.t = 'subs_count'; cap._vars = { k: k, n: n }; cap.textContent = fmt(T('subs_count'), cap._vars); }
     cap.classList.toggle('bad', !!bad);
   }
   el('b-check').addEventListener('click', async function () {
     var b = el('b-check');
     b.disabled = true; b.classList.add('busy');
-    b.innerHTML = '<span class="spin"></span> Проверяем подписку';
+    b.innerHTML = '<span class="spin"></span> ' + esc(T('subs_busy'));
     try {
       var r = await api('api/raffle?stage=check');
-      if (r.data.status === 'joined') { st.data = r.data; haptic('success'); done(); return; }
+      if (r.data.status === 'joined') { setData(r.data); haptic('success'); done(); return; }
       haptic('error');
-      progress(r.data.error || 'Сначала подпишитесь на каналы');
-    } catch (e) { progress('Ошибка сети.'); }
-    finally { b.disabled = false; b.classList.remove('busy'); b.textContent = 'Проверить подписку'; }
+      progress(r.status >= 400 ? (r.data.error || T('err_retry')) : T('subs_fail'));
+    } catch (e) { progress(T('err_net')); }
+    finally { b.disabled = false; b.classList.remove('busy'); b.textContent = T('subs_btn'); }
   });
 
-  // ---------- 5. номер участника ----------
+  // ---------- 5. отсчёт до зачисления ----------
+  var clock = null;
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var left = Math.max(0, Math.floor((st.data.deadline_ts || 0) - (Date.now() / 1000 + st.offset)));
+    el('c-h').textContent = pad2(Math.floor(left / 3600));
+    el('c-m').textContent = pad2(Math.floor(left % 3600 / 60));
+    el('c-s').textContent = pad2(left % 60);
+    var ready = left <= 0, wait = el('t-wait');
+    el('ticket').classList.toggle('ready', ready);
+    if (wait.dataset.t !== (ready ? 'done_ready' : 'done_wait')) {
+      wait.dataset.t = ready ? 'done_ready' : 'done_wait';
+      wait.textContent = fmt(T(wait.dataset.t));
+    }
+    if (ready && clock) { clearInterval(clock); clock = null; }
+  }
   function done() {
-    var d = st.data, c = CH[d.choice] || { pic: '🎃', title: '' };
-    el('t-num').textContent = '№ ' + d.ticket;
+    var d = st.data;
     el('t-who').textContent = shownName();
-    el('t-choice').textContent = c.pic + ' ' + c.title;
     el('t-prize').textContent = d.prize;
-    el('t-fine').textContent = fine(d);
     var note = el('t-note');
     note.textContent = d.note || ''; note.style.display = d.note ? '' : 'none';
     var img = el('t-img');
     if (st.user && st.user.avatar_url) img.src = st.user.avatar_url;
     else img.style.display = 'none';
+    if (clock) clearInterval(clock);
+    tick(); clock = setInterval(tick, 1000);
     show('s-done');
   }
   el('b-close').addEventListener('click', function () { if (tg && tg.close) tg.close(); });
 
-  // уже участвует или бросил на подписках — продолжаем с того же места
+  // ---------- режим редактирования ----------
+  var SAMPLE = {
+    status: 'joined', username: 'ShadowFox_27', prize: 777, prize_min: 300, prize_max: 1500,
+    note: '', links: [
+      { title: '🔥 Канал партнёра', url: 'https://t.me/example' },
+      { title: 'Второй канал', url: 'https://t.me/example2' },
+      { title: 'Бот партнёра', url: 'https://t.me/example_bot?start=1' }
+    ]
+  };
+  var PREVIEW = [
+    ['s-nick', 'Ник'], ['s-pick', 'Выбор'], ['s-sure', 'Уверен?'], ['pop', 'Окно с робуксами'],
+    ['s-subs', 'Подписки'], ['s-done', 'Таймер']
+  ];
+  var current = 's-nick';
+  function preview(id) {
+    current = id;
+    el('veil').classList.remove('on');
+    var real = st.data;
+    st.data = Object.assign({}, SAMPLE, real && real.note ? { note: real.note } : {},
+      { hours: num('cfg.hours'), prize_min: num('cfg.prize_min'), prize_max: num('cfg.prize_max') });
+    if (!st.user) st.user = { username: SAMPLE.username };
+    if (id === 'pop') { show('s-pick'); popup(true); current = 'pop'; markScreen(); return; }
+    if (id === 's-sure') pickChoice(st.choice || 'trick');
+    else if (id === 's-subs') subs();
+    else if (id === 's-done') {
+      st.data.deadline_ts = Date.now() / 1000 + st.data.hours * 3600; st.offset = 0; done();
+    } else show(id);
+  }
+  function markScreen() {
+    Array.prototype.forEach.call(el('ed-screens').children, function (c) {
+      c.classList.toggle('on', c.dataset.id === current);
+    });
+  }
+  PREVIEW.forEach(function (p) {
+    var b = document.createElement('button');
+    b.className = 'ed-chip'; b.dataset.id = p[0]; b.textContent = p[1];
+    b.addEventListener('click', function () { preview(p[0]); });
+    el('ed-screens').appendChild(b);
+  });
+
+  function toast(text) {
+    var t = el('ed-toast'); t.textContent = text; t.classList.add('on');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2200);
+  }
+  function setDirty(key, value) {
+    var saved = Object.prototype.hasOwnProperty.call(TX, key) ? TX[key] : null;
+    if (value === saved || (value === null && saved === null)) delete dirty[key];
+    else dirty[key] = value;
+    el('ed-save').classList.toggle('dirty', Object.keys(dirty).length > 0);
+    paint();
+    if (st.screen === 's-done' && st.data) tick();
+  }
+  function isChanged(key) { return T(key) !== META[key][1]; }
+
+  function field(key, onInput) {
+    var d = META[key], kind = d[4] || 'text', wrap = document.createElement('div');
+    wrap.className = 'ed-item';
+    wrap.innerHTML = '<label>' + esc(d[2]) + '</label>';
+    var inp;
+    if (kind === 'color') {
+      var line = document.createElement('div'); line.className = 'ed-line';
+      inp = document.createElement('input'); inp.type = 'color';
+      var txt = document.createElement('input'); txt.type = 'text'; txt.value = T(key);
+      inp.value = /^#[0-9a-f]{6}$/i.test(T(key)) ? T(key) : d[1];
+      inp.addEventListener('input', function () { txt.value = inp.value; onInput(inp.value); });
+      txt.addEventListener('input', function () {
+        if (/^#[0-9a-f]{6}$/i.test(txt.value)) inp.value = txt.value;
+        onInput(txt.value.trim());
+      });
+      line.appendChild(inp); line.appendChild(txt); wrap.appendChild(line);
+      inp = txt;
+    } else {
+      inp = document.createElement(kind === 'text' ? 'textarea' : 'input');
+      if (kind === 'number') { inp.type = 'number'; inp.min = '0'; inp.inputMode = 'numeric'; }
+      if (kind === 'url') { inp.type = 'text'; inp.placeholder = 'https://…'; }
+      inp.value = T(key);
+      inp.addEventListener('input', function () { onInput(inp.value); });
+      wrap.appendChild(inp);
+    }
+    var reset = document.createElement('button');
+    reset.className = 'ed-reset'; reset.textContent = 'вернуть как было';
+    reset.style.display = isChanged(key) ? '' : 'none';
+    reset.addEventListener('click', function () {
+      setDirty(key, null); inp.value = T(key);
+      if (kind === 'color') wrap.querySelector('input[type=color]').value = T(key);
+      reset.style.display = 'none';
+    });
+    wrap.appendChild(reset);
+    wrap._input = inp; wrap._reset = reset;
+    return wrap;
+  }
+  function openSheet(build) {
+    var box = el('ed-box'); box.innerHTML = ''; build(box);
+    el('ed-sheet').classList.add('on');
+  }
+  function closeSheet() { el('ed-sheet').classList.remove('on'); }
+  el('ed-sheet').addEventListener('click', function (e) { if (e.target === el('ed-sheet')) closeSheet(); });
+  function closeBtn(box, label) {
+    var row = document.createElement('div'); row.className = 'ed-btns';
+    var ok = document.createElement('button'); ok.className = 'btn'; ok.textContent = label || 'Готово';
+    ok.addEventListener('click', closeSheet); row.appendChild(ok); box.appendChild(row);
+  }
+  function hint(key) {
+    if (META[key][4]) return '';
+    return 'Можно вставить: {acc} — ник, {prize} — сумма, {hours} — часы' +
+      (key === 'subs_count' ? ', {k} — открыто, {n} — всего' : '');
+  }
+  function editOne(key) {
+    openSheet(function (box) {
+      var h = document.createElement('h4'); h.textContent = META[key][2]; box.appendChild(h);
+      var sub = document.createElement('div'); sub.className = 'ed-sub';
+      sub.textContent = META[key][3] + (hint(key) ? ' · ' + hint(key) : '');
+      box.appendChild(sub);
+      var f = field(key, function (v) { setDirty(key, v); f._reset.style.display = ''; });
+      f.querySelector('label').style.display = 'none';
+      box.appendChild(f);
+      closeBtn(box);
+      setTimeout(function () { try { f._input.focus(); } catch (e) {} }, 250);
+    });
+  }
+  function editList(filter, title) {
+    openSheet(function (box) {
+      var h = document.createElement('h4'); h.textContent = title; box.appendChild(h);
+      var sub = document.createElement('div'); sub.className = 'ed-sub';
+      sub.textContent = 'Изменения сразу видны на странице. Не забудь нажать «Сохранить».';
+      box.appendChild(sub);
+      var group = '';
+      DEF.filter(filter).forEach(function (d) {
+        if (d[3] !== group) {
+          group = d[3];
+          var g = document.createElement('div'); g.className = 'ed-group'; g.textContent = group;
+          box.appendChild(g);
+        }
+        var f = field(d[0], function (v) { setDirty(d[0], v); f._reset.style.display = ''; });
+        box.appendChild(f);
+      });
+      closeBtn(box);
+    });
+  }
+  el('ed-all').addEventListener('click', function () {
+    editList(function (d) { return d[3] !== GC; }, 'Все тексты');
+  });
+  el('ed-design').addEventListener('click', function () {
+    editList(function (d) { return d[3] === GC; }, 'Цвета и числа');
+  });
+  el('ed-save').addEventListener('click', async function () {
+    if (!Object.keys(dirty).length) { toast('Нечего сохранять'); return; }
+    try {
+      var r = await api('api/app/texts', { texts: dirty });
+      if (r.status >= 400) { toast(r.data.error || 'Не сохранилось'); return; }
+      TX = r.data.texts || {}; dirty = {};
+      el('ed-save').classList.remove('dirty');
+      paint(); haptic('success'); toast('Сохранено ✅ Все увидят изменения');
+    } catch (e) { toast('Ошибка сети — не сохранилось'); }
+  });
+  el('ed-exit').addEventListener('click', function () {
+    var leave = function () { location.reload(); };
+    if (!Object.keys(dirty).length) return leave();
+    var q = 'Есть несохранённые изменения. Выйти без сохранения?';
+    if (tg && tg.showConfirm) tg.showConfirm(q, function (ok) { if (ok) leave(); });
+    else if (window.confirm(q)) leave();
+  });
+  el('ed-fab').addEventListener('click', function () {
+    editing = true; document.body.classList.add('edit');
+    input.readOnly = true;
+    preview(st.screen === 's-nick' && !el('veil').classList.contains('on') ? 's-nick' : st.screen);
+  });
+  // в режиме редактирования нажатие — это правка, а не действие
+  document.addEventListener('click', function (e) {
+    if (!editing) return;
+    if (e.target.closest('#ed-bar, #ed-sheet, #ed-fab')) return;
+    e.preventDefault(); e.stopPropagation();
+    var n = e.target.closest('[data-t]');
+    if (!n && e.target.closest('#sure-pic, #sure-title')) {
+      n = { dataset: { t: (st.choice || 'trick') + (e.target.closest('#sure-pic') ? '_pic' : '_title') } };
+    }
+    if (n) editOne(n.dataset.t);
+  }, true);
+
+  // ---------- запуск ----------
+  paint();
+  (async function loadTexts() {
+    try {
+      var r = await api('api/app/texts');
+      if (r.status < 400) {
+        TX = r.data.texts || {};
+        admin = !!r.data.admin;
+        document.body.classList.toggle('admin', admin);
+        paint();
+      }
+    } catch (e) {}
+  })();
+
+  // уже получил робуксы или бросил на подписках — продолжаем с того же места
   (async function resume() {
     try {
       var r = await api('api/raffle');
       if (!r.data || (r.data.status !== 'joined' && r.data.status !== 'picked')) return;
-      st.data = r.data;
+      setData(r.data);
       try {
         var u = await api('api/roblox/user?username=' + encodeURIComponent(r.data.username));
         if (u.status < 400) st.user = u.data;
       } catch (e) {}
+      if (editing) return;
       if (r.data.status === 'joined') done(); else subs();
     } catch (e) {}
   })();
