@@ -37,7 +37,9 @@ const money = (value) => {
 };
 
 /** Сумма с неразрывным пробелом перед знаком рубля. */
-const rub = (value) => `${money(value)}\u00A0₽`;
+// Символ валюты приходит с сервера: админу «р», участникам «₽».
+let currency = '₽';
+const rub = (value) => `${money(value)}\u00A0${currency}`;
 
 const esc = (value) => String(value == null ? '' : value)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1402,7 +1404,7 @@ function showPayoutDetails(item) {
 
   showOverlay(`
     <button class="modal__close" data-action="close-modal" aria-label="Закрыть">✕</button>
-    <div class="modal__icon${failed ? ' modal__icon--danger' : ''}">${failed ? '🚫' : '₽'}</div>
+    <div class="modal__icon${failed ? ' modal__icon--danger' : ''}">${failed ? '🚫' : esc(currency)}</div>
     <h3>Детали заявки</h3>
     <div class="summary">
       <div class="summary__row">
@@ -1631,6 +1633,7 @@ function setupKeyboard() {
 
 async function reload() {
   state.data = await api('/api/bootstrap');
+  currency = state.data.user.currency || '₽';
   render();
 }
 

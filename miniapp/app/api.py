@@ -217,6 +217,11 @@ def _user_payload(user: dict, config=None) -> dict:
         "avatar": avatar,
         "balance": _money(user["balance"]),
         "total_earned": _money(user["total_earned"]),
+        # Админ смотрит приложение и с компьютера, и при показе заказчику,
+        # где знак ₽ в части шрифтов рисуется плохо. Ему — буква «р»,
+        # участникам остаётся привычный знак.
+        "currency": ("р" if config and config.is_admin(user["user_id"])
+                     else "₽"),
     }
 
 
