@@ -18,6 +18,7 @@ const pulseAt = t => { let v = 0; for (const h of HB) { const d = t - h; if (d >
 function eyeOutside(t) { const k = Math.max(0, t - OFF); return YOU0.clone().add(EYE_L).add(V3(0.0, 0.02 * k + 0.12 * smooth(OFF, OFF + 1.5, t), 0.03 * k + 0.25 * smooth(OFF, OFF + 1.5, t))); }
 // the view: yaw (pi = toward the Earth horizon), pitch, roll, fov — keyed per beat, all blended so it is one continuous move
 function viewAt(t) { let yaw = Math.PI + 0.08 * Math.sin(t * 0.5), pitch = -0.28 + 0.012 * Math.sin(t * 2.2), roll = 0, fov = 68;
+  if (VAR === 2) { const o = smooth(0.2, 3.1, t); pitch = lerp(0.62, pitch, o); yaw += lerp(0.22, 0, o); roll += lerp(-0.12, 0, o); }   // v2 opening: look up into the Milky Way, then tilt down to the Earth
   pitch += 0.16 * bump(t, OFF - 0.1, OFF + 1.2) - 0.06 * bump(t, OFF + 1.0, OFF + 2.6);            // jolt as the helmet lets go
   roll += 0.10 * smooth(OFF, SPIT, t);
   const lookDown = fadeWin(t, SWELL - 0.4, SUNB, 1.4); pitch = lerp(pitch, -0.62, lookDown);

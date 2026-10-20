@@ -89,6 +89,31 @@ bg.add(new THREE.AmbientLight(0x404a60, 0.6)); const bgSun = new THREE.Direction
 const SUN_DIR = new THREE.Vector3(3000, 2600, 5000).normalize();
 { const n = 5000, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(50000); pos.set([v.x, v.y, v.z], i * 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bg.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#ffffff', size: 1.6, sizeAttenuation: false, fog: false }))); }
+// the sky: a Milky Way band crossing the opening view (yaw pi, looking up), coloured stars, a low-poly Moon
+const MW_N = (() => { const d = V3(0, Math.sin(0.5), -Math.cos(0.5)); return d.clone().cross(V3(1, 0.55, 0.15)).normalize(); })();
+const MW_Q = new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), MW_N);
+{ const n = 26000, pos = new Float32Array(n * 3), col = new Float32Array(n * 3), c = new THREE.Color();
+  for (let i = 0; i < n; i++) { const lon = R(0, Math.PI * 2), g = (R(-1, 1) + R(-1, 1) + R(-1, 1)) / 3, lat = g * 0.32 * (0.6 + 0.4 * Math.abs(Math.sin(lon * 1.7)));
+    const v = V3(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)).applyQuaternion(MW_Q).multiplyScalar(48000); pos.set([v.x, v.y, v.z], i * 3);
+    const core = Math.exp(-Math.pow(Math.atan2(Math.sin(lon - 0.6), Math.cos(lon - 0.6)) / 0.7, 2)); c.setHSL(lerp(0.6, 0.1, core * rnd()), R(0.2, 0.6), R(0.55, 0.95)).multiplyScalar(R(0.5, 1.4)); col.set([c.r, c.g, c.b], i * 3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  bg.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.3, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false })));
+  const nb = 420, pb = new Float32Array(nb * 3), cb = new Float32Array(nb * 3);
+  for (let i = 0; i < nb; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(47000); pb.set([v.x, v.y, v.z], i * 3); c.set(pick(['#ffffff', '#cfe0ff', '#ffe6c0', '#ffd0a0', '#bcd4ff'])).multiplyScalar(R(1.2, 3.0)); cb.set([c.r, c.g, c.b], i * 3); }
+  const gb = new THREE.BufferGeometry(); gb.setAttribute('position', new THREE.BufferAttribute(pb, 3)); gb.setAttribute('color', new THREE.BufferAttribute(cb, 3));
+  bg.add(new THREE.Points(gb, new THREE.PointsMaterial({ size: 3.2, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false })));
+  const glow = canvasTex(2048, 1024, (g2, w, h) => { g2.fillStyle = '#000'; g2.fillRect(0, 0, w, h); g2.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 5000; i++) { const x = R(0, w), core = Math.exp(-Math.pow(((x / w * 6.283 - 0.6 + 9.42) % 6.283 - 3.14) / 0.8, 2)); const y = h / 2 + (R(-1, 1) + R(-1, 1) + R(-1, 1)) * h * 0.05 * (1 + core * 0.8), r = R(10, 46) * (1 + core);
+        const gr = g2.createRadialGradient(x, y, 0, x, y, r); const hue = core > 0.4 && rnd() < 0.6 ? `rgba(255,${Math.floor(R(170, 215))},${Math.floor(R(120, 170))},` : rnd() < 0.18 ? 'rgba(200,120,190,' : 'rgba(150,175,255,';
+        gr.addColorStop(0, hue + (0.05 + 0.07 * core) + ')'); gr.addColorStop(1, hue + '0)'); g2.fillStyle = gr; g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); }
+      g2.globalCompositeOperation = 'multiply'; for (let i = 0; i < 900; i++) { const x = R(0, w), y = h / 2 + R(-1, 1) * h * 0.018 + Math.sin(x / w * 25) * h * 0.008, r = R(6, 22); const gr = g2.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(40,30,40,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,1)'); g2.fillStyle = gr; g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); } });
+  const band = new THREE.Mesh(new THREE.SphereGeometry(49000, 64, 32), new THREE.MeshBasicMaterial({ map: glow, side: THREE.BackSide, fog: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending, color: new THREE.Color(1.6, 1.6, 1.6) }));
+  band.quaternion.copy(MW_Q); bg.add(band); }
+const moon = new THREE.Group(); { const mg = new THREE.IcosahedronGeometry(1, 3); const p = mg.attributes.position, mc = new Float32Array(p.count * 3), c = new THREE.Color(), v = new THREE.Vector3();
+  const craters = Array.from({ length: 14 }, () => [V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize(), R(0.15, 0.45)]);
+  for (let f = 0; f < p.count; f += 3) { v.set(0, 0, 0); for (let k = 0; k < 3; k++) v.add(new THREE.Vector3().fromBufferAttribute(p, f + k)); v.normalize(); let d = 0.78 + R(-0.05, 0.05); for (const [cn, r] of craters) if (v.distanceTo(cn) < r) d -= 0.22; c.setRGB(d, d, d * 0.98); for (let k = 0; k < 3; k++) mc.set([c.r, c.g, c.b], (f + k) * 3); }
+  mg.setAttribute('color', new THREE.BufferAttribute(mc, 3)); const mm = new THREE.Mesh(mg, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 })); mm.scale.setScalar(620); moon.add(mm);
+  moon.position.copy(V3(0.42, Math.sin(0.62), -Math.cos(0.62)).normalize().multiplyScalar(30000)); bg.add(moon); }
 const sunDisc = new THREE.Mesh(new THREE.CircleGeometry(900, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(6, 5.6, 5), fog: false })); sunDisc.position.copy(SUN_DIR).multiplyScalar(45000); sunDisc.lookAt(0, 0, 0); bg.add(sunDisc);
 const earth = new THREE.Group(); const EA = 0.62; earth.position.set(0, -(RE + ALT) * Math.cos(EA), -(RE + ALT) * Math.sin(EA)); bg.add(earth);
 async function buildEarth() {
@@ -111,8 +136,11 @@ async function buildEarth() {
   const cl = canvasTex(2048, 1024, (g2, w2, h2) => { g2.clearRect(0, 0, w2, h2); for (let i = 0; i < 700; i++) { const x = R(0, w2), y = R(h2 * 0.1, h2 * 0.9), r = R(3, 14); const gr = g2.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g2.fillStyle = gr; g2.beginPath(); g2.arc(x, y, r, 0, 7); g2.fill(); } });
   earth.add(new THREE.Mesh(new THREE.SphereGeometry(RE + 8, 128, 96), new THREE.MeshStandardMaterial({ map: cl, transparent: true, depthWrite: false, opacity: 0.55, roughness: 1 })));
   earth.add(new THREE.Mesh(new THREE.SphereGeometry(RE + 90, 128, 96), new THREE.ShaderMaterial({ transparent: true, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false,
-    vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
-    fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 9.0); gl_FragColor = vec4(0.4,0.65,1.0,1.0)*f*1.1; }' })));
+    uniforms: { uSun: { value: SUN_DIR } }, vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vNw; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vNw = normalize(mat3(modelMatrix)*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
+    fragmentShader: `uniform vec3 uSun; varying vec3 vN; varying vec3 vV; varying vec3 vNw; void main(){ float g = 1.0 - abs(dot(vN, vV)); float s = dot(vNw, uSun);
+      float day = smoothstep(-0.35, 0.15, s); float dusk = smoothstep(-0.3, -0.02, s) * (1.0 - smoothstep(0.0, 0.35, s));
+      vec3 col = mix(vec3(0.38, 0.64, 1.0), vec3(1.0, 0.5, 0.22), dusk * 0.85);
+      float f = pow(g, 9.0) * 1.1 + pow(g, 26.0) * 1.6; gl_FragColor = vec4(col * f * (0.15 + 0.85 * day) + vec3(1.0, 0.45, 0.18) * pow(g, 14.0) * dusk * 1.4, 1.0); }` })));
 }
 // =================== NEAR (meters): ISS truss + modules + arrays, two astronauts ===================
 const near = new THREE.Scene(); const cam = new THREE.PerspectiveCamera(50, W / H, 0.02, 2000);
@@ -200,6 +228,7 @@ const pulseAt = t => { let v = 0; for (const h of HB) { const d = t - h; if (d >
 function eyeOutside(t) { const k = Math.max(0, t - OFF); return YOU0.clone().add(EYE_L).add(V3(0.0, 0.02 * k + 0.12 * smooth(OFF, OFF + 1.5, t), 0.03 * k + 0.25 * smooth(OFF, OFF + 1.5, t))); }
 // the view: yaw (pi = toward the Earth horizon), pitch, roll, fov — keyed per beat, all blended so it is one continuous move
 function viewAt(t) { let yaw = Math.PI + 0.08 * Math.sin(t * 0.5), pitch = -0.28 + 0.012 * Math.sin(t * 2.2), roll = 0, fov = 68;
+  if (VAR === 2) { const o = smooth(0.2, 3.1, t); pitch = lerp(0.62, pitch, o); yaw += lerp(0.22, 0, o); roll += lerp(-0.12, 0, o); }   // v2 opening: look up into the Milky Way, then tilt down to the Earth
   pitch += 0.16 * bump(t, OFF - 0.1, OFF + 1.2) - 0.06 * bump(t, OFF + 1.0, OFF + 2.6);            // jolt as the helmet lets go
   roll += 0.10 * smooth(OFF, SPIT, t);
   const lookDown = fadeWin(t, SWELL - 0.4, SUNB, 1.4); pitch = lerp(pitch, -0.62, lookDown);
