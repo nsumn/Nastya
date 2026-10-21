@@ -254,7 +254,7 @@
     <h3 data-t="nick_title"></h3>
     <p class="sub" data-t="nick_sub"></p>
     <label class="field"><span>@</span>
-      <input id="nick" data-t="nick_ph" data-attr="placeholder" maxlength="30"
+      <input id="nick" data-t="nick_ph" data-attr="placeholder" maxlength="20"
              autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
     </label>
     <div class="err" id="nick-err"></div>
@@ -395,6 +395,9 @@
     ['nick_ph', 'Например, ShadowFox_27', 'Подсказка в поле ввода', G1],
     ['nick_btn', 'Продолжить', 'Кнопка', G1],
     ['nick_empty', 'Введите ник', 'Если нажали, не вписав ник', G1],
+    ['nick_latin', 'Только латинские буквы (A–Z), цифры и _', 'Если пишут русскими буквами или символами', G1],
+    ['nick_short', 'В нике Roblox от 3 до 20 символов', 'Если ник короче 3 символов', G1],
+    ['nick_under', 'Знак _ может быть только один и не в начале или конце', 'Если с _ что-то не так', G1],
 
     ['pick_top', 'Halloween', 'Заголовок экрана', G2],
     ['trick_pic', '🎃', 'Левый вариант: картинка (эмодзи или ссылка на картинку)', G2],
@@ -584,15 +587,32 @@
   input.addEventListener('focus', function () { document.body.classList.add('kb'); });
   input.addEventListener('blur', function () { document.body.classList.remove('kb'); });
   input.addEventListener('input', function () {
+    // в Roblox ники только латиницей: лишнее сразу убираем и подсказываем
+    var clean = input.value.replace(/[^A-Za-z0-9_]/g, '');
+    if (clean !== input.value) {
+      input.value = clean; haptic('error'); err('nick-err', T('nick_latin'));
+      find.className = 'btn ' + (clean ? 'white' : 'ghost');
+      return;
+    }
     find.className = 'btn ' + (input.value.trim() ? 'white' : 'ghost');
     err('nick-err', '');
   });
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { input.blur(); next(); } });
   find.addEventListener('click', next);
 
+  // правила ников Roblox: 3–20 символов, латиница, цифры, не больше одного _
+  // и не в начале/конце. Проверяем только формат — аккаунт нигде не ищем.
+  function nickError(nick) {
+    if (!nick) return 'nick_empty';
+    if (/[^A-Za-z0-9_]/.test(nick)) return 'nick_latin';
+    if (nick.length < 3 || nick.length > 20) return 'nick_short';
+    if ((nick.match(/_/g) || []).length > 1 || /^_|_$/.test(nick)) return 'nick_under';
+    return '';
+  }
   function next() {
     var nick = input.value.trim();
-    if (!nick) { haptic('error'); err('nick-err', T('nick_empty')); return; }
+    var bad = nickError(nick);
+    if (bad) { haptic('error'); err('nick-err', T(bad)); return; }
     st.user = { username: nick };
     tap(); show('s-pick');
   }

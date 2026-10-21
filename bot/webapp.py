@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 import secrets
 import time
 from collections import deque
@@ -321,6 +322,9 @@ async def halloween_index(request: web.Request) -> web.StreamResponse:
 PRIZE_MIN, PRIZE_MAX = 300, 1500
 WAIT_HOURS = 24          # через столько часов после подписки «придут робуксы»
 CHOICES = ("sweet", "trick")
+# Формат ника Roblox (сам аккаунт не ищем): 3–20 символов, латиница/цифры,
+# не больше одного «_» и не в начале или конце.
+NICK_RE = re.compile(r"^(?=.{3,20}$)[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?$")
 _rng = secrets.SystemRandom()
 
 
@@ -387,7 +391,7 @@ async def raffle(request: web.Request) -> web.Response:
 
     bot = request.app.get("bot")
     stage = request.query.get("stage", "")
-    nick = (request.query.get("username", "") or "").strip()[:30]
+    nick = (request.query.get("username", "") or "").strip()
     existing = await db.get_raffle(user_id)
 
     if existing and nick and nick.lower() != existing["roblox_username"].lower():
@@ -398,7 +402,11 @@ async def raffle(request: web.Request) -> web.Response:
 
     if stage == "pick" and not existing:
         choice = request.query.get("choice", "")
-        if choice not in CHOICES or not nick:
+        if not NICK_RE.match(nick):
+            return web.json_response(
+                {"error": "Ник Roblox — только латинские буквы, цифры и "
+                          "один знак _, от 3 до 20 символов."}, status=400)
+        if choice not in CHOICES:
             return web.json_response(
                 {"error": "Сначала найди аккаунт и сделай выбор."}, status=400)
         user = {}
