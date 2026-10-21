@@ -18,7 +18,7 @@ const pulseAt = t => { let v = 0; for (const h of HB) { const d = t - h; if (d >
 function eyeOutside(t) { const k = Math.max(0, t - OFF); return YOU0.clone().add(EYE_L).add(V3(0.0, 0.02 * k + 0.12 * smooth(OFF, OFF + 1.5, t), 0.03 * k + 0.25 * smooth(OFF, OFF + 1.5, t))); }
 // the view: yaw (pi = toward the Earth horizon), pitch, roll, fov — keyed per beat, all blended so it is one continuous move
 function viewAt(t) { let yaw = Math.PI + 0.08 * Math.sin(t * 0.5), pitch = -0.28 + 0.012 * Math.sin(t * 2.2), roll = 0, fov = 68;
-  if (VAR === 2) { const o = smooth(0.2, 3.1, t); pitch = lerp(0.62, pitch, o); yaw += lerp(0.22, 0, o); roll += lerp(-0.12, 0, o); }   // v2 opening: look up into the Milky Way, then tilt down to the Earth
+  if (VAR >= 2) { const o = smooth(0.2, 3.1, t); pitch = lerp(0.62, pitch, o); yaw += lerp(0.22, 0, o); roll += lerp(-0.12, 0, o); }   // v2 opening: look up into the Milky Way, then tilt down to the Earth
   pitch += 0.16 * bump(t, OFF - 0.1, OFF + 1.2) - 0.06 * bump(t, OFF + 1.0, OFF + 2.6);            // jolt as the helmet lets go
   roll += 0.10 * smooth(OFF, SPIT, t);
   const lookDown = fadeWin(t, SWELL - 0.4, SUNB, 1.4); pitch = lerp(pitch, -0.62, lookDown);
@@ -110,7 +110,22 @@ function updateLock(t) { const u = t - LOCK;
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'flash', 'end', 'endT', 'endS', 'hud', 'veil'].map(k => [k, $(k)]));
-const captions = VAR === 2 ? [
+const captions = DE ? [
+  [4.2, 6.6, 'Und plötzlich —<br>totale Stille.'],
+  [6.7, 8.9, 'Atme AUS!<br>Luft anhalten würde deine Lunge zerreißen.'],
+  [9.3, 11.9, 'Schau — dein Speichel kocht.'],
+  [12.0, 14.8, 'Nicht vor Hitze:<br>Fast ohne Druck kocht Wasser schon bei 37 °C.'],
+  [15.3, 20.8, 'Dein Körper schwillt an…<br>aber deine Haut hält. Du explodierst nicht.'],
+  [21.3, 23.9, 'Du erfrierst nicht sofort —<br>ohne Luft verlierst du kaum Wärme.'],
+  [24.0, 26.8, 'Die echte Gefahr ist die Sonne:<br>ungefiltertes UV, schwerer Sonnenbrand.'],
+  [27.3, 31.4, 'Nach etwa 10 Sekunden<br>hat dein Blut keinen Sauerstoff mehr.'],
+  [31.5, 35.6, 'Die Welt wird grau…<br>und immer enger.'],
+  [36.4, 39.8, 'Nach ~15 Sekunden: Licht aus.<br>Jetzt bleiben etwa 90 Sekunden.'],
+  [40.4, 47.6, 'Dein Kollege zieht dich<br>zurück zur Luftschleuse.'],
+  [48.6, 53.8, 'Der Druck kommt zurück.<br>Du öffnest die Augen. Du lebst.'],
+  [54.2, 57.0, 'Echte Geschichte: 1966, Houston.<br>Jim LeBlancs Anzug verlor in einer NASA-Testkammer den Druck.'],
+  [57.1, 59.9, 'Er spürte noch, wie sein Speichel blubberte.<br>87 Sekunden später wachte er auf — ohne Schäden.'],
+] : VAR === 2 ? [
   [4.2, 6.6, 'And just like that —<br>total silence.'],
   [6.7, 8.9, 'Let the air OUT.<br>Holding your breath would rip your lungs.'],
   [9.3, 11.9, 'Look — your spit is boiling.'],
@@ -142,13 +157,18 @@ const captions = VAR === 2 ? [
   [57.1, 59.9, 'His last memory: spit bubbling on his tongue.<br>He was fine.'],
 ];
 function hudAt(t) { let stat = '', lab = '', val = '', sub = '', show = 1;
-  if (t < OFF - 0.4) { stat = '<b style="background:#5fd27a"></b>EVA · SUIT OK'; lab = 'SUIT PRESSURE'; val = '4.3 psi'; sub = 'O2 100%'; }
-  else if (t < OFF + 0.6) { stat = '<b></b>HELMET UNLOCKED'; lab = 'SUIT PRESSURE'; val = (4.3 * (1 - smooth(OFF - 0.4, OFF + 0.3, t))).toFixed(1) + ' psi'; sub = 'WARNING'; }
+  const T = DE ? { ok: 'EVA · ANZUG OK', sp: 'ANZUGDRUCK', p0: 0.30, u: ' bar', d: 2, o2: 'O2 100 %', un: 'HELM ENTRIEGELT', w: 'WARNUNG', nh: 'OHNE HELM', tv: 'ZEIT IM VAKUUM', s: ['AUSATMEN!', 'SPEICHEL KOCHT', 'SCHWELLUNG (EBULLISMUS)', 'UV-VERBRENNUNG', 'BEWUSSTSEIN SCHWINDET', 'BEWUSSTLOS · ~90 s FENSTER', 'DRUCK WIEDERHERGESTELLT'] }
+    : { ok: 'EVA · SUIT OK', sp: 'SUIT PRESSURE', p0: 4.3, u: ' psi', d: 1, o2: 'O2 100%', un: 'HELMET UNLOCKED', w: 'WARNING', nh: 'NO HELMET', tv: 'TIME IN VACUUM', s: ['EXHALE!', 'SALIVA BOILING', 'SWELLING (EBULLISM)', 'UV BURN', 'LOSING CONSCIOUSNESS', 'UNCONSCIOUS · ~90 s WINDOW', 'REPRESSURIZED'] };
+  const num = x => { const s = x.toFixed(T.d); return DE ? s.replace('.', ',') : s; };
+  if (t < OFF - 0.4) { stat = '<b style="background:#5fd27a"></b>' + T.ok; lab = T.sp; val = num(T.p0) + T.u; sub = T.o2; }
+  else if (t < OFF + 0.6) { stat = '<b></b>' + T.un; lab = T.sp; val = num(T.p0 * (1 - smooth(OFF - 0.4, OFF + 0.3, t))) + T.u; sub = T.w; }
   else if (t < BACK) { const secs = t < DARK ? Math.min(15, Math.floor((t - OFF) * 15 / (DARK - OFF))) : Math.floor(15 + (t - DARK) * 72 / (LOCK - DARK)); const shown = t < LOCK ? secs : 87;
-    stat = '<b></b>NO HELMET'; lab = 'TIME IN VACUUM'; val = 'T+' + shown + ' s'; sub = t < SPIT ? 'EXHALE!' : t < SWELL ? 'SALIVA BOILING' : t < SUNB ? 'SWELLING (EBULLISM)' : t < FADE ? 'UV BURN' : t < DARK ? 'LOSING CONSCIOUSNESS' : t < LOCK ? 'UNCONSCIOUS · ~90 s WINDOW' : 'REPRESSURIZED'; }
+    stat = '<b></b>' + T.nh; lab = T.tv; val = 'T+' + shown + ' s'; sub = T.s[t < SPIT ? 0 : t < SWELL ? 1 : t < SUNB ? 2 : t < FADE ? 3 : t < DARK ? 4 : t < LOCK ? 5 : 6]; }
   else show = 0;
   return { stat, lab, val, sub, show }; }
 const blur = t => t < DARK ? 2.2 * smooth(FADE + 3, DARK - 1, t) : t < LOCK ? 3.5 : lerp(9, 0, smooth(LOCK, LOCK + 3.2, t));
+if (DE) { el.title.innerHTML = 'POV: Du nimmst im All<br>deinen <span class="hl">Helm</span> ab'; el.title.style.fontSize = '70px'; el.title.style.padding = '0 60px'; el.endT.innerHTML = 'POV: Du nimmst im All deinen <span class="hl">Helm</span> ab';
+  el.endS.innerHTML = 'BEI PLÖTZLICHEM DRUCKVERLUST BLEIBST DU ETWA 10–15 SEKUNDEN BEI BEWUSSTSEIN.<br>DRUCK INNERHALB VON ~90 SEKUNDEN KANN ÜBERLEBBAR SEIN.<br>JIM LEBLANC, 1966: LECK IM ANZUG IN EINER NASA-VAKUUMKAMMER — VOLLSTÄNDIG ERHOLT.'; document.documentElement.lang = 'de'; }
 if (VAR === 2) { el.title.innerHTML = 'POV: you take off<br>your <span class="hl">helmet</span> in space'; el.endT.innerHTML = 'POV: you take off your <span class="hl">helmet</span> in space'; }
 function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.0, 3.6, t);
   const h = hudAt(t); el.stat.innerHTML = h.stat; el.lab.textContent = h.lab; el.val.textContent = h.val; el.sub.textContent = h.sub; el.hud.style.opacity = h.show * (1 - smooth(BACK - 0.4, BACK, t));
@@ -168,15 +188,15 @@ function postFX(t, inLock) { const u = compMat.uniforms;
   const hyp = smooth(FADE + 1, DARK - 1, t) * (t < LOCK ? 1 : 0); const res = t >= DARK && t < LOCK ? 1 : 0;
   u.uGhostA.value = Math.max(hyp, 0.6 * res); u.uGhost.value.set(0.012 * Math.sin(t * 1.3) + 0.006, 0.006 * Math.cos(t * 1.7));
   u.uSat.value = t < LOCK ? lerp(1, 0.12, Math.max(hyp, res)) : lerp(0.35, 1, smooth(LOCK, LOCK + 4, t));
-  const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn); if (VAR === 2) u.uTint.value.multiply(V3(0.97, 1.0, 1.06));
+  const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn); if (VAR === 2) u.uTint.value.multiply(V3(0.97, 1.0, 1.06)); if (DE) u.uTint.value.multiply(V3(1.04, 1.0, 0.97));
   u.uVig.value = t < LOCK ? lerp(3, 0.42, smooth(FADE + 0.5, DARK - 0.8, t) * (1 - 0.35 * res)) + 0.06 * u.uPulse.value : lerp(0.8, 3, smooth(LOCK, LOCK + 3, t));
   u.uLid.value = lidAt(t);
   u.uFlash.value = inLock ? 0.7 * (1 - smooth(LOCK + 0.2, LOCK + 3.0, t)) * (1 - u.uLid.value) : 0;
   u.uBright.value = 1;
   // sun glare where the Sun is on screen
   const sp = SUN_DIR.clone().multiplyScalar(1000).project(bgCam); const inView = (!inLock && sp.z < 1 ? 1 : 0) * smooth(2.2, 1.1, Math.abs(sp.x)) * smooth(1.9, 1.1, Math.abs(sp.y));
-  u.uSunUV.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView * (1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8));
-  u.uExpA.value = (inLock ? 1.05 : 1.0) * (VAR === 2 ? 1.08 : 1) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
+  u.uSunUV.value.set(DE ? 0.5 - sp.x * 0.5 : sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView * (1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8));
+  u.uExpA.value = (inLock ? 1.05 : 1.0) * (VAR >= 2 ? 1.08 : 1) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
 // =================== render ===================
 window.renderAt = (t) => {
   const inLock = t >= LOCK;

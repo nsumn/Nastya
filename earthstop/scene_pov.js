@@ -12,7 +12,8 @@ const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
 // ?v=2: re-upload variant (different Earth view, cloud/star layout, wording, grade)
 const VAR = +(new URLSearchParams(location.search).get('v') || 1);
-let seed = VAR === 2 ? 2024 : 1966;
+let seed = VAR === 3 ? 1990 : VAR === 2 ? 2024 : 1966;   // ?v=3: German version (mirrored picture, North Sea view, metric)
+const DE = VAR === 3;
 function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 const R = (a, b) => a + (b - a) * rnd();
 const pick = a => a[Math.floor(rnd() * a.length)];
@@ -33,14 +34,14 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace;
 // every scene renders into a linear HDR target; one full-screen pass tone-maps both and dissolves between them
 const RTA = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 }), RTB = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
-const compMat = new THREE.ShaderMaterial({ depthTest: false, depthWrite: false, uniforms: { tA: { value: RTA.texture }, tB: { value: RTB.texture }, uMix: { value: 0 }, uExpA: { value: 1 }, uExpB: { value: 1 }, uFrame: { value: 0 }, uFrameK: { value: 0 }, uFog: { value: 0 }, uPulse: { value: 0 }, uGhost: { value: new THREE.Vector2() }, uGhostA: { value: 0 }, uSat: { value: 1 }, uTint: { value: new THREE.Vector3(1, 1, 1) }, uVig: { value: 3 }, uLid: { value: 0 }, uBright: { value: 1 }, uFlash: { value: 0 }, uSunUV: { value: new THREE.Vector2(-9, -9) }, uSunA: { value: 0 } },
+const compMat = new THREE.ShaderMaterial({ depthTest: false, depthWrite: false, uniforms: { tA: { value: RTA.texture }, tB: { value: RTB.texture }, uMix: { value: 0 }, uExpA: { value: 1 }, uExpB: { value: 1 }, uFrame: { value: 0 }, uFrameK: { value: 0 }, uFog: { value: 0 }, uPulse: { value: 0 }, uGhost: { value: new THREE.Vector2() }, uGhostA: { value: 0 }, uSat: { value: 1 }, uTint: { value: new THREE.Vector3(1, 1, 1) }, uVig: { value: 3 }, uLid: { value: 0 }, uBright: { value: 1 }, uFlash: { value: 0 }, uSunUV: { value: new THREE.Vector2(-9, -9) }, uSunA: { value: 0 }, uFlipX: { value: VAR === 3 ? 1 : 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }',
   fragmentShader: `uniform sampler2D tA, tB; uniform float uMix, uExpA, uExpB; varying vec2 vUv;
     vec3 RRT(vec3 v){ vec3 a=v*(v+0.0245786)-0.000090537; vec3 b=v*(0.983729*v+0.4329510)+0.238081; return a/b; }
     vec3 aces(vec3 c){ const mat3 I=mat3(vec3(0.59719,0.07600,0.02840),vec3(0.35458,0.90834,0.13383),vec3(0.04823,0.01566,0.83777)); const mat3 O=mat3(vec3(1.60475,-0.10208,-0.00327),vec3(-0.53108,1.10813,-0.07276),vec3(-0.07367,-0.00605,1.07602)); c*=1.0/0.6; c=I*c; c=RRT(c); c=O*c; return clamp(c,0.0,1.0); }
     vec3 srgb(vec3 c){ return mix(c*12.92, pow(c,vec3(1.0/2.4))*1.055-0.055, step(vec3(0.0031308),c)); }
-    uniform float uFrame, uFrameK, uFog, uPulse, uGhostA, uSat, uVig, uLid, uBright, uFlash, uSunA; uniform vec2 uGhost, uSunUV; uniform vec3 uTint;
-    void main(){ vec2 uv = (vUv - 0.5) * (1.0 - 0.014 * uPulse) + 0.5;
+    uniform float uFlipX; uniform float uFrame, uFrameK, uFog, uPulse, uGhostA, uSat, uVig, uLid, uBright, uFlash, uSunA; uniform vec2 uGhost, uSunUV; uniform vec3 uTint;
+    void main(){ vec2 uv = (vUv - 0.5) * (1.0 - 0.014 * uPulse) + 0.5; uv.x = mix(uv.x, 1.0 - uv.x, uFlipX);
       vec3 c = aces(texture2D(tA, uv).rgb * uExpA);
       if (uGhostA > 0.001) { vec3 g = aces(texture2D(tA, uv + uGhost).rgb * uExpA); c = mix(c, g, 0.45 * uGhostA); }
       vec2 p = (vUv - 0.5) * vec2(1.125, 2.0);                       // p.y in [-1,1], p.x in [-0.56,0.56] (square pixels)
@@ -123,7 +124,7 @@ async function buildEarth() {
     for (const poly of polys) for (const ring of poly) { let prev = ring[0][0], off = 0; const pts = []; for (const [lo, la] of ring) { if (lo - prev > 180) off -= 360; else if (prev - lo > 180) off += 360; prev = lo; pts.push([lo + off, la]); }
       for (const sh of [-360, 0, 360]) { g.beginPath(); pts.forEach(([lo, la], i) => { const x = (lo + sh + 180) / 360 * MW, y = (90 - la) / 180 * MH; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill('evenodd'); } } }
   const img = g.getImageData(0, 0, MW, MH).data; const land = (lat, lon) => { const x = ((Math.floor((lon + 180) / 360 * MW) % MW) + MW) % MW, y = clamp(Math.floor((90 - lat) / 180 * MH), 0, MH - 1); return img[(y * MW + x) * 4] > 128; };
-  const n0 = V3(0, Math.cos(EA), Math.sin(EA)).normalize(), la0 = (VAR === 2 ? 27 : 35) * Math.PI / 180, lo0 = (VAR === 2 ? -71 : -62) * Math.PI / 180;   // v2: the US East Coast under the station
+  const n0 = V3(0, Math.cos(EA), Math.sin(EA)).normalize(), la0 = (VAR === 3 ? 45 : VAR === 2 ? 27 : 35) * Math.PI / 180, lo0 = (VAR === 3 ? -19 : VAR === 2 ? -71 : -62) * Math.PI / 180;   // v2: the US East Coast under the station
   const EQ = new THREE.Quaternion().setFromUnitVectors(n0, V3(Math.cos(la0) * Math.cos(lo0), Math.sin(la0), -Math.cos(la0) * Math.sin(lo0)));
   const geo = new THREE.IcosahedronGeometry(RE, 90); const p = geo.attributes.position; const cols = new Float32Array(p.count * 3); const c = new THREE.Color(), v = new THREE.Vector3(), w = new THREE.Vector3();
   for (let f = 0; f < p.count; f += 3) { v.set(0, 0, 0); for (let k = 0; k < 3; k++) v.add(w.fromBufferAttribute(p, f + k)); v.normalize();
@@ -228,7 +229,7 @@ const pulseAt = t => { let v = 0; for (const h of HB) { const d = t - h; if (d >
 function eyeOutside(t) { const k = Math.max(0, t - OFF); return YOU0.clone().add(EYE_L).add(V3(0.0, 0.02 * k + 0.12 * smooth(OFF, OFF + 1.5, t), 0.03 * k + 0.25 * smooth(OFF, OFF + 1.5, t))); }
 // the view: yaw (pi = toward the Earth horizon), pitch, roll, fov — keyed per beat, all blended so it is one continuous move
 function viewAt(t) { let yaw = Math.PI + 0.08 * Math.sin(t * 0.5), pitch = -0.28 + 0.012 * Math.sin(t * 2.2), roll = 0, fov = 68;
-  if (VAR === 2) { const o = smooth(0.2, 3.1, t); pitch = lerp(0.62, pitch, o); yaw += lerp(0.22, 0, o); roll += lerp(-0.12, 0, o); }   // v2 opening: look up into the Milky Way, then tilt down to the Earth
+  if (VAR >= 2) { const o = smooth(0.2, 3.1, t); pitch = lerp(0.62, pitch, o); yaw += lerp(0.22, 0, o); roll += lerp(-0.12, 0, o); }   // v2 opening: look up into the Milky Way, then tilt down to the Earth
   pitch += 0.16 * bump(t, OFF - 0.1, OFF + 1.2) - 0.06 * bump(t, OFF + 1.0, OFF + 2.6);            // jolt as the helmet lets go
   roll += 0.10 * smooth(OFF, SPIT, t);
   const lookDown = fadeWin(t, SWELL - 0.4, SUNB, 1.4); pitch = lerp(pitch, -0.62, lookDown);
@@ -320,7 +321,22 @@ function updateLock(t) { const u = t - LOCK;
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'flash', 'end', 'endT', 'endS', 'hud', 'veil'].map(k => [k, $(k)]));
-const captions = VAR === 2 ? [
+const captions = DE ? [
+  [4.2, 6.6, 'Und plötzlich —<br>totale Stille.'],
+  [6.7, 8.9, 'Atme AUS!<br>Luft anhalten würde deine Lunge zerreißen.'],
+  [9.3, 11.9, 'Schau — dein Speichel kocht.'],
+  [12.0, 14.8, 'Nicht vor Hitze:<br>Fast ohne Druck kocht Wasser schon bei 37 °C.'],
+  [15.3, 20.8, 'Dein Körper schwillt an…<br>aber deine Haut hält. Du explodierst nicht.'],
+  [21.3, 23.9, 'Du erfrierst nicht sofort —<br>ohne Luft verlierst du kaum Wärme.'],
+  [24.0, 26.8, 'Die echte Gefahr ist die Sonne:<br>ungefiltertes UV, schwerer Sonnenbrand.'],
+  [27.3, 31.4, 'Nach etwa 10 Sekunden<br>hat dein Blut keinen Sauerstoff mehr.'],
+  [31.5, 35.6, 'Die Welt wird grau…<br>und immer enger.'],
+  [36.4, 39.8, 'Nach ~15 Sekunden: Licht aus.<br>Jetzt bleiben etwa 90 Sekunden.'],
+  [40.4, 47.6, 'Dein Kollege zieht dich<br>zurück zur Luftschleuse.'],
+  [48.6, 53.8, 'Der Druck kommt zurück.<br>Du öffnest die Augen. Du lebst.'],
+  [54.2, 57.0, 'Echte Geschichte: 1966, Houston.<br>Jim LeBlancs Anzug verlor in einer NASA-Testkammer den Druck.'],
+  [57.1, 59.9, 'Er spürte noch, wie sein Speichel blubberte.<br>87 Sekunden später wachte er auf — ohne Schäden.'],
+] : VAR === 2 ? [
   [4.2, 6.6, 'And just like that —<br>total silence.'],
   [6.7, 8.9, 'Let the air OUT.<br>Holding your breath would rip your lungs.'],
   [9.3, 11.9, 'Look — your spit is boiling.'],
@@ -352,13 +368,18 @@ const captions = VAR === 2 ? [
   [57.1, 59.9, 'His last memory: spit bubbling on his tongue.<br>He was fine.'],
 ];
 function hudAt(t) { let stat = '', lab = '', val = '', sub = '', show = 1;
-  if (t < OFF - 0.4) { stat = '<b style="background:#5fd27a"></b>EVA · SUIT OK'; lab = 'SUIT PRESSURE'; val = '4.3 psi'; sub = 'O2 100%'; }
-  else if (t < OFF + 0.6) { stat = '<b></b>HELMET UNLOCKED'; lab = 'SUIT PRESSURE'; val = (4.3 * (1 - smooth(OFF - 0.4, OFF + 0.3, t))).toFixed(1) + ' psi'; sub = 'WARNING'; }
+  const T = DE ? { ok: 'EVA · ANZUG OK', sp: 'ANZUGDRUCK', p0: 0.30, u: ' bar', d: 2, o2: 'O2 100 %', un: 'HELM ENTRIEGELT', w: 'WARNUNG', nh: 'OHNE HELM', tv: 'ZEIT IM VAKUUM', s: ['AUSATMEN!', 'SPEICHEL KOCHT', 'SCHWELLUNG (EBULLISMUS)', 'UV-VERBRENNUNG', 'BEWUSSTSEIN SCHWINDET', 'BEWUSSTLOS · ~90 s FENSTER', 'DRUCK WIEDERHERGESTELLT'] }
+    : { ok: 'EVA · SUIT OK', sp: 'SUIT PRESSURE', p0: 4.3, u: ' psi', d: 1, o2: 'O2 100%', un: 'HELMET UNLOCKED', w: 'WARNING', nh: 'NO HELMET', tv: 'TIME IN VACUUM', s: ['EXHALE!', 'SALIVA BOILING', 'SWELLING (EBULLISM)', 'UV BURN', 'LOSING CONSCIOUSNESS', 'UNCONSCIOUS · ~90 s WINDOW', 'REPRESSURIZED'] };
+  const num = x => { const s = x.toFixed(T.d); return DE ? s.replace('.', ',') : s; };
+  if (t < OFF - 0.4) { stat = '<b style="background:#5fd27a"></b>' + T.ok; lab = T.sp; val = num(T.p0) + T.u; sub = T.o2; }
+  else if (t < OFF + 0.6) { stat = '<b></b>' + T.un; lab = T.sp; val = num(T.p0 * (1 - smooth(OFF - 0.4, OFF + 0.3, t))) + T.u; sub = T.w; }
   else if (t < BACK) { const secs = t < DARK ? Math.min(15, Math.floor((t - OFF) * 15 / (DARK - OFF))) : Math.floor(15 + (t - DARK) * 72 / (LOCK - DARK)); const shown = t < LOCK ? secs : 87;
-    stat = '<b></b>NO HELMET'; lab = 'TIME IN VACUUM'; val = 'T+' + shown + ' s'; sub = t < SPIT ? 'EXHALE!' : t < SWELL ? 'SALIVA BOILING' : t < SUNB ? 'SWELLING (EBULLISM)' : t < FADE ? 'UV BURN' : t < DARK ? 'LOSING CONSCIOUSNESS' : t < LOCK ? 'UNCONSCIOUS · ~90 s WINDOW' : 'REPRESSURIZED'; }
+    stat = '<b></b>' + T.nh; lab = T.tv; val = 'T+' + shown + ' s'; sub = T.s[t < SPIT ? 0 : t < SWELL ? 1 : t < SUNB ? 2 : t < FADE ? 3 : t < DARK ? 4 : t < LOCK ? 5 : 6]; }
   else show = 0;
   return { stat, lab, val, sub, show }; }
 const blur = t => t < DARK ? 2.2 * smooth(FADE + 3, DARK - 1, t) : t < LOCK ? 3.5 : lerp(9, 0, smooth(LOCK, LOCK + 3.2, t));
+if (DE) { el.title.innerHTML = 'POV: Du nimmst im All<br>deinen <span class="hl">Helm</span> ab'; el.title.style.fontSize = '70px'; el.title.style.padding = '0 60px'; el.endT.innerHTML = 'POV: Du nimmst im All deinen <span class="hl">Helm</span> ab';
+  el.endS.innerHTML = 'BEI PLÖTZLICHEM DRUCKVERLUST BLEIBST DU ETWA 10–15 SEKUNDEN BEI BEWUSSTSEIN.<br>DRUCK INNERHALB VON ~90 SEKUNDEN KANN ÜBERLEBBAR SEIN.<br>JIM LEBLANC, 1966: LECK IM ANZUG IN EINER NASA-VAKUUMKAMMER — VOLLSTÄNDIG ERHOLT.'; document.documentElement.lang = 'de'; }
 if (VAR === 2) { el.title.innerHTML = 'POV: you take off<br>your <span class="hl">helmet</span> in space'; el.endT.innerHTML = 'POV: you take off your <span class="hl">helmet</span> in space'; }
 function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.0, 3.6, t);
   const h = hudAt(t); el.stat.innerHTML = h.stat; el.lab.textContent = h.lab; el.val.textContent = h.val; el.sub.textContent = h.sub; el.hud.style.opacity = h.show * (1 - smooth(BACK - 0.4, BACK, t));
@@ -378,15 +399,15 @@ function postFX(t, inLock) { const u = compMat.uniforms;
   const hyp = smooth(FADE + 1, DARK - 1, t) * (t < LOCK ? 1 : 0); const res = t >= DARK && t < LOCK ? 1 : 0;
   u.uGhostA.value = Math.max(hyp, 0.6 * res); u.uGhost.value.set(0.012 * Math.sin(t * 1.3) + 0.006, 0.006 * Math.cos(t * 1.7));
   u.uSat.value = t < LOCK ? lerp(1, 0.12, Math.max(hyp, res)) : lerp(0.35, 1, smooth(LOCK, LOCK + 4, t));
-  const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn); if (VAR === 2) u.uTint.value.multiply(V3(0.97, 1.0, 1.06));
+  const burn = smooth(SUNB + 2, SUNB + 4, t) * (1 - smooth(FADE + 2, FADE + 5, t)); u.uTint.value.set(1, 1 - 0.12 * burn, 1 - 0.2 * burn); if (VAR === 2) u.uTint.value.multiply(V3(0.97, 1.0, 1.06)); if (DE) u.uTint.value.multiply(V3(1.04, 1.0, 0.97));
   u.uVig.value = t < LOCK ? lerp(3, 0.42, smooth(FADE + 0.5, DARK - 0.8, t) * (1 - 0.35 * res)) + 0.06 * u.uPulse.value : lerp(0.8, 3, smooth(LOCK, LOCK + 3, t));
   u.uLid.value = lidAt(t);
   u.uFlash.value = inLock ? 0.7 * (1 - smooth(LOCK + 0.2, LOCK + 3.0, t)) * (1 - u.uLid.value) : 0;
   u.uBright.value = 1;
   // sun glare where the Sun is on screen
   const sp = SUN_DIR.clone().multiplyScalar(1000).project(bgCam); const inView = (!inLock && sp.z < 1 ? 1 : 0) * smooth(2.2, 1.1, Math.abs(sp.x)) * smooth(1.9, 1.1, Math.abs(sp.y));
-  u.uSunUV.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView * (1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8));
-  u.uExpA.value = (inLock ? 1.05 : 1.0) * (VAR === 2 ? 1.08 : 1) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
+  u.uSunUV.value.set(DE ? 0.5 - sp.x * 0.5 : sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5); u.uSunA.value = inView * (1.0 - 0.45 * fadeWin(t, SUNB + 2.6, FADE + 1, 0.8));
+  u.uExpA.value = (inLock ? 1.05 : 1.0) * (VAR >= 2 ? 1.08 : 1) * (1 + 0.5 * fadeWin(t, SUNB + 2.0, SUNB + 3.6, 0.6)); }
 // =================== render ===================
 window.renderAt = (t) => {
   const inLock = t >= LOCK;
