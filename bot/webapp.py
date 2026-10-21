@@ -595,15 +595,21 @@ async def op_status(request: web.Request) -> web.Response:
 
 def setup_miniapp(app: web.Application) -> None:
     """Подключает маршруты мини-приложения к общему aiohttp-приложению."""
-    app.router.add_get("/app", miniapp_index)
-    app.router.add_get("/app/", miniapp_index)
-    app.router.add_get("/api/roblox/user", roblox_user)
-    app.router.add_get("/api/op/status", op_status)
-    app.router.add_get("/map", map_index)
-    app.router.add_get("/map/", map_index)
-    app.router.add_get("/api/invite", invite)
-    app.router.add_get("/halloween", halloween_index)
-    app.router.add_get("/halloween/", halloween_index)
+    if getattr(app["config"], "bot_mode", "") == "halloween":
+        # Хэллоуинский бот: только его страница, без проверки возраста
+        # аккаунта Roblox и без других мини-приложений.
+        app.router.add_get("/halloween", halloween_index)
+        app.router.add_get("/halloween/", halloween_index)
+    else:
+        app.router.add_get("/app", miniapp_index)
+        app.router.add_get("/app/", miniapp_index)
+        app.router.add_get("/api/roblox/user", roblox_user)
+        app.router.add_get("/api/op/status", op_status)
+        app.router.add_get("/map", map_index)
+        app.router.add_get("/map/", map_index)
+        app.router.add_get("/api/invite", invite)
+        app.router.add_get("/halloween", halloween_index)
+        app.router.add_get("/halloween/", halloween_index)
     app.router.add_get("/api/raffle", raffle)
     app.router.add_get("/api/app/texts", app_texts_get)
     app.router.add_post("/api/app/texts", app_texts_save)

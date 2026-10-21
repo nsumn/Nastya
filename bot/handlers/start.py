@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from aiogram import F, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import BaseFilter, CommandStart
 from aiogram.types import CallbackQuery, Message
 
 from .. import database as db
@@ -12,6 +12,9 @@ from .. import texts
 from ..config import Config
 
 router = Router(name="start")
+# Тарифы, профиль, контакты — только у бота оплаты; в хэллоуинском боте не
+# подключается.
+extra_router = Router(name="start_extra")
 
 
 @router.message(CommandStart())
@@ -50,12 +53,25 @@ async def cmd_start(message: Message, config: Config) -> None:
     await message.answer(texts.TARIFF_PROMPT, reply_markup=kb.welcome_kb(config))
 
 
-@router.message(F.text == kb.BTN_TARIFFS)
+class HalloweenBot(BaseFilter):
+    async def __call__(self, message: Message, config: Config) -> bool:
+        return config.bot_mode == "halloween"
+
+
+@router.message(HalloweenBot(), F.chat.type == "private", F.text,
+                ~F.text.startswith("/"))
+async def halloween_any_text(message: Message, config: Config) -> None:
+    """В хэллоуинском боте всё происходит в мини-приложении: на любой текст
+    просто ещё раз показываем приветствие с кнопкой «ИВЕНТ!»."""
+    await cmd_start(message, config)
+
+
+@extra_router.message(F.text == kb.BTN_TARIFFS)
 async def btn_tariffs(message: Message, config: Config) -> None:
     await message.answer(texts.TARIFF_PROMPT, reply_markup=kb.welcome_kb(config))
 
 
-@router.message(F.forward_origin)
+@extra_router.message(F.forward_origin)
 async def show_forwarded_chat_id(message: Message, config: Config) -> None:
     """Помощник для админа: перешли пост из канала боту — получишь ID канала
     (нужен для одноразовых ссылок: CHANNEL_ID / STARS_CHANNEL_ID)."""
@@ -72,26 +88,26 @@ async def show_forwarded_chat_id(message: Message, config: Config) -> None:
     )
 
 
-@router.message(F.text == kb.BTN_PROFILE)
+@extra_router.message(F.text == kb.BTN_PROFILE)
 async def btn_profile(message: Message) -> None:
     purchases = await db.count_purchases(message.from_user.id)
     await message.answer(texts.profile(message.from_user, purchases))
 
 
-@router.message(F.text == kb.BTN_CONTACTS)
+@extra_router.message(F.text == kb.BTN_CONTACTS)
 async def btn_contacts(message: Message, config: Config) -> None:
     await message.answer(texts.contacts(config.support_username),
                          reply_markup=kb.contacts_kb(config))
 
 
-@router.callback_query(F.data == "back:start")
+@extra_router.callback_query(F.data == "back:start")
 async def back_to_start(call: CallbackQuery, config: Config) -> None:
     await call.message.edit_text(texts.TARIFF_PROMPT,
                                  reply_markup=kb.welcome_kb(config))
     await call.answer()
 
 
-@router.callback_query(F.data.startswith("tariff:"))
+@extra_router.callback_query(F.data.startswith("tariff:"))
 async def show_tariff(call: CallbackQuery, config: Config) -> None:
     tariff_id = call.data.split(":", 1)[1]
     tariff = config.tariffs.get(tariff_id)

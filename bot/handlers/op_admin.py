@@ -50,6 +50,11 @@ class IsAdmin(BaseFilter):
 router.message.filter(IsAdmin())
 router.callback_query.filter(IsAdmin())
 
+# Команды других ботов (приглашения на карту, подпись бонуса) — в хэллоуинском
+# боте их нет, этот роутер там не подключается.
+extra_router = Router(name="op_admin_extra")
+extra_router.message.filter(IsAdmin())
+
 # Пересланные альбомы приходят несколькими сообщениями — отвечаем один раз.
 _seen_albums: dict[str, float] = {}
 
@@ -137,13 +142,21 @@ async def stats_text(bot=None) -> str:
         except TelegramAPIError:
             pass
 
+    if op.scope() == "halloween":
+        rc = await db.raffle_counts()
+        searches_line = f"🎁 Открыли сюрприз (всего): <b>{rc['started']}</b>"
+        total_line = f"⏳ Дошли до очереди (всего): <b>{rc['joined']}</b>"
+    else:
+        searches_line = f"🔎 Поисков ника: <b>{searches}</b>"
+        total_line = f"🔁 Поисков: <b>{st['searches_total']}</b>"
+
     lines = [
         "📊 <b>Статистика</b>",
         "",
         f"<b>С момента смены ссылок</b> ({since[:16] if since else 'ссылки ещё не менялись'})",
         f"🆕 Новых людей: <b>{new_users}</b>",
         f"📱 Открывали мини-приложение: <b>{opens}</b>",
-        f"🔎 Поисков ника: <b>{searches}</b>",
+        searches_line,
         f"🔓 Прошли проверку подписки: <b>{passed}</b>",
         f"➕ Вступили в канал: <b>{joined}</b>"
         + (f", из них по текущей ссылке: <b>{joined_link}</b>" if link else ""),
@@ -159,7 +172,7 @@ async def stats_text(bot=None) -> str:
         f"✅ Осталось: <b>{active}</b>{part(active)}",
         f"🚫 Заблокировали бота: <b>{st['blocked']}</b>{part(st['blocked'])}",
         f"📱 Открывали мини-приложение: <b>{st['opened_app']}</b>{part(st['opened_app'])}",
-        f"🔁 Поисков: <b>{st['searches_total']}</b>",
+        total_line,
         f"🔓 Прошли проверку: <b>{st['op_passed']}</b>{part(st['op_passed'])}",
         f"📅 Пришли за неделю: <b>{st['week']}</b>",
     ]
@@ -171,7 +184,7 @@ async def show_stats(message: Message) -> None:
     await message.answer(await stats_text(message.bot))
 
 
-@router.message(Command("invites"))
+@extra_router.message(Command("invites"))
 async def show_invites(message: Message) -> None:
     """Кто ждёт приглашение."""
     rows = await db.pending_invites(30)
@@ -193,7 +206,7 @@ async def show_invites(message: Message) -> None:
     await message.answer("\n".join(lines))
 
 
-@router.message(Command("sent"))
+@extra_router.message(Command("sent"))
 async def mark_sent(message: Message, command) -> None:
     """/sent <id> — отметить заявку выданной и отправить человеку ссылку."""
     arg = (command.args or "").strip()
@@ -330,7 +343,7 @@ async def raffle_show_winners(message: Message) -> None:
                          else "Розыгрыш ещё не проводился — /draw")
 
 
-@router.message(Command("maplink"))
+@extra_router.message(Command("maplink"))
 async def set_map(message: Message, command) -> None:
     """/maplink <ссылка> — приглашение на карту, которое выдаётся после подписки."""
     url = (command.args or "").strip()
@@ -348,7 +361,7 @@ async def set_map(message: Message, command) -> None:
     await message.answer(f"✅ Приглашение обновлено:\n{html.escape(url)}")
 
 
-@router.message(Command("bonus"))
+@extra_router.message(Command("bonus"))
 async def set_bonus(message: Message, command) -> None:
     """/bonus <текст> — подпись над числом в карточке профиля."""
     text = (command.args or "").strip()

@@ -55,10 +55,13 @@ async def _set_menu_button(bot: Bot, config) -> None:
         log.warning("Не смог настроить кнопку-меню: %s", exc)
 
 
+HALLOWEEN_DESCRIPTION = "Halloween Event 2026"
+
+
 async def _set_commands(bot: Bot, config) -> None:
     """Подсказки команд в меню Telegram — свои для каждого режима."""
     from aiogram.types import BotCommand
-    if config.is_app_bot:
+    if config.is_app_bot and config.bot_mode != "halloween":
         commands = [BotCommand(command="start", description="Начать"),
                     BotCommand(command="roblox",
                                description="Возраст аккаунта Roblox")]
@@ -70,6 +73,14 @@ async def _set_commands(bot: Bot, config) -> None:
         log.warning("Не смог задать команды: %s", exc)
     if config.bot_mode != "halloween":
         return
+    # Описание бота («Что умеет этот бот?») — только про ивент, чтобы там не
+    # осталось ничего от прежних функций.
+    for call, text in ((bot.set_my_description, HALLOWEEN_DESCRIPTION),
+                       (bot.set_my_short_description, HALLOWEEN_DESCRIPTION)):
+        try:
+            await call(text)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Не смог задать описание бота: %s", exc)
     # «Начать заново» в меню команд — только у администратора и тестовых
     # аккаунтов, остальные эту команду не видят.
     from aiogram.types import BotCommandScopeChat
@@ -110,13 +121,23 @@ async def main() -> None:
         # Бот-проверялка: только возраст аккаунта и обязательная подписка.
         dp.include_router(reset.router)      # /reset — раньше «любой текст = ник»
         dp.include_router(op_admin.router)   # списки ОП от админа — раньше всех
-        dp.include_router(roblox.router)
+        dp.include_router(roblox.stats_router)
+        if config.bot_mode != "halloween":
+            # В хэллоуинском боте нет ничего, кроме ивента: ни проверки
+            # возраста аккаунта Roblox, ни команд других ботов.
+            dp.include_router(op_admin.extra_router)
+            dp.include_router(roblox.router)
         dp.include_router(start.router)
+        if config.bot_mode != "halloween":
+            dp.include_router(start.extra_router)
     else:
         dp.include_router(admin.router)  # админ-команды и FSM — раньше relay
+        dp.include_router(roblox.stats_router)
         dp.include_router(roblox.router)
         dp.include_router(op_admin.router)
+        dp.include_router(op_admin.extra_router)
         dp.include_router(start.router)
+        dp.include_router(start.extra_router)
         dp.include_router(payment.router)
         dp.include_router(relay.router)  # подключаем последним
 

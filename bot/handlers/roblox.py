@@ -20,6 +20,9 @@ from ..config import Config
 from ..roblox import BadUsername, RobloxClient, RobloxError, UserNotFound
 
 router = Router(name="roblox")
+# Статистика (кто заблокировал бота, кто вступил в проверочный канал) нужна во
+# всех режимах, поэтому отдельно от проверки возраста аккаунта.
+stats_router = Router(name="stats")
 
 
 class RobloxSG(StatesGroup):
@@ -158,7 +161,7 @@ async def any_text_is_nick(message: Message, roblox: RobloxClient) -> None:
     await _reply_lookup(message, nick, roblox)
 
 
-@router.my_chat_member(F.chat.type == "private")
+@stats_router.my_chat_member(F.chat.type == "private")
 async def user_blocked_or_returned(event: ChatMemberUpdated) -> None:
     """Человек заблокировал бота или разблокировал — отмечаем в статистике."""
     status = getattr(event.new_chat_member.status,
@@ -169,7 +172,7 @@ async def user_blocked_or_returned(event: ChatMemberUpdated) -> None:
 MEMBER = ("member", "administrator", "creator")
 
 
-@router.chat_member()
+@stats_router.chat_member()
 async def channel_membership(event: ChatMemberUpdated) -> None:
     """Кто вступил в проверочный канал и по какой ссылке, кто вышел."""
     if str(event.chat.id) != await op.check_chat():

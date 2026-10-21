@@ -59,6 +59,11 @@ def set_scope(name: str) -> None:
     _scope = (name or "").strip()
 
 
+def scope() -> str:
+    """Режим бота, под которым он хранит свои тексты (halloween, map, …)."""
+    return _scope
+
+
 def _k(key: str) -> str:
     return f"{key}:{_scope}" if _scope else key
 
