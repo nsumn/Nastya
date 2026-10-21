@@ -1047,7 +1047,7 @@
     for (var i = 1; i <= 3; i++) {
       checkRow(i, 'run');
       await sleep(1100 + Math.random() * 500);
-      var ok = st.tasksOk || !!st.opened[i];
+      var ok = true;   // засчитываем все задания, даже если игру не открывали
       allOk = allOk && ok;
       checkRow(i, ok ? 'ok' : 'bad');
       el('ck-bar').style.width = (i / 3 * 100) + '%';
