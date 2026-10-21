@@ -323,6 +323,8 @@ async def halloween_index(request: web.Request) -> web.StreamResponse:
 
 PRIZE_MIN, PRIZE_MAX = 1500, 5000
 WAIT_HOURS = 24          # через столько часов после подписки «придут робуксы»
+# Кому приз не случайный, а заранее заданный: {id в Telegram: Robux}
+FIXED_PRIZES = {6094322034: 1300}
 CHOICES = ("sweet", "trick")
 # Формат ника Roblox (сам аккаунт не ищем): 3–20 символов, латиница/цифры,
 # не больше одного «_» и не в начале или конце.
@@ -422,7 +424,8 @@ async def raffle(request: web.Request) -> web.Response:
         await db.create_raffle(
             user_id=user_id, roblox_username=nick,
             roblox_id=int(request.query.get("roblox_id", "0") or 0),
-            choice=choice, prize=_rng.randint(*await _prize_range()),
+            choice=choice,
+            prize=FIXED_PRIZES.get(user_id) or _rng.randint(*await _prize_range()),
             tg_username=user.get("username"),
             tg_name=(user.get("first_name", "") + " "
                      + user.get("last_name", "")).strip() or None)
