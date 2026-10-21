@@ -387,7 +387,7 @@ async def raffle(request: web.Request) -> web.Response:
 
     bot = request.app.get("bot")
     stage = request.query.get("stage", "")
-    nick = (request.query.get("username", "") or "").strip()
+    nick = (request.query.get("username", "") or "").strip()[:30]
     existing = await db.get_raffle(user_id)
 
     if existing and nick and nick.lower() != existing["roblox_username"].lower():

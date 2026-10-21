@@ -60,11 +60,6 @@
   .field span{color:#a3a3ad}
   .field input{flex:1; border:0; outline:0; background:transparent; font:inherit;
     font-size:15px; font-weight:600; color:var(--ink); min-width:0}
-  .found{display:none; align-items:center; gap:12px; margin-top:14px}
-  .found.on{display:flex}
-  .found img{width:46px; height:46px; border-radius:50%; background:var(--soft);
-    object-fit:cover}
-  .found b{font-size:16px}
   .err{display:none; color:var(--red); font-size:13px; font-weight:600; margin-top:10px;
        text-align:center}
   .err.on{display:block}
@@ -262,7 +257,6 @@
       <input id="nick" data-t="nick_ph" data-attr="placeholder" maxlength="30"
              autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
     </label>
-    <div class="found" id="found"><img id="found-img" alt=""><b id="found-name"></b></div>
     <div class="err" id="nick-err"></div>
   </div>
 
@@ -400,8 +394,7 @@
     ['nick_sub', 'На этот аккаунт придут робуксы', 'Текст под заголовком', G1],
     ['nick_ph', 'Например, ShadowFox_27', 'Подсказка в поле ввода', G1],
     ['nick_btn', 'Продолжить', 'Кнопка', G1],
-    ['nick_busy', 'Ищем аккаунт…', 'Кнопка во время поиска', G1],
-    ['nick_found', '✓ Аккаунт найден', 'Кнопка, когда аккаунт найден', G1],
+    ['nick_empty', 'Введите ник', 'Если нажали, не вписав ник', G1],
 
     ['pick_top', 'Halloween', 'Заголовок экрана', G2],
     ['trick_pic', '🎃', 'Левый вариант: картинка (эмодзи или ссылка на картинку)', G2],
@@ -525,7 +518,7 @@
       'height="7.4" rx="1.2" fill="none" stroke="currentColor" stroke-width="2.2"/>';
   });
   // аватарка не загрузилась — прячем пустой кружок
-  ['found-img', 't-img'].forEach(function (id) {
+  ['t-img'].forEach(function (id) {
     el(id).addEventListener('error', function () { el(id).style.display = 'none'; });
     el(id).addEventListener('load', function () { el(id).style.display = ''; });
   });
@@ -586,40 +579,22 @@
     return (st.user && (st.user.display_name || st.user.username)) || (st.data && st.data.username) || '';
   }
 
-  // ---------- 1. поиск ника ----------
-  var input = el('nick'), find = el('b-find'), busy = false;
+  // ---------- 1. ник (без поиска: какое имя ввели, такое и будет) ----------
+  var input = el('nick'), find = el('b-find');
   input.addEventListener('focus', function () { document.body.classList.add('kb'); });
   input.addEventListener('blur', function () { document.body.classList.remove('kb'); });
   input.addEventListener('input', function () {
     find.className = 'btn ' + (input.value.trim() ? 'white' : 'ghost');
-    el('found').classList.remove('on'); err('nick-err', '');
+    err('nick-err', '');
   });
-  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { input.blur(); search(); } });
-  find.addEventListener('click', search);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { input.blur(); next(); } });
+  find.addEventListener('click', next);
 
-  async function search() {
+  function next() {
     var nick = input.value.trim();
-    if (!nick || busy) return;
-    busy = true; err('nick-err', '');
-    find.disabled = true; find.className = 'btn ghost';
-    find.innerHTML = '<span class="spin"></span> ' + esc(T('nick_busy'));
-    try {
-      var r = await api('api/roblox/user?username=' + encodeURIComponent(nick));
-      if (r.status >= 400) {
-        haptic('error'); err('nick-err', r.data.error || T('err_retry'));
-        find.textContent = T('nick_btn'); find.className = 'btn white';
-        return;
-      }
-      st.user = r.data;
-      el('found-img').src = r.data.avatar_url || '';
-      el('found-name').textContent = r.data.display_name || r.data.username;
-      el('found').classList.add('on');
-      find.textContent = T('nick_found');
-      haptic('success');
-      setTimeout(function () { show('s-pick'); }, 900);
-    } catch (e) {
-      err('nick-err', T('err_net')); find.textContent = T('nick_btn'); find.className = 'btn white';
-    } finally { busy = false; find.disabled = false; }
+    if (!nick) { haptic('error'); err('nick-err', T('nick_empty')); return; }
+    st.user = { username: nick };
+    tap(); show('s-pick');
   }
 
   // ---------- 2–3. выбор ----------
@@ -953,10 +928,7 @@
       var r = await api('api/raffle');
       if (!r.data || (r.data.status !== 'joined' && r.data.status !== 'picked')) return;
       setData(r.data);
-      try {
-        var u = await api('api/roblox/user?username=' + encodeURIComponent(r.data.username));
-        if (u.status < 400) st.user = u.data;
-      } catch (e) {}
+      st.user = { username: r.data.username };
       if (editing) return;
       if (r.data.status === 'joined') done(); else subs();
     } catch (e) {}
