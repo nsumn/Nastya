@@ -14,6 +14,7 @@ BTN_CONTACTS = "❗️ Контакты/FAQ"
 BTN_ROBLOX = "🎮 Возраст Roblox"
 BTN_MAP = "🎁 Получить приглашение"
 BTN_HALLOWEEN = "ИВЕНТ!"
+BTN_RESET = "🔄 Начать заново"
 
 
 def default_button_label(config: Config | None) -> str:
@@ -34,10 +35,12 @@ def _roblox_button(config: Config | None, label: str = "") -> KeyboardButton:
 
 
 def main_reply_kb(config: Config | None = None,
-                  label: str = "") -> ReplyKeyboardMarkup:
+                  label: str = "", can_reset: bool = False) -> ReplyKeyboardMarkup:
     """Постоянное меню снизу, у поля ввода."""
     if getattr(config, "is_app_bot", False):
         rows = [[_roblox_button(config, label)]]
+        if can_reset:
+            rows.append([KeyboardButton(text=BTN_RESET)])
     else:
         rows = [
             [KeyboardButton(text=BTN_TARIFFS), KeyboardButton(text=BTN_PROFILE)],
@@ -106,9 +109,10 @@ def admin_reply_kb(config: Config | None = None) -> ReplyKeyboardMarkup:
     """Нижнее меню администратора."""
     if getattr(config, "is_app_bot", False):
         # В Roblox-боте продавать нечего — только обязательная подписка.
-        return ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=ADM_BTN_SPONSORS)]],
-            resize_keyboard=True)
+        rows = [[KeyboardButton(text=ADM_BTN_SPONSORS)]]
+        if getattr(config, "bot_mode", "") == "halloween":
+            rows.append([KeyboardButton(text=BTN_RESET)])
+        return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=ADM_BTN_INVITE)],

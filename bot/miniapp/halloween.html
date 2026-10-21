@@ -328,12 +328,6 @@
   #ed-fab{position:fixed; top:46%; left:8px; z-index:70; display:none; width:38px; height:38px; border-radius:50%;
     border:0; cursor:pointer; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.25); font-size:18px}
   body.admin #ed-fab{display:block}
-  #reset-fab{position:fixed; top:46%; left:8px; z-index:70; display:none; width:38px; height:38px; border-radius:50%;
-    border:0; cursor:pointer; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.25); font-size:19px;
-    font-weight:700; color:#111; padding:0}
-  body.can-reset #reset-fab{display:block}
-  body.admin #reset-fab{margin-top:46px}
-  body.edit #reset-fab{display:none}
   body.edit #ed-fab{display:none}
   #ed-bar{position:fixed; top:0; left:0; right:0; z-index:80; display:none; background:#111018; color:#fff;
     padding:8px 10px 10px; font-size:12px; box-shadow:0 6px 20px rgba(0,0,0,.3)}
@@ -608,7 +602,6 @@
 
 <!-- редактор (только администратор) -->
 <button id="ed-fab" title="Редактировать">✏️</button>
-<button id="reset-fab" title="Начать заново">↺</button>
 <div id="ed-bar">
   <div class="ed-hint">Режим редактирования — нажми на любой текст или картинку, чтобы изменить</div>
   <div class="ed-row" id="ed-screens"></div>
@@ -1260,21 +1253,6 @@
     v.addEventListener('click', function (e) { if (e.target === v && v.id !== 'ck-veil') v.classList.remove('on'); });
   });
 
-  // ---------- «Начать заново» (администратор и тестовые аккаунты) ----------
-  el('reset-fab').addEventListener('click', function () {
-    var go = async function () {
-      try {
-        var r = await api('api/app/reset', {});
-        if (r.status >= 400) return toast(r.data.error || T('err_retry'));
-        ['opened', 'tasks_ok'].forEach(function (k) { try { localStorage.removeItem('hw_' + k); } catch (e) {} });
-        location.reload();
-      } catch (e) { toast(T('err_net')); }
-    };
-    var q = 'Начать заново? Задания, приз, ник и таймер сбросятся.';
-    if (tg && tg.showConfirm) tg.showConfirm(q, function (ok) { if (ok) go(); });
-    else if (window.confirm(q)) go();
-  });
-
   // ---------- режим редактирования ----------
   var SAMPLE = {
     status: 'joined', username: 'SpookyPlayer', prize: 2121, note: '', hours: 24,
@@ -1479,7 +1457,11 @@
       if (r.status < 400) {
         TX = r.data.texts || {}; admin = !!r.data.admin;
         document.body.classList.toggle('admin', admin);
-        document.body.classList.toggle('can-reset', !!r.data.can_reset);
+        // прогресс сбросили командой /reset в боте — забываем и задания
+        if (r.data.epoch && LS.get('epoch') !== r.data.epoch) {
+          LS.set('epoch', r.data.epoch); LS.set('opened', '{}'); LS.set('tasks_ok', '');
+          st.opened = {}; st.tasksOk = false;
+        }
         renderTasks(); paint();
       }
     }).catch(function () {}),

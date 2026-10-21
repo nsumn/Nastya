@@ -12,7 +12,7 @@ from aiohttp import web
 from . import database as db
 from . import op, op_store, services, settings_store
 from .config import load_config
-from .handlers import admin, op_admin, payment, relay, roblox, start
+from .handlers import admin, op_admin, payment, relay, reset, roblox, start
 from .platega import PlategaClient
 from .roblox import RobloxClient
 from .webhook import build_app
@@ -68,6 +68,19 @@ async def _set_commands(bot: Bot, config) -> None:
         await bot.set_my_commands(commands)
     except Exception as exc:  # noqa: BLE001
         log.warning("Не смог задать команды: %s", exc)
+    if config.bot_mode != "halloween":
+        return
+    # «Начать заново» в меню команд — только у администратора и тестовых
+    # аккаунтов, остальные эту команду не видят.
+    from aiogram.types import BotCommandScopeChat
+    for user_id in op.reset_users(config):
+        try:
+            await bot.set_my_commands(
+                commands + [BotCommand(command="reset",
+                                       description="Начать мини-приложение заново")],
+                scope=BotCommandScopeChat(chat_id=user_id))
+        except Exception as exc:  # noqa: BLE001 — человек ещё не писал боту
+            log.info("Команда /reset для %s не задана: %s", user_id, exc)
 
 
 async def main() -> None:
@@ -95,6 +108,7 @@ async def main() -> None:
     dp = Dispatcher()
     if config.is_app_bot:
         # Бот-проверялка: только возраст аккаунта и обязательная подписка.
+        dp.include_router(reset.router)      # /reset — раньше «любой текст = ник»
         dp.include_router(op_admin.router)   # списки ОП от админа — раньше всех
         dp.include_router(roblox.router)
         dp.include_router(start.router)

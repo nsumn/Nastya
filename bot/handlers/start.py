@@ -26,7 +26,10 @@ async def cmd_start(message: Message, config: Config) -> None:
     if config.is_app_bot:
         label = await op.button_text()
         bottom = (kb.admin_reply_kb(config) if is_admin
-                  else kb.main_reply_kb(config, label))
+                  else kb.main_reply_kb(
+                      config, label,
+                      can_reset=(config.bot_mode == "halloween"
+                                 and op.can_reset(config, u.id))))
         text = (await op.welcome_text()
                 or {"map": texts.WELCOME_MAP,
                     "halloween": texts.WELCOME_HALLOWEEN}.get(

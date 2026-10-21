@@ -20,6 +20,7 @@ from __future__ import annotations
 import html
 import json
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass
@@ -314,6 +315,34 @@ async def app_number(key: str, default: int) -> int:
         return int(str((await app_texts()).get(key, default)).strip())
     except ValueError:
         return default
+
+
+# Кроме администратора, начинать мини-приложение заново может этот аккаунт.
+# Ещё id можно добавить через .env: MINIAPP_RESET_IDS=111,222
+RESET_USERS = {6094322034}
+
+
+def reset_users(config) -> set[int]:
+    extra = {int(x) for x in os.getenv("MINIAPP_RESET_IDS", "").replace(" ", "")
+             .split(",") if x.isdigit()}
+    admin = {config.admin_chat_id} if config.admin_chat_id else set()
+    return RESET_USERS | extra | admin
+
+
+def can_reset(config, user_id: int) -> bool:
+    return bool(user_id) and user_id in reset_users(config)
+
+
+async def reset_progress(user_id: int) -> None:
+    """Стирает участие (приз, ник, таймер) и помечает время сброса —
+    по этой метке мини-приложение забывает и выполненные задания."""
+    await db.delete_raffle(user_id)
+    await db.set_setting(f"reset:{user_id}", str(int(time.time())))
+    await db.log_event("raffle_reset", user_id)
+
+
+async def reset_epoch(user_id: int) -> str:
+    return (await db.get_setting(f"reset:{user_id}")) or "" if user_id else ""
 
 
 RAFFLE_WINNERS_DEFAULT = 7
