@@ -77,7 +77,8 @@ def op_admin_kb(is_on: bool) -> InlineKeyboardMarkup:
     return b.as_markup()
 
 
-def roblox_app_kb(config: Config, label: str = "") -> InlineKeyboardMarkup | None:
+def roblox_app_kb(config: Config, label: str = "",
+                  reset: bool = False) -> InlineKeyboardMarkup | None:
     """Инлайн-кнопка запуска мини-приложения (если задан https-адрес)."""
     if not config.miniapp_url:
         return None
@@ -91,6 +92,8 @@ def roblox_app_kb(config: Config, label: str = "") -> InlineKeyboardMarkup | Non
     except Exception:  # noqa: BLE001 — старый aiogram без цветных кнопок
         button.pop("style", None)
         b.row(InlineKeyboardButton(**button))
+    if reset:
+        b.row(InlineKeyboardButton(text=BTN_RESET, callback_data="reset"))
     return b.as_markup()
 
 

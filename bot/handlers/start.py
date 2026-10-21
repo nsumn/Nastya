@@ -33,11 +33,14 @@ async def cmd_start(message: Message, config: Config) -> None:
                       config, label,
                       can_reset=(config.bot_mode == "halloween"
                                  and op.can_reset(config, u.id))))
+
         text = (await op.welcome_text()
                 or {"map": texts.WELCOME_MAP,
                     "halloween": texts.WELCOME_HALLOWEEN}.get(
                         config.bot_mode, texts.WELCOME_ROBLOX))
-        under = kb.roblox_app_kb(config, label)
+        can_reset = (config.bot_mode == "halloween"
+                     and op.can_reset(config, u.id))
+        under = kb.roblox_app_kb(config, label, reset=can_reset)
         if under is not None:
             # Кнопка под сообщением — единственный способ запустить мини-апп
             # так, чтобы Telegram передал данные пользователя.
