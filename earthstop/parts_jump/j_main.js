@@ -24,14 +24,14 @@ const lakeAt = (la, lo) => Math.hypot((la - 47.62) / 0.11, (lo - 9.35) / 0.33) <
 function buildCap() { const n0 = window.__n0.clone(), EQ = window.__EQ, land = window.__land; const e1 = new THREE.Vector3(1, 0, 0).cross(n0).normalize(), e2 = n0.clone().cross(e1).normalize();
   const N = 520, A = 0.11, P = [], LL = []; for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) { const x = Math.tan(-A + 2 * A * i / N), y = Math.tan(-A + 2 * A * j / N); const d = n0.clone().addScaledVector(e1, x).addScaledVector(e2, y).normalize(); const q = d.clone().applyQuaternion(EQ);
     const la = Math.asin(q.y) * 180 / Math.PI, lo = Math.atan2(-q.z, q.x) * 180 / Math.PI; const isL = land(la, lo) && !lakeAt(la, lo); const h = isL ? 0.35 + alpsH(la, lo) + 0.25 * vnoise(lo * 6, la * 6) : 0.05; P.push(d.multiplyScalar(RE + h)); LL.push([la, lo, h, isL]); }
-  const pos = [], col = [], c = new THREE.Color(); const fields = ['#5f8a3e', '#6f9447', '#86a24e', '#a5a957', '#7d9a45', '#8f8a4a', '#567f3a'];
+  const pos = [], col = [], c = new THREE.Color(); const fields = ['#6a8d42', '#74944a', '#7f9c4f', '#8c9f55', '#77924a', '#86955a', '#6d9046'];
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i, b = a + 1, cc = a + N + 1, dd = cc + 1;
     for (const tri of [[a, b, cc], [b, dd, cc]]) { let h = 0, nl = 0, la = 0, lo = 0; for (const k of tri) { h += LL[k][2] / 3; nl += LL[k][3] ? 1 : 0; la += LL[k][0] / 3; lo += LL[k][1] / 3; }
       if (nl < 2) c.set(Math.abs(la) > 53 ? '#24506e' : '#1f5f92').offsetHSL(0, 0, R(-0.02, 0.02));
       else if (h > 2.3) c.set('#f2f5f8').offsetHSL(0, 0, R(-0.05, 0.0)); else if (h > 1.6) c.set('#8c8a86').offsetHSL(0, 0, R(-0.05, 0.05)); else if (h > 1.0) c.set('#4f6e38');
       else { const forest = vnoise(lo * 2.2, la * 2.2) * 0.65 + vnoise(lo * 7, la * 7) * 0.35, city = cityAt(la, lo);
-        if (forest > 0.62) c.set(rnd() < 0.5 ? '#3c5a2c' : '#456533'); else c.set(fields[Math.floor(hash(i * 7.3 + j * 3.1 + (tri[0] === a ? 0 : 0.5)) * fields.length)]);
-        if (city > 0 && rnd() < 0.35 + 0.6 * city) c.set(rnd() < 0.5 ? '#8e8a84' : '#a29d94'); else if (rnd() < 0.006) c.set('#9a9690'); }
+        if (forest > 0.6) c.set(hash(Math.floor(i / 3) * 3.7 + Math.floor(j / 3) * 17.9) < 0.5 ? '#405f2e' : '#476734'); else c.set(fields[Math.floor(hash(Math.floor(i / 4) * 7.3 + Math.floor(j / 4) * 31.1) * fields.length)]);
+        if (city > 0 && rnd() < 0.35 + 0.6 * city) c.set(rnd() < 0.5 ? '#8e8a84' : '#a29d94'); }
       c.multiplyScalar(0.85); for (const k of tri) { pos.push(P[k].x, P[k].y, P[k].z); col.push(c.r, c.g, c.b); } } }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
   earth.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 })));
@@ -42,7 +42,7 @@ function buildCap() { const n0 = window.__n0.clone(), EQ = window.__EQ, land = w
     earth.add(grpC); } }
 // near scene: the capsule step (platform + door frame) — it falls away above you
 const step = new THREE.Group(); near.add(step);
-{ bx(1.7, 0.12, 1.3, M('#8a8e94', { metalness: 0.4, roughness: 0.5 }), 0, -0.06, 0.1, step); bx(1.7, 0.02, 0.1, '#e8b030', 0, 0.005, 0.7, step); bx(1.7, 0.5, 0.06, '#d8d8d2', 0, -0.37, 0.74, step);
+{ bx(1.7, 0.12, 1.3, M('#b4b8be', { metalness: 0.3, roughness: 0.55 }), 0, -0.06, 0.1, step); bx(1.7, 0.02, 0.1, '#e8b030', 0, 0.005, 0.7, step); bx(1.7, 0.5, 0.06, '#d8d8d2', 0, -0.37, 0.74, step);
   for (const sx of [-1, 1]) { bx(0.12, 2.4, 0.14, '#d8d8d2', sx * 0.9, 1.2, 0.68, step); bx(0.05, 1.3, 0.05, '#e8b030', sx * 0.78, 1.2, 0.6, step); } bx(1.92, 0.14, 0.14, '#d8d8d2', 0, 2.4, 0.68, step);
   bx(1.9, 2.6, 0.1, '#30343a', 0, 1.2, -0.62, step); for (const sx of [-1, 1]) bx(0.1, 2.6, 1.3, '#3a3e46', sx * 0.98, 1.2, 0.0, step); }
 const EYE_L = V3(0, 1.89, 0.1), _e = new THREE.Euler(), _q = new THREE.Quaternion();
@@ -56,7 +56,7 @@ const spinAt = t => { let a = 0; const dt = 1 / 120; for (let x = SPIN - 0.4; x 
 function update(t) { placeEarth(t);
   const fall = Math.max(0, t - JUMP), lean = smooth(JUMP - 0.3, JUMP + 1.1, t);
   // the step drops away above you (you fall; drawn relative to your eye)
-  step.position.set(0, 0.5 * 9.8 * fall * fall, 0); step.rotation.y = YAW0; step.visible = fall < 4;
+  const push = 1.6 * smooth(JUMP - 0.25, JUMP + 0.7, t); step.position.set(-Math.sin(YAW0) * push, 0.5 * 9.8 * fall * fall, -Math.cos(YAW0) * push); step.rotation.y = YAW0; step.visible = fall < 4;
   let yaw = YAW0 + 0.05 * Math.sin(t * 0.6), pitch = lerp(lerp(-0.08, -0.85, smooth(1.6, 3.0, t)) + 0.01 * Math.sin(t * 2.1), -1.25, lean), roll = 0, bodyPitch = lerp(0, 1.2, lean);
   pitch = lerp(pitch, -0.55, smooth(JUMP + 1.6, MACH, t)); bodyPitch = lerp(bodyPitch, 0.75, smooth(JUMP + 1.6, MACH, t));
   yaw += spinAt(t); roll += 0.25 * Math.sin(t * 1.7) * smooth(SPIN, SPIN + 1, t) * (1 - smooth(STAB - 0.5, STAB + 0.5, t));
