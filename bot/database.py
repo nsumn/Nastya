@@ -166,6 +166,13 @@ async def set_raffle_nick(user_id: int, nick: str) -> None:
         await db.commit()
 
 
+async def delete_raffle(user_id: int) -> None:
+    """Сброс участия — чтобы пройти мини-приложение заново (для проверки)."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute("DELETE FROM raffle WHERE user_id = ?", (user_id,))
+        await db.commit()
+
+
 async def confirm_raffle(user_id: int) -> None:
     """Выдаёт следующий по порядку номер участника (если ещё не выдан)."""
     async with aiosqlite.connect(_DB_PATH) as db:

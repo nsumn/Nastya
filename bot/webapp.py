@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import re
 import secrets
 import time
@@ -466,6 +467,30 @@ def _verified_user(request: web.Request) -> int:
     return init_data_user_id(verify_init_data(raw, config.bot_token))
 
 
+# Кроме администратора, начинать мини-приложение заново может этот аккаунт.
+# Ещё id можно добавить через .env: MINIAPP_RESET_IDS=111,222
+RESET_USERS = {6094322034}
+
+
+def _can_reset(config, user_id: int) -> bool:
+    extra = {int(x) for x in os.getenv("MINIAPP_RESET_IDS", "").replace(" ", "").split(",")
+             if x.isdigit()}
+    return bool(user_id) and (user_id == config.admin_chat_id
+                              or user_id in RESET_USERS | extra)
+
+
+async def app_reset(request: web.Request) -> web.Response:
+    """Кнопка «Начать заново»: стирает своё участие (приз, ник, таймер)."""
+    config = request.app["config"]
+    user_id = _verified_user(request)
+    if not _can_reset(config, user_id):
+        return web.json_response({"error": "Сброс недоступен."}, status=403)
+    await db.delete_raffle(user_id)
+    await db.log_event("raffle_reset", user_id)
+    log.info("Мини-приложение: %s начал заново", user_id)
+    return web.json_response({"ok": True})
+
+
 TEXT_KEYS_MAX = 300
 TEXT_KEY_LEN = 64
 TEXT_VALUE_LEN = 3000
@@ -478,6 +503,7 @@ async def app_texts_get(request: web.Request) -> web.Response:
     return web.json_response({
         "texts": await op.app_texts(),
         "admin": bool(user_id and user_id == config.admin_chat_id),
+        "can_reset": _can_reset(config, user_id),
     })
 
 
@@ -604,5 +630,6 @@ def setup_miniapp(app: web.Application) -> None:
     app.router.add_get("/api/app/texts", app_texts_get)
     app.router.add_post("/api/app/texts", app_texts_save)
     app.router.add_post("/api/app/upload", app_upload)
+    app.router.add_post("/api/app/reset", app_reset)
     app.router.add_get("/hw/{name}", hw_asset)
     app.router.add_get("/hw/{up:u}/{name}", hw_asset)
