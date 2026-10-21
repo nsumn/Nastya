@@ -39,7 +39,7 @@
   .rbx-sq{width:62px; height:62px; transform:rotate(-14deg); background:#151517; position:relative; border-radius:4px}
   .rbx-sq:after{content:""; position:absolute; left:50%; top:50%; width:20px; height:20px;
     margin:-10px 0 0 -10px; background:#fff}
-  #loader .kick{margin-top:30px; color:#3a3a40}
+  #loader .kick{margin-top:24px; color:#3a3a40}
   .ld-title{font-size:44px; font-weight:900; line-height:1.02; letter-spacing:-2px; margin-top:12px}
   .ld-sub{color:#55555c; margin-top:16px; font-size:15px}
   .ld-bar{width:200px; height:3px; border-radius:2px; background:#ececf0; margin-top:24px; overflow:hidden}
@@ -105,7 +105,7 @@
   .titlerow .chip{margin-left:auto; margin-top:6px}
   .hello{color:#55555c; font-size:14px; margin-top:2px}
   .hero{margin-top:16px}
-  .hero img{display:block; width:100%; aspect-ratio:546/300; object-fit:cover; border-radius:10px 10px 0 0; background:var(--soft)}
+  .hero img{display:block; width:100%; aspect-ratio:546/186; object-fit:cover; border-radius:10px 10px 0 0; background:var(--soft)}
   .hero .in{padding:16px 18px 18px}
   .hero h2{font-size:34px; font-weight:800; margin-top:14px; letter-spacing:-1.2px}
   .hero p{color:#55555c; margin:8px 0 14px; font-size:14px}
@@ -142,8 +142,6 @@
   .ic{width:30px; height:30px; flex:none; border:1px solid var(--line); border-radius:7px; background:#fff;
     display:flex; align-items:center; justify-content:center}
   .game{display:flex; align-items:center; gap:10px; margin:16px 0; font-size:14px; font-weight:500}
-  .game i{width:13px; height:13px; background:#56565c; transform:rotate(-14deg); border-radius:2px; position:relative}
-  .game i:after{content:""; position:absolute; left:4px; top:4px; width:5px; height:5px; background:#fff}
   .must{border:1px solid #d9d9de; border-radius:7px; text-align:center; padding:10px 8px; margin-bottom:10px;
     box-shadow:0 1px 0 rgba(0,0,0,.05)}
   .must b{display:block; font-size:11px; font-weight:800; letter-spacing:1.2px}
@@ -375,7 +373,7 @@
 <!-- загрузка -->
 <div id="loader">
   <div class="blobs"><i></i><i></i><i></i></div>
-  <div class="rbx-sq"></div>
+  <svg class="pump" width="72" height="72" viewBox="0 0 24 24"><path fill="var(--ink)" d="M11.4 6.6c-.2-1.8.3-3.4 1.8-4.3l.8.9c-1.1.8-1.4 2-1.3 3.4z"/><path fill="var(--ink)" d="M12 6.5c-2.2-1.4-6.8-1-8.3 2.6-1.4 3.4-.3 8.5 3.3 10.4 1.6.9 3.4 1 5 .3 1.6.7 3.4.6 5-.3 3.6-1.9 4.7-7 3.3-10.4C18.8 5.5 14.2 5.1 12 6.5z"/><path fill="#fff" d="M7.4 11.6l1.7-2.3 1.7 2.3zm5.8 0l1.7-2.3 1.7 2.3zM7.6 14.1c1.4 1.8 7.4 1.8 8.8 0l-1.6.5-.8 1-1-.9-1 .9-1-.9-1 .9-.8-1z"/></svg>
   <div class="kick" data-t="ld_kicker"></div>
   <div class="ld-title"><span data-t="ld_t1"></span><br><span class="gray" data-t="ld_t2"></span></div>
   <div class="ld-sub" data-t="ld_sub"></div>
@@ -385,7 +383,7 @@
 
 <div class="wrap">
   <div class="head">
-    <div class="wordmark">R<span class="o"></span>BLOX</div>
+    <div class="wordmark"><svg class="pump" width="30" height="30" viewBox="0 0 24 24"><path fill="var(--ink)" d="M11.4 6.6c-.2-1.8.3-3.4 1.8-4.3l.8.9c-1.1.8-1.4 2-1.3 3.4z"/><path fill="var(--ink)" d="M12 6.5c-2.2-1.4-6.8-1-8.3 2.6-1.4 3.4-.3 8.5 3.3 10.4 1.6.9 3.4 1 5 .3 1.6.7 3.4.6 5-.3 3.6-1.9 4.7-7 3.3-10.4C18.8 5.5 14.2 5.1 12 6.5z"/><path fill="#fff" d="M7.4 11.6l1.7-2.3 1.7 2.3zm5.8 0l1.7-2.3 1.7 2.3zM7.6 14.1c1.4 1.8 7.4 1.8 8.8 0l-1.6.5-.8 1-1-.9-1 .9-1-.9-1 .9-.8-1z"/></svg></div>
     <div class="sep"></div>
     <div class="ev"><b data-t="h_title"></b><span data-t="h_sub"></span></div>
     <button class="who" id="who"><span class="ava" id="ava"></span><span id="who-name"></span></button>
@@ -545,7 +543,7 @@
   </section>
 
   <div class="foot">
-    <div class="l"><div class="rbx-sq"></div><span data-t="foot_title"></span></div>
+    <div class="l"><svg class="pump" width="26" height="26" viewBox="0 0 24 24"><path fill="var(--ink)" d="M11.4 6.6c-.2-1.8.3-3.4 1.8-4.3l.8.9c-1.1.8-1.4 2-1.3 3.4z"/><path fill="var(--ink)" d="M12 6.5c-2.2-1.4-6.8-1-8.3 2.6-1.4 3.4-.3 8.5 3.3 10.4 1.6.9 3.4 1 5 .3 1.6.7 3.4.6 5-.3 3.6-1.9 4.7-7 3.3-10.4C18.8 5.5 14.2 5.1 12 6.5z"/><path fill="#fff" d="M7.4 11.6l1.7-2.3 1.7 2.3zm5.8 0l1.7-2.3 1.7 2.3zM7.6 14.1c1.4 1.8 7.4 1.8 8.8 0l-1.6.5-.8 1-1-.9-1 .9-1-.9-1 .9-.8-1z"/></svg><span data-t="foot_title"></span></div>
     <button id="b-about" data-t="foot_about"></button>
   </div>
 </div>
@@ -649,18 +647,18 @@
     ['tab_tasks', 'Задания', 'Вкладка 2', GH],
     ['tab_prize', 'Моя награда', 'Вкладка 3', GH],
     ['tab_queue', 'Очередь', 'Вкладка 4', GH],
-    ['bc_root', 'Roblox', 'Путь: первое слово', GH],
+    ['bc_root', 'Ивент', 'Путь: первое слово', GH],
     ['foot_title', 'HALLOWEEN 2026', 'Низ страницы: название', GH],
     ['foot_about', 'Об ивенте', 'Низ страницы: ссылка', GH],
     ['about_title', 'Halloween 2026', 'Окно «Об ивенте»: заголовок', GH],
-    ['about_text', 'Хэллоуинский ивент Roblox: выполни три задания в игровых плейсах, ' +
+    ['about_text', 'Хэллоуинский ивент: выполни три задания в игровых плейсах, ' +
       'выбери путь и забери Robux и предмет для гардероба.', 'Окно «Об ивенте»: текст', GH],
 
     ['bc_home', 'Halloween 2026', 'Путь на главной', G1],
     ['home_title', 'Главная', 'Заголовок', G1],
     ['home_chip', 'HALLOWEEN 2026', 'Плашка справа', G1],
     ['home_hello', 'Привет, **{player}**. Готов к приключению?', 'Приветствие', G1],
-    ['img.hero', 'hw/hero.jpg', 'Главная картинка', G1, 'img'],
+    ['img.hero', 'hw/hero.jpg?v=2', 'Главная картинка', G1, 'img'],
     ['ev_tag', '• СОБЫТИЕ', 'Метка', G1],
     ['ev_t1', 'Halloween', 'Название, чёрное', G1],
     ['ev_t2', '2026', 'Название, серое', G1],
@@ -757,15 +755,15 @@
 
     ['nk_kicker', 'АККАУНТ ДЛЯ НАГРАДЫ', 'Надпись', G7],
     ['nk_title', 'На какой аккаунт получить призы?', 'Заголовок', G7],
-    ['nk_text', 'Введи ник Roblox. Он нужен, чтобы видеть выполнение заданий, связать награду с игроком и сохранить прогресс.', 'Текст', G7],
-    ['nk_label', 'Ник в Roblox', 'Подпись поля', G7],
+    ['nk_text', 'Введи свой игровой ник. Он нужен, чтобы видеть выполнение заданий, связать награду с игроком и сохранить прогресс.', 'Текст', G7],
+    ['nk_label', 'Игровой ник', 'Подпись поля', G7],
     ['nk_ph', 'Например, SpookyPlayer', 'Подсказка в поле', G7],
     ['nk_hint', '3–20 латинских букв, цифры и _.', 'Подсказка под полем', G7],
     ['nk_btn', 'Сохранить ник и продолжить', 'Кнопка', G7],
     ['nk_foot', 'Ник хранится на этом устройстве.\nПароль и доступ к аккаунту не нужны.', 'Текст внизу', G7],
     ['nk_empty', 'Введи ник', 'Ошибка: пусто', G7],
     ['nk_latin', 'Только латинские буквы (A–Z), цифры и _', 'Ошибка: русские буквы или символы', G7],
-    ['nk_short', 'В нике Roblox от 3 до 20 символов', 'Ошибка: длина', G7],
+    ['nk_short', 'В нике от 3 до 20 символов', 'Ошибка: длина', G7],
     ['nk_under', 'Знак _ может быть только один и не в начале или конце', 'Ошибка: знак _', G7],
     ['nk_saved', 'Ник сохранён. Продолжаем!', 'Сообщение после сохранения', G7],
 
@@ -1000,7 +998,7 @@
         '<h3 data-t="t' + i + '_title"></h3>' +
         '<div class="quote"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">' +
         ICONS[i - 1] + '</svg></span><span data-t="t' + i + '_text"></span></div>' +
-        '<div class="game"><i></i><span data-t="t' + i + '_game"></span></div>' +
+        '<div class="game"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#56565c" stroke-width="1.8" style="flex:none"><path d="M7 8h10a4 4 0 0 1 4 4.5l-.6 3.3a2.4 2.4 0 0 1-4.1 1.2L14.5 15h-5l-1.8 2a2.4 2.4 0 0 1-4.1-1.2L3 12.5A4 4 0 0 1 7 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.5" cy="11.2" r=".6" fill="#56565c"/><circle cx="17" cy="12.8" r=".6" fill="#56565c"/></svg><span data-t="t' + i + '_game"></span></div>' +
         '<div class="must"><b data-t="tk_must"></b><span data-t="tk_must2"></span></div>' +
         '<button class="btn" data-play="' + i + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15L19.5 12z"/></svg><span data-t="tk_btn"></span></button>' +
         '</div></div>';
@@ -1144,7 +1142,7 @@
     })(t0);
   }
 
-  // ---------- ник: только формат Roblox, аккаунт нигде не ищем ----------
+  // ---------- ник: только формат игрового ника, аккаунт нигде не ищем ----------
   var nick = el('nick');
   function nickErr(text) { var e = el('nk-err'); e.textContent = text || ''; e.classList.toggle('on', !!text); }
   function nickError(v) {

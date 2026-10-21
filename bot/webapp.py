@@ -397,7 +397,7 @@ async def raffle(request: web.Request) -> web.Response:
     nick = (request.query.get("username", "") or "").strip()
     existing = await db.get_raffle(user_id)
     bad_nick = web.json_response(
-        {"error": "Ник Roblox — только латинские буквы, цифры и "
+        {"error": "Ник — только латинские буквы, цифры и "
                   "один знак _, от 3 до 20 символов."}, status=400)
 
     # Ник можно не передавать сразу: сначала выпадает приз, ник вводят потом.
