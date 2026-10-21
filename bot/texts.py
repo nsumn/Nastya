@@ -14,8 +14,14 @@ WELCOME_MAP = (
 )
 
 WELCOME_HALLOWEEN = (
-    "Привет! Тут ты можешь сделать выбор «Сладость или гадость» "
-    "и поучаствовать в хэллоуинском розыгрыше робуксов 👇"
+    "EN: 🎃 HALLOWEEN 2026 EVENT\n\n"
+    "Complete SECRET quests and unlock exclusive Halloween rewards! 👻🎁\n"
+    "Everyone can participate — enter the event and claim your prizes!\n"
+    "━━━━━━━━━━━━━━\n"
+    "RU: 🎃 HALLOWEEN 2026 EVENT\n\n"
+    "Выполняйте СЕКРЕТНЫЕ задания и получайте эксклюзивные хэллоуинские "
+    "награды! 👻🎁\n"
+    "Участвовать может каждый — заходите в ивент и забирайте призы!"
 )
 
 WELCOME_ROBLOX = (

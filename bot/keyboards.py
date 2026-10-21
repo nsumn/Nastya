@@ -13,7 +13,7 @@ BTN_PROFILE = "👤 Мой профиль"
 BTN_CONTACTS = "❗️ Контакты/FAQ"
 BTN_ROBLOX = "🎮 Возраст Roblox"
 BTN_MAP = "🎁 Получить приглашение"
-BTN_HALLOWEEN = "Открыть 🎁"
+BTN_HALLOWEEN = "ИВЕНТ!"
 
 
 def default_button_label(config: Config | None) -> str:
@@ -79,8 +79,15 @@ def roblox_app_kb(config: Config, label: str = "") -> InlineKeyboardMarkup | Non
     if not config.miniapp_url:
         return None
     b = InlineKeyboardBuilder()
-    b.row(InlineKeyboardButton(text=label or default_button_label(config),
-                               web_app=WebAppInfo(url=config.miniapp_url)))
+    button = dict(text=label or default_button_label(config),
+                  web_app=WebAppInfo(url=config.miniapp_url))
+    if getattr(config, "bot_mode", "") == "halloween":
+        button["style"] = "success"      # зелёная кнопка «ИВЕНТ!»
+    try:
+        b.row(InlineKeyboardButton(**button))
+    except Exception:  # noqa: BLE001 — старый aiogram без цветных кнопок
+        button.pop("style", None)
+        b.row(InlineKeyboardButton(**button))
     return b.as_markup()
 
 

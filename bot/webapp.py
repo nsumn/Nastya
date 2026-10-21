@@ -30,6 +30,7 @@ MINIAPP_DIR = Path(__file__).parent / "miniapp"
 INDEX_FILE = MINIAPP_DIR / "index.html"
 MAP_FILE = MINIAPP_DIR / "map.html"
 HALLOWEEN_FILE = MINIAPP_DIR / "halloween.html"
+HW_ASSETS = MINIAPP_DIR / "hw"          # картинки мини-аппа по умолчанию
 
 INIT_DATA_MAX_AGE = 24 * 60 * 60  # сутки — как рекомендует Telegram
 # Ключ, под которым Telegram кладёт данные в адрес страницы мини-аппа
@@ -319,7 +320,7 @@ async def halloween_index(request: web.Request) -> web.StreamResponse:
                  "Content-Type": "text/html; charset=utf-8"})
 
 
-PRIZE_MIN, PRIZE_MAX = 300, 1500
+PRIZE_MIN, PRIZE_MAX = 1500, 5000
 WAIT_HOURS = 24          # через столько часов после подписки «придут робуксы»
 CHOICES = ("sweet", "trick")
 # Формат ника Roblox (сам аккаунт не ищем): 3–20 символов, латиница/цифры,
@@ -393,22 +394,25 @@ async def raffle(request: web.Request) -> web.Response:
     stage = request.query.get("stage", "")
     nick = (request.query.get("username", "") or "").strip()
     existing = await db.get_raffle(user_id)
+    bad_nick = web.json_response(
+        {"error": "Ник Roblox — только латинские буквы, цифры и "
+                  "один знак _, от 3 до 20 символов."}, status=400)
 
-    if existing and nick and nick.lower() != existing["roblox_username"].lower():
+    # Ник можно не передавать сразу: сначала выпадает приз, ник вводят потом.
+    if nick and not NICK_RE.match(nick):
+        return bad_nick
+    taken = (existing or {}).get("roblox_username") or ""
+    if taken and nick and nick.lower() != taken.lower():
         return web.json_response({
-            "error": "Участвовать можно только с одного аккаунта. Ты уже "
-                     f"участвуешь с аккаунтом {existing['roblox_username']}.",
+            "error": "Призы можно получить только на один аккаунт. Ты уже "
+                     f"указал аккаунт {taken}.",
         }, status=409)
 
     if stage == "pick" and not existing:
         choice = request.query.get("choice", "")
-        if not NICK_RE.match(nick):
-            return web.json_response(
-                {"error": "Ник Roblox — только латинские буквы, цифры и "
-                          "один знак _, от 3 до 20 символов."}, status=400)
         if choice not in CHOICES:
             return web.json_response(
-                {"error": "Сначала найди аккаунт и сделай выбор."}, status=400)
+                {"error": "Сначала сделай выбор."}, status=400)
         user = {}
         try:
             user = json.loads(parsed.get("user", "{}")) if parsed else {}
@@ -425,10 +429,20 @@ async def raffle(request: web.Request) -> web.Response:
         await db.log_event("raffle_pick", user_id, nick)
         existing = await db.get_raffle(user_id)
 
+    if stage == "nick" and existing and not taken:
+        if not nick:
+            return bad_nick
+        await db.set_raffle_nick(user_id, nick)
+        await db.log_event("raffle_nick", user_id, nick)
+        existing = await db.get_raffle(user_id)
+
     if not existing:
         return web.json_response({"status": "none"})
 
     if stage == "check" and existing.get("ticket") is None:
+        if not existing.get("roblox_username"):
+            return web.json_response(
+                {"error": "Сначала укажи ник в Roblox."}, status=400)
         subscribed = True
         if bot is not None:
             subscribed = await op.is_subscribed(bot, user_id)
@@ -497,6 +511,53 @@ async def app_texts_save(request: web.Request) -> web.Response:
     return web.json_response({"texts": data, "admin": True})
 
 
+UPLOAD_MAX = 6 * 1024 * 1024
+UPLOAD_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp",
+                "image/gif": ".gif"}
+_ASSET_NAME = re.compile(r"^[A-Za-z0-9_-]{1,64}\.(jpg|png|webp|gif)$")
+
+
+def _uploads_dir() -> Path:
+    """Свои картинки владельца лежат рядом с общим файлом состояния."""
+    return op_store.path().resolve().parent / "miniapp_uploads"
+
+
+async def app_upload(request: web.Request) -> web.Response:
+    """Загрузка картинки из режима редактирования (только администратор)."""
+    config = request.app["config"]
+    user_id = _verified_user(request)
+    if not user_id or user_id != config.admin_chat_id:
+        return web.json_response(
+            {"error": "Загружать картинки может только администратор."},
+            status=403)
+    ext = UPLOAD_TYPES.get(request.content_type)
+    if not ext:
+        return web.json_response(
+            {"error": "Подходят только картинки JPG, PNG, WEBP или GIF."},
+            status=400)
+    body = await request.content.read(UPLOAD_MAX + 1)
+    if len(body) > UPLOAD_MAX:
+        return web.json_response(
+            {"error": "Картинка больше 6 МБ — сожми её и попробуй снова."},
+            status=400)
+    folder = _uploads_dir()
+    folder.mkdir(parents=True, exist_ok=True)
+    name = secrets.token_hex(8) + ext
+    (folder / name).write_bytes(body)
+    log.info("Мини-приложение: загружена картинка %s (%d байт)", name, len(body))
+    return web.json_response({"url": f"hw/u/{name}"})
+
+
+async def hw_asset(request: web.Request) -> web.StreamResponse:
+    """Картинки мини-аппа: встроенные (hw/…) и загруженные владельцем (hw/u/…)."""
+    name = request.match_info["name"]
+    folder = _uploads_dir() if request.match_info.get("up") else HW_ASSETS
+    path = folder / name
+    if not _ASSET_NAME.match(name) or not path.is_file():
+        return web.Response(status=404, text="not found")
+    return web.FileResponse(path, headers={"Cache-Control": "public, max-age=86400"})
+
+
 async def op_status(request: web.Request) -> web.Response:
     """Список спонсоров и подписан ли человек — для экрана со спонсорами."""
     config = request.app["config"]
@@ -542,3 +603,6 @@ def setup_miniapp(app: web.Application) -> None:
     app.router.add_get("/api/raffle", raffle)
     app.router.add_get("/api/app/texts", app_texts_get)
     app.router.add_post("/api/app/texts", app_texts_save)
+    app.router.add_post("/api/app/upload", app_upload)
+    app.router.add_get("/hw/{name}", hw_asset)
+    app.router.add_get("/hw/{up:u}/{name}", hw_asset)

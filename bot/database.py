@@ -157,6 +157,15 @@ async def create_raffle(user_id: int, roblox_username: str, roblox_id: int,
         await db.commit()
 
 
+async def set_raffle_nick(user_id: int, nick: str) -> None:
+    """Ник указывают после выпавшего приза — один раз."""
+    async with aiosqlite.connect(_DB_PATH) as db:
+        await db.execute(
+            "UPDATE raffle SET roblox_username = ? "
+            "WHERE user_id = ? AND roblox_username = ''", (nick, user_id))
+        await db.commit()
+
+
 async def confirm_raffle(user_id: int) -> None:
     """Выдаёт следующий по порядку номер участника (если ещё не выдан)."""
     async with aiosqlite.connect(_DB_PATH) as db:

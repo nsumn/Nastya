@@ -3,359 +3,602 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Roblox Halloween</title>
+<title>Halloween 2026</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#0b0b0f; --grey:#8a8a93; --soft:#f2f1f6; --card:#e6e5ec; --line:#dcdbe3;
-    --red:#e5484d; --btn:#0b0b0f; --btn-tx:#fff;
-    --sky1:#120c24; --sky2:#2a1a33; --acc1:#ff8a00; --acc2:#8b3fd9;
+    --ink:#111114; --mute:#6e6e76; --soft:#f3f3f5; --line:#e6e6ea; --bg:#ffffff;
+    --btn:#151517; --btn-tx:#ffffff; --accent:#3b5bdb; --warn:#fdf3ee; --warn-line:#f2d3c6;
+    --red:#d9480f;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{margin:0; height:100%}
-  body{
-    font:15px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
-         Helvetica, Arial, sans-serif;
-    color:var(--ink); background:var(--soft); overflow-x:hidden;
-  }
+  html,body{margin:0}
+  body{font:15px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+       color:var(--ink); background:var(--bg); overflow-x:hidden; -webkit-font-smoothing:antialiased}
   [data-t]{white-space:pre-line}
-  .screen{display:none; min-height:100vh; min-height:100dvh}
-  .screen.on{display:block; animation:fade .35s ease-out}
-  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .chip [data-t], .stats [data-t]{white-space:nowrap}
+  b{font-weight:700}
+  u{text-decoration:none; background:linear-gradient(transparent 62%, #e9e9ee 62%); font-weight:700}
+  button{font:inherit}
+  .gray{color:#8c8c94}
+  .kick{font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase}
+  h1,h2,h3{margin:0; letter-spacing:-.6px}
 
-  /* ---------- 1. ночная улица ---------- */
-  #s-nick{position:relative; overflow:hidden; color:#fff;
-    background:linear-gradient(180deg,var(--sky1) 0%,#2a1d4a 38%,#3a2752 60%,var(--sky2) 100%);
-    background-size:cover; background-position:center}
-  #s-nick.pic .sky{display:none}
-  .sky{position:absolute; inset:0; pointer-events:none}
-  .star{position:absolute; width:2px; height:2px; background:#fff; border-radius:50%;
-        opacity:.7; animation:tw 3s ease-in-out infinite}
-  @keyframes tw{50%{opacity:.15}}
-  .moon{position:absolute; left:50%; top:24%; width:64px; height:64px; margin-left:-32px;
-    border-radius:50%;
-    background:radial-gradient(circle at 40% 38%,#fffdf4 0%,#e9e5d6 55%,#c9c4b3 100%);
-    box-shadow:0 0 40px 14px rgba(255,248,220,.28), 0 0 120px 40px rgba(170,150,255,.18)}
-  .bat{position:absolute; font-size:14px; filter:brightness(.25);
-       animation:fly 7s ease-in-out infinite}
-  @keyframes fly{50%{transform:translate(14px,-8px) rotate(6deg)}}
-  .town{position:absolute; left:0; right:0; bottom:0; height:62%}
-  .town svg{position:absolute; bottom:0; width:100%; height:100%}
-  .pumpkin{position:absolute; bottom:15%; font-size:26px;
-    filter:drop-shadow(0 0 10px rgba(255,140,0,.9))}
+  /* ---------- загрузка ---------- */
+  #loader{position:fixed; inset:0; z-index:40; background:#fff; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:24px;
+    transition:opacity .45s}
+  #loader.off{opacity:0; pointer-events:none}
+  .blobs{position:absolute; inset:0; overflow:hidden; pointer-events:none; filter:blur(40px)}
+  .blobs i{position:absolute; width:46vw; height:46vw; border-radius:50%; opacity:.55}
+  .blobs i:nth-child(1){left:-14vw; top:6vh; background:#ffe1cf}
+  .blobs i:nth-child(2){right:-16vw; top:30vh; background:#ece6ff}
+  .blobs i:nth-child(3){left:10vw; bottom:4vh; background:#f0f0f3}
+  .rbx-sq{width:62px; height:62px; transform:rotate(-14deg); background:#151517; position:relative; border-radius:4px}
+  .rbx-sq:after{content:""; position:absolute; left:50%; top:50%; width:20px; height:20px;
+    margin:-10px 0 0 -10px; background:#fff}
+  #loader .kick{margin-top:30px; color:#3a3a40}
+  .ld-title{font-size:44px; font-weight:900; line-height:1.02; letter-spacing:-2px; margin-top:12px}
+  .ld-sub{color:#55555c; margin-top:16px; font-size:15px}
+  .ld-bar{width:200px; height:3px; border-radius:2px; background:#ececf0; margin-top:24px; overflow:hidden}
+  .ld-bar i{display:block; height:100%; width:0; background:#151517; transition:width 1.4s ease-out}
+  .ld-cap{font-size:12px; color:#7a7a82; margin-top:12px}
+  #loader > *{position:relative}
+  #loader .blobs{position:absolute}
 
-  .brand{position:relative; z-index:2; text-align:center; padding-top:22px}
-  .brand .rb{font-weight:900; font-size:30px; letter-spacing:1px; line-height:1}
-  .brand .hw{font-size:12px; letter-spacing:4px; margin-top:6px; opacity:.9}
+  /* ---------- шапка ---------- */
+  .wrap{padding:14px 14px 40px; max-width:560px; margin:0 auto}
+  .head{display:flex; align-items:center; gap:10px}
+  .wordmark{font-weight:900; font-size:20px; letter-spacing:.5px; display:flex; align-items:center}
+  .wordmark .o{display:inline-block; width:14px; height:14px; background:var(--ink); margin:0 1px;
+    transform:rotate(-14deg); position:relative; border-radius:1px}
+  .wordmark .o:after{content:""; position:absolute; left:4.5px; top:4.5px; width:5px; height:5px; background:var(--bg)}
+  .head .sep{width:1px; height:28px; background:var(--line)}
+  .head .ev b{display:block; font-size:10.5px; font-weight:800; letter-spacing:.4px}
+  .head .ev span{display:block; font-size:9px; color:var(--mute); letter-spacing:.8px; font-weight:600}
+  .who{margin-left:auto; display:flex; align-items:center; gap:7px; border:0; background:none;
+    font-size:12.5px; font-weight:700; color:var(--ink); cursor:pointer; padding:0; max-width:45%}
+  .who span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ava{width:30px; height:30px; flex:none; border-radius:50%; background:var(--soft);
+    display:flex; align-items:center; justify-content:center}
+  .search{display:flex; align-items:center; gap:10px; margin-top:14px; height:44px; padding:0 10px 0 14px;
+    background:var(--soft); border:1px solid var(--line); border-radius:8px}
+  .search input{flex:1; min-width:0; border:0; outline:0; background:transparent; font:inherit; font-size:16px; color:var(--ink)}
+  .search input::placeholder{color:#7d7d85}
+  .kbd{font-size:10px; color:#8a8a92; border:1px solid var(--line); border-radius:4px; padding:1px 4px; background:#fff}
+  .hr{height:1px; background:var(--line); margin:12px 0 10px}
+  .tabs{display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; margin:0 -14px; padding:0 14px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none; display:flex; align-items:center; gap:7px; border:0; background:none; cursor:pointer;
+    padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:600; color:var(--ink)}
+  .tab.dim{color:#9a9aa2}
+  .tab.on{background:var(--soft); box-shadow:inset 0 0 0 1px var(--line)}
+  .crumbs{font-size:12px; color:var(--mute); margin:14px 0 18px}
+  .crumbs b{color:var(--ink); font-weight:600}
+  .crumbs i{font-style:normal; margin:0 6px}
 
-  .nick-card{position:relative; z-index:2; margin:22vh 14px 0; background:#fff;
-    color:var(--ink); border-radius:18px; padding:20px 18px 18px;
-    box-shadow:0 20px 50px rgba(0,0,0,.35); transition:margin .3s}
-  body.kb .nick-card{margin-top:14px}
-  .nick-card h3{margin:0 0 6px; font-size:19px; font-weight:800}
-  .nick-card .sub{margin:0 0 14px; font-size:12px; color:#6b6b74}
-  .field{display:flex; align-items:center; gap:8px; background:var(--soft);
-    border:1.5px solid transparent; border-radius:12px; padding:0 14px; height:46px}
-  .field:focus-within{background:#fff; border-color:var(--ink)}
-  .field span{color:#a3a3ad}
-  .field input{flex:1; border:0; outline:0; background:transparent; font:inherit;
-    font-size:15px; font-weight:600; color:var(--ink); min-width:0}
-  .err{display:none; color:var(--red); font-size:13px; font-weight:600; margin-top:10px;
-       text-align:center}
-  .err.on{display:block}
+  .view{display:none}
+  .view.on{display:block; animation:fade .35s ease-out}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
 
-  .dock{position:fixed; left:0; right:0; bottom:0; padding:12px 14px 18px; z-index:5}
-  .btn{width:100%; height:48px; border:0; border-radius:12px; cursor:pointer;
-    font:inherit; font-size:15px; font-weight:700; background:var(--btn); color:var(--btn-tx);
-    display:flex; align-items:center; justify-content:center; gap:8px}
+  /* ---------- кнопки, карточки ---------- */
+  .btn{width:100%; height:50px; border:0; border-radius:8px; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; gap:10px; font-size:14.5px; font-weight:700; color:var(--btn-tx); background:var(--btn);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--btn) 82%, #fff) 0%, var(--btn) 60%);
+    box-shadow:0 6px 16px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.12)}
   .btn:active{transform:scale(.985)}
-  .btn.ghost{background:rgba(255,255,255,.14); color:rgba(255,255,255,.75);
-             backdrop-filter:blur(8px)}
-  .btn.white{background:#fff; color:var(--ink)}
-  .btn.outline{background:#fff; color:var(--ink); border:1.5px solid var(--line)}
-  .btn.busy{background:#b8b7c0}
-  .btn:disabled{cursor:default}
-  .spin{width:16px; height:16px; border-radius:50%; border:2px solid currentColor;
-        border-right-color:transparent; animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
+  .btn:disabled{opacity:.45; cursor:default}
+  .btn svg{flex:none}
+  .card{border:1px solid var(--line); border-radius:10px; background:#fff; overflow:hidden}
+  .chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:6px;
+    padding:6px 9px; font-size:10.5px; font-weight:800; letter-spacing:.8px; background:#fff; white-space:nowrap;
+    box-shadow:0 1px 0 rgba(0,0,0,.04)}
+  .pill{display:inline-block; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:800;
+    letter-spacing:1px; background:var(--soft); border:1px solid var(--line)}
+  .pill.dark{background:var(--btn); color:var(--btn-tx); border-color:var(--btn); border-radius:6px}
 
-  /* ---------- светлые экраны ---------- */
-  .top{text-align:center; font-weight:700; font-size:16px; padding:18px 0 14px}
-  .pad{padding:0 14px 120px}
-  .choice{background:var(--card); border-radius:18px; padding:0 12px 12px;
-    text-align:center; margin:44px 0 18px}
-  .choice .pic{font-size:74px; line-height:1; margin-top:-34px; height:92px;
-    display:flex; align-items:flex-end; justify-content:center}
-  .pic img{max-height:92px; max-width:140px; object-fit:contain}
-  .choice.trick .pic{filter:drop-shadow(0 6px 10px rgba(80,200,60,.45))}
-  .choice.sweet .pic{filter:drop-shadow(0 6px 10px rgba(255,120,200,.4))}
-  .choice h4{margin:10px 0 4px; font-size:19px; font-weight:800}
-  .choice p{margin:0 0 12px; font-size:11px; color:#55545c}
-  .confirm-h{text-align:center; margin:60px 0 0}
-  .confirm-h h3{margin:0 0 4px; font-size:19px}
-  .confirm-h p{margin:0; font-size:11px; color:#55545c}
+  /* главная */
+  .titlerow{display:flex; align-items:flex-start; gap:10px}
+  .titlerow h1{font-size:30px; font-weight:800}
+  .titlerow .chip{margin-left:auto; margin-top:6px}
+  .hello{color:#55555c; font-size:14px; margin-top:2px}
+  .hero{margin-top:16px}
+  .hero img{display:block; width:100%; aspect-ratio:546/300; object-fit:cover; border-radius:10px 10px 0 0; background:var(--soft)}
+  .hero .in{padding:16px 18px 18px}
+  .hero h2{font-size:34px; font-weight:800; margin-top:14px; letter-spacing:-1.2px}
+  .hero p{color:#55555c; margin:8px 0 14px; font-size:14px}
+  .hero .kick{margin-bottom:10px; font-size:10px}
+  .stats{display:flex; justify-content:space-between; gap:8px; border-top:1px solid var(--line);
+    padding:14px 18px; font-size:12px; color:#55555c}
+  .stats > span{display:flex; align-items:center; gap:6px; white-space:nowrap}
+  .stats b{color:var(--ink)}
 
-  /* всплывающее окно */
-  .veil{position:fixed; inset:0; background:rgba(20,18,30,.55); z-index:10;
-        display:none; align-items:center; justify-content:center; padding:24px}
-  .veil.on{display:flex; animation:fade .25s}
-  .pop{background:#fff; border-radius:18px; width:100%; max-width:300px;
-       padding:20px 14px 14px; text-align:center; animation:up .35s ease-out}
-  @keyframes up{from{transform:scale(.9); opacity:0}to{transform:none; opacity:1}}
-  .pop h3{margin:0; font-size:17px}
-  .pop .lead{margin:2px 0 10px; font-size:13px; color:#55545c}
-  .prize{display:flex; align-items:center; justify-content:center; gap:10px;
-         font-size:34px; font-weight:800; font-variant-numeric:tabular-nums}
-  .pop .acc{font-size:11px; color:#55545c; margin:2px 0 8px}
-  .pop .fine{font-size:11px; color:#6b6b74; background:var(--soft); border-radius:10px;
-             padding:8px 10px; margin-bottom:12px}
+  .sect{margin-top:34px}
+  .sect .kick{color:#3a3a40; font-size:11px}
+  .sect .kick em{font-style:normal; margin-right:12px}
+  .sect-h{display:flex; gap:12px; margin-top:8px}
+  .sect-h h2{font-size:28px; font-weight:800}
+  .sect-h p{margin:6px 0 0; font-size:14px; color:#55555c}
+  .count{margin-left:auto; text-align:right; flex:none}
+  .count b{font-size:30px; font-weight:800}
+  .count b small{font-size:18px; color:#8c8c94; font-weight:600}
+  .count span{display:block; font-size:10px; font-weight:700; letter-spacing:.8px; color:#55555c; margin-top:4px}
+  .count i{display:block; height:3px; background:var(--line); margin-top:8px; border-radius:2px; overflow:hidden}
+  .count i em{display:block; height:100%; width:0; background:var(--ink); transition:width .5s}
 
-  /* подписки */
-  .sum{display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px;
-       padding:12px 14px; margin-bottom:16px}
-  .sum .lbl{font-size:10px; color:var(--grey)}
-  .sum .val{font-size:16px; font-weight:800}
-  .sum .r{margin-left:auto; text-align:right}
-  .step h3{margin:0 0 4px; font-size:18px}
-  .step p{margin:0 0 12px; font-size:11px; color:#55545c}
-  .bar{display:flex; align-items:center; gap:10px; margin-bottom:14px; font-size:11px;
-       font-weight:700}
-  .bar .t{flex:1; height:5px; border-radius:3px; background:var(--line); overflow:hidden}
-  .bar .f{height:100%; width:0; background:var(--btn); transition:width .3s}
-  .row{display:flex; align-items:center; gap:10px; background:#fff; border-radius:14px;
-       padding:10px 10px 10px 12px; margin-bottom:8px}
-  .row .av{width:34px; height:34px; flex:none; border-radius:50%; color:#fff;
-    font-weight:800; display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(135deg,#f2546b,#8b3fd9)}
-  .row .tx{flex:1; min-width:0}
-  .row .n{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden;
-          text-overflow:ellipsis}
-  .row .s{font-size:10px; color:var(--grey)}
-  .row button{border:0; border-radius:8px; background:var(--btn); color:var(--btn-tx);
-    font:inherit; font-size:11px; font-weight:700; padding:8px 10px; cursor:pointer}
-  .row.done button{background:var(--soft); color:var(--ink)}
-  .dock.light{background:linear-gradient(180deg,rgba(242,241,246,0),var(--soft) 30%)}
-  .cap{text-align:center; font-size:11px; color:var(--grey); margin-top:8px}
-  .cap.bad{color:var(--red)}
+  .task{margin-top:18px}
+  .task img{display:block; width:100%; aspect-ratio:546/302; object-fit:cover; background:var(--soft)}
+  .task .in{padding:16px 18px 18px}
+  .task .meta{display:flex; align-items:center; gap:10px; font-size:11px; font-weight:800; letter-spacing:.8px}
+  .task .num{border:1px solid var(--line); border-radius:5px; padding:3px 6px; background:var(--soft)}
+  .task .st{margin-left:auto; font-weight:600; letter-spacing:0; font-size:12px; color:#55555c}
+  .task.ok .st{color:#2b8a3e}
+  .task h3{font-size:24px; font-weight:800; margin:14px 0 12px}
+  .quote{display:flex; gap:12px; background:var(--soft); border:1px solid var(--line); border-left:3px solid var(--ink);
+    border-radius:6px; padding:14px; font-size:14px; color:#55555c}
+  .quote b{color:var(--ink)}
+  .ic{width:30px; height:30px; flex:none; border:1px solid var(--line); border-radius:7px; background:#fff;
+    display:flex; align-items:center; justify-content:center}
+  .game{display:flex; align-items:center; gap:10px; margin:16px 0; font-size:14px; font-weight:500}
+  .game i{width:13px; height:13px; background:#56565c; transform:rotate(-14deg); border-radius:2px; position:relative}
+  .game i:after{content:""; position:absolute; left:4px; top:4px; width:5px; height:5px; background:#fff}
+  .must{border:1px solid #d9d9de; border-radius:7px; text-align:center; padding:10px 8px; margin-bottom:10px;
+    box-shadow:0 1px 0 rgba(0,0,0,.05)}
+  .must b{display:block; font-size:11px; font-weight:800; letter-spacing:1.2px}
+  .must span{font-size:12px; font-weight:600}
+  .fin{margin-top:18px; padding:18px 16px}
+  .fin .row1{display:flex; gap:12px; margin-bottom:16px}
+  .fin h4{margin:0; font-size:15px; font-weight:700}
+  .fin p{margin:2px 0 0; font-size:12.5px; color:#6e6e76}
+  .foot{border-top:1px solid var(--line); margin-top:34px; padding-top:20px; display:flex; align-items:flex-end}
+  .foot .l{display:flex; align-items:center; gap:12px; font-size:12px; font-weight:800; letter-spacing:1.4px}
+  .foot .rbx-sq{width:26px; height:26px; border-radius:2px}
+  .foot .rbx-sq:after{width:8px; height:8px; margin:-4px 0 0 -4px}
+  .foot button{margin-left:auto; border:0; background:none; color:#6e6e76; font-size:12px; cursor:pointer; padding:20px 0 0}
 
-  /* итог: таймер */
-  .ticket{background:#fff; border-radius:18px; padding:22px 16px; text-align:center;
-          margin-top:10px; position:relative; overflow:hidden}
-  .ticket:before{content:""; position:absolute; inset:0 0 auto 0; height:6px;
-    background:linear-gradient(90deg,var(--acc1),var(--acc2))}
-  .ticket img{width:72px; height:72px; border-radius:50%; background:var(--soft);
-              object-fit:cover; margin:4px 0 4px}
-  .ticket .who{font-weight:800; font-size:16px; margin-bottom:8px}
-  .ticket .wait{font-size:12px; color:var(--grey); margin-top:16px}
-  .clock{display:flex; justify-content:center; gap:6px; margin-top:6px}
-  .clock div{min-width:64px; background:var(--soft); border-radius:12px; padding:8px 4px 6px}
-  .clock b{display:block; font-size:30px; font-weight:900; line-height:1.1;
-           font-variant-numeric:tabular-nums}
-  .clock span{font-size:10px; color:var(--grey)}
-  .clock i{align-self:center; font-style:normal; font-size:24px; font-weight:900;
-           color:var(--grey); margin-top:-14px}
-  .ticket .fine{font-size:12px; color:#55545c; background:var(--soft); border-radius:10px;
-                padding:10px; margin-top:14px}
-  .ticket.ready .clock b{color:#2f9e44}
-  .note{background:#fff; border-radius:14px; padding:14px; margin-top:12px;
-        font-size:14px; white-space:pre-line}
+  /* выбор */
+  .center{text-align:center}
+  .step{display:flex; justify-content:center; gap:8px}
+  .big{font-size:38px; font-weight:800; line-height:1.08; letter-spacing:-1.6px; margin-top:14px}
+  .lead{color:#55555c; font-size:14.5px; margin:14px 0 0}
+  .center .kick{margin-top:22px; color:#3a3a40}
+  .paths{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:24px}
+  .path{position:relative; border:1px solid var(--line); border-radius:10px; padding:16px 14px 14px; cursor:pointer;
+    background:linear-gradient(180deg,#fafafa,#f3f3f5); text-align:left; transition:box-shadow .2s, border-color .2s}
+  .path.on{border-color:var(--ink); box-shadow:0 0 0 1px var(--ink), 0 10px 26px rgba(0,0,0,.08)}
+  .path .kick{font-size:11px; margin:0}
+  .path .radio{position:absolute; right:12px; top:13px; width:20px; height:20px; border-radius:50%;
+    border:1.5px solid #c9c9cf; background:#fff}
+  .path.on .radio{border-color:var(--ink); background:var(--ink)}
+  .path.on .radio:after{content:""; position:absolute; left:6px; top:3px; width:5px; height:9px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg)}
+  .path .pic{height:140px; display:flex; align-items:center; justify-content:center; margin:6px 0 8px; font-size:70px}
+  .path .pic img{max-width:100%; max-height:140px; object-fit:contain; mix-blend-mode:multiply}
+  .path h3{font-size:24px; font-weight:800}
+  .path p{margin:6px 0 0; font-size:12.5px; color:#6e6e76; min-height:36px}
+  .path .pf{display:flex; align-items:center; border-top:1px solid var(--line); margin-top:18px; padding-top:12px;
+    font-size:10px; font-weight:800; letter-spacing:.6px}
+  .path .pf svg{margin-left:auto}
+  .note{font-size:13px; font-weight:700; text-align:center; margin-top:12px}
 
-  /* ---------- режим редактирования (видит только администратор) ---------- */
-  #ed-fab{position:fixed; top:10px; right:10px; z-index:30; display:none;
-    width:38px; height:38px; border-radius:50%; border:0; cursor:pointer;
-    background:rgba(255,255,255,.92); box-shadow:0 4px 14px rgba(0,0,0,.25); font-size:18px}
+  /* приз */
+  .glow{position:relative}
+  .set{margin-top:20px}
+  .set .top{display:flex; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line);
+    font-size:12.5px; font-weight:800; background:var(--soft)}
+  .set .top span{margin-left:auto; display:flex; align-items:center; gap:6px; font-size:10px; letter-spacing:.8px}
+  .cells{display:grid; grid-template-columns:1fr 1fr}
+  .cell{padding:22px 10px 20px; text-align:center; position:relative; overflow:hidden}
+  .cell + .cell{border-left:1px solid var(--line)}
+  .cell:before{content:""; position:absolute; inset:10%; border-radius:50%; filter:blur(30px); opacity:.6; z-index:0}
+  .cell.r:before{background:#ffe6d6}
+  .cell.i:before{background:#ebe6ff}
+  .cell > *{position:relative; z-index:1}
+  .cell .art{height:96px; display:flex; align-items:center; justify-content:center}
+  .cell .art img{max-height:84px; max-width:100%; mix-blend-mode:multiply}
+  .cell .kick{font-size:8.5px; color:#6e6e76; margin-top:8px}
+  .cell .amt{font-size:30px; font-weight:800; letter-spacing:-1px; margin-top:2px; font-variant-numeric:tabular-nums}
+  .cell .amt small{font-size:14px; font-weight:600; color:#55555c; letter-spacing:0}
+  .cell .nm{font-size:17px; font-weight:800; letter-spacing:-.4px; margin-top:4px; line-height:1.2}
+  .cell .sub{font-size:10.5px; color:#8c8c94; margin-top:2px}
+  .get{margin:0 12px; border:1px solid #d9d9de; border-radius:8px; text-align:center; padding:12px 10px;
+    box-shadow:0 2px 0 rgba(0,0,0,.04)}
+  .get .pill{font-size:11px; padding:5px 10px}
+  .get div{font-size:13px; font-weight:600; margin-top:8px}
+  .luck{display:flex; align-items:center; justify-content:center; gap:10px; padding:16px 12px 6px; text-align:left}
+  .luck b{display:block; font-size:11px; font-weight:800; letter-spacing:.6px}
+  .luck span{font-size:10.5px; color:#8c8c94}
+  .set .btn{margin:12px 12px 14px; width:calc(100% - 24px)}
+  #confetti{position:fixed; inset:0; pointer-events:none; z-index:6}
+
+  /* спонсоры */
+  .warnbox{background:var(--warn); border:1px solid var(--warn-line); border-radius:8px; padding:12px 14px;
+    display:flex; gap:12px; margin-top:20px; text-align:left; box-shadow:0 2px 0 rgba(217,72,15,.05)}
+  .warnbox b.t{display:block; color:#862e0c; font-size:11.5px; font-weight:800; letter-spacing:.4px}
+  .warnbox div{font-size:12.5px; color:#3a3a40}
+  .spbox{align-items:center}
+  .spbox h4{margin:0 0 4px; font-size:14.5px; font-weight:700}
+  .spbox .c{margin-left:auto; font-size:12px; font-weight:800; flex:none}
+  .info{display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+    margin-top:12px; font-size:11px; color:#55555c; text-align:left}
+  .info b{color:var(--ink)}
+  .sp{display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:8px; padding:12px;
+    margin-top:12px; text-align:left; box-shadow:0 1px 0 rgba(0,0,0,.03)}
+  .sp .lt{width:34px; height:34px; flex:none; border-radius:6px; background:var(--soft); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px}
+  .sp .tx{flex:1; min-width:0}
+  .sp .n{font-size:14.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .sp .s{font-size:12px; color:#6e6e76}
+  .sp button{border:0; border-radius:6px; background:var(--btn); color:var(--btn-tx); font-size:12px; font-weight:700;
+    padding:10px 12px; cursor:pointer; flex:none}
+  .sp.done button{background:var(--soft); color:var(--ink); box-shadow:inset 0 0 0 1px var(--line)}
+  .dock{position:sticky; bottom:0; padding:14px 0 10px; background:linear-gradient(180deg,rgba(255,255,255,0),var(--bg) 30%)}
+  .dock .btn{font-size:14px; letter-spacing:.3px}
+  .after{font-size:12px; color:#6e6e76; text-align:center; margin-top:8px}
+
+  /* очередь */
+  .clock{display:flex; justify-content:center; gap:8px; margin-top:12px}
+  .clock div{min-width:76px; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:10px 4px 8px}
+  .clock b{display:block; font-size:32px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums}
+  .clock span{font-size:10px; color:#8c8c94}
+  .clock i{align-self:center; font-style:normal; font-size:24px; font-weight:800; color:#b0b0b6; margin-top:-16px}
+  .qcard{margin-top:20px; padding:18px 14px; text-align:center}
+  .qcard.ready .clock b{color:#2b8a3e}
+  .qlist{border-top:1px solid var(--line); margin-top:18px; padding-top:6px; text-align:left}
+  .qlist div{display:flex; align-items:center; gap:10px; padding:10px 2px; font-size:14px}
+  .qlist div + div{border-top:1px solid var(--line)}
+  .qlist b{margin-left:auto}
+  .qlist img{width:28px; height:28px; object-fit:contain; mix-blend-mode:multiply}
+  .qfine{margin-top:14px; font-size:12px; color:#55555c; background:var(--soft); border-radius:8px; padding:10px 12px}
+  .qnote{margin-top:12px; font-size:14px; border:1px solid var(--line); border-radius:8px; padding:12px 14px}
+
+  /* ---------- окна ---------- */
+  .veil{position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:20px;
+    background:rgba(120,120,128,.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
+  .veil.on{display:flex; animation:fadeIn .25s}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{position:relative; width:100%; max-width:420px; background:#fff; border-radius:10px; padding:28px 20px 22px;
+    box-shadow:0 30px 60px rgba(0,0,0,.25); animation:pop .3s ease-out}
+  @keyframes pop{from{transform:translateY(12px) scale(.98); opacity:0}to{transform:none; opacity:1}}
+  .shield{width:76px; height:76px; margin:0 auto; position:relative; display:flex; align-items:center; justify-content:center}
+  .shield .ring{position:absolute; inset:0; border-radius:50%; border:2px solid #ececf0; border-top-color:var(--accent);
+    animation:spin 1s linear infinite}
+  .shield .core{width:62px; height:62px; border-radius:50%; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.08);
+    display:flex; align-items:center; justify-content:center}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .modal .kick{text-align:center; margin-top:18px; color:#3a3a40}
+  .modal h3{text-align:center; font-size:22px; font-weight:800; margin-top:8px}
+  .modal .ms{text-align:center; font-size:13px; color:#6e6e76; margin-top:8px}
+  .cks{margin-top:22px}
+  .ck{display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:8px; padding:9px 10px; margin-top:10px}
+  .ck img{width:56px; height:40px; object-fit:cover; border-radius:4px; flex:none}
+  .ck .tx{flex:1; min-width:0}
+  .ck b{display:block; font-size:13.5px}
+  .ck span{font-size:11.5px; color:#8c8c94}
+  .ck .mk{width:24px; height:24px; flex:none; border-radius:50%; border:1.5px solid #e1e1e6; position:relative}
+  .ck.run{background:#f4f6ff; border-color:#b9c6f7}
+  .ck.run .mk{border-color:#dfe5fb; border-right-color:var(--accent); animation:spin .8s linear infinite}
+  .ck.ok .mk{background:var(--ink); border-color:var(--ink)}
+  .ck.ok .mk:after{content:""; position:absolute; left:7.5px; top:4px; width:5px; height:10px; border:solid #fff;
+    border-width:0 2px 2px 0; transform:rotate(45deg)}
+  .ck.bad{border-color:#f2c1b0; background:var(--warn)}
+  .ck.bad span{color:var(--red)}
+  .ck.bad .mk{border-color:var(--red)}
+  .ck.bad .mk:after{content:"!"; position:absolute; inset:0; text-align:center; line-height:21px; color:var(--red);
+    font-weight:800; font-size:13px}
+  .pbar{height:4px; background:#ececf0; border-radius:2px; margin-top:20px; overflow:hidden}
+  .pbar i{display:block; height:100%; width:0; background:var(--accent); transition:width .5s}
+
+  .x{position:absolute; right:14px; top:14px; width:32px; height:32px; border:1px solid var(--line); border-radius:6px;
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center}
+  .nk .ic{width:46px; height:46px; border-radius:8px; background:var(--soft)}
+  .nk .kick{text-align:left; margin-top:18px; font-size:10px}
+  .nk h3{text-align:left; font-size:26px; line-height:1.15; letter-spacing:-.8px}
+  .nk p{font-size:14px; color:#55555c; margin:12px 0 18px}
+  .nk label{display:block; font-size:12px; font-weight:700; margin-bottom:8px}
+  .nk input{width:100%; height:50px; border:1px solid #d9d9de; border-radius:7px; padding:0 14px; font:inherit;
+    font-size:16px; outline:0; color:var(--ink)}
+  .nk input:focus{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink)}
+  .nk .hint{font-size:11px; color:#8c8c94; margin-top:6px}
+  .nk .err{font-size:12.5px; color:var(--red); font-weight:600; margin-top:6px; display:none}
+  .nk .err.on{display:block}
+  .nk .btn{margin-top:18px}
+  .nk .ft{font-size:11px; color:#8c8c94; text-align:center; margin-top:14px}
+
+  #magic{position:fixed; inset:0; z-index:25; background:#fff; display:none; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; overflow:hidden}
+  #magic.on{display:flex; animation:fadeIn .3s}
+  #magic h3{font-size:22px; font-weight:800; margin-top:16px; position:relative; z-index:2}
+  #magic p{font-size:13px; color:#6e6e76; margin:8px 0 0; position:relative; z-index:2}
+  .dots{display:flex; gap:6px; margin-top:16px; position:relative; z-index:2}
+  .dots i{width:5px; height:5px; border-radius:50%; background:#9a9aa2; animation:dot 1s infinite}
+  .dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+  @keyframes dot{50%{opacity:.25}}
+  .bat{position:absolute; z-index:3; fill:#2b2b30; opacity:.85; animation:batfly linear forwards}
+  @keyframes batfly{from{transform:translate(0,0) scale(var(--s))}to{transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
+
+  #toast{position:fixed; left:50%; bottom:8px; transform:translateX(-50%); z-index:60; background:#2a2a2e; color:#fff;
+    border-radius:6px; padding:10px 16px; font-size:13px; display:none; width:max-content; max-width:88vw; text-align:center;
+    box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  #toast.on{display:block; animation:fadeIn .2s}
+
+  /* ---------- режим редактирования (только администратор) ---------- */
+  #ed-fab{position:fixed; top:10px; right:10px; z-index:70; display:none; width:38px; height:38px; border-radius:50%;
+    border:0; cursor:pointer; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.25); font-size:18px}
   body.admin #ed-fab{display:block}
   body.edit #ed-fab{display:none}
-  #ed-bar{position:fixed; top:0; left:0; right:0; z-index:40; display:none;
-    background:#111018; color:#fff; padding:8px 10px 10px; font-size:12px;
-    box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  #ed-bar{position:fixed; top:0; left:0; right:0; z-index:80; display:none; background:#111018; color:#fff;
+    padding:8px 10px 10px; font-size:12px; box-shadow:0 6px 20px rgba(0,0,0,.3)}
   body.edit #ed-bar{display:block}
-  body.edit{padding-top:96px}
-  body.edit .screen{min-height:calc(100dvh - 96px)}
+  body.edit{padding-top:100px}
+  body.edit .veil, body.edit #magic{top:100px}
   .ed-row{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none}
   .ed-row::-webkit-scrollbar{display:none}
   .ed-row + .ed-row{margin-top:8px}
-  .ed-chip{flex:none; border:0; border-radius:999px; padding:7px 11px; cursor:pointer;
-    font:inherit; font-size:12px; font-weight:600; background:#2a2833; color:#fff}
+  .ed-chip{flex:none; border:0; border-radius:999px; padding:7px 11px; cursor:pointer; font-size:12px;
+    font-weight:600; background:#2a2833; color:#fff}
   .ed-chip.on{background:#fff; color:#111}
   .ed-chip.save{background:#2f9e44}
   .ed-chip.save.dirty{background:#f08c00}
   .ed-hint{opacity:.6; margin:0 0 6px}
-  body.edit [data-t]{outline:1.5px dashed rgba(240,140,0,.9); outline-offset:2px;
-    border-radius:4px; cursor:text}
+  body.edit [data-t], body.edit [data-img]{outline:1.5px dashed rgba(240,140,0,.9); outline-offset:2px; cursor:text}
   body.edit [data-t]:empty{display:inline-block; min-width:40px; min-height:14px}
-  #ed-sheet{position:fixed; inset:0; z-index:50; display:none;
-    background:rgba(10,10,15,.5); align-items:flex-end}
+  #ed-sheet{position:fixed; inset:0; z-index:90; display:none; background:rgba(10,10,15,.5); align-items:flex-end}
   #ed-sheet.on{display:flex}
-  .ed-box{background:#fff; width:100%; max-height:86vh; overflow:auto;
-    border-radius:18px 18px 0 0; padding:16px 14px 20px; animation:slide .25s ease-out}
+  .ed-box{background:#fff; width:100%; max-height:86vh; overflow:auto; border-radius:16px 16px 0 0;
+    padding:16px 14px 20px; animation:slide .25s ease-out}
   @keyframes slide{from{transform:translateY(40px); opacity:0}to{transform:none; opacity:1}}
   .ed-box h4{margin:0 0 4px; font-size:16px}
-  .ed-box .ed-sub{font-size:11px; color:var(--grey); margin-bottom:10px}
-  .ed-box textarea, .ed-box input[type=text], .ed-box input[type=number]{
-    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px;
-    font:inherit; font-size:15px; resize:vertical; color:#111; background:#fff}
+  .ed-box .ed-sub{font-size:11px; color:#8c8c94; margin-bottom:10px}
+  .ed-box textarea, .ed-box input[type=text], .ed-box input[type=number]{width:100%; border:1.5px solid var(--line);
+    border-radius:8px; padding:10px; font:inherit; font-size:15px; resize:vertical; color:#111; background:#fff}
   .ed-box textarea{min-height:80px}
   .ed-box input[type=color]{width:56px; height:36px; border:0; padding:0; background:none}
   .ed-btns{display:flex; gap:8px; margin-top:12px}
-  .ed-btns .btn{height:44px; font-size:14px; background:#0b0b0f; color:#fff}
-  .ed-btns .btn.outline{background:#fff; color:#0b0b0f}
-  .ed-group{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
-    color:var(--grey); margin:18px 0 8px}
-  .ed-item{margin-bottom:10px}
+  .ed-btns .btn{height:44px; font-size:14px; box-shadow:none; background:#111; color:#fff}
+  .ed-group{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:#8c8c94; margin:18px 0 8px}
+  .ed-item{margin-bottom:12px}
   .ed-item label{display:block; font-size:12px; font-weight:600; margin-bottom:4px}
   .ed-item textarea{min-height:44px}
   .ed-line{display:flex; align-items:center; gap:10px}
   .ed-line input[type=text]{flex:1}
-  .ed-reset{border:0; background:none; color:var(--grey); font:inherit; font-size:11px;
-    cursor:pointer; padding:2px 0; text-decoration:underline}
-  #ed-toast{position:fixed; left:50%; bottom:90px; transform:translateX(-50%); z-index:60;
-    background:#111018; color:#fff; border-radius:10px; padding:10px 14px; font-size:13px;
-    display:none}
-  #ed-toast.on{display:block; animation:fade .2s}
+  .ed-img{display:flex; gap:10px; align-items:center; margin-bottom:6px}
+  .ed-img img{width:64px; height:44px; object-fit:cover; border-radius:6px; background:var(--soft); border:1px solid var(--line)}
+  .ed-up{border:0; border-radius:8px; background:#111; color:#fff; font-size:13px; font-weight:600; padding:10px 12px; cursor:pointer}
+  .ed-reset{border:0; background:none; color:#8c8c94; font-size:11px; cursor:pointer; padding:2px 0; text-decoration:underline}
 </style>
 </head>
 <body>
 
-<!-- 1. ник -->
-<section id="s-nick" class="screen on">
-  <div class="sky" id="sky">
-    <div class="moon"></div>
-    <div class="bat" style="left:18%;top:30%">🦇</div>
-    <div class="bat" style="left:72%;top:22%;animation-delay:-2s">🦇</div>
-    <div class="bat" style="left:62%;top:36%;font-size:10px;animation-delay:-4s">🦇</div>
-    <div class="town">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice">
-        <defs>
-          <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#3c2a4e"/><stop offset="1" stop-color="#1c1224"/>
-          </linearGradient>
-        </defs>
-        <path d="M0 120 L30 95 L60 120 L60 300 L0 300Z" fill="#1d1430"/>
-        <path d="M50 140 L85 100 L120 140 L120 300 L50 300Z" fill="#241839"/>
-        <path d="M280 140 L315 102 L350 140 L350 300 L280 300Z" fill="#241839"/>
-        <path d="M340 115 L372 88 L400 112 L400 300 L340 300Z" fill="#1d1430"/>
-        <rect x="18" y="140" width="10" height="14" fill="#ffb347" opacity=".85"/>
-        <rect x="80" y="160" width="10" height="14" fill="#ffb347" opacity=".75"/>
-        <rect x="300" y="158" width="10" height="14" fill="#ffb347" opacity=".8"/>
-        <rect x="362" y="135" width="10" height="14" fill="#ffb347" opacity=".85"/>
-        <path d="M120 300 L180 170 L220 170 L280 300Z" fill="url(#road)"/>
-      </svg>
-      <div class="pumpkin" style="left:8%">🎃</div>
-      <div class="pumpkin" style="left:24%;bottom:22%;font-size:20px">🎃</div>
-      <div class="pumpkin" style="right:22%;bottom:20%;font-size:22px">🎃</div>
-      <div class="pumpkin" style="right:7%">🎃</div>
-    </div>
+<!-- загрузка -->
+<div id="loader">
+  <div class="blobs"><i></i><i></i><i></i></div>
+  <div class="rbx-sq"></div>
+  <div class="kick" data-t="ld_kicker"></div>
+  <div class="ld-title"><span data-t="ld_t1"></span><br><span class="gray" data-t="ld_t2"></span></div>
+  <div class="ld-sub" data-t="ld_sub"></div>
+  <div class="ld-bar"><i id="ld-bar"></i></div>
+  <div class="ld-cap" data-t="ld_cap"></div>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <div class="wordmark">R<span class="o"></span>BLOX</div>
+    <div class="sep"></div>
+    <div class="ev"><b data-t="h_title"></b><span data-t="h_sub"></span></div>
+    <button class="who" id="who"><span class="ava" id="ava"></span><span id="who-name"></span></button>
   </div>
-
-  <div class="brand"><div class="rb" data-t="brand_top"></div><div class="hw" data-t="brand_sub"></div></div>
-
-  <div class="nick-card">
-    <h3 data-t="nick_title"></h3>
-    <p class="sub" data-t="nick_sub"></p>
-    <label class="field"><span>@</span>
-      <input id="nick" data-t="nick_ph" data-attr="placeholder" maxlength="20"
-             autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
-    </label>
-    <div class="err" id="nick-err"></div>
+  <label class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#55555c" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="search" data-t="search_ph" data-attr="placeholder" enterkeyhint="search" autocomplete="off">
+    <span class="kbd">↵</span>
+  </label>
+  <div class="hr"></div>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-tab="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg><span data-t="tab_home"></span></button>
+    <button class="tab" data-tab="tasks"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/></svg><span data-t="tab_tasks"></span></button>
+    <button class="tab" data-tab="prize"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-2-4-6-4-6-1.5S10 8 12 8zm0 0c2-4 6-4 6-1.5S14 8 12 8z"/></svg><span data-t="tab_prize"></span></button>
+    <button class="tab" data-tab="queue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span data-t="tab_queue"></span></button>
   </div>
+  <div class="crumbs"><span data-t="bc_root"></span><i>/</i><b id="crumb"></b></div>
 
-  <div class="dock"><button class="btn ghost" id="b-find" data-t="nick_btn"></button></div>
-</section>
-
-<!-- 2. выбор -->
-<section id="s-pick" class="screen">
-  <div class="top" data-t="pick_top"></div>
-  <div class="pad">
-    <div class="choice trick">
-      <div class="pic" data-t="trick_pic"></div>
-      <h4 data-t="trick_title"></h4>
-      <p data-t="trick_desc"></p>
-      <button class="btn" data-choice="trick" data-t="pick_btn"></button>
+  <!-- главная + задания -->
+  <section class="view" id="v-home">
+    <div class="titlerow">
+      <div><h1 data-t="home_title"></h1><div class="hello" data-t="home_hello"></div></div>
+      <span class="chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2z"/><circle cx="10" cy="10" r=".8"/><circle cx="14" cy="10" r=".8"/></svg><span data-t="home_chip"></span></span>
     </div>
-    <div class="choice sweet">
-      <div class="pic" data-t="sweet_pic"></div>
-      <h4 data-t="sweet_title"></h4>
-      <p data-t="sweet_desc"></p>
-      <button class="btn" data-choice="sweet" data-t="pick_btn"></button>
-    </div>
-  </div>
-</section>
-
-<!-- 3. подтверждение -->
-<section id="s-sure" class="screen">
-  <div class="top" data-t="sure_top"></div>
-  <div class="pad">
-    <div class="confirm-h">
-      <h3 data-t="sure_title"></h3>
-      <p data-t="sure_sub"></p>
-    </div>
-    <div class="choice" id="sure-card">
-      <div class="pic" id="sure-pic"></div>
-      <h4 id="sure-title"></h4>
-      <p data-t="sure_desc"></p>
-      <button class="btn" id="b-sure" data-t="sure_btn"></button>
-    </div>
-  </div>
-  <div class="dock"><button class="btn outline" id="b-cancel" data-t="sure_cancel"></button></div>
-</section>
-
-<!-- 4. подписки -->
-<section id="s-subs" class="screen">
-  <div class="top" data-t="subs_top"></div>
-  <div class="pad">
-    <div class="sum">
-      <svg class="rbx" width="30" height="30" viewBox="0 0 24 24"></svg>
-      <div><div class="lbl" data-t="subs_prize_lbl"></div><div class="val" id="sum-prize"></div></div>
-      <div class="r"><div class="lbl" data-t="subs_acc_lbl"></div><div class="val" id="sum-acc"></div></div>
-    </div>
-    <div class="step">
-      <h3 data-t="subs_title"></h3>
-      <p data-t="subs_text"></p>
-    </div>
-    <div class="bar"><div class="t"><div class="f" id="bar"></div></div><span id="pct">0%</span></div>
-    <div id="rows"></div>
-  </div>
-  <div class="dock light">
-    <button class="btn" id="b-check" data-t="subs_btn"></button>
-    <div class="cap" id="cap"></div>
-  </div>
-</section>
-
-<!-- 5. отсчёт до зачисления -->
-<section id="s-done" class="screen">
-  <div class="top" data-t="done_top"></div>
-  <div class="pad">
-    <div class="ticket" id="ticket">
-      <img id="t-img" alt="">
-      <div class="who" id="t-who"></div>
-      <div class="prize"><svg class="rbx" width="28" height="28" viewBox="0 0 24 24"></svg>
-        <span id="t-prize"></span></div>
-      <div class="wait" id="t-wait" data-t="done_wait"></div>
-      <div class="clock">
-        <div><b id="c-h">24</b><span data-t="done_h"></span></div><i>:</i>
-        <div><b id="c-m">00</b><span data-t="done_m"></span></div><i>:</i>
-        <div><b id="c-s">00</b><span data-t="done_s"></span></div>
+    <div class="card hero">
+      <img data-img="img.hero" alt="">
+      <div class="in">
+        <span class="chip" data-t="ev_tag"></span>
+        <h2><span data-t="ev_t1"></span> <span class="gray" data-t="ev_t2"></span></h2>
+        <p data-t="ev_text"></p>
+        <div class="kick" data-t="ev_start"></div>
+        <button class="btn" id="b-start"><span data-t="ev_btn"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
       </div>
-      <div class="fine" data-t="done_fine"></div>
+      <div class="stats">
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/></svg><span data-t="ev_stat1"></span></span>
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12"/></svg><span data-t="ev_stat2"></span></span>
+      </div>
     </div>
-    <div class="note" id="t-note"></div>
-  </div>
-  <div class="dock light"><button class="btn" id="b-close" data-t="done_btn"></button></div>
-</section>
 
-<!-- всплывающее окно с робуксами -->
-<div class="veil" id="veil">
-  <div class="pop">
-    <h3 data-t="pop_title"></h3>
-    <div class="lead" data-t="pop_lead"></div>
-    <div class="prize"><svg class="rbx" width="32" height="32" viewBox="0 0 24 24"></svg>
-      <span id="pop-prize">0</span></div>
-    <div class="acc" data-t="pop_acc"></div>
-    <div class="fine" data-t="pop_fine"></div>
-    <button class="btn" id="b-take" data-t="pop_btn"></button>
+    <div class="sect" id="tasks-sect">
+      <div class="kick"><em data-t="tk_num"></em><span data-t="tk_kicker"></span></div>
+      <div class="sect-h">
+        <div><h2 data-t="tk_title"></h2><p data-t="tk_lead"></p><p data-t="tk_text"></p></div>
+        <div class="count"><b id="tk-count">0<small> / 3</small></b><span data-t="tk_done_lbl"></span><i><em id="tk-bar"></em></i></div>
+      </div>
+      <div id="tasks"></div>
+      <div class="card fin" id="fin">
+        <div class="row1">
+          <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <div><h4 data-t="fin_title"></h4><p data-t="fin_text"></p></div>
+        </div>
+        <button class="btn" id="b-check-tasks"><span data-t="fin_btn"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- выбор -->
+  <section class="view center" id="v-choice">
+    <div class="step"><span class="pill" data-t="ch_step"></span></div>
+    <div class="kick" data-t="ch_kicker"></div>
+    <div class="big"><span data-t="ch_t1"></span><br><span class="gray" data-t="ch_t2"></span></div>
+    <p class="lead" data-t="ch_sub"></p>
+    <div class="paths">
+      <div class="path" data-choice="sweet">
+        <span class="radio"></span>
+        <div class="kick" data-t="sweet_path"></div>
+        <div class="pic"><img data-img="img.sweet" alt=""></div>
+        <h3 data-t="sweet_title"></h3>
+        <p data-t="sweet_text"></p>
+        <div class="pf"><span data-t="sweet_foot"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c.8 4.5 2.5 6.2 7 7-4.5.8-6.2 2.5-7 7-.8-4.5-2.5-6.2-7-7 4.5-.8 6.2-2.5 7-7z"/></svg></div>
+      </div>
+      <div class="path" data-choice="trick">
+        <span class="radio"></span>
+        <div class="kick" data-t="trick_path"></div>
+        <div class="pic"><img data-img="img.trick" alt=""></div>
+        <h3 data-t="trick_title"></h3>
+        <p data-t="trick_text"></p>
+        <div class="pf"><span data-t="trick_foot"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2z"/><circle cx="10" cy="10" r=".8"/><circle cx="14" cy="10" r=".8"/></svg></div>
+      </div>
+    </div>
+    <button class="btn" id="b-surprise" style="margin-top:22px"><span data-t="ch_btn"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-2-4-6-4-6-1.5S10 8 12 8zm0 0c2-4 6-4 6-1.5S14 8 12 8z"/></svg></button>
+    <div class="note" data-t="ch_note"></div>
+  </section>
+
+  <!-- приз -->
+  <section class="view center glow" id="v-prize">
+    <div class="kick" style="margin-top:4px" data-t="pr_kicker"></div>
+    <div class="big" style="font-size:34px"><span data-t="pr_t1"></span> <span class="gray" data-t="pr_t2"></span></div>
+    <p class="lead" style="margin-top:8px; font-size:13px" data-t="pr_sub"></p>
+    <div class="card set">
+      <div class="top"><span style="margin:0; font-size:12.5px; letter-spacing:0" data-t="pr_set"></span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c.8 4.5 2.5 6.2 7 7-4.5.8-6.2 2.5-7 7-.8-4.5-2.5-6.2-7-7 4.5-.8 6.2-2.5 7-7z"/></svg><span data-t="pr_now"></span></span></div>
+      <div class="cells">
+        <div class="cell r">
+          <div class="art"><svg class="rbx" width="84" height="84" viewBox="0 0 24 24"></svg></div>
+          <div class="kick" data-t="pr_rbx_lbl"></div>
+          <div class="amt"><span id="pr-amt">0</span> <small data-t="pr_rbx_unit"></small></div>
+          <div class="sub" data-t="pr_rbx_sub"></div>
+        </div>
+        <div class="cell i">
+          <div class="art"><img data-img="img.item" alt=""></div>
+          <div class="kick" data-t="pr_item_lbl"></div>
+          <div class="nm" data-t="pr_item"></div>
+          <div class="sub" data-t="pr_item_sub"></div>
+        </div>
+      </div>
+      <div class="get"><span class="pill dark" data-t="pr_get_pill"></span><div data-t="pr_get"></div></div>
+      <div class="luck"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c.8 4.5 2.5 6.2 7 7-4.5.8-6.2 2.5-7 7-.8-4.5-2.5-6.2-7-7 4.5-.8 6.2-2.5 7-7z"/></svg></span>
+        <div><b data-t="pr_luck"></b><span data-t="pr_chance"></span></div></div>
+      <button class="btn" id="b-claim"><span data-t="pr_btn"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+    </div>
+  </section>
+
+  <!-- спонсоры -->
+  <section class="view center" id="v-subs">
+    <div class="step"><span class="pill" data-t="sb_step"></span><span class="pill dark" data-t="sb_badge"></span></div>
+    <div class="big"><span data-t="sb_t1"></span><br><span class="gray" data-t="sb_t2"></span></div>
+    <p class="lead" data-t="sb_lead"></p>
+    <div class="warnbox">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a3a40" stroke-width="1.8" style="flex:none"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+      <div><b class="t" data-t="sb_warn_t"></b><span data-t="sb_warn"></span></div>
+    </div>
+    <div class="warnbox spbox">
+      <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div><h4 data-t="sb_sp_t"></h4><span data-t="sb_sp"></span></div>
+      <span class="c" id="sb-count">0 / 0</span>
+    </div>
+    <div class="info"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span data-t="sb_info"></span></div>
+    <div id="rows"></div>
+    <div class="dock">
+      <button class="btn" id="b-subs"><span data-t="sb_btn"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button>
+      <div class="after" data-t="sb_after"></div>
+    </div>
+  </section>
+
+  <!-- очередь -->
+  <section class="view center" id="v-queue">
+    <div class="step"><span class="pill" data-t="q_step"></span></div>
+    <div class="kick" data-t="q_kicker"></div>
+    <div class="big"><span data-t="q_t1"></span><br><span class="gray" data-t="q_t2"></span></div>
+    <p class="lead" data-t="q_sub"></p>
+    <div class="card qcard" id="qcard">
+      <div class="kick" style="margin:0; font-size:10px; color:#6e6e76" id="q-wait" data-t="q_wait"></div>
+      <div class="clock">
+        <div><b id="c-h">24</b><span data-t="q_h"></span></div><i>:</i>
+        <div><b id="c-m">00</b><span data-t="q_m"></span></div><i>:</i>
+        <div><b id="c-s">00</b><span data-t="q_s"></span></div>
+      </div>
+      <div class="qlist">
+        <div><svg class="rbx" width="28" height="28" viewBox="0 0 24 24"></svg><span data-t="q_rbx"></span><b id="q-amt"></b></div>
+        <div><img data-img="img.item" alt=""><span data-t="q_item"></span><b data-t="pr_item"></b></div>
+      </div>
+      <div class="qfine" data-t="q_fine"></div>
+    </div>
+    <div class="qnote" id="q-note"></div>
+    <button class="btn" id="b-close" style="margin-top:18px"><span data-t="q_btn"></span></button>
+  </section>
+
+  <div class="foot">
+    <div class="l"><div class="rbx-sq"></div><span data-t="foot_title"></span></div>
+    <button id="b-about" data-t="foot_about"></button>
   </div>
 </div>
+
+<!-- проверка заданий -->
+<div class="veil" id="ck-veil">
+  <div class="modal">
+    <div class="shield"><div class="ring"></div><div class="core"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div></div>
+    <div class="kick" data-t="ck_kicker"></div>
+    <h3 data-t="ck_title"></h3>
+    <div class="ms" id="ck-sub" data-t="ck_sub"></div>
+    <div class="cks" id="cks"></div>
+    <div class="pbar"><i id="ck-bar"></i></div>
+  </div>
+</div>
+
+<!-- ник -->
+<div class="veil" id="nk-veil">
+  <div class="modal nk">
+    <button class="x" id="nk-x"><svg width="14" height="14" viewBox="0 0 24 24" stroke="#111" stroke-width="2.2"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+    <span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2z"/><circle cx="10" cy="10" r=".9"/><circle cx="14" cy="10" r=".9"/><path d="M10 13.5c1.2.8 2.8.8 4 0"/></svg></span>
+    <div class="kick" data-t="nk_kicker"></div>
+    <h3 data-t="nk_title"></h3>
+    <p data-t="nk_text"></p>
+    <label for="nick" data-t="nk_label"></label>
+    <input id="nick" data-t="nk_ph" data-attr="placeholder" maxlength="20" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+    <div class="hint" data-t="nk_hint"></div>
+    <div class="err" id="nk-err"></div>
+    <button class="btn" id="b-nick"><span data-t="nk_btn"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+    <div class="ft" data-t="nk_foot"></div>
+  </div>
+</div>
+
+<!-- об ивенте -->
+<div class="veil" id="ab-veil">
+  <div class="modal nk">
+    <button class="x" id="ab-x"><svg width="14" height="14" viewBox="0 0 24 24" stroke="#111" stroke-width="2.2"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+    <h3 data-t="about_title"></h3>
+    <p data-t="about_text"></p>
+  </div>
+</div>
+
+<!-- тёмная магия -->
+<div id="magic">
+  <div class="blobs"><i></i><i></i><i></i></div>
+  <svg width="74" height="74" viewBox="0 0 24 24" fill="#e9e9ec" stroke="#1d1d21" stroke-width="1.5" style="position:relative;z-index:2"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8z"/><path d="M12 8v12" fill="none"/><path d="M12 8c-2-4-6-4-6-1.5S10 8 12 8zm0 0c2-4 6-4 6-1.5S14 8 12 8z" fill="none"/></svg>
+  <h3 data-t="mg_title"></h3>
+  <p data-t="mg_sub"></p>
+  <div class="dots"><i></i><i></i><i></i></div>
+</div>
+
+<canvas id="confetti"></canvas>
+<div id="toast"></div>
 
 <!-- редактор (только администратор) -->
 <button id="ed-fab" title="Редактировать">✏️</button>
@@ -364,13 +607,12 @@
   <div class="ed-row" id="ed-screens"></div>
   <div class="ed-row">
     <button class="ed-chip" id="ed-all">📝 Все тексты</button>
-    <button class="ed-chip" id="ed-design">🎨 Цвета и числа</button>
+    <button class="ed-chip" id="ed-design">🎨 Картинки, ссылки, цвета</button>
     <button class="ed-chip save" id="ed-save">💾 Сохранить</button>
     <button class="ed-chip" id="ed-exit">✕ Выйти</button>
   </div>
 </div>
 <div id="ed-sheet"><div class="ed-box" id="ed-box"></div></div>
-<div id="ed-toast"></div>
 
 <script>
 (function () {
@@ -378,179 +620,278 @@
   if (tg) {
     try { tg.ready(); tg.expand(); } catch (e) {}
     try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {}
+    try { tg.setHeaderColor && tg.setHeaderColor('#ffffff'); tg.setBackgroundColor && tg.setBackgroundColor('#ffffff'); } catch (e) {}
   }
   var el = function (id) { return document.getElementById(id); };
-  var SCREENS = ['s-nick', 's-pick', 's-sure', 's-subs', 's-done'];
-  var st = { user: null, choice: '', data: null, opened: {}, screen: 's-nick', offset: 0 };
+  var LS = {
+    get: function (k) { try { return localStorage.getItem('hw_' + k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem('hw_' + k, v); } catch (e) {} }
+  };
 
-  // ---------- все тексты страницы: [ключ, по умолчанию, подпись, раздел] ----------
-  // {acc} — ник, {prize} — сумма, {hours} — часы ожидания, {k}/{n} — открыто/всего
-  var G1 = '1. Ввод ника', G2 = '2. Выбор', G3 = '3. Подтверждение', G4 = 'Окно с робуксами',
-      G5 = '4. Подписки', G6 = '5. Таймер 24 часа', G7 = 'Сообщения', GC = 'Цвета и числа';
+  // ---------- все тексты, картинки и настройки: [ключ, по умолчанию, подпись, раздел, вид] ----------
+  // В текстах: **жирный**, __подчёркнутый__, {acc} ник, {player} ник или «игрок», {prize} сумма,
+  // {min}/{max} диапазон Robux, {hours} часы таймера, {chance} шанс приза.
+  var GL = 'Загрузка', GH = 'Шапка, меню, низ', G1 = 'Главная', G2 = 'Задания',
+      G3 = 'Проверка заданий', G4 = 'Сладость или гадость', G5 = 'Тёмная магия', G6 = 'Приз',
+      G7 = 'Ник', G8 = 'Спонсоры', G9 = 'Очередь и таймер', G10 = 'Сообщения', GC = 'Числа и цвета';
   var DEF = [
-    ['brand_top', 'ROBLOX', 'Заголовок сверху', G1],
-    ['brand_sub', 'HALLOWEEN', 'Подзаголовок сверху', G1],
-    ['nick_title', 'Введите ник в Roblox', 'Заголовок карточки', G1],
-    ['nick_sub', 'На этот аккаунт придут робуксы', 'Текст под заголовком', G1],
-    ['nick_ph', 'Например, ShadowFox_27', 'Подсказка в поле ввода', G1],
-    ['nick_btn', 'Продолжить', 'Кнопка', G1],
-    ['nick_empty', 'Введите ник', 'Если нажали, не вписав ник', G1],
-    ['nick_latin', 'Только латинские буквы (A–Z), цифры и _', 'Если пишут русскими буквами или символами', G1],
-    ['nick_short', 'В нике Roblox от 3 до 20 символов', 'Если ник короче 3 символов', G1],
-    ['nick_under', 'Знак _ может быть только один и не в начале или конце', 'Если с _ что-то не так', G1],
+    ['ld_kicker', 'HALLOWEEN EVENT', 'Надпись над заголовком', GL],
+    ['ld_t1', 'HALLOWEEN', 'Заголовок, первая строка', GL],
+    ['ld_t2', '2026', 'Заголовок, вторая строка (серая)', GL],
+    ['ld_sub', 'Пусть эта ночь станет легендой.', 'Текст', GL],
+    ['ld_cap', 'Открываем портал в приключение', 'Подпись под полоской', GL],
 
-    ['pick_top', 'Halloween', 'Заголовок экрана', G2],
-    ['trick_pic', '🎃', 'Левый вариант: картинка (эмодзи или ссылка на картинку)', G2],
-    ['trick_title', 'Гадость', 'Левый вариант: название', G2],
-    ['trick_desc', 'Будь внимателен!\nИзменить выбор будет невозможно', 'Левый вариант: текст', G2],
-    ['sweet_pic', '🍭', 'Правый вариант: картинка (эмодзи или ссылка на картинку)', G2],
-    ['sweet_title', 'Сладость', 'Правый вариант: название', G2],
-    ['sweet_desc', 'Будь внимателен!\nИзменить выбор будет невозможно', 'Правый вариант: текст', G2],
-    ['pick_btn', 'Выбрать', 'Кнопка выбора', G2],
+    ['h_title', 'HALLOWEEN 2026', 'Шапка: название', GH],
+    ['h_sub', 'СОБЫТИЕ', 'Шапка: подпись', GH],
+    ['h_nick', 'Твой ник', 'Шапка: пока ник не введён', GH],
+    ['search_ph', 'Поиск по заданиям', 'Поиск: подсказка', GH],
+    ['tab_home', 'Главная', 'Вкладка 1', GH],
+    ['tab_tasks', 'Задания', 'Вкладка 2', GH],
+    ['tab_prize', 'Моя награда', 'Вкладка 3', GH],
+    ['tab_queue', 'Очередь', 'Вкладка 4', GH],
+    ['bc_root', 'Roblox', 'Путь: первое слово', GH],
+    ['foot_title', 'HALLOWEEN 2026', 'Низ страницы: название', GH],
+    ['foot_about', 'Об ивенте', 'Низ страницы: ссылка', GH],
+    ['about_title', 'Halloween 2026', 'Окно «Об ивенте»: заголовок', GH],
+    ['about_text', 'Хэллоуинский ивент Roblox: выполни три задания в игровых плейсах, ' +
+      'выбери путь и забери Robux и предмет для гардероба.', 'Окно «Об ивенте»: текст', GH],
 
-    ['sure_top', 'Halloween', 'Заголовок экрана', G3],
-    ['sure_title', 'Вы точно уверены в выборе?', 'Вопрос', G3],
-    ['sure_sub', 'Отменить действие будет невозможно!', 'Текст под вопросом', G3],
-    ['sure_desc', 'Будь внимателен!\nИзменить выбор будет невозможно', 'Текст в карточке', G3],
-    ['sure_btn', 'Точно уверен(а)', 'Кнопка подтверждения', G3],
-    ['sure_cancel', 'Отменить выбор', 'Кнопка отмены', G3],
+    ['bc_home', 'Halloween 2026', 'Путь на главной', G1],
+    ['home_title', 'Главная', 'Заголовок', G1],
+    ['home_chip', 'HALLOWEEN 2026', 'Плашка справа', G1],
+    ['home_hello', 'Привет, **{player}**. Готов к приключению?', 'Приветствие', G1],
+    ['img.hero', 'hw/hero.jpg', 'Главная картинка', G1, 'img'],
+    ['ev_tag', '• СОБЫТИЕ', 'Метка', G1],
+    ['ev_t1', 'Halloween', 'Название, чёрное', G1],
+    ['ev_t2', '2026', 'Название, серое', G1],
+    ['ev_text', 'Три жутких плейса. Секретные задания. Robux и предмет в финале.', 'Описание', G1],
+    ['ev_start', 'НАЧНИ ОТСЮДА ↓', 'Надпись над кнопкой', G1],
+    ['ev_btn', 'Начать и перейти к заданиям', 'Кнопка', G1],
+    ['ev_stat1', '**3** игровых задания', 'Внизу слева', G1],
+    ['ev_stat2', '**{min}–{max}** Robux + предмет', 'Внизу справа', G1],
 
-    ['pop_title', 'Отличный выбор!', 'Заголовок', G4],
-    ['pop_lead', 'Вам начислено', 'Текст над суммой', G4],
-    ['pop_acc', 'на аккаунт {acc}', 'Текст под суммой', G4],
-    ['pop_fine', 'Чтобы получить робуксы, подпишитесь на каналы партнёров', 'Серая плашка', G4],
-    ['pop_btn', 'Забрать', 'Кнопка', G4],
+    ['tk_num', '01 /', 'Номер раздела', G2],
+    ['tk_kicker', 'ТВОЁ ПРИКЛЮЧЕНИЕ', 'Надпись раздела', G2],
+    ['tk_title', 'Задания ивента', 'Заголовок', G2],
+    ['tk_lead', '__Все три задания обязательны для получения награды.__', 'Главная строка', G2],
+    ['tk_text', 'Открой плейсы, выполни условия и проверь всё одной кнопкой.', 'Текст', G2],
+    ['tk_done_lbl', 'ЗАДАНИЯ\nПОДТВЕРЖДЕНЫ', 'Подпись под счётчиком', G2],
+    ['tk_status', 'К выполнению', 'Статус задания', G2],
+    ['tk_status_ok', 'Подтверждено', 'Статус выполненного задания', G2],
+    ['tk_must', 'ОБЯЗАТЕЛЬНО ДЛЯ НАГРАДЫ', 'Плашка над кнопкой', G2],
+    ['tk_must2', 'Чтобы выполнить задание — жми ↓', 'Плашка над кнопкой, вторая строка', G2],
+    ['tk_btn', 'Открыть игру', 'Кнопка задания', G2],
+    ['t1_tag', 'ОБРАЗ', 'Задание 1: метка', G2],
+    ['t1_title', 'Самый страшный костюм', 'Задание 1: название', G2],
+    ['t1_text', 'Примерь **3 костюма на Хэллоуин**.\nНайди образ, от которого мурашки даже у монстров.', 'Задание 1: что сделать', G2],
+    ['t1_game', 'Halloween Matching Outfits', 'Задание 1: название игры', G2],
+    ['t1_url', 'https://www.roblox.com/games/18725237056', 'Задание 1: ссылка на игру', G2, 'url'],
+    ['img.t1', 'hw/task1.jpg', 'Задание 1: картинка', G2, 'img'],
+    ['t2_tag', 'ТАЙНА', 'Задание 2: метка', G2],
+    ['t2_title', 'Таинственность!', 'Задание 2: название', G2],
+    ['t2_text', 'Сыграй **хотя бы 1 раунд**.\nДоверься интуиции: этой ночью подозревать стоит каждого.', 'Задание 2: что сделать', G2],
+    ['t2_game', 'Murder Mystery 2', 'Задание 2: название игры', G2],
+    ['t2_url', 'https://www.roblox.com/games/142823291/Murder-Mystery-2', 'Задание 2: ссылка на игру', G2, 'url'],
+    ['img.t2', 'hw/task2.jpg', 'Задание 2: картинка', G2, 'img'],
+    ['t3_tag', 'ВСТРЕЧА', 'Задание 3: метка', G2],
+    ['t3_title', 'Приют монстров', 'Задание 3: название', G2],
+    ['t3_text', 'Поговори с **«Графом Слутуа»**.\nОн ждёт тебя в Adopt Me! — не проходи мимо.', 'Задание 3: что сделать', G2],
+    ['t3_game', 'Adopt Me!', 'Задание 3: название игры', G2],
+    ['t3_url', 'https://www.roblox.com/games/920587237/Adopt-Me', 'Задание 3: ссылка на игру', G2, 'url'],
+    ['img.t3', 'hw/task3.jpg', 'Задание 3: картинка', G2, 'img'],
+    ['fin_title', 'Всё сделал? Дальше — самое интересное.', 'Блок проверки: заголовок', G2],
+    ['fin_text', 'Одна кнопка для всех трёх заданий.', 'Блок проверки: текст', G2],
+    ['fin_btn', 'Проверить выполнение заданий', 'Блок проверки: кнопка', G2],
 
-    ['subs_top', 'Получение робуксов', 'Заголовок экрана', G5],
-    ['subs_prize_lbl', 'Начислено', 'Подпись над суммой', G5],
-    ['subs_acc_lbl', 'Аккаунт', 'Подпись над ником', G5],
-    ['subs_title', 'Последний шаг', 'Заголовок', G5],
-    ['subs_text', 'Подпишитесь на все каналы партнёров и нажмите «Проверить подписку». ' +
-      'После проверки робуксы отправятся на ваш аккаунт.', 'Текст', G5],
-    ['subs_row_go', 'Подписаться', 'Кнопка у канала', G5],
-    ['subs_row_done', '✓ Открыто', 'Кнопка у открытого канала', G5],
-    ['subs_row_sub', 'подписаться', 'Подпись под каналом', G5],
-    ['subs_row_start', 'нажать старт', 'Подпись под ботом', G5],
-    ['subs_count', 'Открыто {k} из {n}', 'Счётчик под кнопкой', G5],
-    ['subs_btn', 'Проверить подписку', 'Кнопка', G5],
-    ['subs_busy', 'Проверяем подписку', 'Кнопка во время проверки', G5],
-    ['subs_fail', 'Сначала подпишитесь на каналы', 'Если подписки нет', G5],
+    ['ck_kicker', 'ПРОВЕРКА', 'Надпись', G3],
+    ['ck_title', 'Проверяем твои задания', 'Заголовок', G3],
+    ['ck_sub', 'Задание {i} из 3 · Сверяем прогресс приключения', 'Подзаголовок', G3],
+    ['ck_wait', 'Ожидает проверки', 'Статус: ждёт', G3],
+    ['ck_run', 'Проверяем задание…', 'Статус: проверяется', G3],
+    ['ck_ok', 'Подтверждено', 'Статус: готово', G3],
+    ['ck_bad', 'Не выполнено — открой игру', 'Статус: игру не открывали', G3],
+    ['ck_fail', 'Сначала открой все три игры и выполни задания', 'Сообщение, если что-то не выполнено', G3],
 
-    ['done_top', 'Робуксы в пути 🎃', 'Заголовок экрана', G6],
-    ['done_wait', 'До зачисления осталось', 'Текст над таймером', G6],
-    ['done_ready', 'Робуксы отправлены на ваш аккаунт ✅', 'Текст, когда таймер дошёл до нуля', G6],
-    ['done_h', 'час.', 'Подпись под часами', G6],
-    ['done_m', 'мин.', 'Подпись под минутами', G6],
-    ['done_s', 'сек.', 'Подпись под секундами', G6],
-    ['done_fine', 'Робуксы придут на аккаунт {acc} в течение {hours} часов. ' +
-      'Не отписывайтесь от каналов до зачисления.', 'Серая плашка', G6],
-    ['done_btn', 'Закрыть', 'Кнопка', G6],
+    ['bc_choice', 'Сладость или гадость', 'Путь вверху', G4],
+    ['ch_step', '02 / 05', 'Шаг', G4],
+    ['ch_kicker', 'ТРИ МИССИИ ПОЗАДИ', 'Надпись', G4],
+    ['ch_t1', 'Сладость', 'Заголовок, чёрная строка', G4],
+    ['ch_t2', 'или гадость?', 'Заголовок, серая строка', G4],
+    ['ch_sub', 'Доверься своему внутреннему монстру.\nВпереди Robux и предмет для гардероба.', 'Текст', G4],
+    ['sweet_path', 'ПУТЬ 01', 'Сладость: метка', G4],
+    ['img.sweet', 'hw/sweet.jpg', 'Сладость: картинка', G4, 'img'],
+    ['sweet_title', 'Сладость', 'Сладость: название', G4],
+    ['sweet_text', 'Для тех, кто на светлой стороне тьмы.', 'Сладость: текст', G4],
+    ['sweet_foot', 'СЛАДКИЙ РИСК', 'Сладость: подпись внизу', G4],
+    ['trick_path', 'ПУТЬ 02', 'Гадость: метка', G4],
+    ['img.trick', 'hw/trick.jpg', 'Гадость: картинка', G4, 'img'],
+    ['trick_title', 'Гадость', 'Гадость: название', G4],
+    ['trick_text', 'Для тех, кто сам пугает темноту.', 'Гадость: текст', G4],
+    ['trick_foot', 'ПРИЯТНАЯ НЕПРИЯТНОСТЬ', 'Гадость: подпись внизу', G4],
+    ['ch_btn', 'Открыть сюрприз', 'Кнопка', G4],
+    ['ch_note', 'Robux выпадают случайно: от {min} до {max}.', 'Подпись под кнопкой', G4],
+    ['ch_pick', 'Сначала выбери путь', 'Если не выбрали путь', G4],
 
-    ['err_net', 'Ошибка сети.', 'Нет интернета', G7],
-    ['err_retry', 'Не получилось, попробуй ещё раз.', 'Общая ошибка', G7],
+    ['mg_title', 'Немного тёмной магии…', 'Заголовок', G5],
+    ['mg_sub', 'Твой сюрприз уже рядом', 'Текст', G5],
 
-    ['cfg.prize_min', '300', 'Сумма робуксов: от', GC, 'number'],
-    ['cfg.prize_max', '1500', 'Сумма робуксов: до', GC, 'number'],
+    ['bc_prize', 'Твой выигрыш', 'Путь вверху', G6],
+    ['pr_kicker', 'ТВОЙ ХЭЛЛОУИНСКИЙ СЮРПРИЗ', 'Надпись', G6],
+    ['pr_t1', 'Жутко', 'Заголовок, чёрное', G6],
+    ['pr_t2', 'хороший улов.', 'Заголовок, серое', G6],
+    ['pr_sub', 'Игрок, смелость тебе к лицу. Смотри, что попалось!', 'Текст', G6],
+    ['pr_set', 'ТВОЙ НАБОР ПРИЗОВ', 'Карточка: заголовок', G6],
+    ['pr_now', 'ВЫПАЛО СЕЙЧАС', 'Карточка: справа', G6],
+    ['pr_rbx_lbl', 'ROBUX', 'Robux: метка', G6],
+    ['pr_rbx_unit', 'Robux', 'Robux: после числа', G6],
+    ['pr_rbx_sub', 'На игровой баланс', 'Robux: подпись', G6],
+    ['img.item', 'hw/item.jpg', 'Предмет: картинка', G6, 'img'],
+    ['pr_item_lbl', 'ПРЕДМЕТ', 'Предмет: метка', G6],
+    ['pr_item', 'Набор анимаций · Тень', 'Предмет: название', G6],
+    ['pr_item_sub', 'Вместе с Robux', 'Предмет: подпись', G6],
+    ['pr_get_pill', 'ЧТОБЫ ПОЛУЧИТЬ ПРИЗ', 'Чёрная плашка', G6],
+    ['pr_get', 'Нажми кнопку «Забрать оба приза» ниже ↓', 'Текст под плашкой', G6],
+    ['pr_luck', 'ВАМ КРУПНО ПОВЕЗЛО!', 'Удача: заголовок', G6],
+    ['pr_chance', 'Шанс такого приза — {chance}%', 'Удача: текст', G6],
+    ['pr_btn', 'Забрать оба приза', 'Кнопка', G6],
+
+    ['nk_kicker', 'АККАУНТ ДЛЯ НАГРАДЫ', 'Надпись', G7],
+    ['nk_title', 'На какой аккаунт получить призы?', 'Заголовок', G7],
+    ['nk_text', 'Введи ник Roblox. Он нужен, чтобы видеть выполнение заданий, связать награду с игроком и сохранить прогресс.', 'Текст', G7],
+    ['nk_label', 'Ник в Roblox', 'Подпись поля', G7],
+    ['nk_ph', 'Например, SpookyPlayer', 'Подсказка в поле', G7],
+    ['nk_hint', '3–20 латинских букв, цифры и _.', 'Подсказка под полем', G7],
+    ['nk_btn', 'Сохранить ник и продолжить', 'Кнопка', G7],
+    ['nk_foot', 'Ник хранится на этом устройстве.\nПароль и доступ к аккаунту не нужны.', 'Текст внизу', G7],
+    ['nk_empty', 'Введи ник', 'Ошибка: пусто', G7],
+    ['nk_latin', 'Только латинские буквы (A–Z), цифры и _', 'Ошибка: русские буквы или символы', G7],
+    ['nk_short', 'В нике Roblox от 3 до 20 символов', 'Ошибка: длина', G7],
+    ['nk_under', 'Знак _ может быть только один и не в начале или конце', 'Ошибка: знак _', G7],
+    ['nk_saved', 'Ник сохранён. Продолжаем!', 'Сообщение после сохранения', G7],
+
+    ['bc_subs', 'Спонсоры', 'Путь вверху', G8],
+    ['sb_step', '04 / 05', 'Шаг', G8],
+    ['sb_badge', 'ПРОВЕРКА НА БОТА', 'Чёрная плашка', G8],
+    ['sb_t1', 'Подпишись', 'Заголовок, чёрная строка', G8],
+    ['sb_t2', 'и забери призы.', 'Заголовок, серая строка', G8],
+    ['sb_lead', '__Чтобы получить награду__, обязательно подпишись на всех наших спонсоров.', 'Текст', G8],
+    ['sb_warn_t', 'ЭТО ОБЯЗАТЕЛЬНЫЙ ШАГ ДЛЯ НАГРАДЫ', 'Предупреждение: заголовок', G8],
+    ['sb_warn', 'Если не подписаться на все каналы, проверка не завершится и заявка на награду может быть отменена.', 'Предупреждение: текст', G8],
+    ['sb_sp_t', 'Спонсоры поддерживают ивент', 'Спонсоры: заголовок', G8],
+    ['sb_sp', '**Благодаря спонсорам** мы можем выделять игрокам такие игровые предметы.', 'Спонсоры: текст', G8],
+    ['sb_info', 'Каналы можно **убрать в архив Telegram**. Через 48 часов от них можно отписаться.', 'Плашка с подсказкой', G8],
+    ['sb_row_go', 'Подписаться', 'Кнопка у канала', G8],
+    ['sb_row_done', '✓ Открыто', 'Кнопка у открытого канала', G8],
+    ['sb_row_sub', 'подписаться', 'Подпись под каналом', G8],
+    ['sb_row_start', 'нажать старт', 'Подпись под ботом', G8],
+    ['sb_btn', 'Я ПОДПИСАН — ЗАБРАТЬ ПРИЗЫ', 'Кнопка', G8],
+    ['sb_busy', 'Проверяем подписку…', 'Кнопка во время проверки', G8],
+    ['sb_after', 'После успешной проверки сразу откроется очередь на выдачу призов.', 'Текст под кнопкой', G8],
+    ['sb_fail', 'Сначала подпишись на всех спонсоров', 'Если подписки нет', G8],
+
+    ['bc_queue', 'Очередь', 'Путь вверху', G9],
+    ['q_step', '05 / 05', 'Шаг', G9],
+    ['q_kicker', 'ОЧЕРЕДЬ НА ВЫДАЧУ', 'Надпись', G9],
+    ['q_t1', 'Призы', 'Заголовок, чёрная строка', G9],
+    ['q_t2', 'уже в пути.', 'Заголовок, серая строка', G9],
+    ['q_sub', '**{acc}**, заявка принята. Robux и предмет придут на аккаунт в течение {hours} часов.', 'Текст', G9],
+    ['q_wait', 'ДО ЗАЧИСЛЕНИЯ ОСТАЛОСЬ', 'Над таймером', G9],
+    ['q_ready', 'ПРИЗЫ ОТПРАВЛЕНЫ НА ТВОЙ АККАУНТ ✅', 'Когда таймер дошёл до нуля', G9],
+    ['q_h', 'час.', 'Под часами', G9],
+    ['q_m', 'мин.', 'Под минутами', G9],
+    ['q_s', 'сек.', 'Под секундами', G9],
+    ['q_rbx', 'Robux', 'Список: Robux', G9],
+    ['q_item', 'Предмет', 'Список: предмет', G9],
+    ['q_fine', 'Не отписывайся от спонсоров до зачисления — иначе заявка может быть отменена.', 'Серая плашка', G9],
+    ['q_btn', 'Закрыть', 'Кнопка', G9],
+
+    ['err_net', 'Ошибка сети. Попробуй ещё раз.', 'Нет интернета', G10],
+    ['err_retry', 'Не получилось, попробуй ещё раз.', 'Общая ошибка', G10],
+    ['locked_prize', 'Сначала выполни задания и открой сюрприз', 'Вкладка «Моя награда» пока закрыта', G10],
+    ['locked_queue', 'Очередь откроется после проверки подписки', 'Вкладка «Очередь» пока закрыта', G10],
+
+    ['cfg.prize_min', '1500', 'Robux: от', GC, 'number'],
+    ['cfg.prize_max', '5000', 'Robux: до', GC, 'number'],
     ['cfg.hours', '24', 'Таймер: сколько часов ждать', GC, 'number'],
-    ['cfg.c_btn', '#0b0b0f', 'Цвет кнопок', GC, 'color'],
+    ['cfg.c_btn', '#151517', 'Цвет кнопок', GC, 'color'],
     ['cfg.c_btn_tx', '#ffffff', 'Цвет текста на кнопках', GC, 'color'],
-    ['cfg.c_ink', '#0b0b0f', 'Цвет текста', GC, 'color'],
-    ['cfg.c_bg', '#f2f1f6', 'Фон светлых экранов', GC, 'color'],
-    ['cfg.c_card', '#e6e5ec', 'Фон карточек выбора', GC, 'color'],
-    ['cfg.c_sky1', '#120c24', 'Первый экран: цвет неба сверху', GC, 'color'],
-    ['cfg.c_sky2', '#2a1a33', 'Первый экран: цвет внизу', GC, 'color'],
-    ['cfg.c_acc1', '#ff8a00', 'Полоска на таймере: цвет слева', GC, 'color'],
-    ['cfg.c_acc2', '#8b3fd9', 'Полоска на таймере: цвет справа', GC, 'color'],
-    ['cfg.bg_img', '', 'Первый экран: своя картинка фона (ссылка, пусто — ночная улица)', GC, 'url']
+    ['cfg.c_ink', '#111114', 'Цвет текста', GC, 'color'],
+    ['cfg.c_bg', '#ffffff', 'Фон', GC, 'color'],
+    ['cfg.c_accent', '#3b5bdb', 'Цвет полоски проверки', GC, 'color']
   ];
   var META = {};
   DEF.forEach(function (d) { META[d[0]] = d; });
-  var TX = {};          // сохранённые правки владельца
-  var dirty = {};       // несохранённые правки (null — вернуть по умолчанию)
-  var admin = false, editing = false;
+  var TX = {}, dirty = {}, admin = false, editing = false;
 
+  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function T(key) {
-    if (Object.prototype.hasOwnProperty.call(dirty, key)) {
-      if (dirty[key] !== null) return dirty[key];
-    } else if (Object.prototype.hasOwnProperty.call(TX, key)) return TX[key];
+    if (has(dirty, key)) { if (dirty[key] !== null) return dirty[key]; }
+    else if (has(TX, key)) return TX[key];
     return META[key] ? META[key][1] : '';
   }
   function num(key) { var n = parseInt(T(key), 10); return isNaN(n) ? +META[key][1] : n; }
-  function hours() { return !editing && st.data && st.data.hours != null ? st.data.hours : num('cfg.hours'); }
+  function money(n) { return Number(n || 0).toLocaleString('ru-RU').replace(/\s/g, ' '); }
+
+  var st = { data: null, nick: '', choice: '', opened: {}, view: 'home', offset: 0, subsOpened: {} };
+  try { st.opened = JSON.parse(LS.get('opened') || '{}') || {}; } catch (e) {}
+  st.tasksOk = LS.get('tasks_ok') === '1';
+
+  function vars(extra) {
+    var d = st.data || {}, lo = num('cfg.prize_min'), hi = Math.max(lo, num('cfg.prize_max'));
+    var prize = d.prize || 0;
+    var chance = prize ? (5 + 30 * (1 - Math.min(1, Math.max(0, (prize - lo) / ((hi - lo) || 1))))).toFixed(1).replace('.', ',') : '19,8';
+    return Object.assign({
+      acc: st.nick || d.username || '', player: st.nick || d.username || 'игрок',
+      prize: money(prize), min: money(lo), max: money(hi), chance: chance,
+      hours: !editing && d.hours != null ? d.hours : num('cfg.hours')
+    }, extra || {});
+  }
   function fmt(text, extra) {
-    var v = Object.assign({ acc: shownName(), prize: st.data ? st.data.prize : '', hours: hours() },
-                          extra || {});
+    var v = vars(extra);
     return String(text).replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; });
   }
-  function isUrl(v) { return /^https?:\/\/\S+$/i.test(String(v).trim()); }
-  function setPic(node, value) {
-    node.textContent = '';
-    if (isUrl(value)) {
-      var img = document.createElement('img'); img.src = String(value).trim(); img.alt = '';
-      node.appendChild(img);
-    } else node.textContent = value;
-  }
-  // расставить все тексты и цвета по местам
-  function paint(root) {
-    Array.prototype.forEach.call((root || document).querySelectorAll('[data-t]'), function (n) {
-      var key = n.dataset.t, val = fmt(T(key), n._vars);
-      if (n.dataset.attr) n.setAttribute(n.dataset.attr, val);
-      else if (n.classList.contains('pic')) setPic(n, T(key));
-      else n.textContent = val;
-    });
-    var css = document.documentElement.style;
-    [['--btn', 'cfg.c_btn'], ['--btn-tx', 'cfg.c_btn_tx'], ['--ink', 'cfg.c_ink'],
-     ['--soft', 'cfg.c_bg'], ['--card', 'cfg.c_card'], ['--sky1', 'cfg.c_sky1'],
-     ['--sky2', 'cfg.c_sky2'], ['--acc1', 'cfg.c_acc1'], ['--acc2', 'cfg.c_acc2']
-    ].forEach(function (p) { css.setProperty(p[0], T(p[1]) || META[p[1]][1]); });
-    var bg = T('cfg.bg_img'), nickScr = el('s-nick');
-    nickScr.classList.toggle('pic', isUrl(bg));
-    nickScr.style.backgroundImage = isUrl(bg) ? 'url("' + bg.trim().replace(/"/g, '%22') + '")' : '';
-    if (st.choice && CH[st.choice]) {
-      setPic(el('sure-pic'), T(st.choice + '_pic'));
-      el('sure-title').textContent = T(st.choice + '_title');
-    }
-    if (st.screen === 's-nick') document.body.style.background = T('cfg.c_sky1') || '#1a1030';
-  }
-  var CH = { trick: 1, sweet: 1 };
-
-  // значок робукса
-  Array.prototype.forEach.call(document.querySelectorAll('svg.rbx'), function (s) {
-    s.innerHTML = '<path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="none" stroke="currentColor" ' +
-      'stroke-width="2.2" stroke-linejoin="round"/><rect x="8.3" y="8.3" width="7.4" ' +
-      'height="7.4" rx="1.2" fill="none" stroke="currentColor" stroke-width="2.2"/>';
-  });
-  // аватарка не загрузилась — прячем пустой кружок
-  ['t-img'].forEach(function (id) {
-    el(id).addEventListener('error', function () { el(id).style.display = 'none'; });
-    el(id).addEventListener('load', function () { el(id).style.display = ''; });
-  });
-  // звёзды
-  for (var i = 0; i < 40; i++) {
-    var s = document.createElement('div');
-    s.className = 'star';
-    s.style.left = Math.random() * 100 + '%';
-    s.style.top = Math.random() * 45 + '%';
-    s.style.animationDelay = (-Math.random() * 3) + 's';
-    el('sky').appendChild(s);
-  }
-
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
   }
+  function rich(text) {
+    return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/__(.+?)__/g, '<u>$1</u>');
+  }
+  function paint(root) {
+    Array.prototype.forEach.call((root || document).querySelectorAll('[data-t]'), function (n) {
+      var key = n.dataset.t, val = fmt(T(key), n._vars);
+      if (n.dataset.attr) n.setAttribute(n.dataset.attr, val.replace(/\*\*|__/g, ''));
+      else n.innerHTML = rich(val);
+    });
+    Array.prototype.forEach.call((root || document).querySelectorAll('[data-img]'), function (n) {
+      var src = T(n.dataset.img);
+      if (n.getAttribute('src') !== src) n.setAttribute('src', src);
+    });
+    var css = document.documentElement.style;
+    [['--btn', 'cfg.c_btn'], ['--btn-tx', 'cfg.c_btn_tx'], ['--ink', 'cfg.c_ink'],
+     ['--bg', 'cfg.c_bg'], ['--accent', 'cfg.c_accent']
+    ].forEach(function (p) { css.setProperty(p[0], T(p[1]) || META[p[1]][1]); });
+    el('who-name').textContent = st.nick || T('h_nick');
+  }
+
+  // значки
+  var RBX = '<path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/>' +
+    '<path d="M12 4.6 18.6 8.4v7.2L12 19.4 5.4 15.6V8.4z" fill="#111"/><rect x="10" y="10" width="4" height="4" fill="#fff"/>';
+  Array.prototype.forEach.call(document.querySelectorAll('svg.rbx'), function (s) { s.innerHTML = RBX; });
+  el('ava').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.6"><path d="M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2z"/><circle cx="10" cy="10" r=".9"/><circle cx="14" cy="10" r=".9"/><path d="M10 13.5c1.2.8 2.8.8 4 0"/></svg>';
+  var ICONS = [
+    '<path d="M8 4 4 7l2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/>',
+    '<path d="M4 6c3 1.5 5 1.5 8 0 3 1.5 5 1.5 8 0v6a8 8 0 0 1-16 0z"/><path d="M8 11h2m4 0h2M9.5 15.5c1.5 1 3.5 1 5 0"/>',
+    '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/><path d="M9 11h6m-3-3v6"/>'
+  ];
+
   function haptic(k) { try { tg.HapticFeedback.notificationOccurred(k); } catch (e) {} }
   function tap() { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} }
-  function show(id) {
-    st.screen = id;
-    SCREENS.forEach(function (s) { el(s).classList.toggle('on', s === id); });
-    document.body.style.background = id === 's-nick' ? (T('cfg.c_sky1') || '#1a1030') : '';
-    window.scrollTo(0, 0);
-    paint();
-    if (editing) markScreen();
+  function toast(text, ms) {
+    var t = el('toast'); t.textContent = text; t.classList.add('on');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, ms || 2400);
   }
-  function err(id, text) { var n = el(id); n.textContent = text || ''; n.classList.toggle('on', !!text); }
   function openLink(url) {
     if (!url) return;
     if (tg && tg.openTelegramLink && url.indexOf('https://t.me/') === 0) tg.openTelegramLink(url);
@@ -563,224 +904,386 @@
     return m ? decodeURIComponent(m[1]) : '';
   }
   function headers() {
-    return {
-      'X-Telegram-Init-Data': initData(),
-      'X-App-Hash': encodeURIComponent((location.hash || '') + (location.search || ''))
-    };
+    return { 'X-Telegram-Init-Data': initData(),
+             'X-App-Hash': encodeURIComponent((location.hash || '') + (location.search || '')) };
   }
-  async function api(url, body) {
+  async function api(url, body, type) {
     var opts = { headers: headers() };
     if (body) {
-      opts.method = 'POST'; opts.body = JSON.stringify(body);
-      opts.headers['Content-Type'] = 'application/json';
+      opts.method = 'POST';
+      opts.body = type ? body : JSON.stringify(body);
+      opts.headers['Content-Type'] = type || 'application/json';
     }
     var res = await fetch(url, opts);
     var data = await res.json().catch(function () { return {}; });
     return { status: res.status, data: data };
   }
-  function shownName() {
-    return (st.user && (st.user.display_name || st.user.username)) || (st.data && st.data.username) || '';
-  }
-
-  // ---------- 1. ник (без поиска: какое имя ввели, такое и будет) ----------
-  var input = el('nick'), find = el('b-find');
-  input.addEventListener('focus', function () { document.body.classList.add('kb'); });
-  input.addEventListener('blur', function () { document.body.classList.remove('kb'); });
-  input.addEventListener('input', function () {
-    // в Roblox ники только латиницей: лишнее сразу убираем и подсказываем
-    var clean = input.value.replace(/[^A-Za-z0-9_]/g, '');
-    if (clean !== input.value) {
-      input.value = clean; haptic('error'); err('nick-err', T('nick_latin'));
-      find.className = 'btn ' + (clean ? 'white' : 'ghost');
-      return;
-    }
-    find.className = 'btn ' + (input.value.trim() ? 'white' : 'ghost');
-    err('nick-err', '');
-  });
-  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { input.blur(); next(); } });
-  find.addEventListener('click', next);
-
-  // правила ников Roblox: 3–20 символов, латиница, цифры, не больше одного _
-  // и не в начале/конце. Проверяем только формат — аккаунт нигде не ищем.
-  function nickError(nick) {
-    if (!nick) return 'nick_empty';
-    if (/[^A-Za-z0-9_]/.test(nick)) return 'nick_latin';
-    if (nick.length < 3 || nick.length > 20) return 'nick_short';
-    if ((nick.match(/_/g) || []).length > 1 || /^_|_$/.test(nick)) return 'nick_under';
-    return '';
-  }
-  function next() {
-    var nick = input.value.trim();
-    var bad = nickError(nick);
-    if (bad) { haptic('error'); err('nick-err', T(bad)); return; }
-    st.user = { username: nick };
-    tap(); show('s-pick');
-  }
-
-  // ---------- 2–3. выбор ----------
-  function pickChoice(choice) {
-    st.choice = choice;
-    el('sure-card').className = 'choice ' + choice;
-    show('s-sure');
-  }
-  Array.prototype.forEach.call(document.querySelectorAll('[data-choice]'), function (b) {
-    b.addEventListener('click', function () { tap(); pickChoice(b.dataset.choice); });
-  });
-  el('b-cancel').addEventListener('click', function () { tap(); show('s-pick'); });
-  el('b-sure').addEventListener('click', async function () {
-    var b = el('b-sure'); b.disabled = true; b.innerHTML = '<span class="spin"></span>';
-    try {
-      var u = st.user || {};
-      var r = await api('api/raffle?stage=pick&choice=' + st.choice +
-        '&username=' + encodeURIComponent(u.username || '') +
-        '&roblox_id=' + encodeURIComponent(u.id || ''));
-      if (r.status >= 400) {
-        haptic('error'); show('s-nick');
-        err('nick-err', r.data.error || T('err_retry'));
-        return;
-      }
-      setData(r.data);
-      if (r.data.status === 'joined') { done(); return; }
-      popup();
-    } catch (e) { show('s-nick'); err('nick-err', T('err_net')); }
-    finally { b.disabled = false; b.textContent = T('sure_btn'); }
-  });
   function setData(d) {
     st.data = d;
     if (d && d.now_ts) st.offset = d.now_ts - Date.now() / 1000;
+    if (d && d.username) st.nick = d.username;
   }
 
-  // ---------- всплывающее окно: начисление ----------
-  function popup(still) {
+  // ---------- экраны и вкладки ----------
+  var CRUMB = { home: 'bc_home', choice: 'bc_choice', prize: 'bc_prize', subs: 'bc_subs', queue: 'bc_queue' };
+  var TAB = { home: 'home', choice: 'tasks', prize: 'prize', subs: 'tasks', queue: 'queue' };
+  function show(view) {
+    st.view = view;
+    ['home', 'choice', 'prize', 'subs', 'queue'].forEach(function (v) {
+      el('v-' + v).classList.toggle('on', v === view);
+    });
+    el('crumb').dataset.t = CRUMB[view];
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) {
+      t.classList.toggle('on', t.dataset.tab === TAB[view]);
+    });
+    paint();
+    window.scrollTo(0, 0);
+    if (editing) markScreen();
+  }
+  function stage() {
     var d = st.data;
-    paint(el('veil'));
-    el('veil').classList.add('on');
-    if (still) { el('pop-prize').textContent = d.prize; return; }
+    if (d && d.status === 'joined') return 'queue';
+    if (d && d.status === 'picked') return d.username ? 'subs' : 'prize';
+    return st.tasksOk ? 'choice' : 'home';
+  }
+  function dimTabs() {
+    var s = stage();
+    document.querySelector('[data-tab=prize]').classList.toggle('dim', !(st.data && st.data.prize));
+    document.querySelector('[data-tab=queue]').classList.toggle('dim', s !== 'queue');
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) {
+    t.addEventListener('click', function () {
+      tap();
+      var s = stage(), tab = t.dataset.tab;
+      if (tab === 'home') return show('home');
+      if (tab === 'tasks') {
+        if (s === 'home') { show('home'); return scrollTasks(); }
+        if (s === 'choice') return show('choice');
+        if (s === 'subs') return showSubs();
+        return show(s === 'queue' ? 'queue' : 'prize');
+      }
+      if (tab === 'prize') {
+        if (!(st.data && st.data.prize)) return toast(T('locked_prize'));
+        return showPrize(true);
+      }
+      if (tab === 'queue') {
+        if (s !== 'queue') return toast(T('locked_queue'));
+        return showQueue();
+      }
+    });
+  });
+  function scrollTasks() {
+    setTimeout(function () { el('tasks-sect').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  }
+  el('b-start').addEventListener('click', function () { tap(); scrollTasks(); });
+
+  // поиск по заданиям
+  el('search').addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase();
+    if (st.view !== 'home') show('home');
+    Array.prototype.forEach.call(document.querySelectorAll('.task'), function (c) {
+      c.style.display = !q || c.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+    if (q) scrollTasks();
+  });
+  el('search').addEventListener('keydown', function (e) { if (e.key === 'Enter') this.blur(); });
+
+  // ---------- задания ----------
+  function renderTasks() {
+    var html = '';
+    for (var i = 1; i <= 3; i++) {
+      html += '<div class="card task' + (st.tasksOk ? ' ok' : '') + '" data-i="' + i + '">' +
+        '<img data-img="img.t' + i + '" alt="">' +
+        '<div class="in"><div class="meta"><span class="num">0' + i + '</span><span data-t="t' + i + '_tag"></span>' +
+        '<span class="st" data-t="' + (st.tasksOk ? 'tk_status_ok' : 'tk_status') + '"></span></div>' +
+        '<h3 data-t="t' + i + '_title"></h3>' +
+        '<div class="quote"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">' +
+        ICONS[i - 1] + '</svg></span><span data-t="t' + i + '_text"></span></div>' +
+        '<div class="game"><i></i><span data-t="t' + i + '_game"></span></div>' +
+        '<div class="must"><b data-t="tk_must"></b><span data-t="tk_must2"></span></div>' +
+        '<button class="btn" data-play="' + i + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15L19.5 12z"/></svg><span data-t="tk_btn"></span></button>' +
+        '</div></div>';
+    }
+    el('tasks').innerHTML = html;
+    Array.prototype.forEach.call(el('tasks').querySelectorAll('[data-play]'), function (b) {
+      b.addEventListener('click', function () {
+        var i = b.dataset.play;
+        st.opened[i] = 1; LS.set('opened', JSON.stringify(st.opened));
+        tap(); openLink(T('t' + i + '_url'));
+      });
+    });
+    var done = st.tasksOk ? 3 : 0;
+    el('tk-count').innerHTML = done + '<small> / 3</small>';
+    el('tk-bar').style.width = (done / 3 * 100) + '%';
+    paint(el('tasks'));
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function checkRows() {
+    var list = el('cks');
+    list.innerHTML = [1, 2, 3].map(function (i) {
+      return '<div class="ck" id="ck' + i + '"><img data-img="img.t' + i + '" alt=""><div class="tx">' +
+        '<b data-t="t' + i + '_title"></b><span data-t="ck_wait"></span></div><span class="mk"></span></div>';
+    }).join('');
+    el('ck-bar').style.width = '0';
+    paint(list);
+  }
+  function checkRow(i, state) {
+    var row = el('ck' + i), lbl = row.querySelector('span[data-t]');
+    row.className = 'ck ' + state;
+    lbl.dataset.t = { run: 'ck_run', ok: 'ck_ok', bad: 'ck_bad', '': 'ck_wait' }[state];
+    el('ck-sub')._vars = { i: i };
+    paint(row); paint(el('ck-sub').parentNode);
+  }
+  function previewCheck() {
+    checkRows(); checkRow(1, 'ok'); checkRow(2, 'run'); el('ck-bar').style.width = '45%';
+    el('ck-veil').classList.add('on');
+  }
+  el('b-check-tasks').addEventListener('click', async function () {
+    tap();
+    var veil = el('ck-veil');
+    checkRows();
+    veil.classList.add('on');
+    var allOk = true;
+    for (var i = 1; i <= 3; i++) {
+      checkRow(i, 'run');
+      await sleep(1100 + Math.random() * 500);
+      var ok = st.tasksOk || !!st.opened[i];
+      allOk = allOk && ok;
+      checkRow(i, ok ? 'ok' : 'bad');
+      el('ck-bar').style.width = (i / 3 * 100) + '%';
+    }
+    await sleep(700);
+    veil.classList.remove('on');
+    if (!allOk) { haptic('error'); return toast(T('ck_fail'), 3200); }
     haptic('success');
-    var start = performance.now(), lo = d.prize_min || 300, hi = d.prize_max || 1500, to = d.prize;
+    st.tasksOk = true; LS.set('tasks_ok', '1');
+    renderTasks();
+    await sleep(500);
+    show('choice'); dimTabs();
+  });
+
+  // ---------- сладость или гадость ----------
+  Array.prototype.forEach.call(document.querySelectorAll('.path'), function (p) {
+    p.addEventListener('click', function () {
+      tap(); st.choice = p.dataset.choice;
+      Array.prototype.forEach.call(document.querySelectorAll('.path'), function (o) { o.classList.toggle('on', o === p); });
+    });
+  });
+  el('b-surprise').addEventListener('click', async function () {
+    if (!st.choice) { haptic('error'); return toast(T('ch_pick')); }
+    var b = this; b.disabled = true;
+    magic(true);
+    try {
+      var r = await Promise.all([api('api/raffle?stage=pick&choice=' + st.choice), sleep(2600)]);
+      r = r[0];
+      if (r.status >= 400) { magic(false); haptic('error'); return toast(r.data.error || T('err_retry')); }
+      setData(r.data);
+      magic(false);
+      if (r.data.status === 'joined') return showQueue();
+      showPrize(false);
+    } catch (e) { magic(false); toast(T('err_net')); }
+    finally { b.disabled = false; dimTabs(); }
+  });
+
+  // летучие мыши
+  function magic(on) {
+    var m = el('magic');
+    if (!on) { m.classList.remove('on'); Array.prototype.forEach.call(m.querySelectorAll('.bat'), function (b) { b.remove(); }); return; }
+    m.classList.add('on');
+    var W = innerWidth, H = innerHeight;
+    for (var i = 0; i < 46; i++) {
+      var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      s.setAttribute('viewBox', '0 0 64 28'); s.setAttribute('class', 'bat');
+      s.innerHTML = '<path d="M32 9c1.5-3 2.5-4 3-6 .5 2 .5 4 0 6 4-3 12-6 29-3-6 2-9 6-10 12-3-3-7-3-10 1-2-3-5-4-8-1-1-2-2-3-4-3s-3 1-4 3c-3-3-6-2-8 1-3-4-7-4-10-1C9 12 6 8 0 6c17-3 25 0 29 3-.5-2-.5-4 0-6 .5 2 1.5 3 3 6z"/>';
+      var sc = .5 + Math.random() * 1.2, sx = Math.random() * W, sy = H + 40 + Math.random() * H * .6;
+      s.style.cssText = 'width:64px;left:' + sx + 'px;top:' + sy + 'px;--s:' + sc + ';--dx:' + ((Math.random() - .5) * W) +
+        'px;--dy:' + (-(H + 200 + Math.random() * 300)) + 'px;animation-duration:' + (1.6 + Math.random() * 1.4) +
+        's;animation-delay:' + (Math.random() * .9) + 's;opacity:' + (.35 + Math.random() * .6);
+      m.appendChild(s);
+    }
+  }
+
+  // ---------- приз ----------
+  function showPrize(still) {
+    var d = st.data;
+    show('prize');
+    var target = d.prize || 0, node = el('pr-amt');
+    if (still) { node.textContent = money(target); return; }
+    haptic('success'); confetti();
+    var lo = num('cfg.prize_min'), start = performance.now();
     (function roll(t) {
-      var k = Math.min(1, (t - start) / 1400), e = 1 - Math.pow(1 - k, 3);
-      el('pop-prize').textContent = k < 1
-        ? Math.round(lo + (hi - lo) * Math.random() * (1 - e) + (to - lo) * e)
-        : to;
+      var k = Math.min(1, (t - start) / 1600), e = 1 - Math.pow(1 - k, 3);
+      node.textContent = money(k < 1 ? Math.round(lo * .4 + (target - lo * .4) * e) : target);
       if (k < 1) requestAnimationFrame(roll);
     })(start);
   }
-  el('b-take').addEventListener('click', function () {
-    tap(); el('veil').classList.remove('on'); subs();
+  el('b-claim').addEventListener('click', function () {
+    tap();
+    if (st.data && st.data.username) return showSubs();
+    openNick();
   });
 
-  // ---------- 4. подписки ----------
+  function confetti() {
+    var c = el('confetti'), ctx = c.getContext('2d'), W = c.width = innerWidth, H = c.height = innerHeight;
+    var cols = ['#ff8a4c', '#ffb38a', '#8b7cf6', '#c7bdfd', '#f6c453', '#e64980'];
+    var ps = [];
+    for (var i = 0; i < 120; i++) ps.push({ x: Math.random() * W, y: -20 - Math.random() * H * .6, vx: (Math.random() - .5) * 1.6,
+      vy: 1.6 + Math.random() * 2.6, r: Math.random() * 6, w: 4 + Math.random() * 5, h: 2 + Math.random() * 3,
+      c: cols[i % cols.length], a: Math.random() * 6 });
+    var t0 = performance.now();
+    (function frame(t) {
+      ctx.clearRect(0, 0, W, H);
+      ps.forEach(function (p) {
+        p.x += p.vx; p.y += p.vy; p.a += .08;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c;
+        ctx.globalAlpha = Math.max(0, 1 - (t - t0) / 4200); ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+      });
+      if (t - t0 < 4200) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+    })(t0);
+  }
+
+  // ---------- ник: только формат Roblox, аккаунт нигде не ищем ----------
+  var nick = el('nick');
+  function nickErr(text) { var e = el('nk-err'); e.textContent = text || ''; e.classList.toggle('on', !!text); }
+  function nickError(v) {
+    if (!v) return 'nk_empty';
+    if (/[^A-Za-z0-9_]/.test(v)) return 'nk_latin';
+    if (v.length < 3 || v.length > 20) return 'nk_short';
+    if ((v.match(/_/g) || []).length > 1 || /^_|_$/.test(v)) return 'nk_under';
+    return '';
+  }
+  nick.addEventListener('input', function () {
+    var clean = nick.value.replace(/[^A-Za-z0-9_]/g, '');
+    if (clean !== nick.value) { nick.value = clean; haptic('error'); return nickErr(T('nk_latin')); }
+    nickErr('');
+  });
+  nick.addEventListener('keydown', function (e) { if (e.key === 'Enter') saveNick(); });
+  function openNick() {
+    nick.value = st.nick || ''; nickErr('');
+    el('nk-veil').classList.add('on');
+    if (!editing) setTimeout(function () { try { nick.focus(); } catch (e) {} }, 250);
+  }
+  el('nk-x').addEventListener('click', function () { el('nk-veil').classList.remove('on'); });
+  el('b-nick').addEventListener('click', saveNick);
+  async function saveNick() {
+    var v = nick.value.trim(), bad = nickError(v);
+    if (bad) { haptic('error'); return nickErr(T(bad)); }
+    var b = el('b-nick'); b.disabled = true;
+    try {
+      var r = await api('api/raffle?stage=nick&username=' + encodeURIComponent(v));
+      if (r.status >= 400) { haptic('error'); return nickErr(r.data.error || T('err_retry')); }
+      setData(r.data);
+      nick.blur(); el('nk-veil').classList.remove('on');
+      haptic('success');
+      showSubs();
+      toast(T('nk_saved'));
+    } catch (e) { nickErr(T('err_net')); }
+    finally { b.disabled = false; }
+  }
+  el('who').addEventListener('click', function () {
+    tap();
+    if (st.data && st.data.prize && !st.data.username) openNick();
+  });
+
+  // ---------- спонсоры ----------
   function isBot(url) { return /[?&]start=|bot\/?$|bot\?/i.test(url || ''); }
-  function subs() {
-    var d = st.data, links = d.links || [];
-    el('sum-prize').textContent = d.prize;
-    el('sum-acc').textContent = shownName();
+  function showSubs() {
+    var links = (st.data && st.data.links) || [];
     el('rows').innerHTML = links.map(function (c, i) {
       var name = String(c.title || 'Канал').replace(/^[^\p{L}\p{N}]+/u, '') || 'Канал';
-      return '<div class="row' + (st.opened[i] ? ' done' : '') + '" data-i="' + i + '">' +
-        '<div class="av">' + esc(name.charAt(0).toUpperCase()) + '</div>' +
-        '<div class="tx"><div class="n">' + esc(name) + '</div><div class="s" data-t="' +
-        (isBot(c.url) ? 'subs_row_start' : 'subs_row_sub') + '"></div></div>' +
-        '<button data-t="' + (st.opened[i] ? 'subs_row_done' : 'subs_row_go') + '"></button></div>';
+      var done = !!st.subsOpened[i];
+      return '<div class="sp' + (done ? ' done' : '') + '" data-i="' + i + '"><span class="lt">' + esc(name.charAt(0).toUpperCase()) +
+        '</span><div class="tx"><div class="n">' + esc(name) + '</div><div class="s" data-t="' +
+        (isBot(c.url) ? 'sb_row_start' : 'sb_row_sub') + '"></div></div><button data-t="' +
+        (done ? 'sb_row_done' : 'sb_row_go') + '"></button></div>';
     }).join('');
-    Array.prototype.forEach.call(el('rows').querySelectorAll('.row button'), function (b) {
+    Array.prototype.forEach.call(el('rows').querySelectorAll('.sp button'), function (b) {
       b.addEventListener('click', function () {
         var row = b.parentNode, i = +row.dataset.i;
-        st.opened[i] = true; row.classList.add('done'); b.dataset.t = 'subs_row_done';
-        b.textContent = T('subs_row_done');
-        tap(); progress(); openLink((links[i] || {}).url);
+        st.subsOpened[i] = 1; row.classList.add('done'); b.dataset.t = 'sb_row_done'; paint(row);
+        tap(); subsCount(); openLink((links[i] || {}).url);
       });
     });
-    progress();
-    show('s-subs');
+    subsCount();
+    show('subs');
   }
-  function progress(bad) {
-    var n = (st.data.links || []).length, k = Object.keys(st.opened).length;
-    var p = n ? Math.round(k / n * 100) : 0;
-    el('bar').style.width = p + '%'; el('pct').textContent = p + '%';
-    var cap = el('cap');
-    cap.removeAttribute('data-t');
-    if (bad) cap.textContent = bad;
-    else { cap.dataset.t = 'subs_count'; cap._vars = { k: k, n: n }; cap.textContent = fmt(T('subs_count'), cap._vars); }
-    cap.classList.toggle('bad', !!bad);
+  function subsCount() {
+    var n = ((st.data && st.data.links) || []).length;
+    el('sb-count').textContent = Object.keys(st.subsOpened).length + ' / ' + n;
   }
-  el('b-check').addEventListener('click', async function () {
-    var b = el('b-check');
-    b.disabled = true; b.classList.add('busy');
-    b.innerHTML = '<span class="spin"></span> ' + esc(T('subs_busy'));
+  el('b-subs').addEventListener('click', async function () {
+    var b = this; b.disabled = true;
+    var label = b.querySelector('span'); label.dataset.t = 'sb_busy'; paint(b);
     try {
       var r = await api('api/raffle?stage=check');
-      if (r.data.status === 'joined') { setData(r.data); haptic('success'); done(); return; }
+      if (r.data.status === 'joined') { setData(r.data); haptic('success'); dimTabs(); return showQueue(); }
       haptic('error');
-      progress(r.status >= 400 ? (r.data.error || T('err_retry')) : T('subs_fail'));
-    } catch (e) { progress(T('err_net')); }
-    finally { b.disabled = false; b.classList.remove('busy'); b.textContent = T('subs_btn'); }
+      toast(r.status >= 400 ? (r.data.error || T('err_retry')) : T('sb_fail'));
+    } catch (e) { toast(T('err_net')); }
+    finally { b.disabled = false; label.dataset.t = 'sb_btn'; paint(b); }
   });
 
-  // ---------- 5. отсчёт до зачисления ----------
+  // ---------- очередь: отсчёт до зачисления ----------
   var clock = null;
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function tick() {
-    var left = Math.max(0, Math.floor((st.data.deadline_ts || 0) - (Date.now() / 1000 + st.offset)));
+    var left = Math.max(0, Math.floor(((st.data && st.data.deadline_ts) || 0) - (Date.now() / 1000 + st.offset)));
     el('c-h').textContent = pad2(Math.floor(left / 3600));
     el('c-m').textContent = pad2(Math.floor(left % 3600 / 60));
     el('c-s').textContent = pad2(left % 60);
-    var ready = left <= 0, wait = el('t-wait');
-    el('ticket').classList.toggle('ready', ready);
-    if (wait.dataset.t !== (ready ? 'done_ready' : 'done_wait')) {
-      wait.dataset.t = ready ? 'done_ready' : 'done_wait';
-      wait.textContent = fmt(T(wait.dataset.t));
-    }
+    var ready = left <= 0, w = el('q-wait'), key = ready ? 'q_ready' : 'q_wait';
+    el('qcard').classList.toggle('ready', ready);
+    if (w.dataset.t !== key) { w.dataset.t = key; paint(w.parentNode); }
     if (ready && clock) { clearInterval(clock); clock = null; }
   }
-  function done() {
+  function showQueue() {
     var d = st.data;
-    el('t-who').textContent = shownName();
-    el('t-prize').textContent = d.prize;
-    var note = el('t-note');
-    note.textContent = d.note || ''; note.style.display = d.note ? '' : 'none';
-    var img = el('t-img');
-    if (st.user && st.user.avatar_url) img.src = st.user.avatar_url;
-    else img.style.display = 'none';
+    el('q-amt').textContent = money(d.prize);
+    var note = el('q-note'); note.textContent = d.note || ''; note.style.display = d.note ? '' : 'none';
+    show('queue');
     if (clock) clearInterval(clock);
     tick(); clock = setInterval(tick, 1000);
-    show('s-done');
   }
   el('b-close').addEventListener('click', function () { if (tg && tg.close) tg.close(); });
+  el('b-about').addEventListener('click', function () { el('ab-veil').classList.add('on'); });
+  el('ab-x').addEventListener('click', function () { el('ab-veil').classList.remove('on'); });
+  Array.prototype.forEach.call(document.querySelectorAll('.veil'), function (v) {
+    v.addEventListener('click', function (e) { if (e.target === v && v.id !== 'ck-veil') v.classList.remove('on'); });
+  });
 
   // ---------- режим редактирования ----------
   var SAMPLE = {
-    status: 'joined', username: 'ShadowFox_27', prize: 777, prize_min: 300, prize_max: 1500,
-    note: '', links: [
-      { title: '🔥 Канал партнёра', url: 'https://t.me/example' },
-      { title: 'Второй канал', url: 'https://t.me/example2' },
-      { title: 'Бот партнёра', url: 'https://t.me/example_bot?start=1' }
-    ]
+    status: 'joined', username: 'SpookyPlayer', prize: 2121, note: '', hours: 24,
+    links: [{ title: 'Подарочки тут', url: 'https://t.me/example' },
+            { title: 'Феско', url: 'https://t.me/example2' },
+            { title: 'Секретик бот', url: 'https://t.me/example_bot?start=1' }]
   };
-  var PREVIEW = [
-    ['s-nick', 'Ник'], ['s-pick', 'Выбор'], ['s-sure', 'Уверен?'], ['pop', 'Окно с робуксами'],
-    ['s-subs', 'Подписки'], ['s-done', 'Таймер']
-  ];
-  var current = 's-nick';
+  var PREVIEW = [['load', 'Загрузка'], ['home', 'Главная'], ['check', 'Проверка'], ['choice', 'Выбор'],
+    ['magic', 'Магия'], ['prize', 'Приз'], ['nick', 'Ник'], ['subs', 'Спонсоры'], ['queue', 'Очередь'], ['about', 'Об ивенте']];
+  var current = 'home';
+  function closeOverlays() {
+    ['ck-veil', 'nk-veil', 'ab-veil'].forEach(function (id) { el(id).classList.remove('on'); });
+    magic(false); el('loader').classList.add('off');
+  }
   function preview(id) {
-    current = id;
-    el('veil').classList.remove('on');
-    var real = st.data;
-    st.data = Object.assign({}, SAMPLE, real && real.note ? { note: real.note } : {},
-      { hours: num('cfg.hours'), prize_min: num('cfg.prize_min'), prize_max: num('cfg.prize_max') });
-    if (!st.user) st.user = { username: SAMPLE.username };
-    if (id === 'pop') { show('s-pick'); popup(true); current = 'pop'; markScreen(); return; }
-    if (id === 's-sure') pickChoice(st.choice || 'trick');
-    else if (id === 's-subs') subs();
-    else if (id === 's-done') {
-      st.data.deadline_ts = Date.now() / 1000 + st.data.hours * 3600; st.offset = 0; done();
-    } else show(id);
+    current = id; closeOverlays();
+    st.data = Object.assign({}, SAMPLE, { prize_min: num('cfg.prize_min'), prize_max: num('cfg.prize_max') });
+    st.nick = SAMPLE.username;
+    if (id === 'load') { show('home'); el('loader').classList.remove('off'); }
+    else if (id === 'home') show('home');
+    else if (id === 'check') { show('home'); previewCheck(); }
+    else if (id === 'choice') show('choice');
+    else if (id === 'magic') { show('choice'); magic(true); }
+    else if (id === 'prize') showPrize(true);
+    else if (id === 'nick') { showPrize(true); openNick(); }
+    else if (id === 'subs') showSubs();
+    else if (id === 'queue') { st.data.deadline_ts = Date.now() / 1000 + num('cfg.hours') * 3600; st.offset = 0; showQueue(); }
+    else if (id === 'about') { show('home'); el('ab-veil').classList.add('on'); }
+    current = id; markScreen();
   }
   function markScreen() {
-    Array.prototype.forEach.call(el('ed-screens').children, function (c) {
-      c.classList.toggle('on', c.dataset.id === current);
-    });
+    Array.prototype.forEach.call(el('ed-screens').children, function (c) { c.classList.toggle('on', c.dataset.id === current); });
   }
   PREVIEW.forEach(function (p) {
     var b = document.createElement('button');
@@ -788,38 +1291,51 @@
     b.addEventListener('click', function () { preview(p[0]); });
     el('ed-screens').appendChild(b);
   });
-
-  function toast(text) {
-    var t = el('ed-toast'); t.textContent = text; t.classList.add('on');
-    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2200);
-  }
   function setDirty(key, value) {
-    var saved = Object.prototype.hasOwnProperty.call(TX, key) ? TX[key] : null;
-    if (value === saved || (value === null && saved === null)) delete dirty[key];
-    else dirty[key] = value;
+    var saved = has(TX, key) ? TX[key] : null;
+    if (value === saved) delete dirty[key]; else dirty[key] = value;
     el('ed-save').classList.toggle('dirty', Object.keys(dirty).length > 0);
     paint();
-    if (st.screen === 's-done' && st.data) tick();
+    if (st.view === 'queue' && st.data) tick();
   }
   function isChanged(key) { return T(key) !== META[key][1]; }
-
   function field(key, onInput) {
-    var d = META[key], kind = d[4] || 'text', wrap = document.createElement('div');
+    var d = META[key], kind = d[4] || 'text', wrap = document.createElement('div'), inp;
     wrap.className = 'ed-item';
     wrap.innerHTML = '<label>' + esc(d[2]) + '</label>';
-    var inp;
     if (kind === 'color') {
       var line = document.createElement('div'); line.className = 'ed-line';
-      inp = document.createElement('input'); inp.type = 'color';
-      var txt = document.createElement('input'); txt.type = 'text'; txt.value = T(key);
-      inp.value = /^#[0-9a-f]{6}$/i.test(T(key)) ? T(key) : d[1];
-      inp.addEventListener('input', function () { txt.value = inp.value; onInput(inp.value); });
-      txt.addEventListener('input', function () {
-        if (/^#[0-9a-f]{6}$/i.test(txt.value)) inp.value = txt.value;
-        onInput(txt.value.trim());
+      var pick = document.createElement('input'); pick.type = 'color';
+      inp = document.createElement('input'); inp.type = 'text'; inp.value = T(key);
+      pick.value = /^#[0-9a-f]{6}$/i.test(T(key)) ? T(key) : d[1];
+      pick.addEventListener('input', function () { inp.value = pick.value; onInput(pick.value); });
+      inp.addEventListener('input', function () {
+        if (/^#[0-9a-f]{6}$/i.test(inp.value)) pick.value = inp.value;
+        onInput(inp.value.trim());
       });
-      line.appendChild(inp); line.appendChild(txt); wrap.appendChild(line);
-      inp = txt;
+      line.appendChild(pick); line.appendChild(inp); wrap.appendChild(line);
+    } else if (kind === 'img') {
+      var row = document.createElement('div'); row.className = 'ed-img';
+      var thumb = document.createElement('img'); thumb.src = T(key);
+      var up = document.createElement('button'); up.className = 'ed-up'; up.textContent = '📷 Загрузить фото';
+      var file = document.createElement('input'); file.type = 'file'; file.accept = 'image/*'; file.style.display = 'none';
+      inp = document.createElement('input'); inp.type = 'text'; inp.value = T(key); inp.placeholder = 'или ссылка https://…';
+      up.addEventListener('click', function () { file.click(); });
+      file.addEventListener('change', async function () {
+        var f = file.files && file.files[0]; if (!f) return;
+        up.textContent = 'Загружаю…';
+        try {
+          var r = await api('api/app/upload', f, f.type || 'image/jpeg');
+          if (r.status >= 400) { toast(r.data.error || 'Не загрузилось'); return; }
+          inp.value = r.data.url; thumb.src = r.data.url; onInput(r.data.url);
+          toast('Картинка загружена — не забудь «Сохранить»');
+        } catch (e) { toast('Ошибка сети — не загрузилось'); }
+        finally { up.textContent = '📷 Загрузить фото'; file.value = ''; }
+      });
+      inp.addEventListener('input', function () { thumb.src = inp.value.trim(); onInput(inp.value.trim()); });
+      row.appendChild(thumb); row.appendChild(up); row.appendChild(file);
+      wrap.appendChild(row); wrap.appendChild(inp);
+      wrap._thumb = thumb;
     } else {
       inp = document.createElement(kind === 'text' ? 'textarea' : 'input');
       if (kind === 'number') { inp.type = 'number'; inp.min = '0'; inp.inputMode = 'numeric'; }
@@ -833,54 +1349,57 @@
     reset.style.display = isChanged(key) ? '' : 'none';
     reset.addEventListener('click', function () {
       setDirty(key, null); inp.value = T(key);
-      if (kind === 'color') wrap.querySelector('input[type=color]').value = T(key);
+      if (wrap._thumb) wrap._thumb.src = T(key);
+      var pk = wrap.querySelector('input[type=color]'); if (pk) pk.value = T(key);
       reset.style.display = 'none';
     });
     wrap.appendChild(reset);
     wrap._input = inp; wrap._reset = reset;
     return wrap;
   }
-  function openSheet(build) {
-    var box = el('ed-box'); box.innerHTML = ''; build(box);
-    el('ed-sheet').classList.add('on');
-  }
+  function openSheet(build) { var box = el('ed-box'); box.innerHTML = ''; build(box); el('ed-sheet').classList.add('on'); }
   function closeSheet() { el('ed-sheet').classList.remove('on'); }
   el('ed-sheet').addEventListener('click', function (e) { if (e.target === el('ed-sheet')) closeSheet(); });
-  function closeBtn(box, label) {
+  function closeBtn(box) {
     var row = document.createElement('div'); row.className = 'ed-btns';
-    var ok = document.createElement('button'); ok.className = 'btn'; ok.textContent = label || 'Готово';
+    var ok = document.createElement('button'); ok.className = 'btn'; ok.textContent = 'Готово';
     ok.addEventListener('click', closeSheet); row.appendChild(ok); box.appendChild(row);
   }
-  function hint(key) {
-    if (META[key][4]) return '';
-    return 'Можно вставить: {acc} — ник, {prize} — сумма, {hours} — часы' +
-      (key === 'subs_count' ? ', {k} — открыто, {n} — всего' : '');
+  var HINT = 'Можно: **жирный**, __подчёркнутый__, {player} — ник или «игрок», {acc} — ник, {prize} — сумма, ' +
+    '{min}/{max} — Robux от/до, {hours} — часы, {chance} — шанс';
+  function related(key) {
+    var m = /^(t\d)_/.exec(key) || /^img\.(t\d)$/.exec(key);
+    if (m) return [m[1] + '_title', m[1] + '_text', m[1] + '_game', m[1] + '_url', 'img.' + m[1]];
+    if (key === 'tk_btn') return ['tk_btn', 't1_url', 't2_url', 't3_url'];
+    return [key];
   }
   function editOne(key) {
+    var keys = related(key);
+    if (keys.indexOf(key) < 0) keys.unshift(key);
     openSheet(function (box) {
-      var h = document.createElement('h4'); h.textContent = META[key][2]; box.appendChild(h);
+      var h = document.createElement('h4'); h.textContent = keys.length > 1 ? META[key][3] : META[key][2]; box.appendChild(h);
       var sub = document.createElement('div'); sub.className = 'ed-sub';
-      sub.textContent = META[key][3] + (hint(key) ? ' · ' + hint(key) : '');
-      box.appendChild(sub);
-      var f = field(key, function (v) { setDirty(key, v); f._reset.style.display = ''; });
-      f.querySelector('label').style.display = 'none';
-      box.appendChild(f);
+      sub.textContent = META[key][4] ? META[key][3] : HINT; box.appendChild(sub);
+      var first = null;
+      keys.forEach(function (k) {
+        var f = field(k, function (v) { setDirty(k, v); f._reset.style.display = ''; });
+        if (keys.length === 1) f.querySelector('label').style.display = 'none';
+        if (k === key) first = f;
+        box.appendChild(f);
+      });
       closeBtn(box);
-      setTimeout(function () { try { f._input.focus(); } catch (e) {} }, 250);
+      if (first && !META[key][4]) setTimeout(function () { try { first._input.focus(); } catch (e) {} }, 250);
     });
   }
-  function editList(filter, title) {
+  function editList(filter, title, subText) {
     openSheet(function (box) {
       var h = document.createElement('h4'); h.textContent = title; box.appendChild(h);
-      var sub = document.createElement('div'); sub.className = 'ed-sub';
-      sub.textContent = 'Изменения сразу видны на странице. Не забудь нажать «Сохранить».';
-      box.appendChild(sub);
+      var sub = document.createElement('div'); sub.className = 'ed-sub'; sub.textContent = subText; box.appendChild(sub);
       var group = '';
       DEF.filter(filter).forEach(function (d) {
         if (d[3] !== group) {
           group = d[3];
-          var g = document.createElement('div'); g.className = 'ed-group'; g.textContent = group;
-          box.appendChild(g);
+          var g = document.createElement('div'); g.className = 'ed-group'; g.textContent = group; box.appendChild(g);
         }
         var f = field(d[0], function (v) { setDirty(d[0], v); f._reset.style.display = ''; });
         box.appendChild(f);
@@ -889,16 +1408,17 @@
     });
   }
   el('ed-all').addEventListener('click', function () {
-    editList(function (d) { return d[3] !== GC; }, 'Все тексты');
+    editList(function (d) { return !d[4]; }, 'Все тексты', HINT + '. Не забудь нажать «Сохранить».');
   });
   el('ed-design').addEventListener('click', function () {
-    editList(function (d) { return d[3] === GC; }, 'Цвета и числа');
+    editList(function (d) { return !!d[4]; }, 'Картинки, ссылки, цвета, числа',
+      'Картинку можно загрузить с телефона или вставить ссылку. Не забудь нажать «Сохранить».');
   });
   el('ed-save').addEventListener('click', async function () {
-    if (!Object.keys(dirty).length) { toast('Нечего сохранять'); return; }
+    if (!Object.keys(dirty).length) return toast('Нечего сохранять');
     try {
       var r = await api('api/app/texts', { texts: dirty });
-      if (r.status >= 400) { toast(r.data.error || 'Не сохранилось'); return; }
+      if (r.status >= 400) return toast(r.data.error || 'Не сохранилось');
       TX = r.data.texts || {}; dirty = {};
       el('ed-save').classList.remove('dirty');
       paint(); haptic('success'); toast('Сохранено ✅ Все увидят изменения');
@@ -913,46 +1433,47 @@
   });
   el('ed-fab').addEventListener('click', function () {
     editing = true; document.body.classList.add('edit');
-    input.readOnly = true;
-    preview(st.screen === 's-nick' && !el('veil').classList.contains('on') ? 's-nick' : st.screen);
+    nick.readOnly = true; el('search').readOnly = true;
+    preview('home');
   });
   // в режиме редактирования нажатие — это правка, а не действие
   document.addEventListener('click', function (e) {
     if (!editing) return;
     if (e.target.closest('#ed-bar, #ed-sheet, #ed-fab')) return;
     e.preventDefault(); e.stopPropagation();
-    var n = e.target.closest('[data-t]');
-    if (!n && e.target.closest('#sure-pic, #sure-title')) {
-      n = { dataset: { t: (st.choice || 'trick') + (e.target.closest('#sure-pic') ? '_pic' : '_title') } };
-    }
-    if (n) editOne(n.dataset.t);
+    var n = e.target.closest('[data-t], [data-img]');
+    if (n) editOne(n.dataset.t || n.dataset.img);
   }, true);
 
   // ---------- запуск ----------
-  paint();
-  (async function loadTexts() {
-    try {
-      var r = await api('api/app/texts');
+  renderTasks();
+  show(stage() === 'choice' ? 'choice' : 'home');
+  dimTabs();
+  setTimeout(function () { el('ld-bar').style.width = '100%'; }, 50);
+  var loaded = Promise.all([
+    sleep(1700),
+    api('api/app/texts').then(function (r) {
       if (r.status < 400) {
-        TX = r.data.texts || {};
-        admin = !!r.data.admin;
+        TX = r.data.texts || {}; admin = !!r.data.admin;
         document.body.classList.toggle('admin', admin);
-        paint();
+        renderTasks(); paint();
       }
-    } catch (e) {}
-  })();
-
-  // уже получил робуксы или бросил на подписках — продолжаем с того же места
-  (async function resume() {
-    try {
-      var r = await api('api/raffle');
+    }).catch(function () {}),
+    api('api/raffle').then(function (r) {
       if (!r.data || (r.data.status !== 'joined' && r.data.status !== 'picked')) return;
-      setData(r.data);
-      st.user = { username: r.data.username };
-      if (editing) return;
-      if (r.data.status === 'joined') done(); else subs();
-    } catch (e) {}
-  })();
+      setData(r.data); st.tasksOk = true;
+    }).catch(function () {})
+  ]);
+  loaded.then(function () {
+    el('loader').classList.add('off');
+    if (editing) return;
+    renderTasks(); dimTabs();
+    var s = stage();
+    if (s === 'queue') showQueue();
+    else if (s === 'subs') showSubs();
+    else if (s === 'prize') showPrize(true);
+    else show(s === 'choice' ? 'choice' : 'home');
+  });
 })();
 </script>
 </body>
