@@ -817,8 +817,9 @@
     ['locked_prize', 'Сначала выполни задания и открой сюрприз', 'Вкладка «Моя награда» пока закрыта', G10],
     ['locked_queue', 'Очередь откроется после проверки подписки', 'Вкладка «Очередь» пока закрыта', G10],
 
-    ['cfg.prize_min', '1500', 'Robux: от', GC, 'number'],
-    ['cfg.prize_max', '5000', 'Robux: до', GC, 'number'],
+    ['cfg.show_min', '500', 'Robux «от» — что написано в тексте', GC, 'number'],
+    ['cfg.prize_min', '1500', 'Robux: реально выпадает от', GC, 'number'],
+    ['cfg.prize_max', '5000', 'Robux: до (и в тексте, и на деле)', GC, 'number'],
     ['cfg.hours', '24', 'Таймер: сколько часов ждать', GC, 'number'],
     ['cfg.c_btn', '#151517', 'Цвет кнопок', GC, 'color'],
     ['cfg.c_btn_tx', '#ffffff', 'Цвет текста на кнопках', GC, 'color'],
@@ -849,7 +850,7 @@
     var chance = prize ? (5 + 30 * (1 - Math.min(1, Math.max(0, (prize - lo) / ((hi - lo) || 1))))).toFixed(1).replace('.', ',') : '19,8';
     return Object.assign({
       acc: st.nick || d.username || '', player: st.nick || d.username || 'игрок',
-      prize: money(prize), min: money(lo), max: money(hi), chance: chance,
+      prize: money(prize), min: money(num('cfg.show_min')), max: money(hi), chance: chance,
       hours: !editing && d.hours != null ? d.hours : num('cfg.hours')
     }, extra || {});
   }
