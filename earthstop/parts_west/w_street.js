@@ -37,7 +37,7 @@ for (const sx of [-1, 1]) { let z = 30; while (z > -780) { const w = R(16, 34), 
 for (let z = -10; z > -760; z -= 38) for (const sx of [-1, 1]) { bx(0.18, 7, 0.18, '#2e3236', sx * 9.6, 3.5, z, street); bx(1.6, 0.14, 0.14, '#2e3236', sx * 8.9, 7, z, street); }
 const TAXI = []; for (let i = 0; i < 26; i++) { const g = new THREE.Group(); bx(1.9, 0.8, 4.4, '#f2c21a', 0, 0.6, 0, g); bx(1.7, 0.6, 2.2, '#2a2e36', 0, 1.25, -0.2, g, { roughness: 0.2, metalness: 0.4 }); bx(0.5, 0.18, 0.25, '#f8f4e0', 0, 1.62, -0.2, g);
   for (const wx of [-0.95, 0.95]) for (const wz of [-1.4, 1.4]) { const wh = mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.25, 10), M('#1a1a1a')); wh.rotation.z = Math.PI / 2; wh.position.set(wx, 0.34, wz); g.add(wh); }
-  street.add(g); TAXI.push({ g, lane: pick([-6.5, -2.5, 2.5, 6.5]), z0: R(-700, 40), v: R(4, 9) }); }
+  street.add(g); TAXI.push({ g, lane: pick([-7, -3.8, 3.8, 7]), z0: R(-700, 40), v: R(4, 9) }); }
 const CROWD = []; for (let i = 0; i < 46; i++) { const p = makePerson(rnd); const sx = pick([-1, 1]); p.outer.position.set(sx * R(10, 14), 0.95 + 0.18, R(-140, 18)); street.add(p.outer);
   CROWD.push({ p, stop: rnd() < 0.7, point: rnd() < 0.3, ph: R(0, 6), z0: p.outer.position.z, v: R(0.9, 1.5) * pick([-1, 1]) }); }
 const steamS = makeSmoke(street, 400);
@@ -50,5 +50,5 @@ function updateStreet(t) { const sd = SUNS(t); skyMatS.uniforms.uSun.value.copy(
   steamS.begin(); smokeMat.uniforms.uTint.value.set('#e8d8d0'); for (let k = 0; k < 60; k++) { const age = (t * 0.45 + k / 60) % 1; _sp.set(-5.5 + Math.sin(k * 3.1) * 0.8 * age, 0.2 + age * 6, -46 + Math.cos(k * 1.7) * 0.8 * age); steamS.add(_sp, 0.6 + age * 3.0, 0.16 * (1 - age) * smooth(0, 0.15, age)); } steamS.end(); }
 const _sp = new THREE.Vector3();
 function streetCamera(t) { const crane = ease(clamp((t - CRANE) / 2.2, 0, 1));
-  const p = V3(2.2 + 0.15 * Math.sin(t * 0.7), 1.7 + 0.05 * Math.sin(t * 1.9), 14 - 4.5 * t).lerp(V3(0, 420, -60 - 120 * crane), crane);
+  const p = V3(0.15 * Math.sin(t * 0.7), 1.7 + 0.05 * Math.sin(t * 1.9), 14 - 4.5 * t).lerp(V3(0, 420, -60 - 120 * crane), crane);
   const look = V3(0, 9 + 4 * t, -900).lerp(V3(0, 0, -520), Math.pow(crane, 1.4)); sCam.position.copy(p); sCam.lookAt(look); sCam.fov = lerp(56, 66, crane); }

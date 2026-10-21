@@ -18,7 +18,10 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add film grain.
 
-## Latest: helmet off in space — FIRST-PERSON remake (`parts_pov/`, `index_pov.html`, `scene_pov.js`, `audio_pov.py`)
+## Latest: What if the Sun rose in the West? (`parts_west/`, US, 64 s)
+Science from the MPI-M retrograde-Earth simulation (Mikolajewicz et al. 2018, ESD; Eos 2018). She asked for "красиво и динамично": sunrise street + crane into one continuous globe flight. Also made: a 15 s German stratosphere jump (`parts_jump/`). Note: TikTok blocked the mirrored/recoloured German re-upload of the helmet video for copied content — re-skins of her own posted videos get matched; make new scenes instead.
+
+## Helmet off in space — FIRST-PERSON remake (`parts_pov/`, `index_pov.html`, `scene_pov.js`, `audio_pov.py`)
 She disliked the third-person cut version ("не нравится вообще") and asked for first person + more dynamics: one continuous POV with blinks/blackout as transitions, the face shown only in the floating helmet's visor mirror. Lesson: for body-horror/experience topics, POV is the default. Also she asked for more breathing/body sounds (`audio_*.py` breath()/HELM()/cough()/gulp()).
 
 ## Earlier: helmet off in space, third person (`parts_helmet/`, `index_helmet.html`, `scene_helmet.js`, `audio_helmet.py`)
