@@ -51,16 +51,16 @@ function updateRoom(t) { lightRoom(t);
   drawClock(t < NIGHT ? 21 + t * 0.02 : t < WEEKS ? 3 + (t - NIGHT) * 0.06 : t < MORNING ? lerp(4, 7, (t - WEEKS) / (MORNING - WEEKS)) : 8 + (t - MORNING) * 0.03);
   const o = you.outer, P = you; o.rotation.set(0, 0, 0); o.scale.setScalar(1); P.root.rotation.set(0, 0, 0);
   const hand = () => P.elbows[1].localToWorld(_rv.set(0, -0.27, 0.03));
-  if (t < NIGHT) { // QUIT: by the bin, snap the vape, drop it, toss the pack
+  if (t < NIGHT - 0.45) { // QUIT: by the bin, snap the vape, drop it, toss the pack
     o.position.set(0.55, 0.95, -0.35); o.rotation.y = 0.55; poseIdle(P, t, 0);
-    const lift = smooth(0.2, 1.0, t) * (1 - smooth(2.3, 2.8, t)); P.arms[1].rotation.set(-1.1 * lift, 0, -0.15 * lift); P.elbows[1].rotation.x = -1.2 * lift; P.arms[0].rotation.set(-1.0 * lift, 0, 0.2 * lift); P.elbows[0].rotation.x = -1.3 * lift;
+    const lift = smooth(0.2, 1.0, t) * (1 - smooth(2.3, 2.8, t)); P.arms[1].rotation.set(-0.45 * lift, 0, -0.12 * lift); P.elbows[1].rotation.x = -1.35 * lift; P.arms[0].rotation.set(-0.4 * lift, 0, 0.15 * lift); P.elbows[0].rotation.x = -1.4 * lift;   // hands at chest height, well below the face
     const snap = smooth(1.5, 1.75, t), drop = clamp((t - 2.35) / 0.45, 0, 1); you.outer.updateMatrixWorld(true); const hp = hand().clone();
     vape.visible = t < 3.2; vape.position.copy(hp).lerp(V3(1.05, 0.15, 0.15), drop * drop); vape.rotation.set(0.3, 0.6, 0); vapeA.rotation.z = 0.9 * snap; vapeA.position.x = 0.012 * snap; vapeB.rotation.z = -0.9 * snap; vapeB.position.x = -0.012 * snap;
     const toss = clamp((t - 3.0) / 0.55, 0, 1); pack.visible = t > 1.0 && t < 3.8; pack.position.copy(P.elbows[0].localToWorld(_rv.set(0, -0.27, 0.03))).lerp(V3(1.05, 0.2, 0.15), toss).add(V3(0, 0.35 * Math.sin(Math.PI * toss), 0)); pack.rotation.set(toss * 4, toss * 3, 0); pack.scale.set(1, lerp(1, 0.55, smooth(1.2, 1.8, t)), 1); }
   else { vape.visible = false; pack.visible = false;
-    if (t < NIGHT + 2.4) { // tossing on the sofa
+    if (t < NIGHT + 2.7) { // tossing on the sofa (switches while the camera pans past the window)
       o.position.set(-1.6, 0.85, -1.8); o.rotation.set(0, 0, Math.PI / 2 + 0.12 * Math.sin(t * 2.2)); o.rotation.order = 'ZYX'; poseIdle(P, t, 0); P.arms[1].rotation.x = -2.6 + 0.5 * Math.sin(t * 1.7); }
-    else if (t < PEAK) { // raiding the fridge
+    else if (t < PEAK + 0.45) { // raiding the fridge (leaves while the camera turns away)
       o.position.set(2.1, 0.95, -0.9); o.rotation.y = Math.PI / 2 + 0.2; poseIdle(P, t, 1); P.arms[1].rotation.x = -1.3; P.elbows[1].rotation.x = -0.6; }
     else if (t < MORNING) { // the peak: on the sofa edge, head in hands; then calmer
       const calm = smooth(WEEKS + 0.5, MORNING - 0.5, t); o.position.set(-1.5, 0.95 + 0.05, -1.55); o.rotation.y = 0.15; poseSit(P); o.position.y = 0.6;
@@ -73,8 +73,8 @@ function updateRoom(t) { lightRoom(t);
   for (const S of SNACKS) S.g.visible = t > S.at && t < MORNING - 0.3;
   pizza.visible = t > MORNING - 0.5; steamR.begin(); smokeMat.uniforms.uTint.value.set('#ffffff'); if (pizza.visible) for (let k = 0; k < 40; k++) { const age = (t * 0.5 + k / 40) % 1; _rv.set(-1.3 + Math.sin(k * 2.1 + age * 5) * 0.08, 0.55 + age * 0.7, -0.7 + Math.cos(k * 1.3) * 0.08); steamR.add(_rv, 0.04 + age * 0.12, 0.35 * (1 - age) * smooth(0, 0.2, age)); } steamR.end(); }
 function roomCamera(t) { let pos, look, fov = 50; const sh = (a) => V3(Math.sin(t * 31) * a, Math.sin(t * 27.3) * a, 0);
-  if (t < NIGHT) { pos = V3(1.7, 1.5, 1.75).lerp(V3(1.45, 1.3, 1.25), smooth(0, 3.5, t)); look = V3(0.65, 1.15, -0.2).lerp(V3(0.95, 0.6, 0.05), smooth(1.9, 3.3, t)); fov = 44; }
-  else if (t < PEAK) { const k = ease(clamp((t - (NIGHT + 1.6)) / 1.4, 0, 1)); pos = V3(0.2, 1.7, 1.6).lerp(V3(0.4, 1.6, 1.4), k); look = V3(-1.6, 0.8, -1.8).lerp(V3(2.4, 1.1, -1.1), k); fov = 52; }
-  else if (t < MORNING) { const k = ease(clamp((t - PEAK) / 3, 0, 1)); pos = V3(0.4, 1.6, 1.4).lerp(V3(-0.6, 1.3, 0.9), k); look = V3(2.4, 1.1, -1.1).lerp(V3(-1.5, 0.95, -1.6), ease(clamp((t - PEAK) / 1.2, 0, 1))); fov = 50; pos.add(sh(0.02 * smooth(PEAK, PEAK + 0.6, t) * (1 - smooth(WEEKS, WEEKS + 1.5, t)))); }
-  else { const k = smooth(MORNING, LUNGS, t); pos = V3(0.3, 1.35, 1.0).lerp(V3(-0.6, 1.15, 0.2), k); look = V3(-1.4, 0.8, -1.4).lerp(V3(-1.45, 1.05, -1.6), k); fov = 50; }
+  if (t < NIGHT - 0.45) { pos = V3(1.7, 1.5, 1.75).lerp(V3(1.45, 1.3, 1.25), smooth(0, 3.5, t)); look = V3(0.65, 1.15, -0.2).lerp(V3(0.95, 0.6, 0.05), smooth(1.9, 3.3, t)); fov = 44; }
+  else if (t < PEAK - 0.6) { const k = ease(clamp((t - (NIGHT + 1.6)) / 2.2, 0, 1)); pos = V3(0.2, 1.7, 1.6).lerp(V3(0.4, 1.6, 1.4), k); look = V3(-1.6, 0.8, -1.8).lerp(V3(2.4, 1.1, -1.1), k); fov = 52; }
+  else if (t < MORNING) { const k = ease(clamp((t - PEAK + 0.6) / 3.6, 0, 1)); pos = V3(0.4, 1.6, 1.4).lerp(V3(-0.6, 1.3, 0.9), k); look = V3(2.4, 1.1, -1.1).lerp(V3(-1.5, 0.95, -1.6), ease(clamp((t - PEAK + 0.6) / 2.0, 0, 1))); fov = 50; pos.add(sh(0.02 * smooth(PEAK + 0.2, PEAK + 0.8, t) * (1 - smooth(WEEKS, WEEKS + 1.5, t)))); }
+  else { const k = smooth(MORNING, LUNGS, t); pos = V3(-0.6, 1.3, 0.9).lerp(V3(-0.75, 1.15, 0.2), k); look = V3(-1.5, 0.95, -1.6).lerp(V3(-1.45, 1.0, -1.6), k); fov = 50; }
   rCam.position.copy(pos); rCam.lookAt(look); rCam.fov = fov; }
