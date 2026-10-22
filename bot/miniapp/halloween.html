@@ -801,7 +801,7 @@
     ['q_s', 'сек.', 'Под секундами', G9],
     ['q_rbx', 'На баланс', 'Список: сумма', G9],
     ['q_item', 'Предмет', 'Список: предмет', G9],
-    ['q_fine', '', 'Серая плашка внизу (пусто — не показывается)', G9],
+    ['q_fine', 'Не отписывайся от спонсоров до зачисления — иначе заявка может быть отменена.', 'Серая плашка (пусто — не показывается)', G9],
     ['q_btn', 'Закрыть', 'Кнопка', G9],
 
     ['err_net', 'Ошибка сети. Попробуй ещё раз.', 'Нет интернета', G10],
@@ -858,7 +858,9 @@
   }
   function rich(text) {
     return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/__(.+?)__/g, '<u>$1</u>')
-      .replace(/\{R\}/g, currencyIcon('ri'));
+      .replace(/\{R\}/g, currencyIcon('ri'))
+      // слово «робуксы» в любом тексте (и в заданных на сервере) — тоже значком
+      .replace(/(^|[^A-Za-zА-Яа-яЁё])(?:robux|роб[уа]кс[а-яё]*)/gi, function (m, pre) { return pre + currencyIcon('ri'); });
   }
   function paint(root) {
     Array.prototype.forEach.call((root || document).querySelectorAll('[data-t]'), function (n) {
@@ -1255,7 +1257,7 @@
   function showQueue() {
     var d = st.data;
     el('q-amt').textContent = money(d.prize);
-    var note = el('q-note'); note.textContent = d.note || ''; note.style.display = d.note ? '' : 'none';
+    var note = el('q-note'); note.innerHTML = rich(d.note || ''); note.style.display = d.note ? '' : 'none';
     show('queue');
     if (clock) clearInterval(clock);
     tick(); clock = setInterval(tick, 1000);
