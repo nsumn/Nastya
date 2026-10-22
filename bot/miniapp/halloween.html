@@ -20,7 +20,7 @@
   [data-t]{white-space:pre-line}
   .chip [data-t], .stats [data-t]{white-space:nowrap}
   b{font-weight:700}
-  .ri{width:1.05em; height:1.05em; vertical-align:-.17em; margin:0 .08em}
+  .ri{width:1.05em; height:1.05em; vertical-align:-.17em; margin:0 .08em; object-fit:contain}
   u{text-decoration:none; background:linear-gradient(transparent 62%, #e9e9ee 62%); font-weight:700}
   button{font:inherit}
   .gray{color:#8c8c94}
@@ -537,7 +537,7 @@
         <div><svg class="rbx" width="28" height="28" viewBox="0 0 24 24"></svg><span data-t="q_rbx"></span><b id="q-amt"></b></div>
         <div><img data-img="img.item" alt=""><span data-t="q_item"></span><b data-t="pr_item"></b></div>
       </div>
-      <div class="qfine" data-t="q_fine"></div>
+      <div class="qfine hide-empty" data-t="q_fine"></div>
     </div>
     <div class="qnote" id="q-note"></div>
     <button class="btn" id="b-close" style="margin-top:18px"><span data-t="q_btn"></span></button>
@@ -801,7 +801,7 @@
     ['q_s', 'сек.', 'Под секундами', G9],
     ['q_rbx', 'На баланс', 'Список: сумма', G9],
     ['q_item', 'Предмет', 'Список: предмет', G9],
-    ['q_fine', 'Не отписывайся от спонсоров до зачисления — иначе заявка может быть отменена.', 'Серая плашка', G9],
+    ['q_fine', '', 'Серая плашка внизу (пусто — не показывается)', G9],
     ['q_btn', 'Закрыть', 'Кнопка', G9],
 
     ['err_net', 'Ошибка сети. Попробуй ещё раз.', 'Нет интернета', G10],
@@ -809,6 +809,7 @@
     ['locked_prize', 'Сначала выполни задания и открой сюрприз', 'Вкладка «Моя награда» пока закрыта', G10],
     ['locked_queue', 'Очередь откроется после проверки подписки', 'Вкладка «Очередь» пока закрыта', G10],
 
+    ['img.rbx', '', 'Значок валюты: своя картинка (пусто — стандартный значок)', GC, 'img'],
     ['cfg.show_min', '500', 'Сумма «от» — что написано в тексте', GC, 'number'],
     ['cfg.prize_min', '1500', 'Сумма: реально выпадает от', GC, 'number'],
     ['cfg.prize_max', '5000', 'Сумма: до (и в тексте, и на деле)', GC, 'number'],
@@ -857,14 +858,16 @@
   }
   function rich(text) {
     return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/__(.+?)__/g, '<u>$1</u>')
-      .replace(/\{R\}/g, '<svg class="ri" viewBox="0 0 24 24">' + RBX + '</svg>');
+      .replace(/\{R\}/g, currencyIcon('ri'));
   }
   function paint(root) {
     Array.prototype.forEach.call((root || document).querySelectorAll('[data-t]'), function (n) {
       var key = n.dataset.t, val = fmt(T(key), n._vars);
       if (n.dataset.attr) n.setAttribute(n.dataset.attr, val.replace(/\*\*|__|\{R\}/g, ''));
       else n.innerHTML = rich(val);
+      if (n.classList.contains('hide-empty')) n.style.display = val.trim() || editing ? '' : 'none';
     });
+    if (typeof paintCurrency === 'function') paintCurrency();
     Array.prototype.forEach.call((root || document).querySelectorAll('[data-img]'), function (n) {
       var src = T(n.dataset.img);
       if (n.getAttribute('src') !== src) n.setAttribute('src', src);
@@ -879,7 +882,18 @@
   // значки
   var RBX = '<path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/>' +
     '<path d="M12 4.6 18.6 8.4v7.2L12 19.4 5.4 15.6V8.4z" fill="#111"/><rect x="10" y="10" width="4" height="4" fill="#fff"/>';
-  Array.prototype.forEach.call(document.querySelectorAll('svg.rbx'), function (s) { s.innerHTML = RBX; });
+  // значок валюты: своя картинка из настроек или стандартный
+  function currencyIcon(cls) {
+    var src = T('img.rbx');
+    return src ? '<img class="' + cls + '" src="' + esc(src) + '" alt="">'
+               : '<svg class="' + cls + '" viewBox="0 0 24 24">' + RBX + '</svg>';
+  }
+  function paintCurrency() {
+    var src = T('img.rbx');
+    Array.prototype.forEach.call(document.querySelectorAll('svg.rbx'), function (s) {
+      s.innerHTML = src ? '<image href="' + esc(src) + '" x="0" y="0" width="24" height="24" preserveAspectRatio="xMidYMid meet"/>' : RBX;
+    });
+  }
   el('ava').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.6"><path d="M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2z"/><circle cx="10" cy="10" r=".9"/><circle cx="14" cy="10" r=".9"/><path d="M10 13.5c1.2.8 2.8.8 4 0"/></svg>';
   var ICONS = [
     '<path d="M8 4 4 7l2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/>',
