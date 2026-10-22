@@ -48,12 +48,18 @@ const compMat = new THREE.ShaderMaterial({ depthTest: false, depthWrite: false, 
       // sun glare
       vec2 sd = (vUv - uSunUV) * vec2(1.125, 2.0); float d = length(sd);
       c += uSunA * (vec3(1.0, 0.93, 0.8) * exp(-d * 3.5) * 0.55 + vec3(1.0) * exp(-d * 22.0) * 1.5 + vec3(1.0, 0.95, 0.85) * exp(-abs(sd.y) * 60.0) * exp(-abs(sd.x) * 2.5) * 0.35);
-      // visor fog from your breath
-      vec2 fq = (p - vec2(0.0, -0.62)) / vec2(0.5, 0.32); c = mix(c, vec3(0.86, 0.9, 0.93), clamp(uFog * exp(-dot(fq, fq)) * 0.75, 0.0, 1.0));
-      // helmet rim (dark padded edge) — grows + fades as the helmet comes off
-      vec2 hq = p / (vec2(0.66, 1.02) * (1.0 + 2.2 * uFrameK)); float e = length(hq);
-      float rim = smoothstep(0.9, 1.0, e); vec3 rimC = vec3(0.045, 0.05, 0.06) + vec3(0.5, 0.55, 0.6) * exp(-abs(e - 0.985) * 70.0) * 0.35;
-      c = mix(c, rimC, rim * uFrame); c += vec3(0.6, 0.75, 0.9) * 0.05 * uFrame * exp(-pow((p.x + p.y * 0.4 - 0.25) * 6.0, 2.0)) * (1.0 - rim);
+      // KR helmet (different design from the EN/DE videos): rounded-rectangle visor, white padded shell, orange trim, amber glass,
+      // gold sunshade at the top, orange corner brackets, glare from the upper right, breath fog lower right
+      vec2 fq = (p - vec2(0.12, -0.6)) / vec2(0.4, 0.24); c = mix(c, vec3(0.92, 0.89, 0.84), clamp(uFog * exp(-dot(fq, fq)) * 0.7, 0.0, 1.0));
+      vec2 hq = (p - vec2(0.0, 0.03)) / (vec2(0.5, 0.86) * (1.0 + 2.2 * uFrameK)); float e = pow(pow(abs(hq.x), 5.0) + pow(abs(hq.y), 5.0), 0.2);
+      float inside = 1.0 - smoothstep(0.985, 1.0, e), outside = 1.0 - inside;
+      c *= mix(vec3(1.0), vec3(1.05, 0.97, 0.84), uFrame * inside);
+      c = mix(c, c * vec3(0.6, 0.48, 0.26), smoothstep(0.55, 0.97, hq.y) * inside * 0.6 * uFrame);
+      c += vec3(1.0, 0.86, 0.62) * 0.07 * uFrame * inside * exp(-pow((-p.x + p.y * 0.5 - 0.32) * 7.0, 2.0));
+      vec2 a = abs(hq); float br = (1.0 - smoothstep(0.008, 0.014, abs(a.x - 0.86))) * step(0.6, a.y) * step(a.y, 0.78) + (1.0 - smoothstep(0.008, 0.014, abs(a.y - 0.86))) * step(0.6, a.x) * step(a.x, 0.78);
+      c = mix(c, vec3(1.0, 0.55, 0.15), clamp(br, 0.0, 1.0) * 0.55 * uFrame * inside);
+      vec3 shellC = mix(vec3(0.86, 0.87, 0.88), vec3(0.42, 0.44, 0.47), smoothstep(1.0, 1.7, e)); shellC *= 1.0 - 0.3 * exp(-abs(e - 1.24) * 55.0);
+      c = mix(c, shellC, outside * uFrame); c = mix(c, vec3(1.0, 0.42, 0.08), exp(-abs(e - 1.012) * 110.0) * uFrame * 0.9);
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = mix(vec3(l), c, uSat) * uTint;
       float r = length(p * vec2(1.3, 0.8)); c *= 1.0 - smoothstep(uVig * 0.45, uVig, r);
       float hl = 1.1 * (1.0 - uLid) - 0.35 * p.x * p.x; c *= 1.0 - smoothstep(hl - 0.1, hl + 0.02, abs(p.y));
