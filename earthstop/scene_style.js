@@ -105,14 +105,61 @@ function makeGirl(scale = 1, mood = 'awake', o = {}) { const g = new THREE.Group
   const q = add(new THREE.TorusGeometry(0.035, 0.011, 8, 20, Math.PI * 1.45), CLIP, 0, 0.012, 0, clip, { emissive: STYLE === 'neon' ? CLIP : null, ei: 0.9 }); q.rotation.z = -Math.PI * 0.62;
   add(new THREE.CylinderGeometry(0.009, 0.009, 0.02, 8), CLIP, -0.002, -0.032, 0, clip, { emissive: STYLE === 'neon' ? CLIP : null, ei: 0.9 }); add(new THREE.SphereGeometry(0.011, 8, 6), CLIP, -0.002, -0.06, 0, clip, { emissive: STYLE === 'neon' ? CLIP : null, ei: 0.9 });
   g.userData.head = head; return g; }
-const iffy = HERO === 'girl' ? makeGirl(1.25) : makeIffy(PAL.iffy); iffy.position.set(0.1, HERO === 'girl' ? 0.52 : 0.48, -0.65); iffy.rotation.set(0, 0.25, 0.06); if (HERO === 'girl') iffy.userData.head.rotation.set(-0.12, -0.25, 0.08); scene.add(iffy);
+
+// ---------- adult hosts (25-30): ?hero=woman (long pink hair, "?" clip) or ?hero=man (short hair, "?" pin) — stylised, ~1:6 head proportions ----------
+const PAL_A = { woman: { skin: '#f6cfb4', hair: '#ff5fa8', hair2: '#d6418a', top: '#b8a6ff', top2: '#9c88f0', legs: '#3f4a6e', shoe: '#f4f4f4', eye: '#5a3a7a' },
+  man: { skin: '#e9b48e', hair: '#3a2a22', hair2: '#2a1e18', top: '#7fd8c4', top2: '#62bfa9', legs: '#4a4e58', shoe: '#f4f4f4', eye: '#3a2a22' } };
+function limb(parent, x, y, z, len, r, color, rx = 0, rz = 0) { const j = new THREE.Group(); j.position.set(x, y, z); j.rotation.set(rx, 0, rz); parent.add(j); const m = add(new THREE.CapsuleGeometry(r, len, 5, 12), color, 0, -len / 2, 0, j); return { j, m, end: () => { const e = new THREE.Group(); e.position.y = -len; j.add(e); return e; } }; }
+function makeAdult(kind = 'woman', scale = 1, mood = 'awake', o = {}) { const P = PAL_A[kind], g = new THREE.Group(); g.scale.setScalar(scale); const sit = !o.stand;
+  // torso + hips (sweater), neck
+  const hipY = sit ? 0.0 : 0.88; const body = new THREE.Group(); body.position.y = hipY; g.add(body);
+  const torso = add(new THREE.CapsuleGeometry(kind === 'man' ? 0.17 : 0.15, 0.36, 6, 16), P.top, 0, 0.33, 0, body); torso.scale.set(1, 1, 0.72);
+  add(new THREE.CylinderGeometry(0.15, 0.17, 0.1, 16), P.legs, 0, 0.06, 0, body).scale.set(1, 1, 0.75);
+  add(new THREE.CylinderGeometry(0.045, 0.05, 0.1, 10), P.skin, 0, 0.66, 0, body);
+  // legs: thighs forward when sitting, shins down
+  for (const sx of [-1, 1]) { const th = limb(body, sx * 0.085, 0.05, 0, 0.36, 0.065, P.legs, sit ? -Math.PI / 2 + 0.08 : 0, 0); const kn = th.end(); const sh = new THREE.Group(); kn.add(sh); sh.rotation.x = sit ? Math.PI / 2 - 0.1 : 0;
+    add(new THREE.CapsuleGeometry(0.055, 0.36, 5, 12), P.legs, 0, -0.18, 0, sh); const sho = add(new THREE.BoxGeometry(0.1, 0.07, 0.2), P.shoe, 0, -0.41, 0.04, sh); }
+  // arms: hands resting on the knees (sitting) or by the sides
+  for (const sx of [-1, 1]) { const ua = limb(body, sx * (kind === 'man' ? 0.22 : 0.19), 0.56, 0, 0.26, 0.05, P.top, sit ? -0.55 : 0, sx * 0.12); const el = ua.end(); const fa = new THREE.Group(); el.add(fa); fa.rotation.x = sit ? -0.7 : -0.1;
+    add(new THREE.CapsuleGeometry(0.045, 0.22, 5, 10), P.top2, 0, -0.12, 0, fa); add(new THREE.SphereGeometry(0.042, 12, 8), P.skin, 0, -0.27, 0.01, fa, { noEdge: true }); }
+  // head
+  const head = new THREE.Group(); head.position.set(0, 0.84, 0.01); body.add(head);
+  const hd = add(new THREE.SphereGeometry(0.125, 26, 20), P.skin, 0, 0, 0, head, { glow: 0.2 }); hd.scale.set(0.92, 1.1, 0.95);
+  add(new THREE.SphereGeometry(0.05, 12, 8), P.skin, 0, -0.085, 0.045, head, { noEdge: true }).scale.set(1.3, 0.9, 1);   // jaw / chin
+  const eyeH = mood === 'happy' ? 0.35 : mood === 'shock' ? 1.3 : 1.0;
+  for (const sx of [-1, 1]) { const ew = add(new THREE.SphereGeometry(0.026, 14, 10), '#ffffff', sx * 0.045, 0.012, 0.108, head, { noEdge: true, noOutline: true }); ew.scale.set(1.15, 0.85 * eyeH, 0.45);
+    const ir = add(new THREE.SphereGeometry(0.016, 12, 8), P.eye, sx * 0.045 - 0.004, 0.012, 0.118, head, { noEdge: true, noOutline: true }); ir.scale.set(1, eyeH, 0.4);
+    add(new THREE.SphereGeometry(0.005, 6, 4), '#ffffff', sx * 0.045 - 0.009, 0.019, 0.124, head, { noEdge: true, noOutline: true, emissive: '#ffffff', ei: 0.8 });
+    const br = add(new THREE.CapsuleGeometry(0.0055, 0.032, 2, 6), P.hair2, sx * 0.046, 0.05 + (mood === 'shock' ? 0.012 : 0), 0.112, head, { noEdge: true, noOutline: true }); br.rotation.z = Math.PI / 2 + sx * (mood === 'think' ? -0.3 : 0.12);
+    if (kind === 'woman') { const la = add(new THREE.TorusGeometry(0.026, 0.004, 5, 12, Math.PI * 0.9), '#2a1630', sx * 0.045, 0.014 + 0.006 * eyeH, 0.11, head, { noEdge: true, noOutline: true }); la.rotation.z = Math.PI * 0.05; la.scale.set(1.1, 0.6, 1); }
+    const bl = add(new THREE.SphereGeometry(0.02, 10, 6), '#ff9ab8', sx * 0.07, -0.035, 0.095, head, { noEdge: true, noOutline: true }); bl.scale.set(1, 0.5, 0.3); bl.material.transparent = true; bl.material.opacity = kind === 'woman' ? 0.6 : 0.25; }
+  add(new THREE.ConeGeometry(0.012, 0.035, 6), P.skin, 0, -0.02, 0.122, head, { noEdge: true, noOutline: true }).rotation.x = Math.PI / 2;
+  const mo = add(new THREE.TorusGeometry(0.016, 0.005, 6, 14, mood === 'happy' ? Math.PI : Math.PI * 2), '#a0384a', 0, -0.058, 0.113, head, { noEdge: true, noOutline: true }); if (mood === 'happy') mo.rotation.z = Math.PI; else mo.scale.set(mood === 'think' ? 0.6 : 0.9, mood === 'shock' ? 1.4 : 0.8, 1);
+  add(new THREE.SphereGeometry(0.03, 10, 8), P.skin, -0.118, 0.0, 0.0, head, { noEdge: true }).scale.set(0.4, 1, 0.8); add(new THREE.SphereGeometry(0.03, 10, 8), P.skin, 0.118, 0.0, 0.0, head, { noEdge: true }).scale.set(0.4, 1, 0.8);   // ears
+  if (kind === 'woman') { // long straight pink hair, side-swept fringe, "?" clip
+    const cap = add(new THREE.SphereGeometry(0.136, 26, 18, 0, Math.PI * 2, 0, Math.PI * 0.58), P.hair, 0, 0.012, -0.008, head, { glow: 0.35 }); cap.scale.set(0.98, 1.12, 1.02); cap.rotation.x = -0.25;
+    const fr = add(new THREE.SphereGeometry(0.14, 26, 12, Math.PI * 0.12, Math.PI * 0.62, Math.PI * 0.14, Math.PI * 0.2), P.hair, 0, 0.0, 0.0, head, { glow: 0.35 }); fr.scale.set(0.98, 1.12, 1.02); fr.rotation.set(0, 0.25, 0.12); fr.material.side = THREE.DoubleSide;
+    const back = add(new THREE.CapsuleGeometry(0.11, 0.42, 8, 16), P.hair, 0, -0.2, -0.055, head, { glow: 0.35 }); back.scale.set(1.25, 1, 0.5);
+    for (const sx of [-1, 1]) { const lk = add(new THREE.CapsuleGeometry(0.03, 0.3, 6, 10), P.hair, sx * 0.112, -0.14, 0.035, head, { glow: 0.35 }); lk.rotation.z = sx * 0.06; }
+    const clip = new THREE.Group(); clip.position.set(0.085, 0.085, 0.085); clip.rotation.set(0, 0.7, -0.3); head.add(clip);
+    const q = add(new THREE.TorusGeometry(0.018, 0.006, 8, 18, Math.PI * 1.45), CLIP, 0, 0.006, 0, clip); q.rotation.z = -Math.PI * 0.62; add(new THREE.SphereGeometry(0.006, 8, 6), CLIP, -0.001, -0.028, 0, clip); }
+  else { // short textured hair with a quiff + light stubble; a "?" pin on the hoodie
+    const cap = add(new THREE.SphereGeometry(0.134, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), P.hair, 0, 0.018, -0.006, head); cap.scale.set(0.98, 1.1, 1.02); cap.rotation.x = -0.22;
+    const qf = add(new THREE.SphereGeometry(0.07, 14, 10), P.hair, 0.02, 0.11, 0.06, head); qf.scale.set(1.2, 0.55, 0.9); qf.rotation.z = -0.25;
+    const st = add(new THREE.SphereGeometry(0.075, 16, 10, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.4), '#7a5a48', 0, -0.03, 0.02, head, { noEdge: true }); st.scale.set(1.05, 1, 1.05); st.material.transparent = true; st.material.opacity = 0.35;
+    const pin = new THREE.Group(); pin.position.set(-0.08, 0.52, 0.12); body.add(pin); const q = add(new THREE.TorusGeometry(0.018, 0.006, 8, 18, Math.PI * 1.45), CLIP, 0, 0.006, 0, pin); q.rotation.z = -Math.PI * 0.62; add(new THREE.SphereGeometry(0.006, 8, 6), CLIP, -0.001, -0.028, 0, pin); }
+  g.userData.head = head; return g; }
+const ADULT = HERO === 'woman' || HERO === 'man';
+const iffy = ADULT ? makeAdult(HERO) : HERO === 'girl' ? makeGirl(1.25) : makeIffy(PAL.iffy); iffy.position.set(0.1, HERO === 'girl' ? 0.52 : 0.48, -0.65); iffy.rotation.set(0, 0.25, 0.06); if (HERO === 'girl') iffy.userData.head.rotation.set(-0.12, -0.25, 0.08);
+if (ADULT) { iffy.position.set(0.15, 0.52, 0.32); iffy.rotation.set(0, 0.2, 0); iffy.userData.head.rotation.set(-0.22, -0.3, 0.06); } scene.add(iffy);
 // ---------- thought bubble with the cringe memory: mini Iffy tripping on stage, three beans laughing ----------
 const bub = new THREE.Group(); bub.position.set(-0.62, 2.02, 0.45); bub.scale.setScalar(1.0); scene.add(bub);
+const BUBY = () => (HERO === 'woman' || HERO === 'man') ? 1.74 : 2.02; if (HERO === 'woman' || HERO === 'man') { bub.position.set(0.62, 1.74, 0.75); bub.scale.setScalar(0.55); }
 for (const [x, y, z, r] of [[0, 0, 0, 0.42], [0.42, 0.1, 0, 0.34], [-0.42, 0.08, 0, 0.34], [0.2, 0.32, -0.05, 0.32], [-0.22, 0.3, -0.05, 0.3], [0.62, -0.12, 0, 0.24], [-0.62, -0.12, 0, 0.24]]) add(new THREE.SphereGeometry(r, 24, 16), PAL.bubble, x, y, z, bub, { cast: false, glow: 0.3, emissive: STYLE === 'neon' ? null : null });
 for (const [x, y, r] of [[0.55, -0.55, 0.08], [0.72, -0.82, 0.055], [0.82, -1.02, 0.04]]) add(new THREE.SphereGeometry(r, 14, 10), PAL.bubble, x, y, 0.1, bub, { cast: false });
 const stage = new THREE.Group(); stage.position.set(0, -0.08, 0.4); bub.add(stage);
 add(box(0.9, 0.04, 0.3, 0.01), PAL.wood, 0, -0.18, 0, stage, { cast: false });
-const mini = HERO === 'girl' ? makeGirl(0.42, 'shock', { stand: true }) : makeIffy(PAL.iffy, 0.4); mini.position.set(-0.05, HERO === 'girl' ? -0.1 : -0.16, 0.02); mini.rotation.set(0, 0, -1.1); stage.add(mini);
+const mini = ADULT ? makeAdult(HERO, 0.24, 'shock', { stand: true }) : HERO === 'girl' ? makeGirl(0.42, 'shock', { stand: true }) : makeIffy(PAL.iffy, 0.4); mini.position.set(-0.05, ADULT ? -0.17 : HERO === 'girl' ? -0.1 : -0.16, 0.02); mini.rotation.set(0, 0, -1.1); stage.add(mini);
 PAL.crowd.forEach((c, i) => { const b = makeIffy(c, 0.26, 'laugh'); b.position.set(0.16 + i * 0.15, -0.16, 0.06); b.rotation.y = -0.4; stage.add(b); });
 // little "!" marks for the cringe
 for (const [x, y] of [[-0.25, 0.22], [-0.12, 0.28]]) add(box(0.025, 0.09, 0.02, 0.005), '#ff4a3a', x, y, 0.02, stage, { cast: false, noOutline: true });
@@ -126,12 +173,14 @@ if (STYLE === 'paper') { scene.traverse(o => { if (o.isMesh && o.material.map) {
 const SHEET = new URLSearchParams(location.search).get('sheet') === '1';
 if (SHEET) { room.visible = false; bub.visible = false; iffy.visible = false; scene.background = new THREE.Color(STYLE === 'neon' ? '#05040c' : '#f3e4f4');
   const fl = add(new THREE.CircleGeometry(6, 48), STYLE === 'neon' ? '#0a0818' : '#ead2ec', 0, 0, 0, scene, { cast: false, noOutline: true }); fl.rotation.x = -Math.PI / 2;
-  [[-0.95, 0, 'awake'], [0, 0.65, 'happy'], [0.95, Math.PI / 2, 'think']].forEach(([x, ry, md]) => { const gg = makeGirl(1.25, md, { stand: true }); gg.position.set(x, 0.12, 0); gg.rotation.y = ry; scene.add(gg); });
-  [['happy', -0.75], ['shock', 0], ['think', 0.75]].forEach(([md, x]) => { const gg = makeGirl(0.95, md, { stand: true }); gg.position.set(x, 1.55, -0.6); scene.add(gg); }); }
+  const mk = (md, sc) => ADULT ? makeAdult(HERO, sc * 0.85, md, { stand: true }) : makeGirl(sc, md, { stand: true });
+  [[-0.95, 0, 'awake'], [0, 0.65, 'happy'], [0.95, Math.PI / 2, 'think']].forEach(([x, ry, md]) => { const gg = mk(md, 1.25); gg.position.set(x, ADULT ? 0 : 0.12, 0); gg.rotation.y = ry; scene.add(gg); });
+  if (!ADULT) [['happy', -0.75], ['shock', 0], ['think', 0.75]].forEach(([md, x]) => { const gg = makeGirl(0.95, md, { stand: true }); gg.position.set(x, 1.55, -0.6); scene.add(gg); }); }
 // ---------- camera ----------
 let cam;
-if (STYLE === 'dio') { const s = 3.5; cam = new THREE.OrthographicCamera(-s * W / H, s * W / H, s, -s, 0.1, 100); cam.position.set(7, 6.2, 7); cam.lookAt(-0.25, 1.35, -0.3); }
-else if (SHEET) { cam = new THREE.PerspectiveCamera(30, W / H, 0.05, 100); cam.position.set(0, 1.5, 10.5); cam.lookAt(0, 1.2, 0); }
+if (STYLE === 'dio') { const s = ADULT ? 2.6 : 3.5; cam = new THREE.OrthographicCamera(-s * W / H, s * W / H, s, -s, 0.1, 100); cam.position.set(7, 6.2, 7); cam.lookAt(ADULT ? -0.1 : -0.25, ADULT ? 1.45 : 1.35, ADULT ? 0.1 : -0.3); }
+else if (SHEET) { cam = new THREE.PerspectiveCamera(30, W / H, 0.05, 100); cam.position.set(0, ADULT ? 1.0 : 1.5, ADULT ? 9.5 : 10.5); cam.lookAt(0, ADULT ? 0.8 : 1.2, 0); }
+else if (ADULT) { cam = new THREE.PerspectiveCamera(40, W / H, 0.05, 100); cam.position.set(1.15, 1.75, 3.55); cam.lookAt(-0.15, 1.45, -0.1); }
 else { cam = new THREE.PerspectiveCamera(42, W / H, 0.05, 100); cam.position.set(2.0, 2.2, 5.9); cam.lookAt(-0.2, 1.55, -0.4); }
 // ---------- DOM ----------
 const $ = id => document.getElementById(id);
@@ -143,5 +192,5 @@ $('hud').style.opacity = 0; if (SHEET) { $('title').innerHTML = STYLE === 'dio' 
 // ---------- render ----------
 let composer = null;
 if (STYLE === 'neon') { composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, cam)); composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 1.1, 0.6, 0.15)); composer.addPass(new OutputPass()); }
-window.renderAt = (t) => { iffy.position.y = (HERO === 'girl' ? 0.52 : 0.48) + 0.01 * Math.sin(t * 2); bub.position.y = 2.02 + 0.03 * Math.sin(t * 1.3); if (composer) composer.render(); else renderer.render(scene, cam); return true; };
+window.renderAt = (t) => { iffy.position.y = (HERO === 'girl' || ADULT ? 0.52 : 0.48) + 0.01 * Math.sin(t * 2) * (ADULT ? 0 : 1); bub.position.y = BUBY() + 0.03 * Math.sin(t * 1.3); if (composer) composer.render(); else renderer.render(scene, cam); return true; };
 window.sceneReady = (async () => { await document.fonts.ready; window.renderAt(0); return true; })();
