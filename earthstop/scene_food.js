@@ -331,14 +331,14 @@ const captions = [
   [27.0, 29.4, 'Your gut bacteria eat fiber.<br>Fast food has almost none.'],
   [29.5, 31.8, '10 days: one person lost ~40%<br>of their gut bacteria species.'],
   [32.4, 35.0, 'You eat it faster than<br>your brain can say “full”.'],
-  [35.2, 37.4, '+500 calories a day<br>≈ 4 lb a month (MODEL).'],
+  [35.2, 37.4, '+500 calories a day<br>≈ 4 lb a month.'],
   [37.5, 39.8, 'Super Size Me:<br>+24.5 lb in 30 days.'],
   [40.4, 45.7, 'Week 1: liver stress<br>in 14 of 18 people.<br>Main suspect: sugar.'],
   [46.4, 49.3, 'Rats on junk food got lazier.'],
   [49.5, 52.7, 'Their breaks before working<br>for a reward: 2× longer.'],
   [53.4, 56.3, '2 weeks of fruits & veggies:<br>more energy,<br>more motivation.'],
   [56.5, 58.0, 'Your gut changes in a day.'],
-  [58.1, 59.9, '84.8 million Americans<br>eat fast food today. 👇'],
+  [58.1, 59.9, '84.8 million Americans<br>eat fast food today.<br><span style="font-style:normal;font-size:1.3em">👇</span>'],
 ];
 const GREEN = '<b style="background:#5fd27a"></b>';
 const weightAt = t => t < WT + 5.5 ? 4.3 * smooth(WT + 3.3, WT + 4.8, t) : lerp(4.3, 24.5, smooth(WT + 5.6, WT + 7.4, t));
@@ -346,10 +346,10 @@ function hudAt(t) {
   if (t < 3.8) return null;
   if (t < ART) return ['<b></b>DAY 1 · DRIVE-THRU', 'ENERGY', t < 6.8 ? 'OK' : t < 8.6 ? 'DROPPING' : 'LOW', 'AFTER SODA + FRIES'];
   if (t < SALT) return ['<b></b>DAY 1 · BREAKFAST', 'ARTERY FLEX', Math.round(100 * artFlex(t)) + '%', 'VS. NORMAL · NEXT ~4 HOURS'];
-  if (t < DAY5) return ['<b></b>DAY 1 · 3 COMBOS', 'SODIUM', fmt(6200 * smooth(SALT + 0.2, SALT + 2.4, t)) + ' mg', '≈ 2.7× THE DAILY LIMIT (MODEL)'];
+  if (t < DAY5) return ['<b></b>DAY 1 · 3 COMBOS', 'SODIUM', fmt(6200 * smooth(SALT + 0.2, SALT + 2.4, t)) + ' mg', '≈ 2.7× THE DAILY LIMIT'];
   if (t < GUT) return ['<b></b>DAY 5', 'FOCUS', 'WORSE', 'ATTENTION · SPEED · MOOD'];
   if (t < WT) return ['<b></b>DAY 10', 'GUT SPECIES', Math.round(100 - 40 * smooth(GUT + 3.2, GUT + 6.8, t)) + '%', 'LEFT · ONE-PERSON TEST'];
-  if (t < LIV) return ['<b></b>DAY 30', 'WEIGHT', '+' + weightAt(t).toFixed(1) + ' lb', t < WT + 5.5 ? '+500 KCAL A DAY (MODEL)' : 'SUPER SIZE ME · 5,000 KCAL A DAY'];
+  if (t < LIV) return ['<b></b>DAY 30', 'WEIGHT', '+' + weightAt(t).toFixed(1) + ' lb', t < WT + 5.5 ? '+500 KCAL A DAY' : 'SUPER SIZE ME · 5,000 KCAL A DAY'];
   if (t < LAZY) return ['<b></b>WEEK 1', 'LIVER STRESS', '14 of 18', 'PEOPLE IN THE STUDY'];
   if (t < LAZY + 3.3) return ['<b></b>DAY 30 · EVENING', 'MOTIVATION', 'LOW', 'THE COUCH WINS'];
   if (t < FIX) return ['<b></b>RATS · 3 MONTHS', 'BREAKS', '2× longer', 'VS. RATS ON NORMAL FOOD'];
