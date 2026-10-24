@@ -11,9 +11,9 @@ const cloudM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.46, 20, 14), n
 const elM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.045, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), NA * 3); elM.frustumCulled = false; atomS.add(elM);
 const SPK_A = 160; const sparkA = new THREE.InstancedMesh(new THREE.BoxGeometry(0.02, 0.22, 0.02), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 2.4, 3.2) }), SPK_A); sparkA.frustumCulled = false; atomS.add(sparkA);
 const HERC = new THREE.Color('#ff8ab0'), HISC = new THREE.Color('#5ad8ff'), _ac = new THREE.Color(), _o2 = new THREE.Object3D(), _q2 = new THREE.Quaternion(), _e2 = new THREE.Vector3();
-// her lattice comes down 8.0-11.2 and settles with a little bounce: the clouds never merge
-const latDrop = t => { const k = ease(clamp((t - ATOM + 0.6) / 3.6, 0, 1)); return 2.6 * (1 - k) + 0.12 * Math.sin(clamp(t - ATOM - 2.9, 0, 3) * 5) * Math.exp(-Math.max(0, t - ATOM - 2.9) * 1.6); };
-const pushAt = t => smooth(ATOM + 1.9, ATOM + 3.0, t);
+// her lattice comes down from LAT0 and settles with a little bounce: the clouds never merge
+const latDrop = t => { const k = ease(clamp((t - LAT0 + 0.3) / 2.4, 0, 1)); return 2.6 * (1 - k) + 0.12 * Math.sin(clamp(t - LAT0 - 2.1, 0, 3) * 5) * Math.exp(-Math.max(0, t - LAT0 - 2.1) * 1.6); };
+const pushAt = t => smooth(LAT0 + 1.2, LAT0 + 2.2, t);
 function updateAtoms(t) { const dy = latDrop(t), push = pushAt(t);
   ATOMS.forEach((A, i) => { const y = A.y + (A.side > 0 ? dy : 0) + 0.015 * Math.sin(t * 7 + A.ph), face = A.layer === 0 ? push : 0, sq = 1 - 0.32 * face;
     _o2.position.set(A.x, y, A.z); _o2.rotation.set(0, 0, 0); _o2.scale.setScalar(1); _o2.updateMatrix(); nucM.setMatrixAt(i, _o2.matrix);
@@ -24,25 +24,23 @@ function updateAtoms(t) { const dy = latDrop(t), push = pushAt(t);
   for (let s = 0; s < SPK_A; s++) { const on = push > 0.2 && hash(s * 7.1 + Math.floor(t * 18)) < 0.45 * push; const x = (hash(s * 3.3) - 0.5) * AX * ASP * 0.9, z = (hash(s * 5.7) - 0.5) * AZ * ASP * 0.9;
     _o2.position.set(x, dy * 0.5 + 0.0, z); _o2.rotation.set(0, hash(s) * 3, (hash(s * 9.1 + Math.floor(t * 18)) - 0.5) * 0.8); _o2.scale.setScalar(on ? 1 : 0.0001); _o2.updateMatrix(); sparkA.setMatrixAt(s, _o2.matrix); } sparkA.instanceMatrix.needsUpdate = true; }
 // camera: a log-scale dolly from "1 mm away" (a field of dots) down to the gap between two atoms
-const atDist = t => Math.exp(lerp(Math.log(150), Math.log(14), smooth(LENS + 0.3, ATOM, t)) + lerp(0, Math.log(4.2 / 14), smooth(ATOM, ATOM + 3.4, t)));
+const atDist = t => t < ATOM + 1 ? Math.exp(lerp(Math.log(150), Math.log(14), smooth(LENS + 0.3, ATOM, t))) : Math.exp(lerp(Math.log(9), Math.log(4.2), smooth(LAT0 - 0.4, LAT0 + 3.2, t)));
 function atomCamera(t) { const d = atDist(t), a = 0.5 + 0.12 * Math.sin(t * 0.3); atCam.position.set(Math.sin(a) * d, d * 0.12 + 0.2, Math.cos(a) * d); atCam.lookAt(0, 0.25, 0); }
-// =================== FUSION: two deuterium nuclei (a proton + a neutron each) pushed together; they bounce off once, then fuse into a tiny sun ===================
-const fuseS = new THREE.Scene(); fuseS.background = new THREE.Color('#0a0410'); const fuCam = new THREE.PerspectiveCamera(40, W / H, 0.05, 100);
-fuseS.add(new THREE.AmbientLight(0x6a5a80, 0.7)); { const k = new THREE.DirectionalLight(0xffffff, 1.6); k.position.set(2, 3, 4); fuseS.add(k); }
-const sunL = new THREE.PointLight(0xffb050, 0, 12, 1.2); fuseS.add(sunL);
-function nucleus() { const g = new THREE.Group(); const p = mesh(new THREE.SphereGeometry(0.3, 24, 16), new THREE.MeshStandardMaterial({ color: '#ff5a4a', roughness: 0.35, emissive: '#3a0a06' })); p.position.x = -0.17; g.add(p);
-  const n = mesh(new THREE.SphereGeometry(0.3, 24, 16), new THREE.MeshStandardMaterial({ color: '#9ab0d8', roughness: 0.35 })); n.position.set(0.17, 0.05, 0.08); g.add(n); fuseS.add(g); return g; }
-const nucA = nucleus(), nucB = nucleus();
-const tinySun = mesh(new THREE.SphereGeometry(1, 32, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.3, 0.45) })); fuseS.add(tinySun);
-const plasma = makeSmoke(fuseS, 260);
-const pushRing = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.02, 8, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 1.8, 3.0), transparent: true })); fuseS.add(pushRing);
-const FT = FUSE + 3.9;   // the moment of fusion
-function updateFuse(t) { const u = t - FUSE;
-  // approach, bounce (repulsion), approach again harder, fuse
-  let sep = u < 1.6 ? lerp(2.4, 0.9, ease(u / 1.6)) : u < 2.4 ? lerp(0.9, 1.6, ease((u - 1.6) / 0.8)) : lerp(1.6, 0.0, ease(clamp((u - 2.4) / 1.5, 0, 1)));
-  const shake = u > 2.4 && u < 3.9 ? 0.03 * Math.sin(t * 60) * smooth(FUSE + 2.6, FT, t) : 0;
-  nucA.position.set(-sep / 2 + shake, 0, 0); nucB.position.set(sep / 2 - shake, 0, 0); nucA.rotation.set(t * 0.8, t * 0.5, 0); nucB.rotation.set(-t * 0.7, t * 0.4, 1);
-  const f = smooth(FT - 0.05, FT + 0.6, t); nucA.visible = nucB.visible = f < 0.5; tinySun.scale.setScalar(Math.max(0.0001, f * (0.42 + 0.03 * Math.sin(t * 9)))); sunL.intensity = 30 * f;
-  pushRing.scale.setScalar(lerp(1.6, 0.5, smooth(FUSE + 2.4, FT, t))); pushRing.material.opacity = fadeWin(t, FUSE + 2.3, FT + 0.1, 0.3); pushRing.rotation.x = Math.PI / 2 + 0.3;
-  plasma.begin(); smokeMat.uniforms.uTint.value.set('#ffa040'); if (f > 0) for (let k = 0; k < 120; k++) { const a = k * 2.399, rr = 0.8 + ((t * 0.6 + k * 0.013) % 1) * 1.8 * f; plasma.add(V3(Math.cos(a) * rr, Math.sin(a * 1.3) * rr * 0.8, Math.sin(a) * rr * 0.6), 0.45, 0.25 * f * (1 - ((t * 0.6 + k * 0.013) % 1))); } plasma.end(); }
-function fuseCamera(t) { const k = smooth(FUSE - 0.5, ENDS + 0.5, t); fuCam.position.set(lerp(0.6, -0.4, k), lerp(0.3, 0.5, k), lerp(4.6, 3.6, k) + 1.2 * smooth(FT, FT + 1.2, t)); fuCam.lookAt(0, 0, 0); }
+// =================== ONE ATOM, the textbook picture: a nucleus (6 protons + 6 neutrons) and electrons racing round three tilted orbits — mostly nothing ===================
+const bohrS = new THREE.Scene(); bohrS.background = new THREE.Color('#050a1c'); const bhCam = new THREE.PerspectiveCamera(40, W / H, 0.05, 200);
+bohrS.add(new THREE.AmbientLight(0x8090c0, 0.7)); { const k = new THREE.DirectionalLight(0xffffff, 1.8); k.position.set(2, 3, 4); bohrS.add(k); }
+{ const n = 1200, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(R(40, 80)); pos.set([v.x, v.y, v.z], i * 3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bohrS.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#5a6ab0', size: 2, sizeAttenuation: false }))); }
+const bohrNuc = new THREE.Group(); bohrS.add(bohrNuc);
+for (let i = 0; i < 12; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(i ? R(0.12, 0.2) : 0); const b = mesh(new THREE.SphereGeometry(0.13, 18, 12), new THREE.MeshStandardMaterial({ color: i % 2 ? '#ff5a4a' : '#9ab0d8', roughness: 0.35, emissive: i % 2 ? '#3a0a06' : '#0a1020' })); b.position.copy(v); bohrNuc.add(b); }
+const nucGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, 'rgba(255,220,180,0.9)'); rg.addColorStop(1, 'rgba(255,120,80,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); nucGlow.scale.setScalar(0.9); bohrS.add(nucGlow);
+const ORB = [0, 1, 2].map(k => { const g = new THREE.Group(); g.rotation.set(Math.PI / 2 + 0.35 * (k - 1), k * Math.PI / 3, 0); bohrS.add(g);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.006, 6, 160), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.25, 0.6, 1.1) })); ring.scale.set(1, 0.62, 1); g.add(ring);
+  const els = [0, 1].map(() => { const e = mesh(new THREE.SphereGeometry(0.075, 14, 10), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 2.4, 3.2) })); g.add(e); return e; }); return { g, els, sp: 1.6 + k * 0.35 }; });
+const bohrTrail = makeSmoke(bohrS, 200);
+function updateBohr(t) { bohrNuc.rotation.set(t * 0.4, t * 0.6, 0);
+  bohrTrail.begin(); smokeMat.uniforms.uTint.value.set('#7ad8ff');
+  ORB.forEach((O, k) => { O.els.forEach((e, j) => { const a = t * O.sp * 2 + j * Math.PI + k; e.position.set(Math.cos(a) * 2.0, Math.sin(a) * 2.0 * 0.62, 0);
+    for (let s = 1; s < 12; s++) { const b = a - s * 0.06; bohrTrail.add(O.g.localToWorld(V3(Math.cos(b) * 2.0, Math.sin(b) * 1.24, 0)), 0.09 * (1 - s / 12), 0.5 * (1 - s / 12)); } }); });
+  bohrTrail.end(); }
+function bohrCamera(t) { const k = smooth(ATOM, LAT0 + 0.4, t), a = 0.3 + 0.5 * k; bhCam.position.set(Math.sin(a) * lerp(7.4, 9.0, k), lerp(1.6, 0.8, k), Math.cos(a) * lerp(7.4, 9.0, k)); bhCam.lookAt(0, 0, 0); }

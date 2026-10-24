@@ -4,10 +4,10 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 
 // "What if you could REALLY touch someone?" — remake for @wowwwwhatif with all-new scenes: a man's and a woman's fingers interlacing in a café at golden hour,
 // a scope that zooms into the contact (1 mm -> 0.1 nm), atoms with buzzing electrons pushing back, a hammock, an airport hug, the electron push dialled to 0%,
-// sinking through the floor and the ground, an Earth cut in half like an apple (Chicago -> Indian Ocean, 38 min, back and forth), two nuclei fusing into a tiny sun.
-// Physics: touch = electromagnetic repulsion of electron clouds; gap ~1 angstrom = 1e-8 cm; tunnel fall 38.3 min one way, ~22,000 mph at the centre (tools/tunnel.py).
+// sinking through the floor and the ground, Earth collapsing to a ball next to the Empire State Building, you squeezed to the size of a blood cell.
+// Physics: touch = electromagnetic repulsion of electron clouds; gap ~1 angstrom = 1e-8 cm; at nuclear density Earth = 367 m (1,205 ft), a 70 kg person = 8.3 um (tools/collapse_math.py).
 // =================== timeline ===================
-const LENS = 4.0, ATOM = 8.0, HAM = 15.0, HUG = 22.0, OFF = 28.0, SINK = 31.0, EARTH = 37.0, FUSE = 49.0, ENDS = 56.0, T_END = 64.0;
+const LENS = 4.0, ATOM = 8.0, LAT0 = 11.4, HAM = 15.0, HUG = 22.0, OFF = 28.0, SINK = 31.0, EARTH = 37.0, ESB = 43.0, CELL = 49.0, ENDS = 56.0, T_END = 64.0;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
 let seed = 707;
@@ -134,9 +134,9 @@ const cloudM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.46, 20, 14), n
 const elM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.045, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), NA * 3); elM.frustumCulled = false; atomS.add(elM);
 const SPK_A = 160; const sparkA = new THREE.InstancedMesh(new THREE.BoxGeometry(0.02, 0.22, 0.02), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 2.4, 3.2) }), SPK_A); sparkA.frustumCulled = false; atomS.add(sparkA);
 const HERC = new THREE.Color('#ff8ab0'), HISC = new THREE.Color('#5ad8ff'), _ac = new THREE.Color(), _o2 = new THREE.Object3D(), _q2 = new THREE.Quaternion(), _e2 = new THREE.Vector3();
-// her lattice comes down 8.0-11.2 and settles with a little bounce: the clouds never merge
-const latDrop = t => { const k = ease(clamp((t - ATOM + 0.6) / 3.6, 0, 1)); return 2.6 * (1 - k) + 0.12 * Math.sin(clamp(t - ATOM - 2.9, 0, 3) * 5) * Math.exp(-Math.max(0, t - ATOM - 2.9) * 1.6); };
-const pushAt = t => smooth(ATOM + 1.9, ATOM + 3.0, t);
+// her lattice comes down from LAT0 and settles with a little bounce: the clouds never merge
+const latDrop = t => { const k = ease(clamp((t - LAT0 + 0.3) / 2.4, 0, 1)); return 2.6 * (1 - k) + 0.12 * Math.sin(clamp(t - LAT0 - 2.1, 0, 3) * 5) * Math.exp(-Math.max(0, t - LAT0 - 2.1) * 1.6); };
+const pushAt = t => smooth(LAT0 + 1.2, LAT0 + 2.2, t);
 function updateAtoms(t) { const dy = latDrop(t), push = pushAt(t);
   ATOMS.forEach((A, i) => { const y = A.y + (A.side > 0 ? dy : 0) + 0.015 * Math.sin(t * 7 + A.ph), face = A.layer === 0 ? push : 0, sq = 1 - 0.32 * face;
     _o2.position.set(A.x, y, A.z); _o2.rotation.set(0, 0, 0); _o2.scale.setScalar(1); _o2.updateMatrix(); nucM.setMatrixAt(i, _o2.matrix);
@@ -147,28 +147,26 @@ function updateAtoms(t) { const dy = latDrop(t), push = pushAt(t);
   for (let s = 0; s < SPK_A; s++) { const on = push > 0.2 && hash(s * 7.1 + Math.floor(t * 18)) < 0.45 * push; const x = (hash(s * 3.3) - 0.5) * AX * ASP * 0.9, z = (hash(s * 5.7) - 0.5) * AZ * ASP * 0.9;
     _o2.position.set(x, dy * 0.5 + 0.0, z); _o2.rotation.set(0, hash(s) * 3, (hash(s * 9.1 + Math.floor(t * 18)) - 0.5) * 0.8); _o2.scale.setScalar(on ? 1 : 0.0001); _o2.updateMatrix(); sparkA.setMatrixAt(s, _o2.matrix); } sparkA.instanceMatrix.needsUpdate = true; }
 // camera: a log-scale dolly from "1 mm away" (a field of dots) down to the gap between two atoms
-const atDist = t => Math.exp(lerp(Math.log(150), Math.log(14), smooth(LENS + 0.3, ATOM, t)) + lerp(0, Math.log(4.2 / 14), smooth(ATOM, ATOM + 3.4, t)));
+const atDist = t => t < ATOM + 1 ? Math.exp(lerp(Math.log(150), Math.log(14), smooth(LENS + 0.3, ATOM, t))) : Math.exp(lerp(Math.log(9), Math.log(4.2), smooth(LAT0 - 0.4, LAT0 + 3.2, t)));
 function atomCamera(t) { const d = atDist(t), a = 0.5 + 0.12 * Math.sin(t * 0.3); atCam.position.set(Math.sin(a) * d, d * 0.12 + 0.2, Math.cos(a) * d); atCam.lookAt(0, 0.25, 0); }
-// =================== FUSION: two deuterium nuclei (a proton + a neutron each) pushed together; they bounce off once, then fuse into a tiny sun ===================
-const fuseS = new THREE.Scene(); fuseS.background = new THREE.Color('#0a0410'); const fuCam = new THREE.PerspectiveCamera(40, W / H, 0.05, 100);
-fuseS.add(new THREE.AmbientLight(0x6a5a80, 0.7)); { const k = new THREE.DirectionalLight(0xffffff, 1.6); k.position.set(2, 3, 4); fuseS.add(k); }
-const sunL = new THREE.PointLight(0xffb050, 0, 12, 1.2); fuseS.add(sunL);
-function nucleus() { const g = new THREE.Group(); const p = mesh(new THREE.SphereGeometry(0.3, 24, 16), new THREE.MeshStandardMaterial({ color: '#ff5a4a', roughness: 0.35, emissive: '#3a0a06' })); p.position.x = -0.17; g.add(p);
-  const n = mesh(new THREE.SphereGeometry(0.3, 24, 16), new THREE.MeshStandardMaterial({ color: '#9ab0d8', roughness: 0.35 })); n.position.set(0.17, 0.05, 0.08); g.add(n); fuseS.add(g); return g; }
-const nucA = nucleus(), nucB = nucleus();
-const tinySun = mesh(new THREE.SphereGeometry(1, 32, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.3, 0.45) })); fuseS.add(tinySun);
-const plasma = makeSmoke(fuseS, 260);
-const pushRing = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.02, 8, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 1.8, 3.0), transparent: true })); fuseS.add(pushRing);
-const FT = FUSE + 3.9;   // the moment of fusion
-function updateFuse(t) { const u = t - FUSE;
-  // approach, bounce (repulsion), approach again harder, fuse
-  let sep = u < 1.6 ? lerp(2.4, 0.9, ease(u / 1.6)) : u < 2.4 ? lerp(0.9, 1.6, ease((u - 1.6) / 0.8)) : lerp(1.6, 0.0, ease(clamp((u - 2.4) / 1.5, 0, 1)));
-  const shake = u > 2.4 && u < 3.9 ? 0.03 * Math.sin(t * 60) * smooth(FUSE + 2.6, FT, t) : 0;
-  nucA.position.set(-sep / 2 + shake, 0, 0); nucB.position.set(sep / 2 - shake, 0, 0); nucA.rotation.set(t * 0.8, t * 0.5, 0); nucB.rotation.set(-t * 0.7, t * 0.4, 1);
-  const f = smooth(FT - 0.05, FT + 0.6, t); nucA.visible = nucB.visible = f < 0.5; tinySun.scale.setScalar(Math.max(0.0001, f * (0.42 + 0.03 * Math.sin(t * 9)))); sunL.intensity = 30 * f;
-  pushRing.scale.setScalar(lerp(1.6, 0.5, smooth(FUSE + 2.4, FT, t))); pushRing.material.opacity = fadeWin(t, FUSE + 2.3, FT + 0.1, 0.3); pushRing.rotation.x = Math.PI / 2 + 0.3;
-  plasma.begin(); smokeMat.uniforms.uTint.value.set('#ffa040'); if (f > 0) for (let k = 0; k < 120; k++) { const a = k * 2.399, rr = 0.8 + ((t * 0.6 + k * 0.013) % 1) * 1.8 * f; plasma.add(V3(Math.cos(a) * rr, Math.sin(a * 1.3) * rr * 0.8, Math.sin(a) * rr * 0.6), 0.45, 0.25 * f * (1 - ((t * 0.6 + k * 0.013) % 1))); } plasma.end(); }
-function fuseCamera(t) { const k = smooth(FUSE - 0.5, ENDS + 0.5, t); fuCam.position.set(lerp(0.6, -0.4, k), lerp(0.3, 0.5, k), lerp(4.6, 3.6, k) + 1.2 * smooth(FT, FT + 1.2, t)); fuCam.lookAt(0, 0, 0); }
+// =================== ONE ATOM, the textbook picture: a nucleus (6 protons + 6 neutrons) and electrons racing round three tilted orbits — mostly nothing ===================
+const bohrS = new THREE.Scene(); bohrS.background = new THREE.Color('#050a1c'); const bhCam = new THREE.PerspectiveCamera(40, W / H, 0.05, 200);
+bohrS.add(new THREE.AmbientLight(0x8090c0, 0.7)); { const k = new THREE.DirectionalLight(0xffffff, 1.8); k.position.set(2, 3, 4); bohrS.add(k); }
+{ const n = 1200, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(R(40, 80)); pos.set([v.x, v.y, v.z], i * 3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bohrS.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#5a6ab0', size: 2, sizeAttenuation: false }))); }
+const bohrNuc = new THREE.Group(); bohrS.add(bohrNuc);
+for (let i = 0; i < 12; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(i ? R(0.12, 0.2) : 0); const b = mesh(new THREE.SphereGeometry(0.13, 18, 12), new THREE.MeshStandardMaterial({ color: i % 2 ? '#ff5a4a' : '#9ab0d8', roughness: 0.35, emissive: i % 2 ? '#3a0a06' : '#0a1020' })); b.position.copy(v); bohrNuc.add(b); }
+const nucGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, 'rgba(255,220,180,0.9)'); rg.addColorStop(1, 'rgba(255,120,80,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); nucGlow.scale.setScalar(0.9); bohrS.add(nucGlow);
+const ORB = [0, 1, 2].map(k => { const g = new THREE.Group(); g.rotation.set(Math.PI / 2 + 0.35 * (k - 1), k * Math.PI / 3, 0); bohrS.add(g);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.006, 6, 160), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.25, 0.6, 1.1) })); ring.scale.set(1, 0.62, 1); g.add(ring);
+  const els = [0, 1].map(() => { const e = mesh(new THREE.SphereGeometry(0.075, 14, 10), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 2.4, 3.2) })); g.add(e); return e; }); return { g, els, sp: 1.6 + k * 0.35 }; });
+const bohrTrail = makeSmoke(bohrS, 200);
+function updateBohr(t) { bohrNuc.rotation.set(t * 0.4, t * 0.6, 0);
+  bohrTrail.begin(); smokeMat.uniforms.uTint.value.set('#7ad8ff');
+  ORB.forEach((O, k) => { O.els.forEach((e, j) => { const a = t * O.sp * 2 + j * Math.PI + k; e.position.set(Math.cos(a) * 2.0, Math.sin(a) * 2.0 * 0.62, 0);
+    for (let s = 1; s < 12; s++) { const b = a - s * 0.06; bohrTrail.add(O.g.localToWorld(V3(Math.cos(b) * 2.0, Math.sin(b) * 1.24, 0)), 0.09 * (1 - s / 12), 0.5 * (1 - s / 12)); } }); });
+  bohrTrail.end(); }
+function bohrCamera(t) { const k = smooth(ATOM, LAT0 + 0.4, t), a = 0.3 + 0.5 * k; bhCam.position.set(Math.sin(a) * lerp(7.4, 9.0, k), lerp(1.6, 0.8, k), Math.cos(a) * lerp(7.4, 9.0, k)); bhCam.lookAt(0, 0, 0); }
 // =================== BACKYARD HAMMOCK (meters): she naps in a striped hammock between two trees; a glowing strip marks the one-atom gap under her ===================
 const yard = new THREE.Scene(); yard.background = new THREE.Color('#9ad0f2'); yard.fog = new THREE.Fog(0xbfe0f4, 18, 60); const ydCam = new THREE.PerspectiveCamera(45, W / H, 0.05, 200);
 yard.add(new THREE.HemisphereLight(0xe8f4ff, 0x6a8a4a, 1.0));
@@ -247,8 +245,8 @@ function portCamera(t) { const fy = fallY(t); let pos, look;
   if (t < OFF) { const k = smooth(HUG - 0.5, OFF, t); pos = V3(lerp(1.6, 0.9, k), lerp(1.7, 1.55, k), lerp(5.8, 3.4, k)); look = V3(0, 1.25, lerp(-0.5, 0.6, k)); }
   else { const k = smooth(OFF, OFF + 2.0, t); pos = V3(lerp(0.9, 1.4, k), 1.55 + fy * 0.96 + lerp(0, 0.6, smooth(fallT0, SINK + 1, t)), lerp(3.4, 4.6, k)); look = V3(0, 1.2 + fy, 0.6); }
   ptCam.position.copy(pos); ptCam.lookAt(look); }
-// =================== EARTH CUT LIKE AN APPLE: a smooth cartoon globe (real coastlines) with Chicago on top; it splits into two halves that turn their
-// layered faces to us; a glowing dot falls Chicago -> centre -> Indian Ocean in 38 min, then back, and again ===================
+// =================== EARTH COLLAPSING: a smooth cartoon globe (real coastlines, built in two halves); with nothing keeping atoms apart it squeezes down
+// to a white-hot speck (at nuclear density Earth would be ~1,200 ft wide) ===================
 const earthS = new THREE.Scene(); earthS.background = new THREE.Color('#04060e'); const eaCam = new THREE.PerspectiveCamera(38, W / H, 0.1, 500);
 { const n = 2500, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(R(120, 200)); pos.set([v.x, v.y, v.z], i * 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); earthS.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#dfe8ff', size: 2, sizeAttenuation: false }))); }
@@ -287,59 +285,92 @@ const trail = makeSmoke(earthS, 80);
 const atm = new THREE.Mesh(new THREE.SphereGeometry(ER2 * 1.035, 64, 40), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending, uniforms: { uA: { value: 1 } },
   vertexShader: 'varying vec3 vN, vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
   fragmentShader: 'uniform float uA; varying vec3 vN, vV; void main(){ float f=pow(1.0-abs(dot(vN,vV)),3.0); gl_FragColor=vec4(vec3(0.4,0.7,1.0)*f*1.4*uA,1.0); }' })); earthS.add(atm);
-// the fall: y(t) = R cos(2π t / T), one way = 38 min of story time squeezed into ~4 s, then back
-const FALL0 = EARTH + 3.4, LEG = 4.0;
-const fallPos = t => t < FALL0 ? 1 : Math.cos(Math.PI * (t - FALL0) / LEG);
-function updateEarth(t) { const sp = ease(clamp((t - EARTH - 0.6) / 2.4, 0, 1));   // split: halves slide apart and turn their faces to the camera
-  halfA.position.set(-ER2 * 1.12 * sp, 0, 0); halfA.rotation.y = -Math.PI / 2 * sp; halfB.position.set(ER2 * 1.12 * sp, 0, 0); halfB.rotation.y = Math.PI / 2 * sp;
-  earthG.rotation.y = 0.25 * (1 - sp) + 0.1 * Math.sin(t * 0.2) * (1 - sp); atm.material.uniforms.uA.value = 1 - sp;
-  for (const hh of [halfA, halfB]) hh.children.forEach(c => { if (c.userData.groove) c.material.opacity = 0.7 * smooth(EARTH + 2.6, EARTH + 3.4, t); });
-  // the dot rides down the groove of the left half (its face now looks at us)
-  const y = ER2 * 0.97 * fallPos(t); faller.position.set(halfA.position.x + 0.0, y, 0.05); faller.visible = t > EARTH + 2.8; faller.scale.setScalar(1 + 0.25 * Math.sin(t * 8));
-  trail.begin(); smokeMat.uniforms.uTint.value.set('#ffd890'); if (faller.visible) for (let k = 1; k < 22; k++) { const tt2 = t - k * 0.03; if (tt2 < FALL0) break; trail.add(V3(faller.position.x, ER2 * 0.97 * fallPos(tt2), 0.06), 0.22 * (1 - k / 22), 0.5 * (1 - k / 22)); } trail.end(); }
-function earthCamera(t) { const sp = smooth(EARTH + 0.6, EARTH + 3.0, t); eaCam.position.set(lerp(0, -ER2 * 1.12, smooth(EARTH + 2.6, EARTH + 3.6, t)), lerp(2, 0, sp), lerp(33, 32, sp) - lerp(0, 3, smooth(EARTH + 3.2, LIVE_END, t)));
-  eaCam.lookAt(lerp(0, -ER2 * 1.12, smooth(EARTH + 2.6, EARTH + 3.6, t)), 0, 0); }
-const LIVE_END = FUSE;
+const hotGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, 'rgba(255,250,235,1)'); rg.addColorStop(0.35, 'rgba(255,190,120,0.55)'); rg.addColorStop(1, 'rgba(255,120,60,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); earthS.add(hotGlow);
+const squeezeAt = t => smooth(EARTH + 0.8, EARTH + 5.2, t);
+const earthDiam = t => Math.exp(lerp(Math.log(12742e3), Math.log(367), squeezeAt(t)));   // metres, for the HUD
+function updateEarth(t) { const k = squeezeAt(t), sc = Math.exp(lerp(0, Math.log(0.02), k)); earthG.scale.setScalar(sc); atm.scale.setScalar(sc); atm.material.uniforms.uA.value = 1 - k;
+  earthG.rotation.y = 0.2 + 0.5 * k + 0.08 * t; faller.visible = false; trail.begin(); trail.end();
+  for (const hh of [halfA, halfB]) hh.children.forEach(c => { if (c.userData.groove) c.visible = false; else if (c.material.emissive) c.material.emissive.setRGB(1.6 * k, 0.8 * k * k, 0.3 * k * k * k); });
+  const g = smooth(EARTH + 2.5, EARTH + 5.4, t); hotGlow.scale.setScalar(lerp(0.1, 5.0, g) * (1 + 0.06 * Math.sin(t * 9))); hotGlow.material.opacity = g; }
+function earthCamera(t) { eaCam.position.set(0, 1.5, lerp(33, 27, smooth(EARTH, ESB + 0.5, t))); eaCam.lookAt(0, 0, 0); }
+// =================== FOR SCALE (meters): squeezed Earth (367 m ball) next to the Empire State Building (roof 381 m, tip 443 m) at dusk ===================
+const nycS = new THREE.Scene(); nycS.background = new THREE.Color('#1c2440'); nycS.fog = new THREE.Fog(0x2a3458, 1800, 6000); const nyCam = new THREE.PerspectiveCamera(40, W / H, 1, 20000);
+nycS.add(new THREE.HemisphereLight(0x8a9ad8, 0x2a2430, 1.0)); { const s = new THREE.DirectionalLight(0xffb070, 2.2); s.position.set(-800, 600, 900); nycS.add(s); }
+{ const sky = canvasTex(64, 512, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#141c3a'); gr.addColorStop(0.55, '#3a4a8a'); gr.addColorStop(0.8, '#e88a6a'); gr.addColorStop(1, '#f8c88a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  const sp = new THREE.Mesh(new THREE.PlaneGeometry(16000, 5000), new THREE.MeshBasicMaterial({ map: sky, fog: false, depthWrite: false })); sp.position.set(0, 2000, -6000); sp.renderOrder = -1; nycS.add(sp);
+  const gr = mesh(new THREE.PlaneGeometry(20000, 20000), M('#22242c', { roughness: 1 }), false, true); gr.rotation.x = -Math.PI / 2; nycS.add(gr); }
+const winTex = canvasTex(128, 512, (g, w, h) => { g.fillStyle = '#3a3e4a'; g.fillRect(0, 0, w, h); for (let y = 4; y < h; y += 8) for (let x = 4; x < w; x += 8) { g.fillStyle = rnd() < 0.45 ? pick(['#ffe0a0', '#ffd080', '#fff0c8']) : '#2a2e38'; g.fillRect(x, y, 4, 5); } });
+function tower(w, d, h, x, z, col = '#8a8c94') { const t = winTex.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.max(1, w / 40), Math.max(1, h / 120));
+  const m = mesh(BOX, new THREE.MeshStandardMaterial({ color: col, map: t, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.55, roughness: 0.8 })); m.scale.set(w, h, d); m.position.set(x, h / 2, z); nycS.add(m); return m; }
+// the Empire State Building: stepped tiers + mast
+const ESBX = -60; [[130, 60, 0, 25], [100, 50, 25, 85], [70, 45, 85, 265], [52, 36, 265, 320], [34, 30, 320, 381]].forEach(([w, d, y0, y1]) => { const m = tower(w, d, y1 - y0, ESBX, 0, '#b8b0a0'); m.position.y = y0 + (y1 - y0) / 2; });
+{ const mast = mesh(new THREE.CylinderGeometry(2, 7, 62, 10), M('#c8c0b0')); mast.position.set(ESBX, 412, 0); nycS.add(mast); const tip = new THREE.Mesh(new THREE.SphereGeometry(4, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 0.6, 0.5) })); tip.position.set(ESBX, 444, 0); nycS.add(tip); }
+for (let i = 0; i < 70; i++) { const x = R(-1600, 1400), z = R(-1800, -120); if (Math.abs(x - ESBX) < 120 && z > -300) continue; tower(R(30, 80), R(30, 80), R(40, 230), x, z); }
+for (let i = 0; i < 30; i++) { const x = R(-1600, -250), z = R(-100, 300); tower(R(30, 70), R(30, 70), R(30, 140), x, z); }
+// squeezed Earth: dark, impossibly dense, still glowing hot in the cracks
+const crackTex = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#2a2a34'; g.fillRect(0, 0, w, h); g.strokeStyle = '#ff9a4a'; g.lineWidth = 2; for (let i = 0; i < 60; i++) { let x = rnd() * w, y = rnd() * h; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 6; k++) { x += R(-30, 30); y += R(-20, 20); g.lineTo(x, y); } g.stroke(); } });
+const denseBall = mesh(new THREE.SphereGeometry(183.5, 48, 32), new THREE.MeshStandardMaterial({ color: '#5a5a6a', map: crackTex, emissive: '#ffffff', emissiveMap: crackTex, emissiveIntensity: 0.9, roughness: 0.6 })); denseBall.position.set(330, 184, 0); nycS.add(denseBall);
+const ballHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { const rg = g.createRadialGradient(64, 64, 30, 64, 64, 64); rg.addColorStop(0, 'rgba(255,170,90,0.5)'); rg.addColorStop(1, 'rgba(255,120,60,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); ballHalo.scale.setScalar(560); ballHalo.visible = false; ballHalo.position.copy(denseBall.position); nycS.add(ballHalo);
+function updateNyc(t) { denseBall.rotation.y = 0.15 * t; denseBall.material.emissiveIntensity = 0.75 + 0.15 * Math.sin(t * 2.3); }
+function nycCamera(t) { const k = smooth(ESB - 0.5, CELL + 0.5, t); nyCam.position.set(lerp(260, 200, k), lerp(330, 260, k), lerp(2300, 1900, k)); nyCam.lookAt(150, 215, 0); }
+// =================== BLOOD (micrometres): red blood cells drift by; a glowing 8-µm ball — all of you, squeezed — hangs among them ===================
+const cellS = new THREE.Scene(); cellS.background = new THREE.Color('#3a0812'); cellS.fog = new THREE.Fog(0x3a0812, 20, 70); const ceCam = new THREE.PerspectiveCamera(42, W / H, 0.1, 300);
+cellS.add(new THREE.HemisphereLight(0xffd0d0, 0x400810, 1.0)); { const k = new THREE.DirectionalLight(0xfff0f0, 1.8); k.position.set(5, 8, 10); cellS.add(k); }
+const cellGeo = (() => { const g = new THREE.CylinderGeometry(4, 4, 1.2, 40, 1); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z) / 4; p.setY(i, p.getY(i) * (0.45 + 1.6 * r * r)); } g.computeVertexNormals(); return g; })();
+const CELLS = Array.from({ length: 34 }, (_, i) => ({ p: V3(R(-22, 22), R(-34, 34), R(-30, 6)), r: V3(R(0, 6), R(0, 6), 0), sp: R(0.6, 1.4), m: mesh(cellGeo, M('#d82a3a', { roughness: 0.45 })) }));
+CELLS.forEach(C => cellS.add(C.m));
+const youBall = mesh(new THREE.SphereGeometry(4.15, 32, 22), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.5, 1.9) })); cellS.add(youBall);
+const youHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { const rg = g.createRadialGradient(64, 64, 20, 64, 64, 64); rg.addColorStop(0, 'rgba(200,220,255,0.7)'); rg.addColorStop(1, 'rgba(160,190,255,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); cellS.add(youHalo);
+const youFig = makeHer(); cellS.add(youFig.outer); youFig.outer.rotation.y = 0.4;
+function updateCell(t) { CELLS.forEach((C, i) => { C.m.position.set(C.p.x + Math.sin(t * 0.3 + i) * 1.5, wrapR(C.p.y - (t - CELL) * 2.2 * C.sp, -36, 36), C.p.z); C.m.rotation.set(C.r.x + t * 0.25 * C.sp, C.r.y + t * 0.2, 0); });
+  const k = smooth(CELL + 0.4, CELL + 2.6, t); poseIdle(youFig, t, 0); youFig.root.rotation.set(0, 0, 0);
+  const fs = lerp(16, 0.0001, k); youFig.outer.scale.setScalar(Math.max(0.0001, fs)); youFig.outer.position.set(0, 0.1 * fs, 0); youFig.outer.visible = k < 0.98;
+  youBall.scale.setScalar(Math.max(0.0001, k)); youHalo.scale.setScalar(Math.max(0.0001, k * 13 * (1 + 0.05 * Math.sin(t * 5)))); }
+function cellCamera(t) { const k = smooth(CELL - 0.5, ENDS + 0.5, t); ceCam.position.set(lerp(-6, 4, k), lerp(4, 1, k), lerp(48, 32, smooth(CELL + 0.6, CELL + 3.4, t))); ceCam.lookAt(0, 0, 0); }
 // =================== scene schedule: [start, id, dissolve] — the café -> atoms change is the scope reveal, so that boundary has no dissolve ===================
-const SCN = { cafe: [t => updateCafe(t, 'start'), t => cafeCamera(t, 'start'), cafe, () => cfCam, 1.0], atoms: [updateAtoms, atomCamera, atomS, () => atCam, 1.2], yard: [updateYard, yardCamera, yard, () => ydCam, 1.0],
-  port: [updatePort, portCamera, port, () => ptCam, 1.0], earth: [updateEarth, earthCamera, earthS, () => eaCam, 1.1], fuse: [updateFuse, fuseCamera, fuseS, () => fuCam, 1.1], cafeEnd: [t => updateCafe(t, 'end'), t => cafeCamera(t, 'end'), cafe, () => cfCam, 1.0] };
-const SEQ = [[0, 'cafe', 0.7], [ATOM, 'atoms', 0], [HAM, 'yard', 0.7], [HUG, 'port', 0.7], [EARTH, 'earth', 0.7], [FUSE, 'fuse', 0.7], [ENDS, 'cafeEnd', 0.7]];
+const SCN = { cafe: [t => updateCafe(t, 'start'), t => cafeCamera(t, 'start'), cafe, () => cfCam, 1.0], atoms: [updateAtoms, atomCamera, atomS, () => atCam, 1.2], bohr: [updateBohr, bohrCamera, bohrS, () => bhCam, 1.2],
+  yard: [updateYard, yardCamera, yard, () => ydCam, 1.0], port: [updatePort, portCamera, port, () => ptCam, 1.0], earth: [updateEarth, earthCamera, earthS, () => eaCam, 1.1], nyc: [updateNyc, nycCamera, nycS, () => nyCam, 1.0],
+  cell: [updateCell, cellCamera, cellS, () => ceCam, 1.1], cafeEnd: [t => updateCafe(t, 'end'), t => cafeCamera(t, 'end'), cafe, () => cfCam, 1.0] };
+const SEQ = [[0, 'cafe', 0.7], [LENS + 0.3, 'atoms', 0], [ATOM + 0.4, 'bohr', 0.7], [LAT0, 'atoms', 0.7], [HAM, 'yard', 0.7], [HUG, 'port', 0.7], [EARTH, 'earth', 0.7], [ESB, 'nyc', 0.7], [CELL, 'cell', 0.7], [ENDS, 'cafeEnd', 0.7]];
 function shootScene(id, t, rt) { const S = SCN[id]; S[0](t); S[1](t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); return S[4]; }
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'end', 'endT', 'endS', 'hud'].map(k => [k, $(k)]));
 el.title.innerHTML = 'What if you could<br><span class="hl">REALLY</span> touch someone?'; el.endT.innerHTML = 'What if you could<br><span class="hl">REALLY</span> touch someone?';
-el.endS.innerHTML = 'TOUCH = ELECTRON CLOUDS REPELLING (ELECTROMAGNETISM + PAULI EXCLUSION).<br>THE GAP IS ABOUT 1 ÅNGSTRÖM = 0.00000001 CM.<br>A FALL THROUGH EARTH IN A VACUUM TUBE: ~38 MIN ONE WAY (PREM MODEL).';
+el.endS.innerHTML = 'TOUCH IS ELECTRON CLOUDS REPELLING — THE ATOMS NEVER MEET.<br>THAT GAP IS ABOUT 1 ÅNGSTRÖM (0.00000001 CM).<br>SQUEEZED TO NUCLEAR DENSITY, EARTH WOULD BE ~1,200 FT ACROSS.';
 const captions = [
-  [4.3, 7.8, 'Here’s the thing:<br>you never have.'],
-  [8.3, 11.4, 'Atoms are almost<br>all empty space.'],
-  [11.6, 14.8, 'That “touch” is electrons<br>shoving each other away.'],
-  [15.4, 18.4, 'You’re not lying<br>in your hammock.'],
-  [18.6, 21.8, 'You’re floating above it —<br>one atom up.'],
-  [22.4, 24.9, 'Every hug in your life…'],
-  [25.1, 27.9, '…had a gap of<br>0.00000001 cm.'],
-  [28.2, 30.8, 'So let’s turn it off.'],
-  [31.3, 33.9, 'You’d sink through<br>the floor…'],
-  [34.1, 36.8, '…and keep going.'],
-  [37.6, 42.6, '38 minutes to the<br>other side of Earth.'],
-  [43.0, 48.6, 'Then back. And again.<br>Forever — no air in the way.'],
-  [49.4, 52.6, 'Push even harder<br>and the nuclei fuse.'],
-  [52.8, 55.8, 'That takes<br>Sun-core conditions.'],
-  [56.4, 59.8, 'That tiny gap makes<br>everything solid.'],
-  [60.0, 63.8, 'And it’s the closest two<br>people can ever get.'],
+  [4.3, 7.8, 'Fun fact: you’ve never<br>touched anyone. Ever.'],
+  [8.6, 11.3, 'An atom is 99.9999999%<br>empty space.'],
+  [11.6, 14.8, 'What you call “touch” is<br>electrons repelling each other.'],
+  [15.4, 18.4, 'This hammock? She’s not<br>really lying on it.'],
+  [18.6, 21.8, 'She’s levitating —<br>by about one atom.'],
+  [22.4, 24.9, 'Even the tightest hug…'],
+  [25.1, 27.9, '…leaves a gap of<br>0.00000001 cm.'],
+  [28.2, 30.8, 'Now switch that push off.'],
+  [31.3, 33.9, 'You’d slide through<br>the floor like a ghost…'],
+  [34.1, 36.8, '…and nothing<br>could stop you.'],
+  [37.6, 42.7, 'Atoms would collapse.<br>All of Earth would shrink…'],
+  [43.1, 48.7, '…to a ball ~1,200 ft wide.<br>Shorter than the<br>Empire State Building.'],
+  [49.4, 52.6, 'And you? The size<br>of a blood cell.'],
+  [52.8, 55.8, 'Same weight.<br>Zero empty space.'],
+  [56.4, 59.8, 'Every touch you’ve felt<br>was a force, not contact.'],
+  [60.0, 63.8, 'And that almost-touch is<br>the closest we’ll ever be.'],
 ];
 const BLUE = '<b style="background:#5ad8ff"></b>', RED = '<b style="background:#ff6a5a"></b>', GREEN = '<b style="background:#5fd27a"></b>';
-const SCALES = [[LENS, '1 mm'], [LENS + 1.3, '0.1 mm'], [LENS + 2.5, '10 µm'], [LENS + 3.3, '1 µm'], [ATOM, '10 nm'], [ATOM + 1.2, '1 nm'], [ATOM + 2.2, '0.1 nm']];
+const SCALES = [[LENS, '1 mm'], [LENS + 1.3, '0.1 mm'], [LENS + 2.5, '10 µm'], [LENS + 3.3, '1 µm'], [ATOM - 0.3, '1 nm']];
+const ft = m => m > 1609 ? fmt(m / 1609.34) + ' mi' : fmt(m * 3.281) + ' ft';
 function hudAt(t) {
   if (t < 3.8) return null;
-  if (t < ATOM + 2.6) { let s = SCALES[0][1]; for (const [a, l] of SCALES) if (t >= a) s = l; return [BLUE + 'ZOOMING IN', 'SCALE', s, t < ATOM ? 'SKIN → CELLS → MOLECULES' : 'ATOMS']; }
+  if (t < ATOM + 0.4) { let s = SCALES[0][1]; for (const [a, l] of SCALES) if (t >= a) s = l; return [BLUE + 'ZOOMING IN', 'SCALE', s, 'SKIN → CELLS → ATOMS']; }
+  if (t < LAT0) return [BLUE + 'ONE ATOM', 'EMPTY SPACE', '99.9999999%', 'THE NUCLEUS IS TINY'];
   if (t < HAM) return ['<b></b>CONTACT?', 'GAP', '~0.1 nm', 'ELECTRONS PUSHING BACK'];
-  if (t < HUG) return ['<b></b>YOUR HAMMOCK', 'GAP', '~1 atom', 'YOU NEVER QUITE TOUCH IT'];
+  if (t < HUG) return ['<b></b>THE HAMMOCK', 'GAP', '~1 atom', 'SHE NEVER QUITE TOUCHES IT'];
   if (t < OFF) return ['<b></b>ARRIVALS', 'GAP', '~0.1 nm', 'EVEN IN THE TIGHTEST HUG'];
   if (t < SINK) { const p = Math.round(100 * (1 - smooth(OFF + 0.3, OFF + 2.0, t))); return [RED + 'PHYSICS SETTINGS', 'ELECTRON PUSH', p + '%', p > 0 ? 'TURNING OFF…' : 'OFF']; }
-  if (t < EARTH) return [RED + 'ELECTRON PUSH: OFF', 'DEPTH', fmt(-fallY(t) * 3.281) + ' ft', 'FALLING THROUGH ROCK'];
-  if (t < FUSE) { const u = Math.max(0, (t - FALL0) / LEG), leg = Math.floor(u); return [BLUE + (leg % 2 ? 'INDIAN OCEAN → CHICAGO' : 'CHICAGO → INDIAN OCEAN'), 'TIME', Math.round(u * 38.3) + ' min', 'TOP SPEED ~22,000 MPH']; }
-  if (t < ENDS) return ['<b></b>SQUEEZE HARDER', 'NEEDS', '27 million °F', 'LIKE THE SUN’S CORE'];
+  if (t < EARTH) return [RED + 'ELECTRON PUSH: OFF', 'DEPTH', fmt(-fallY(t) * 3.281) + ' ft', 'NOTHING STOPS YOU'];
+  if (t < ESB) return [RED + 'ELECTRON PUSH: OFF', 'EARTH, ACROSS', ft(earthDiam(t)), 'ALL THE EMPTY SPACE SQUEEZED OUT'];
+  if (t < CELL) return ['<b></b>FOR SCALE', 'SQUEEZED EARTH', '1,205 ft', 'EMPIRE STATE BLDG ROOF: 1,250 FT'];
+  if (t < ENDS) return ['<b></b>YOU, SQUEEZED', 'SIZE', '0.0003 in', 'STILL 154 LB · LIKE A BLOOD CELL'];
   return [GREEN + 'EVERY TOUCH, EVER', 'GAP', '~0.1 nm', 'THE CLOSEST WE CAN GET']; }
 function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t);
   const h = hudAt(t); el.hud.style.opacity = h ? (1 - smooth(T_END - 0.4, T_END, t)) * smooth(3.8, 4.3, t) : 0; if (h) { el.stat.innerHTML = h[0]; el.lab.textContent = h[1]; el.val.textContent = h[2]; el.sub.textContent = h[3]; el.val.style.fontSize = h[2].length > 8 ? '80px' : ''; }

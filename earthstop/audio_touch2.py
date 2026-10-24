@@ -4,12 +4,12 @@ from scipy.io import wavfile
 
 # "What if you could REALLY touch someone?" — remake (64 s + card), all-new sound: café murmur + one cup clink, a rising scope zoom, buzzing electrons that crackle and
 # bounce, a backyard (birds, breeze, hammock rope creak), airport arrivals (PA chime, crowd, rolling suitcase, running steps, a happy sigh), the push powering down,
-# the fall (wind + rock swooshes), space hum with a whoosh that peaks at the centre each pass, fusion (tension, a bounce, a warm boom), the café at sunset.
+# the fall (wind + rock swooshes), Earth collapsing (a groan rising into a hot hiss), a distant city at dusk, blood flow + a shrinking zip, the café at sunset.
 # ONE theme in A major, gentle; it thins out during the fall. Mids only, no repeating high ticks.
 SR = 44100; DUR = 67.5; N = int(SR * DUR); t = np.arange(N) / SR
 MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no theme, pads or end chord)
 rng = np.random.default_rng(707); L = np.zeros(N); Rr = np.zeros(N)
-LENS, ATOM, HAM, HUG, OFF, SINK, EARTH, FUSE, ENDS, T_END = 4.0, 8.0, 15.0, 22.0, 28.0, 31.0, 37.0, 49.0, 56.0, 64.0
+LENS, ATOM, LAT0, HAM, HUG, OFF, SINK, EARTH, ESB, CELL, ENDS, T_END = 4.0, 8.0, 11.4, 15.0, 22.0, 28.0, 31.0, 37.0, 43.0, 49.0, 56.0, 64.0
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
 def db(x): return 10 ** (x / 20)
 def norm(x): return x / (np.abs(x).max() + 1e-9)
@@ -62,11 +62,13 @@ x = tt(0.8); place(0.9, (np.sin(2 * np.pi * 1320 * x) + 0.5 * np.sin(2 * np.pi *
 place(2.5, breath(1.2, 'out', 0.15, 160), db(-24))
 # --- 4-8: the scope: a rising shimmer-whoosh, louder as the circle opens
 x = tt(4.2); f = 180 * (6 ** (x / 4.2)); place(LENS + 0.2, filt(rng.standard_normal(len(x)), 'bandpass', [300, 3000]) * (x / 4.2) ** 1.5 * np.clip((4.2 - x) / 0.2, 0, 1), db(-24)); place(LENS + 0.2, np.sin(2 * np.pi * np.cumsum(f) / SR) * (x / 4.2) ** 2 * np.clip((4.2 - x) / 0.3, 0, 1), db(-30))
-# --- 8-15: atoms: an electron buzz that thickens as the lattices close; the push: crackles + a springy bounce
+# --- 8-11: one atom: electrons whirring round the orbits (soft, pitched); 11-15: the lattices buzz, close, crackle and bounce
+whirl = np.sin(2 * np.pi * 520 * t + 3 * np.sin(2 * np.pi * 3.2 * t)) * (0.6 + 0.4 * np.sin(2 * np.pi * 3.2 * t))
+add(filt(whirl, 'bandpass', [300, 1400]) * win(ATOM + 0.3, LAT0 + 0.3, 0.4), db(-31))
 buzz = np.sin(2 * np.pi * 330 * t + 2 * np.sin(2 * np.pi * 37 * t)) + 0.5 * np.sin(2 * np.pi * 495 * t + 1.5 * np.sin(2 * np.pi * 29 * t))
-add(filt(buzz, 'bandpass', [250, 1500]) * win(ATOM - 0.2, HAM + 0.2, 0.4) * (0.5 + 0.5 * sm(ATOM, ATOM + 2.9)), db(-29))
-for k in range(26): at = ATOM + 2.9 + rng.uniform(0, 4); x = tt(0.06); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3200]) * np.exp(-x * 60), db(-25), rng.uniform(-0.6, 0.6))
-x = tt(0.7); f = 260 * (1 + 0.5 * np.exp(-x * 5) * np.sin(2 * np.pi * 9 * x)); place(ATOM + 2.95, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 4), db(-20))
+add(filt(buzz, 'bandpass', [250, 1500]) * win(LAT0 - 0.3, HAM + 0.2, 0.4) * (0.5 + 0.5 * sm(LAT0, LAT0 + 2.1)), db(-29))
+for k in range(22): at = LAT0 + 2.1 + rng.uniform(0, 1.4); x = tt(0.06); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3200]) * np.exp(-x * 60), db(-25), rng.uniform(-0.6, 0.6))
+x = tt(0.7); f = 260 * (1 + 0.5 * np.exp(-x * 5) * np.sin(2 * np.pi * 9 * x)); place(LAT0 + 2.15, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 4), db(-20))
 # --- 15-22: backyard: breeze, birds, the hammock rope creaking slowly
 add(BN(300, 1600) * win(HAM - 0.3, HUG + 0.3, 0.5) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.2 * t)), db(-33))
 for k in range(9): at = HAM + 0.3 + k * 0.75 + rng.uniform(0, 0.3); x = tt(0.2); f0 = rng.uniform(1900, 2700); place(at, np.sin(2 * np.pi * np.cumsum(f0 * (1 + 0.3 * np.sin(2 * np.pi * 11 * x))) / SR) * np.sin(np.pi * x / 0.2), db(-31), rng.uniform(-0.6, 0.6))
@@ -85,21 +87,23 @@ for k in range(8): x = tt(0.05); place(OFF + 1.9 + k * 0.07, filt(rng.standard_n
 fall = sm(OFF + 2.4, SINK + 2) * win(OFF + 2.3, EARTH + 0.3, 0.3)
 add(filt(rng.standard_normal(N), 'bandpass', [250, 1500]) * fall * (0.6 + 0.4 * sm(SINK, EARTH)), db(-22))
 for at in [SINK - 0.4, SINK + 0.6, SINK + 1.4, SINK + 2.1, SINK + 2.7, SINK + 3.2, SINK + 3.7, SINK + 4.1, SINK + 4.5, SINK + 4.9, SINK + 5.3]: x = tt(0.4); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [200, 1200]) * np.exp(-((x - 0.15) / 0.07) ** 2), db(-20), rng.uniform(-0.5, 0.5))
-# --- 37-49: space: low hum; each pass a whoosh that peaks at the centre (fastest)
-add((np.sin(2 * np.pi * 110 * t) + 0.5 * np.sin(2 * np.pi * 165 * t)) * win(EARTH - 0.3, FUSE + 0.3, 0.8), db(-34))
-FALL0, LEG = EARTH + 3.4, 4.0
-spd = np.abs(np.sin(np.pi * np.clip(t - FALL0, 0, None) / LEG)) * (t > FALL0) * win(FALL0, FUSE, 0.4)
-add(filt(rng.standard_normal(N), 'bandpass', [300, 2200]) * spd ** 2, db(-22))
-# --- 49-56: fusion: rising tension, the bounce, the warm boom of a tiny sun
-add(filt(rng.standard_normal(N), 'bandpass', [200, 900]) * win(FUSE, FUSE + 3.9, 0.4) * sm(FUSE, FUSE + 3.8), db(-26))
-thud(FUSE + 1.6, db(-19), 200, 0.25); x = tt(0.6); f = 300 * (1 + 0.4 * np.exp(-x * 6) * np.sin(2 * np.pi * 8 * x)); place(FUSE + 1.62, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 5), db(-22))
-x = tt(2.5); place(FUSE + 3.9, filt(rng.standard_normal(len(x)), 'bandpass', [150, 1200]) * np.exp(-x * 2.2) + 0.6 * np.sin(2 * np.pi * 220 * x) * np.exp(-x * 1.8), db(-18))
-add(pad([57, 64, 69], FUSE + 4.0, ENDS + 0.4, 0.3, 0.6, lp=2000), db(-34))
+# --- 37-43: Earth collapses: a low groan bending upward into a hot hiss, cracking
+x = tt(5.4); f = 70 * (8 ** ((x / 5.4) ** 2)); place(EARTH + 0.6, filt(np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * 0.4 + np.sin(2 * np.pi * np.cumsum(f) / SR), 'bandpass', [120, 1600]) * np.sin(np.pi * x / 5.4) ** 0.6, db(-28))
+add(filt(rng.standard_normal(N), 'bandpass', [800, 3500]) * win(EARTH + 2.5, ESB + 0.3, 0.6) * sm(EARTH + 2.5, EARTH + 5.4), db(-30))
+for k in range(18): at = EARTH + 1 + rng.uniform(0, 4.5); x = tt(0.12); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [300, 1800]) * np.exp(-x * 30), db(-24), rng.uniform(-0.6, 0.6))
+# --- 43-49: for scale: a distant city at dusk, a deep hum from the dense ball
+add(BN(150, 900) * win(ESB - 0.3, CELL + 0.3, 0.5), db(-34)); add((np.sin(2 * np.pi * 98 * t) + 0.6 * np.sin(2 * np.pi * 147 * t)) * win(ESB - 0.2, CELL + 0.2, 0.6), db(-31))
+for at in [ESB + 1.5, ESB + 4.2]: x = tt(1.2); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [400, 1200]) * np.sin(np.pi * x / 1.2), db(-36), 0.6)   # far traffic
+# --- 49-56: blood: a slow pulse + flow, the shrinking zip, a soft sparkle when "you" lands
+add(filt(rng.standard_normal(N), 'lowpass', 600) * win(CELL - 0.3, ENDS + 0.3, 0.5) * (0.6 + 0.4 * np.sin(2 * np.pi * 1.1 * t)), db(-26))
+for at in np.arange(CELL, ENDS, 60 / 66): beat(at, db(-22))
+sweep(CELL + 0.4, 2.2, 1100, 180, db(-24))
+x = tt(1.5); place(CELL + 2.6, (np.sin(2 * np.pi * 1760 * x) + 0.6 * np.sin(2 * np.pi * 2640 * x)) * np.exp(-x * 3), db(-30))
 # --- ONE theme: A major, gentle piano; thins during the fall and space (every other note)
 mel = np.zeros(N); beat_s = 60 / 80; line = [69, 73, 76, 73, 71, 74, 78, 76, 74, 73, 71, 69]
 k = 0; at = 0.4
 while at < T_END - 0.3:
-    if (OFF + 2.2 <= at < FUSE and k % 2) or ATOM + 2.7 <= at < ATOM + 3.4: at += beat_s; k += 1; continue
+    if (OFF + 2.2 <= at < ESB and k % 2) or LAT0 + 1.9 <= at < LAT0 + 2.6: at += beat_s; k += 1; continue
     place(at, piano(line[k % len(line)], 2.2), db(-25), buf=mel); at += beat_s; k += 1
 if MUSIC: add(mel, 1.0)
 if MUSIC: add(pad([57, 61, 64], 0.0, DUR, 2.0, 2.0), db(-38))

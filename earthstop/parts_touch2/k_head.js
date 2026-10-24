@@ -4,10 +4,10 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 
 // "What if you could REALLY touch someone?" — remake for @wowwwwhatif with all-new scenes: a man's and a woman's fingers interlacing in a café at golden hour,
 // a scope that zooms into the contact (1 mm -> 0.1 nm), atoms with buzzing electrons pushing back, a hammock, an airport hug, the electron push dialled to 0%,
-// sinking through the floor and the ground, an Earth cut in half like an apple (Chicago -> Indian Ocean, 38 min, back and forth), two nuclei fusing into a tiny sun.
-// Physics: touch = electromagnetic repulsion of electron clouds; gap ~1 angstrom = 1e-8 cm; tunnel fall 38.3 min one way, ~22,000 mph at the centre (tools/tunnel.py).
+// sinking through the floor and the ground, Earth collapsing to a ball next to the Empire State Building, you squeezed to the size of a blood cell.
+// Physics: touch = electromagnetic repulsion of electron clouds; gap ~1 angstrom = 1e-8 cm; at nuclear density Earth = 367 m (1,205 ft), a 70 kg person = 8.3 um (tools/collapse_math.py).
 // =================== timeline ===================
-const LENS = 4.0, ATOM = 8.0, HAM = 15.0, HUG = 22.0, OFF = 28.0, SINK = 31.0, EARTH = 37.0, FUSE = 49.0, ENDS = 56.0, T_END = 64.0;
+const LENS = 4.0, ATOM = 8.0, LAT0 = 11.4, HAM = 15.0, HUG = 22.0, OFF = 28.0, SINK = 31.0, EARTH = 37.0, ESB = 43.0, CELL = 49.0, ENDS = 56.0, T_END = 64.0;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
 let seed = 707;

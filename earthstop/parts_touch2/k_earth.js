@@ -1,5 +1,5 @@
-// =================== EARTH CUT LIKE AN APPLE: a smooth cartoon globe (real coastlines) with Chicago on top; it splits into two halves that turn their
-// layered faces to us; a glowing dot falls Chicago -> centre -> Indian Ocean in 38 min, then back, and again ===================
+// =================== EARTH COLLAPSING: a smooth cartoon globe (real coastlines, built in two halves); with nothing keeping atoms apart it squeezes down
+// to a white-hot speck (at nuclear density Earth would be ~1,200 ft wide) ===================
 const earthS = new THREE.Scene(); earthS.background = new THREE.Color('#04060e'); const eaCam = new THREE.PerspectiveCamera(38, W / H, 0.1, 500);
 { const n = 2500, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar(R(120, 200)); pos.set([v.x, v.y, v.z], i * 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); earthS.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#dfe8ff', size: 2, sizeAttenuation: false }))); }
@@ -38,16 +38,11 @@ const trail = makeSmoke(earthS, 80);
 const atm = new THREE.Mesh(new THREE.SphereGeometry(ER2 * 1.035, 64, 40), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending, uniforms: { uA: { value: 1 } },
   vertexShader: 'varying vec3 vN, vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
   fragmentShader: 'uniform float uA; varying vec3 vN, vV; void main(){ float f=pow(1.0-abs(dot(vN,vV)),3.0); gl_FragColor=vec4(vec3(0.4,0.7,1.0)*f*1.4*uA,1.0); }' })); earthS.add(atm);
-// the fall: y(t) = R cos(2π t / T), one way = 38 min of story time squeezed into ~4 s, then back
-const FALL0 = EARTH + 3.4, LEG = 4.0;
-const fallPos = t => t < FALL0 ? 1 : Math.cos(Math.PI * (t - FALL0) / LEG);
-function updateEarth(t) { const sp = ease(clamp((t - EARTH - 0.6) / 2.4, 0, 1));   // split: halves slide apart and turn their faces to the camera
-  halfA.position.set(-ER2 * 1.12 * sp, 0, 0); halfA.rotation.y = -Math.PI / 2 * sp; halfB.position.set(ER2 * 1.12 * sp, 0, 0); halfB.rotation.y = Math.PI / 2 * sp;
-  earthG.rotation.y = 0.25 * (1 - sp) + 0.1 * Math.sin(t * 0.2) * (1 - sp); atm.material.uniforms.uA.value = 1 - sp;
-  for (const hh of [halfA, halfB]) hh.children.forEach(c => { if (c.userData.groove) c.material.opacity = 0.7 * smooth(EARTH + 2.6, EARTH + 3.4, t); });
-  // the dot rides down the groove of the left half (its face now looks at us)
-  const y = ER2 * 0.97 * fallPos(t); faller.position.set(halfA.position.x + 0.0, y, 0.05); faller.visible = t > EARTH + 2.8; faller.scale.setScalar(1 + 0.25 * Math.sin(t * 8));
-  trail.begin(); smokeMat.uniforms.uTint.value.set('#ffd890'); if (faller.visible) for (let k = 1; k < 22; k++) { const tt2 = t - k * 0.03; if (tt2 < FALL0) break; trail.add(V3(faller.position.x, ER2 * 0.97 * fallPos(tt2), 0.06), 0.22 * (1 - k / 22), 0.5 * (1 - k / 22)); } trail.end(); }
-function earthCamera(t) { const sp = smooth(EARTH + 0.6, EARTH + 3.0, t); eaCam.position.set(lerp(0, -ER2 * 1.12, smooth(EARTH + 2.6, EARTH + 3.6, t)), lerp(2, 0, sp), lerp(33, 32, sp) - lerp(0, 3, smooth(EARTH + 3.2, LIVE_END, t)));
-  eaCam.lookAt(lerp(0, -ER2 * 1.12, smooth(EARTH + 2.6, EARTH + 3.6, t)), 0, 0); }
-const LIVE_END = FUSE;
+const hotGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, 'rgba(255,250,235,1)'); rg.addColorStop(0.35, 'rgba(255,190,120,0.55)'); rg.addColorStop(1, 'rgba(255,120,60,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); earthS.add(hotGlow);
+const squeezeAt = t => smooth(EARTH + 0.8, EARTH + 5.2, t);
+const earthDiam = t => Math.exp(lerp(Math.log(12742e3), Math.log(367), squeezeAt(t)));   // metres, for the HUD
+function updateEarth(t) { const k = squeezeAt(t), sc = Math.exp(lerp(0, Math.log(0.02), k)); earthG.scale.setScalar(sc); atm.scale.setScalar(sc); atm.material.uniforms.uA.value = 1 - k;
+  earthG.rotation.y = 0.2 + 0.5 * k + 0.08 * t; faller.visible = false; trail.begin(); trail.end();
+  for (const hh of [halfA, halfB]) hh.children.forEach(c => { if (c.userData.groove) c.visible = false; else if (c.material.emissive) c.material.emissive.setRGB(1.6 * k, 0.8 * k * k, 0.3 * k * k * k); });
+  const g = smooth(EARTH + 2.5, EARTH + 5.4, t); hotGlow.scale.setScalar(lerp(0.1, 5.0, g) * (1 + 0.06 * Math.sin(t * 9))); hotGlow.material.opacity = g; }
+function earthCamera(t) { eaCam.position.set(0, 1.5, lerp(33, 27, smooth(EARTH, ESB + 0.5, t))); eaCam.lookAt(0, 0, 0); }
