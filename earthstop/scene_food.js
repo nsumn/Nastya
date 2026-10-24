@@ -338,7 +338,7 @@ const captions = [
   [49.5, 52.7, 'Their breaks before working<br>for a reward: 2× longer.'],
   [53.4, 56.3, '2 weeks of fruits & veggies:<br>more energy,<br>more motivation.'],
   [56.5, 58.0, 'Your gut changes in a day.'],
-  [58.1, 59.9, '84.8 million Americans<br>eat fast food today.<br><span style="font-style:normal;font-size:1.3em">👇</span>'],
+  [58.1, 59.9, '84.8 million Americans<br>eat fast food today.'],
 ];
 const GREEN = '<b style="background:#5fd27a"></b>';
 const weightAt = t => t < WT + 5.5 ? 4.3 * smooth(WT + 3.3, WT + 4.8, t) : lerp(4.3, 24.5, smooth(WT + 5.6, WT + 7.4, t));
