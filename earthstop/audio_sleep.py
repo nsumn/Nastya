@@ -7,6 +7,7 @@ from scipy.io import wavfile
 # the 2:40 am fridge raid (door, hum, wrappers, crunch), the sneeze, brain fog (everything muffled), a rested morning (birds, a deep stretch breath).
 # ONE theme: minor while short on sleep (muffled in the fog), the same line in major after a full night. Mids only, no repeating high ticks.
 SR = 44100; DUR = 64.5; N = int(SR * DUR); t = np.arange(N) / SR
+MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no theme, pads or end chord)
 rng = np.random.default_rng(505); L = np.zeros(N); Rr = np.zeros(N)
 BRAIN, MORN, DRIVE, OFFICE, SNACK, COLD, FOG, FIX, T_END = 4.0, 10.0, 17.0, 25.0, 32.0, 39.0, 46.0, 54.0, 60.0
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
@@ -53,7 +54,7 @@ wash = (0.6 + 0.4 * np.sin(2 * np.pi * 0.45 * (t - BRAIN))) * win(BRAIN - 0.2, B
 add(filt(rng.standard_normal(N), 'bandpass', [250, 1300]) * wash, db(-22))
 for k in range(16):
     at = BRAIN + 0.3 + rng.uniform(0, 3.3); x = tt(0.18); f = rng.uniform(220, 420) * (1 + 1.5 * x); place(at, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 18), db(-27), rng.uniform(-0.5, 0.5))
-add(pad([57, 62, 65], BRAIN, BRAIN + 4.2, 0.8, 0.8, lp=1600), db(-34))
+if MUSIC: add(pad([57, 62, 65], BRAIN, BRAIN + 4.2, 0.8, 0.8, lp=1600), db(-34))
 x = tt(1.2); place(BRAIN + 3.7, filt(rng.standard_normal(len(x)), 'bandpass', [300, 900]) * np.exp(-x * 3) * np.linspace(1, 0, len(x)), db(-28))   # flow drains away
 # --- alarm: a short phone-style two-tone pattern (mid pitch), three bursts only
 for k in range(3):
@@ -111,9 +112,9 @@ while at < T_END - 0.3:
     if DRIVE + 3.2 <= at < DRIVE + 5.0 or COLD + 0.6 <= at < COLD + 1.9: at += beat_s; k += 1; continue   # rests under the near-miss and the sneeze
     place(at, piano((major if at >= FIX else minor)[k % 8], 2.2), db(-24), buf=mel); at += beat_s; k += 1
 fogk = win(FOG, FIX - 0.1, 1.2); mel = mel * (1 - fogk) + filt(mel, 'lowpass', 420) * fogk * 1.6
-add(mel, 1.0)
-add(pad([62, 65, 69], 0.0, FIX + 0.2, 1.5, 1.0), db(-38)); add(pad([65, 69, 72], FIX - 0.2, DUR, 1.5, 2.0), db(-34))
-place(T_END + 0.2, sum(piano(n, 4.5, 0.5) * a for n, a in [(53, 1), (60, 0.7), (65, 0.6), (69, 0.5), (72, 0.4)]), db(-19))
+if MUSIC: add(mel, 1.0)
+if MUSIC: add(pad([62, 65, 69], 0.0, FIX + 0.2, 1.5, 1.0), db(-38)); add(pad([65, 69, 72], FIX - 0.2, DUR, 1.5, 2.0), db(-34))
+if MUSIC: place(T_END + 0.2, sum(piano(n, 4.5, 0.5) * a for n, a in [(53, 1), (60, 0.7), (65, 0.6), (69, 0.5), (72, 0.4)]), db(-19))
 out = np.stack([L, Rr], 1); out = sosfilt(butter(2, 60, 'highpass', fs=SR, output='sos'), out.T).T
 out *= np.clip((DUR - t) / 0.8, 0, 1)[:, None] * np.clip(t / 0.05, 0, 1)[:, None]
 out = np.tanh(out * 1.2) / np.tanh(1.2); out /= np.abs(out).max() / 0.92
