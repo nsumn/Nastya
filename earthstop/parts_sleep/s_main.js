@@ -6,7 +6,7 @@ function shootScene(id, t, rt) { const S = SCN[id]; S[0](t); S[1](t); const c = 
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'end', 'endT', 'endS', 'hud'].map(k => [k, $(k)]));
-el.title.innerHTML = 'What if you only slept<br><span class="hl">5 hours</span> a night?'; el.endT.innerHTML = 'What if you only slept <span class="hl">5 hours</span> a night?';
+el.title.innerHTML = 'What if you only slept<br><span class="hl">5 hours</span> a night?'; el.endT.innerHTML = 'What if you only slept<br><span class="hl">5 hours</span> a night?';
 el.endS.innerHTML = 'AAA FOUNDATION 2016: 4–5 HOURS OF SLEEP → ~4.3× THE CRASH RATE.<br>PRATHER ET AL., SLEEP 2015: UNDER 6 HOURS → 4.2× MORE COLDS.<br>VAN DONGEN ET AL. 2003: 2 WEEKS OF SHORT SLEEP ≈ 1–2 NIGHTS WITH NONE.';
 const captions = [
   [4.4, 7.0, 'While you sleep,<br>your brain washes itself.'],
