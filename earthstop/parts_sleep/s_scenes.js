@@ -57,17 +57,17 @@ function updateOffice(t) { const P = meO, o = P.outer; o.rotation.set(0, 0, 0); 
   // you at your desk (seat at z -1.55 facing -z)
   const angry = fadeWin(t, OFFICE + 2.2, OFFICE + 5.6, 0.25);
   o.position.set(-1, 0.55, -1.5); o.rotation.y = Math.PI; poseSit(P); if (angry > 0) { o.position.y = lerp(0.55, 0.95, angry); poseIdle(P, t, 0); P.arms[1].rotation.x = -1.8 * angry; P.arms[0].rotation.x = -1.6 * angry; P.root.rotation.x = -0.15 * angry; }
-  if (t >= COLD && t < FOG) { const sn = fadeWin(t, COLD + 1.0, COLD + 2.2, 0.15); P.root.rotation.x = 0.45 * sn; P.arms[0].rotation.x = -2.4 * smooth(COLD + 0.4, COLD + 0.9, t); P.elbows[0].rotation.x = -2.0; }
-  if (t >= FOG) { P.arms[1].rotation.set(-2.6, 0, -0.2); P.elbows[1].rotation.x = -0.4; }
-  coworker.outer.position.set(-0.3, 0.95, -0.9); coworker.outer.rotation.y = -2.28; poseIdle(coworker, t, 1); coworker.outer.visible = t < SNACK; coworker.arms[1].rotation.x = -0.9 - 0.3 * Math.sin(t * 5) * (t < OFFICE + 2.5 ? 1 : 0);
+  if (t >= COLD) { const sn = fadeWin(t, COLD + 1.0, COLD + 2.2, 0.15), hf = fadeWin(t, COLD + 0.4, COLD + 3.4, 0.5); P.root.rotation.x = 0.45 * sn; P.arms[0].rotation.x = lerp(-0.3, -2.4, hf); P.elbows[0].rotation.x = lerp(-0.6, -2.0, hf); }
+  if (t >= COLD) { const k2 = smooth(FOG - 0.3, FOG + 0.7, t); P.arms[1].rotation.set(lerp(-0.3, -2.6, k2), 0, -0.2 * k2); P.elbows[1].rotation.x = lerp(-0.6, -0.4, k2); }
+  coworker.outer.position.set(-0.3, 0.95, -0.9); coworker.outer.rotation.y = -2.28; poseIdle(coworker, t, 1); coworker.outer.visible = t < COLD - 1; coworker.arms[1].rotation.x = -0.9 - 0.3 * Math.sin(t * 5) * (t < OFFICE + 2.5 ? 1 : 0);
   others.forEach((p, k) => { p.outer.position.set(-3 + (k % 4) * 2 + (k > 3 ? 1 : 0), 0.55, -1.5 + Math.floor(k / 4) * 2.2 + (k > 3 ? 0 : 2.2)); p.outer.rotation.y = Math.PI; poseSit(p); });
   // sneeze burst
-  for (let i = 0; i < VIR_N; i++) { const V = VIR[i]; const age = t - (COLD + 1.25); if (age > 0 && age < 3.5 && t < FOG) { const hp = P.elbows[0].localToWorld(_ov.set(0, -0.2, 0)); _oo.position.set(-1, 1.45, -1.75).addScaledVector(V.d.clone().multiply(V3(1, 1, -1)), age * V.sp * (1 - age * 0.12)); _oo.position.y -= 0.05 * age * age; _oo.scale.setScalar(1); } else _oo.scale.setScalar(0.0001); _oo.rotation.set(t * 2 + i, t, 0); _oo.updateMatrix(); virus.setMatrixAt(i, _oo.matrix); } virus.instanceMatrix.needsUpdate = true;
+  for (let i = 0; i < VIR_N; i++) { const V = VIR[i]; const age = t - (COLD + 1.25); if (age > 0 && age < 3.5 && t < FOG) { const hp = P.elbows[0].localToWorld(_ov.set(0, -0.2, 0)); _oo.position.set(-1, 1.45, -1.75).addScaledVector(V.d.clone().multiply(V3(1, 1, -1)), 0.5 * V.sp * (1 - Math.exp(-age * 2.2))); _oo.position.y -= 0.03 * age * age; _oo.scale.setScalar(Math.max(0.0001, 1 - smooth(2.6, 3.5, age))); } else _oo.scale.setScalar(0.0001); _oo.rotation.set(t * 2 + i, t, 0); _oo.updateMatrix(); virus.setMatrixAt(i, _oo.matrix); } virus.instanceMatrix.needsUpdate = true;
   // brain fog: grey haze rolls in, papers float
   fogO.begin(); smokeMat.uniforms.uTint.value.set('#b8bcc4'); const fz = smooth(FOG, FOG + 2.5, t) * (1 - smooth(FIX - 1.2, FIX - 0.3, t)); if (fz > 0) for (let k = 0; k < 160; k++) { const a = k * 2.4 + t * 0.15; _ov.set(-1 + Math.cos(a) * (0.6 + (k % 7) * 0.35), 0.4 + (k % 9) * 0.25 + 0.1 * Math.sin(t + k), -1.5 + Math.sin(a) * (0.6 + (k % 7) * 0.35)); fogO.add(_ov, 0.9 + (k % 5) * 0.3, 0.32 * fz); } fogO.end();
-  papers.forEach((Pp, k) => { Pp.p.visible = fz > 0.05; const a = Pp.a + t * 0.8; Pp.p.position.set(-1 + Math.cos(a) * Pp.r, Pp.y0 + 0.15 * Math.sin(t * 1.5 + k), -1.6 + Math.sin(a) * Pp.r); Pp.p.rotation.set(t + k, t * 0.7, k); }); }
+  papers.forEach((Pp, k) => { Pp.p.visible = fz > 0.01; Pp.p.scale.setScalar(Math.max(0.0001, fz)); const a = Pp.a + t * 0.8; Pp.p.position.set(-1 + Math.cos(a) * Pp.r, Pp.y0 + 0.15 * Math.sin(t * 1.5 + k), -1.6 + Math.sin(a) * Pp.r); Pp.p.rotation.set(t + k, t * 0.7, k); }); }
 function officeCamera(t) { let pos, look, fov = 50;
   if (t < SNACK) { const k = smooth(OFFICE, SNACK, t); pos = V3(0.3, 1.75, -3.7).lerp(V3(0.1, 1.68, -3.4), k); look = V3(-0.65, 1.25, -1.2); pos.add(V3(Math.sin(t * 31) * 0.02, Math.sin(t * 27) * 0.02, 0).multiplyScalar(fadeWin(t, OFFICE + 2.2, OFFICE + 3.4, 0.2))); }
-  else if (t < FOG) { pos = V3(-0.35, 1.47, -3.05).lerp(V3(-0.5, 1.45, -2.85), smooth(COLD, FOG, t)); look = V3(-1.0, 1.3, -1.55); fov = 46; }
-  else { const k = smooth(FOG, FIX, t); pos = V3(0.9, 1.9, -3.5).lerp(V3(0.2, 1.6, -2.95), k); look = V3(-1, 1.2, -1.5); }
+  else { const kc = smooth(FOG - 0.6, FOG + 0.9, t), k = smooth(FOG, FIX, t);   // sneeze close-up glides out into the fog shot
+    pos = V3(-0.35, 1.47, -3.05).lerp(V3(-0.5, 1.45, -2.85), smooth(COLD, FOG, t)).lerp(V3(0.9, 1.9, -3.5).lerp(V3(0.2, 1.6, -2.95), k), kc); look = V3(-1.0, 1.3, -1.55).lerp(V3(-1, 1.2, -1.5), kc); fov = lerp(46, 50, kc); }
   oCam.position.copy(pos); oCam.lookAt(look); oCam.fov = fov; }

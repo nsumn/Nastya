@@ -100,23 +100,23 @@ const SNK = []; for (let i = 0; i < 22; i++) { const g = new THREE.Group(); cons
   g.position.set(1.5 + R(-0.6, 0.6), 1.02 + Math.floor(i / 8) * 0.07, -2.15 + R(-0.18, 0.18)); g.rotation.set(R(-0.4, 0.4), R(0, 6), R(-1, 1)); home.add(g); SNK.push({ g, at: SNACK + 0.8 + i * 0.22 }); }
 const me = makePerson(rnd, { top: '#f2c84a', bottom: '#3a4a6a', hair: '#2a1d16', skin: '#d8a07a', dress: false, shorts: false, longSleeve: false, cap: false, hairStyle: 0.3 }); home.add(me.outer);
 const steamH = makeSmoke(home, 200); const _hv = new THREE.Vector3();
-function lightHome(t) { const day = (t >= MORN && t < SNACK - 0.5) || t >= FIX; const bright = t >= FIX ? 1.3 : 0.9;
-  hemiH.intensity = day ? 0.9 * bright : 0.42; moonH.intensity = day ? 0 : 2.2; sunH.intensity = day ? 3.0 * bright : 0; fillH.intensity = t >= FIX ? 6 : day ? 3 : 1.4;
-  winH.material.color.set(day ? new THREE.Color(1.6 * bright, 1.4 * bright, 1.0 * bright) : new THREE.Color(0.12, 0.16, 0.35)); BLINDS.forEach(b => b.rotation.x = day ? 1.2 : 0.6); clockL.intensity = day ? 0.1 : 0.3;
+function lightHome(t) { const dk = t < SNACK - 0.5 ? smooth(MORN - 0.4, MORN + 1.8, t) : smooth(FIX - 0.45, FIX + 0.6, t), bright = t >= FIX - 0.45 ? 1.3 : 0.9;   // dawn behind the alarm; night raid; rested morning
+  hemiH.intensity = lerp(0.42, 0.9 * bright, dk); moonH.intensity = 2.2 * (1 - dk); sunH.intensity = 3.0 * bright * dk; fillH.intensity = lerp(1.4, t >= FIX - 0.45 ? 6 : 3, dk);
+  winH.material.color.setRGB(lerp(0.12, 1.6 * bright, dk), lerp(0.16, 1.4 * bright, dk), lerp(0.35, 1.0 * bright, dk)); BLINDS.forEach(b => b.rotation.x = lerp(0.6, 1.2, dk)); clockL.intensity = lerp(0.3, 0.1, dk);
   const open = fadeWin(t, SNACK + 0.3, COLD - 0.2, 0.5); fDoorH.rotation.y = -1.9 * open; fridgeLH.intensity = 3 * open; }
 function updateHome(t) { lightHome(t); const o = me.outer, P = me; o.rotation.set(0, 0, 0); o.rotation.order = 'XYZ'; P.root.rotation.set(0, 0, 0); poseIdle(P, t, 0);
-  if (t < MORN) { drawAlarm(t < 2.5 ? '1:00' : 'ALARM 6:00', t < 2.5 ? '#3aff8a' : '#ffb03a'); o.position.set(-1.7, 0.78, -1.35); o.rotation.set(-Math.PI / 2, 0, 0); duvet.position.y = 0.66; }
+  if (t < MORN - 0.4) { drawAlarm(t < 2.5 ? '1:00' : 'ALARM 6:00', t < 2.5 ? '#3aff8a' : '#ffb03a'); o.position.set(-1.7, 0.78, -1.35); o.rotation.set(-Math.PI / 2, 0, 0); duvet.position.y = 0.66; }
   else if (t < SNACK - 0.5) { const ring = t < MORN + 2.2; drawAlarm(ring ? (Math.floor(t * 3) % 2 ? '6:00' : '    ') : '6:0' + Math.min(9, Math.floor((t - MORN) * 1.2)), '#ff4a3a');
     if (t < MORN + 3.2) { o.position.set(-1.0, 0.62, -1.35); o.rotation.y = 1.4; poseSit(P); P.root.rotation.x = 0.35; P.arms[0].rotation.x = -2.2 * smooth(MORN + 0.6, MORN + 1.2, t); P.elbows[0].rotation.x = -2.0; }   // sits up, hand on the face
     else { o.position.set(0.75, 0.95, -1.62); o.rotation.y = 0.5; P.arms[1].rotation.x = -1.0 - 0.5 * (0.5 + 0.5 * Math.sin(t * 2)); P.elbows[1].rotation.x = -1.4; P.root.rotation.x = 0.18; } }   // slumped against the counter, coffee in hand
-  else if (t < FIX) { drawAlarm('2:40'); o.position.set(1.95, 0.95, -1.35); o.rotation.y = Math.PI / 2; P.arms[1].rotation.x = -1.1 + 0.25 * Math.sin(t * 4); P.elbows[1].rotation.x = -2.0; }
+  else if (t < FIX - 0.4) { drawAlarm('2:40'); o.position.set(1.95, 0.95, -1.35); o.rotation.y = Math.PI / 2; P.arms[1].rotation.x = -1.1 + 0.25 * Math.sin(t * 4); P.elbows[1].rotation.x = -2.0; }
   else { drawAlarm('8:00', '#3aff8a'); o.position.set(-0.5, 0.95, -0.4); o.rotation.y = 0.6; const up = smooth(FIX + 0.6, FIX + 1.6, t); P.arms[0].rotation.set(-3.0 * up, 0, 0.3 * up); P.arms[1].rotation.set(-3.0 * up, 0, -0.3 * up); }
-  MUGS.forEach((m, k) => m.visible = t > MORN + 3.4 + k * 0.9 && t < SNACK - 0.5); SNK.forEach(S => S.g.visible = t > S.at && t < FIX);
+  MUGS.forEach((m, k) => m.visible = t > MORN + 3.4 + k * 0.9 && t < SNACK - 0.5); SNK.forEach(S => S.g.visible = t > S.at && t < FIX - 0.4);
   steamH.begin(); smokeMat.uniforms.uTint.value.set('#ffffff'); if (t > MORN + 3.4 && t < SNACK - 0.5) for (let k = 0; k < 30; k++) { const age = (t * 0.5 + k / 30) % 1; const mk = MUGS[k % 3]; if (!mk.visible) continue; _hv.copy(mk.position).add(V3(Math.sin(k * 2.1 + age * 5) * 0.03, 0.12 + age * 0.4, 0)); steamH.add(_hv, 0.02 + age * 0.06, 0.3 * (1 - age)); } steamH.end(); }
 function homeCamera(t) { let pos, look, fov = 50;
-  if (t < MORN) { const k = smooth(0, 3.6, t); pos = V3(0.6, 2.1, 1.2).lerp(V3(0.15, 1.12, -0.8), k); look = V3(-1.4, 0.6, -1.7).lerp(V3(-0.42, 0.66, -2.1), k); fov = lerp(52, 44, k); }
+  if (t < MORN - 0.4) { const k = smooth(0, 3.6, t); pos = V3(0.6, 2.1, 1.2).lerp(V3(0.15, 1.12, -0.8), k); look = V3(-1.4, 0.6, -1.7).lerp(V3(-0.42, 0.66, -2.1), k); fov = lerp(52, 44, k); }
   else if (t < SNACK - 0.5) { const k = ease(clamp((t - MORN - 2.8) / 1.4, 0, 1)); pos = V3(0.4, 1.5, 0.9).lerp(V3(2.2, 1.5, 0.5), k); look = V3(-1.1, 0.9, -1.4).lerp(V3(1.05, 1.15, -1.9), k); }
-  else if (t < FIX) { pos = V3(2.6, 1.55, 0.4).lerp(V3(2.5, 1.45, 0.0), smooth(SNACK, COLD, t)); look = V3(1.9, 1.15, -1.55); }
+  else if (t < FIX - 0.4) { pos = V3(2.6, 1.55, 0.4).lerp(V3(2.5, 1.45, 0.0), smooth(SNACK, COLD, t)); look = V3(1.9, 1.15, -1.55); }
   else { pos = V3(1.2, 1.6, 1.6).lerp(V3(0.9, 1.5, 1.2), smooth(FIX, T_END, t)); look = V3(-0.6, 1.2, -1.0); }
   hCam.position.copy(pos); hCam.lookAt(look); hCam.fov = fov; }
 // =================== BRAIN (abstract): a glassy pink brain; blue fluid washes waste particles out — the alarm stops it at ~62% ===================
@@ -178,19 +178,19 @@ function updateOffice(t) { const P = meO, o = P.outer; o.rotation.set(0, 0, 0); 
   // you at your desk (seat at z -1.55 facing -z)
   const angry = fadeWin(t, OFFICE + 2.2, OFFICE + 5.6, 0.25);
   o.position.set(-1, 0.55, -1.5); o.rotation.y = Math.PI; poseSit(P); if (angry > 0) { o.position.y = lerp(0.55, 0.95, angry); poseIdle(P, t, 0); P.arms[1].rotation.x = -1.8 * angry; P.arms[0].rotation.x = -1.6 * angry; P.root.rotation.x = -0.15 * angry; }
-  if (t >= COLD && t < FOG) { const sn = fadeWin(t, COLD + 1.0, COLD + 2.2, 0.15); P.root.rotation.x = 0.45 * sn; P.arms[0].rotation.x = -2.4 * smooth(COLD + 0.4, COLD + 0.9, t); P.elbows[0].rotation.x = -2.0; }
-  if (t >= FOG) { P.arms[1].rotation.set(-2.6, 0, -0.2); P.elbows[1].rotation.x = -0.4; }
-  coworker.outer.position.set(-0.3, 0.95, -0.9); coworker.outer.rotation.y = -2.28; poseIdle(coworker, t, 1); coworker.outer.visible = t < SNACK; coworker.arms[1].rotation.x = -0.9 - 0.3 * Math.sin(t * 5) * (t < OFFICE + 2.5 ? 1 : 0);
+  if (t >= COLD) { const sn = fadeWin(t, COLD + 1.0, COLD + 2.2, 0.15), hf = fadeWin(t, COLD + 0.4, COLD + 3.4, 0.5); P.root.rotation.x = 0.45 * sn; P.arms[0].rotation.x = lerp(-0.3, -2.4, hf); P.elbows[0].rotation.x = lerp(-0.6, -2.0, hf); }
+  if (t >= COLD) { const k2 = smooth(FOG - 0.3, FOG + 0.7, t); P.arms[1].rotation.set(lerp(-0.3, -2.6, k2), 0, -0.2 * k2); P.elbows[1].rotation.x = lerp(-0.6, -0.4, k2); }
+  coworker.outer.position.set(-0.3, 0.95, -0.9); coworker.outer.rotation.y = -2.28; poseIdle(coworker, t, 1); coworker.outer.visible = t < COLD - 1; coworker.arms[1].rotation.x = -0.9 - 0.3 * Math.sin(t * 5) * (t < OFFICE + 2.5 ? 1 : 0);
   others.forEach((p, k) => { p.outer.position.set(-3 + (k % 4) * 2 + (k > 3 ? 1 : 0), 0.55, -1.5 + Math.floor(k / 4) * 2.2 + (k > 3 ? 0 : 2.2)); p.outer.rotation.y = Math.PI; poseSit(p); });
   // sneeze burst
-  for (let i = 0; i < VIR_N; i++) { const V = VIR[i]; const age = t - (COLD + 1.25); if (age > 0 && age < 3.5 && t < FOG) { const hp = P.elbows[0].localToWorld(_ov.set(0, -0.2, 0)); _oo.position.set(-1, 1.45, -1.75).addScaledVector(V.d.clone().multiply(V3(1, 1, -1)), age * V.sp * (1 - age * 0.12)); _oo.position.y -= 0.05 * age * age; _oo.scale.setScalar(1); } else _oo.scale.setScalar(0.0001); _oo.rotation.set(t * 2 + i, t, 0); _oo.updateMatrix(); virus.setMatrixAt(i, _oo.matrix); } virus.instanceMatrix.needsUpdate = true;
+  for (let i = 0; i < VIR_N; i++) { const V = VIR[i]; const age = t - (COLD + 1.25); if (age > 0 && age < 3.5 && t < FOG) { const hp = P.elbows[0].localToWorld(_ov.set(0, -0.2, 0)); _oo.position.set(-1, 1.45, -1.75).addScaledVector(V.d.clone().multiply(V3(1, 1, -1)), 0.5 * V.sp * (1 - Math.exp(-age * 2.2))); _oo.position.y -= 0.03 * age * age; _oo.scale.setScalar(Math.max(0.0001, 1 - smooth(2.6, 3.5, age))); } else _oo.scale.setScalar(0.0001); _oo.rotation.set(t * 2 + i, t, 0); _oo.updateMatrix(); virus.setMatrixAt(i, _oo.matrix); } virus.instanceMatrix.needsUpdate = true;
   // brain fog: grey haze rolls in, papers float
   fogO.begin(); smokeMat.uniforms.uTint.value.set('#b8bcc4'); const fz = smooth(FOG, FOG + 2.5, t) * (1 - smooth(FIX - 1.2, FIX - 0.3, t)); if (fz > 0) for (let k = 0; k < 160; k++) { const a = k * 2.4 + t * 0.15; _ov.set(-1 + Math.cos(a) * (0.6 + (k % 7) * 0.35), 0.4 + (k % 9) * 0.25 + 0.1 * Math.sin(t + k), -1.5 + Math.sin(a) * (0.6 + (k % 7) * 0.35)); fogO.add(_ov, 0.9 + (k % 5) * 0.3, 0.32 * fz); } fogO.end();
-  papers.forEach((Pp, k) => { Pp.p.visible = fz > 0.05; const a = Pp.a + t * 0.8; Pp.p.position.set(-1 + Math.cos(a) * Pp.r, Pp.y0 + 0.15 * Math.sin(t * 1.5 + k), -1.6 + Math.sin(a) * Pp.r); Pp.p.rotation.set(t + k, t * 0.7, k); }); }
+  papers.forEach((Pp, k) => { Pp.p.visible = fz > 0.01; Pp.p.scale.setScalar(Math.max(0.0001, fz)); const a = Pp.a + t * 0.8; Pp.p.position.set(-1 + Math.cos(a) * Pp.r, Pp.y0 + 0.15 * Math.sin(t * 1.5 + k), -1.6 + Math.sin(a) * Pp.r); Pp.p.rotation.set(t + k, t * 0.7, k); }); }
 function officeCamera(t) { let pos, look, fov = 50;
   if (t < SNACK) { const k = smooth(OFFICE, SNACK, t); pos = V3(0.3, 1.75, -3.7).lerp(V3(0.1, 1.68, -3.4), k); look = V3(-0.65, 1.25, -1.2); pos.add(V3(Math.sin(t * 31) * 0.02, Math.sin(t * 27) * 0.02, 0).multiplyScalar(fadeWin(t, OFFICE + 2.2, OFFICE + 3.4, 0.2))); }
-  else if (t < FOG) { pos = V3(-0.35, 1.47, -3.05).lerp(V3(-0.5, 1.45, -2.85), smooth(COLD, FOG, t)); look = V3(-1.0, 1.3, -1.55); fov = 46; }
-  else { const k = smooth(FOG, FIX, t); pos = V3(0.9, 1.9, -3.5).lerp(V3(0.2, 1.6, -2.95), k); look = V3(-1, 1.2, -1.5); }
+  else { const kc = smooth(FOG - 0.6, FOG + 0.9, t), k = smooth(FOG, FIX, t);   // sneeze close-up glides out into the fog shot
+    pos = V3(-0.35, 1.47, -3.05).lerp(V3(-0.5, 1.45, -2.85), smooth(COLD, FOG, t)).lerp(V3(0.9, 1.9, -3.5).lerp(V3(0.2, 1.6, -2.95), k), kc); look = V3(-1.0, 1.3, -1.55).lerp(V3(-1, 1.2, -1.5), kc); fov = lerp(46, 50, kc); }
   oCam.position.copy(pos); oCam.lookAt(look); oCam.fov = fov; }
 // =================== scene schedule + dissolves ===================
 const SCN = { home: [updateHome, homeCamera, home, () => hCam, 1.0], brain: [updateBrainS, brainCamera, brs, () => bCam, 1.2],
