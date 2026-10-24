@@ -88,7 +88,7 @@ function updateApt(t, mode) { lightApt(mode, t); const P = meA, o = P.outer; o.r
     const belly = lerp(1.04, 1.13, smooth(WT + 1, WT + 7, t)); P.torso.scale.set(belly, 1, belly * 1.04);
     if (t < WT + 3.4) { o.position.set(2.0, 0.95, -2.0); const bite = Math.max(0, Math.sin((t - WT) * 6.5)); P.arms[0].rotation.x = -1.1 - 0.35 * bite; P.elbows[0].rotation.x = -1.4 - 0.6 * bite; burgerA.visible = true; P.arms[1].rotation.x = -0.7; P.elbows[1].rotation.x = -0.6; }
     else if (t < WT + 4.8) { const w = walkPath([[2.0, -2.0], [3.45, -1.75], [3.45, -0.85], [3.3, -0.2]], (t - WT - 3.4) / 1.4); o.position.set(w.x, 0.95, w.z); o.rotation.y = w.ry; poseWalk(P, (t - WT) * 9, 1); }
-    else { o.position.set(3.3, 1.01, -0.22); o.rotation.y = 0; P.root.rotation.x = 0.1 * smooth(WT + 5, WT + 5.6, t); P.arms[0].rotation.x = P.arms[1].rotation.x = -0.1; } }
+    else { o.position.set(3.3, 0.95 + 0.06 * smooth(WT + 4.8, WT + 5.1, t), -0.2); o.rotation.y = 0; P.root.rotation.x = 0.1 * smooth(WT + 5, WT + 5.6, t); P.arms[0].rotation.x = P.arms[1].rotation.x = -0.1; } }
   else if (mode === 'couch') {   // lying on the couch scrolling, TV on, fog of no motivation
     o.position.set(-1.6, 0.68, 1.15); o.rotation.set(-Math.PI / 2, 0, -0.35); poseIdle(P, t, 0); P.legs[0].rotation.x = 0.05; P.knees[1].rotation.x = 0.5; P.legs[1].rotation.x = -0.25;
     P.arms[0].rotation.x = -1.5; P.elbows[0].rotation.x = -1.0 + 0.04 * Math.sin(t * 3); phoneA.visible = true; P.torso.scale.set(1.13, 1, 1.17); cloud = 1; }
