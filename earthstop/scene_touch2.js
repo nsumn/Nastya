@@ -291,7 +291,7 @@ const squeezeAt = t => smooth(EARTH + 0.8, EARTH + 5.2, t);
 const earthDiam = t => Math.exp(lerp(Math.log(12742e3), Math.log(367), squeezeAt(t)));   // metres, for the HUD
 function updateEarth(t) { const k = squeezeAt(t), sc = Math.exp(lerp(0, Math.log(0.02), k)); earthG.scale.setScalar(sc); atm.scale.setScalar(sc); atm.material.uniforms.uA.value = 1 - k;
   earthG.rotation.y = 0.2 + 0.5 * k + 0.08 * t; faller.visible = false; trail.begin(); trail.end();
-  for (const hh of [halfA, halfB]) hh.children.forEach(c => { if (c.userData.groove) c.visible = false; else if (c.material.emissive) c.material.emissive.setRGB(1.6 * k, 0.8 * k * k, 0.3 * k * k * k); });
+  for (const hh of [halfA, halfB]) hh.children.forEach(c => { if (c.userData.groove) c.visible = false; else if (c.material.emissive) { const h = smooth(0.35, 1, k); c.material.emissive.setRGB(1.8 * h, 0.75 * h * h, 0.15 * h * h); c.material.color.setScalar(1 - 0.7 * h); } });
   const g = smooth(EARTH + 2.5, EARTH + 5.4, t); hotGlow.scale.setScalar(lerp(0.1, 5.0, g) * (1 + 0.06 * Math.sin(t * 9))); hotGlow.material.opacity = g; }
 function earthCamera(t) { eaCam.position.set(0, 1.5, lerp(33, 27, smooth(EARTH, ESB + 0.5, t))); eaCam.lookAt(0, 0, 0); }
 // =================== FOR SCALE (meters): squeezed Earth (367 m ball) next to the Empire State Building (roof 381 m, tip 443 m) at dusk ===================
