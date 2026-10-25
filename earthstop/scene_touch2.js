@@ -74,21 +74,20 @@ function makeSmoke(scene, n) {
 // =================== the couple: same look in every scene (own seeds so height/hair never change) ===================
 function makeHer() { const sv = seed; seed = 5151; const p = makePerson(rnd, { top: '#e86a9a', bottom: '#34385a', hair: '#7a4a22', skin: '#f1d2b6', shoe: '#f4f4f4', dress: false, shorts: false, longSleeve: true, cap: false, hairStyle: 0.85 }); seed = sv; return p; }
 function makeHim() { const sv = seed; seed = 6262; const p = makePerson(rnd, { top: '#2a3a6a', bottom: '#5a4632', hair: '#1a1a1a', skin: '#b98260', shoe: '#1b1b1b', dress: false, shorts: false, longSleeve: true, cap: false, hairStyle: 0.3 }); seed = sv; return p; }
-// =================== CAFÉ HANDS (meters, close-up): his and her fingers interlace at golden hour; at the end the same hands at sunset with the glowing gap ===================
+// =================== HANDS OUTDOORS (meters, close-up): his and her fingers interlace, standing on grass under an open sky; at the end the same hands at sunset with the glowing gap ===================
 const cafe = new THREE.Scene(); const cfCam = new THREE.PerspectiveCamera(38, W / H, 0.01, 50);
-const cfHemi = new THREE.HemisphereLight(0xfff0e0, 0x5a4038, 0.8); cafe.add(cfHemi);
-const cfKey = new THREE.DirectionalLight(0xffc890, 2.6); cfKey.position.set(-1.5, 1.2, 1.0); cfKey.castShadow = true; cfKey.shadow.mapSize.set(2048, 2048); cfKey.shadow.bias = -0.0002; Object.assign(cfKey.shadow.camera, { left: -0.5, right: 0.5, top: 0.5, bottom: -0.5, near: 0.1, far: 6 }); cafe.add(cfKey);
+const cfHemi = new THREE.HemisphereLight(0xeaf4ff, 0x4a6a3a, 0.9); cafe.add(cfHemi);
+const cfKey = new THREE.DirectionalLight(0xfff0d8, 2.6); cfKey.position.set(-1.5, 1.2, 1.0); cfKey.castShadow = true; cfKey.shadow.mapSize.set(2048, 2048); cfKey.shadow.bias = -0.0002; Object.assign(cfKey.shadow.camera, { left: -0.5, right: 0.5, top: 0.5, bottom: -0.5, near: 0.1, far: 6 }); cafe.add(cfKey);
 const cfRim = new THREE.DirectionalLight(0xffa070, 1.4); cfRim.position.set(1.2, 0.6, -1.4); cafe.add(cfRim);
 const cfFill = new THREE.PointLight(0xffe0c8, 0.6, 3, 1.5); cfFill.position.set(0.4, 0.2, 0.6); cafe.add(cfFill);
-// soft bokeh backdrop (café window + string lights), drawn once; tinted per mode
-const bokehTex = canvasTex(1024, 1820, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#f0b070'); gr.addColorStop(0.55, '#c8784a'); gr.addColorStop(1, '#4a2a22'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 90; i++) { const x = rnd() * w, y = rnd() * h * 0.75, r = R(30, 110); const rg = g.createRadialGradient(x, y, 0, x, y, r); const c = pick(['255,230,180', '255,200,140', '255,170,120', '255,245,220', '200,220,255']);
-    rg.addColorStop(0, `rgba(${c},0.55)`); rg.addColorStop(0.7, `rgba(${c},0.35)`); rg.addColorStop(1, `rgba(${c},0)`); g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); } });
-const cfBack = new THREE.Mesh(new THREE.SphereGeometry(4, 48, 24, 0, Math.PI * 2, 0.25, Math.PI * 0.62), new THREE.MeshBasicMaterial({ map: bokehTex, color: new THREE.Color(1, 1, 1), side: THREE.BackSide, fog: false })); cfBack.rotation.y = 0.6; cafe.add(cfBack);
-{ const wood = canvasTex(512, 512, (g, w, h) => { for (let y = 0; y < h; y += 64) { g.fillStyle = pick(['#c89a6a', '#c2946a', '#cc9e70', '#bf9064']); g.fillRect(0, y, w, 64); g.fillStyle = 'rgba(90,55,30,0.35)'; g.fillRect(0, y, w, 2);
-    for (let k = 0; k < 5; k++) { g.fillStyle = 'rgba(120,80,45,0.08)'; g.fillRect(0, y + 8 + k * 11 + R(-2, 2), w, R(2, 5)); } } }, [2, 2]);
-  const tb = mesh(new THREE.CircleGeometry(0.9, 40), M('#ffffff', { map: wood, roughness: 0.35 }), false, true); tb.rotation.x = -Math.PI / 2; tb.position.y = -0.22; cafe.add(tb);
-  const cup = mesh(new THREE.CylinderGeometry(0.04, 0.032, 0.09, 20), M('#f4f0e8', { roughness: 0.3 })); cup.position.set(0.16, -0.175, -0.12); cafe.add(cup); const cf = mesh(new THREE.CircleGeometry(0.036, 20), M('#5a3420')); cf.rotation.x = -Math.PI / 2; cf.position.set(0.16, -0.132, -0.12); cafe.add(cf); }
+// open sky with soft clouds (tinted for the sunset ending), grass below, a few distant trees
+const bokehTex = canvasTex(1024, 1820, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#3a7ad8'); gr.addColorStop(0.5, '#7ab4ec'); gr.addColorStop(0.72, '#c8e2f8'); gr.addColorStop(1, '#e8f2fa'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 26; i++) { const x = rnd() * w, y = R(0.12, 0.62) * h, s = R(60, 150); for (let k = 0; k < 7; k++) { const cx = x + R(-1.2, 1.2) * s, cy = y + R(-0.25, 0.25) * s, r = s * R(0.45, 0.8); const rg = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+    rg.addColorStop(0, 'rgba(255,255,255,0.75)'); rg.addColorStop(0.6, 'rgba(255,255,255,0.35)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill(); } } });
+const cfBack = new THREE.Mesh(new THREE.SphereGeometry(30, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.62), new THREE.MeshBasicMaterial({ map: bokehTex, color: new THREE.Color(1, 1, 1), side: THREE.BackSide, fog: false })); cfBack.rotation.y = 0.6; cafe.add(cfBack);
+{ const grass = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#5a9a3e'; g.fillRect(0, 0, w, h); speckle(g, w, h, 9000, ['#4e8e36', '#6aaa4a', '#589a3c', '#76b456'], 3); }, [14, 14]);
+  const gr = mesh(new THREE.CircleGeometry(28, 48), M('#ffffff', { map: grass, roughness: 1 }), false, true); gr.rotation.x = -Math.PI / 2; gr.position.y = -1.2; cafe.add(gr);
+  for (let i = 0; i < 22; i++) { const a = R(0, 6.28), d = R(16, 27); const c = mesh(new THREE.IcosahedronGeometry(R(1.0, 2.2), 1), M(pick(['#3e8a34', '#4a9a3a', '#5aaa44']), { flatShading: true })); c.position.set(Math.cos(a) * d, -1.2 + R(0.8, 2.2), Math.sin(a) * d); cafe.add(c); } }
 // a stylised hand: forearm sleeve + cuff, palm, 4 three-joint fingers, 2-joint thumb. Wrist at the origin, fingers along +y, palm faces +z
 function makeHand(skin, sleeve, cuff) { const g = new THREE.Group(), S = M(skin, { roughness: 0.6 }), SL = M(sleeve, { roughness: 0.8 });
   const arm = mesh(new THREE.CylinderGeometry(0.03, 0.036, 0.34, 18), SL); arm.position.y = -0.19; g.add(arm); const cf = mesh(new THREE.TorusGeometry(0.031, 0.006, 8, 20), M(cuff, { roughness: 0.4, metalness: cuff === '#d8b860' ? 0.7 : 0 })); cf.rotation.x = Math.PI / 2; cf.position.y = -0.03; g.add(cf);
@@ -117,11 +116,11 @@ function poseHands(t) { const app = ease(clamp(t / 1.9, 0, 1)), spread = smooth(
     Hh.thumb[0].rotation.x = lerp(0.35, 0.9, curl); Hh.thumb[1].rotation.x = lerp(0.1, 0.6, curl); } }
 const _cp = new THREE.Vector3();
 function updateCafe(t, mode) { poseHands(mode === 'end' ? 3.6 + (t - ENDS) : t); const end = mode === 'end';
-  cfKey.color.set(end ? '#ff9a5a' : '#ffc890'); cfKey.intensity = end ? 2.2 : 2.6; cfRim.color.set(end ? '#ff6a8a' : '#ffa070'); cfHemi.intensity = end ? 0.55 : 0.8;
-  cfBack.material.color.set(end ? '#ff9a8a' : '#ffffff').multiplyScalar(end ? 0.75 : 1);
+  cfKey.color.set(end ? '#ff9a5a' : '#fff0d8'); cfKey.intensity = end ? 2.2 : 2.6; cfRim.color.set(end ? '#ff6a8a' : '#c8e0ff'); cfHemi.intensity = end ? 0.55 : 0.9;
+  cfBack.material.color.set(end ? '#ffa070' : '#ffffff').multiplyScalar(end ? 0.85 : 1);
   gapGlow.material.uniforms.uA.value = end ? (0.35 + 0.15 * Math.sin(t * 3)) * smooth(ENDS + 0.8, ENDS + 2.4, t) : 0; gapGlow.lookAt(cfCam.position); }
-function cafeCamera(t, mode) { if (mode === 'end') { const k = smooth(ENDS - 0.5, T_END, t); cfCam.position.set(lerp(-0.34, -0.26, k), lerp(0.08, 0.04, k), lerp(0.2, 0.16, k)); cfCam.lookAt(0, 0.0, 0); cfCam.fov = 38; return; }
-  const k = smooth(0, ATOM, t); cfCam.position.set(lerp(0.36, 0.26, k), lerp(0.12, 0.05, k), lerp(0.3, 0.2, k)); cfCam.lookAt(0, lerp(0.0, 0.02, k), 0); cfCam.fov = lerp(40, 30, smooth(LENS, ATOM, t)); }
+function cafeCamera(t, mode) { if (mode === 'end') { const k = smooth(ENDS - 0.5, T_END, t); cfCam.position.set(lerp(-0.34, -0.26, k), lerp(-0.07, -0.05, k), lerp(0.2, 0.16, k)); cfCam.lookAt(0, 0.03, 0); cfCam.fov = 38; return; }
+  const k = smooth(0, ATOM, t); cfCam.position.set(lerp(0.36, 0.26, k), lerp(-0.08, -0.05, k), lerp(0.3, 0.2, k)); cfCam.lookAt(0, lerp(0.04, 0.03, k), 0); cfCam.fov = lerp(40, 30, smooth(LENS, ATOM, t)); }
 // =================== ATOMS (1 unit ≈ 1 Å): two lattices — hers (warm electrons) above, his (cool) below. Seen from far they are a field of dots;
 // up close every atom is a tiny nucleus in a cloud with three buzzing electrons. They come together, the facing clouds squash and spark — and stop ===================
 const atomS = new THREE.Scene(); atomS.background = new THREE.Color('#050a1c'); const atCam = new THREE.PerspectiveCamera(40, W / H, 0.05, 400);
@@ -204,8 +203,8 @@ port.add(new THREE.HemisphereLight(0xf0f4ff, 0x6a6058, 1.0));
 const ptFill = new THREE.PointLight(0xfff0e0, 3, 12, 1.2); port.add(ptFill);
 // terminal: glossy tiles in front of the cut, back wall with tall windows + parked plane, arrivals board, gate doors, ceiling light strips, a few travellers
 { const tile = canvasTex(512, 512, (g, w, h) => { for (let y = 0; y < h; y += 128) for (let x = 0; x < w; x += 128) { g.fillStyle = pick(['#d8dce2', '#e2e6ea', '#d2d6dc']); g.fillRect(x + 2, y + 2, 124, 124); } }, [10, 5]);
-  const fl = mesh(new THREE.PlaneGeometry(40, 12), M('#ffffff', { map: tile, roughness: 0.25, metalness: 0.1 }), false, true); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, -4.5); port.add(fl);
-  bx(40, 0.3, 6, '#c8ccd2', 0, -0.15, 3.5, port);   // floor slab in front of the cut (seen from below on the way down)
+  const fl = mesh(new THREE.PlaneGeometry(40, 17), M('#ffffff', { map: tile, roughness: 0.25, metalness: 0.1 }), false, true); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, -2.0); port.add(fl);
+  bx(40, 0.3, 6, '#c8ccd2', 0, -0.156, 3.5, port);   // floor slab in front of the cut (seen from below on the way down)
   bx(40, 7, 0.2, '#e8ecf0', 0, 3.5, -10.5, port); for (let x = -15; x <= 15; x += 3.2) { const w = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 5.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.8, 2.2) })); w.position.set(x, 3.2, -10.39); port.add(w); }
   const pl = grp(-3, 0, -16, 0.3, port); bx(14, 1.8, 1.8, '#f4f6f8', 0, 2.6, 0, pl); bx(1.5, 2.4, 0.3, '#2a6ad0', 6.2, 4.4, 0, pl); bx(3, 0.3, 9, '#e8eaee', 0, 2.4, 0, pl);
   const board = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#10141c'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2c84a'; g.font = 'bold 34px Inter, sans-serif'; g.fillText('ARRIVALS', 20, 44);
@@ -344,8 +343,8 @@ const captions = [
   [4.3, 7.8, 'Fun fact: you’ve never<br>touched anyone. Ever.'],
   [8.6, 11.3, 'An atom is 99.9999999%<br>empty space.'],
   [11.6, 14.8, 'What you call “touch” is<br>electrons repelling each other.'],
-  [15.4, 18.4, 'This hammock? She’s not<br>really lying on it.'],
-  [18.6, 21.8, 'She’s levitating —<br>by about one atom.'],
+  [15.4, 18.4, 'She isn’t actually lying<br>on this hammock.'],
+  [18.6, 21.8, 'There’s a gap between them —<br>about one atom wide.'],
   [22.4, 24.9, 'Even the tightest hug…'],
   [25.1, 27.9, '…leaves a gap of<br>0.00000001 cm.'],
   [28.2, 30.8, 'Now switch that push off.'],

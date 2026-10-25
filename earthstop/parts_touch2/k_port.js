@@ -6,8 +6,8 @@ port.add(new THREE.HemisphereLight(0xf0f4ff, 0x6a6058, 1.0));
 const ptFill = new THREE.PointLight(0xfff0e0, 3, 12, 1.2); port.add(ptFill);
 // terminal: glossy tiles in front of the cut, back wall with tall windows + parked plane, arrivals board, gate doors, ceiling light strips, a few travellers
 { const tile = canvasTex(512, 512, (g, w, h) => { for (let y = 0; y < h; y += 128) for (let x = 0; x < w; x += 128) { g.fillStyle = pick(['#d8dce2', '#e2e6ea', '#d2d6dc']); g.fillRect(x + 2, y + 2, 124, 124); } }, [10, 5]);
-  const fl = mesh(new THREE.PlaneGeometry(40, 12), M('#ffffff', { map: tile, roughness: 0.25, metalness: 0.1 }), false, true); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, -4.5); port.add(fl);
-  bx(40, 0.3, 6, '#c8ccd2', 0, -0.15, 3.5, port);   // floor slab in front of the cut (seen from below on the way down)
+  const fl = mesh(new THREE.PlaneGeometry(40, 17), M('#ffffff', { map: tile, roughness: 0.25, metalness: 0.1 }), false, true); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, -2.0); port.add(fl);
+  bx(40, 0.3, 6, '#c8ccd2', 0, -0.156, 3.5, port);   // floor slab in front of the cut (seen from below on the way down)
   bx(40, 7, 0.2, '#e8ecf0', 0, 3.5, -10.5, port); for (let x = -15; x <= 15; x += 3.2) { const w = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 5.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.8, 2.2) })); w.position.set(x, 3.2, -10.39); port.add(w); }
   const pl = grp(-3, 0, -16, 0.3, port); bx(14, 1.8, 1.8, '#f4f6f8', 0, 2.6, 0, pl); bx(1.5, 2.4, 0.3, '#2a6ad0', 6.2, 4.4, 0, pl); bx(3, 0.3, 9, '#e8eaee', 0, 2.4, 0, pl);
   const board = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#10141c'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2c84a'; g.font = 'bold 34px Inter, sans-serif'; g.fillText('ARRIVALS', 20, 44);
