@@ -124,7 +124,7 @@ function updatePlat(t) { drawBoard(t);
     else { P.outer.position.set(Wt.x, 0.95 + 0.76, Wt.z); P.outer.rotation.y = Wt.ry + 0.8 * relief * Math.sin(k); P.outer.visible = true; } }); }
 // camera keyframes: wide -> the board -> the clock -> the arrival
 const KF = [[0, [6.0, 2.3, 12], [0.6, 2.8, -6]], [BOARD - 0.4, [5.4, 2.6, 9.5], [1.0, 3.0, -6]], [BOARD + 0.6, [2.2, 1.9, 4.4], [2.2, 2.55, -4]], [CLOCK - 0.6, [2.2, 1.9, 4.0], [2.2, 2.55, -4]],
-  [CLOCK + 0.5, [4.5, 2.35, 2.6], [4.5, 2.6, -0.4]], [ARRIVE - 0.6, [4.5, 2.35, 2.4], [4.5, 2.6, -0.4]], [ARRIVE + 0.8, [3.4, 2.2, 11], [-2.0, 2.0, -12]], [T_END, [3.3, 2.1, 9.8], [-2.1, 2.0, -12]]];
+  [CLOCK + 0.5, [4.5, 2.35, 2.6], [4.5, 2.6, -0.4]], [ARRIVE - 0.6, [4.5, 2.35, 2.4], [4.5, 2.6, -0.4]], [ARRIVE - 0.1, [3.4, 2.35, 2.2], [2.6, 2.4, -4]], [ARRIVE + 0.8, [3.4, 2.2, 11], [-2.0, 2.0, -12]], [T_END, [3.3, 2.1, 9.8], [-2.1, 2.0, -12]]];
 function platCamera(t) { let i = 0; while (i < KF.length - 2 && t >= KF[i + 1][0]) i++; const [a, pa, la] = KF[i], [b, pb, lb] = KF[i + 1], k = ease(clamp((t - a) / (b - a), 0, 1));
   plCam.position.set(lerp(pa[0], pb[0], k), lerp(pa[1], pb[1], k), lerp(pa[2], pb[2], k)); plCam.lookAt(lerp(la[0], lb[0], k), lerp(la[1], lb[1], k), lerp(la[2], lb[2], k)); plCam.fov = 50; }
 // =================== DOM + render ===================
