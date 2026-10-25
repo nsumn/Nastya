@@ -44,7 +44,8 @@ function updatePort(t) { travellers.forEach((T, k) => { const P = T.p; P.root.ro
   for (let i = 0; i < GSP_N; i++) { const a = i * 2.39, h = 1.0 + (i / GSP_N) * 0.62; _o2.position.set(0.0 + 0.012 * Math.sin(t * 5 + i), h + fy, 0.9 + Math.sin(a) * 0.16); _o2.rotation.set(t * 3 + i, t * 2, 0);
     _o2.scale.setScalar(Math.max(0.0001, spk * (0.5 + 0.5 * Math.sin(t * 9 + i * 1.7)))); _o2.updateMatrix(); gapSpk.setMatrixAt(i, _o2.matrix); } gapSpk.instanceMatrix.needsUpdate = true;
   ptFill.position.set(1.0, 1.8 + fy, 3.0); }
-function portCamera(t) { const fy = fallY(t); let pos, look;
+function portCamera(t, mode = 'up') { const fy = fallY(t); let pos, look;
   if (t < OFF) { const k = smooth(HUG - 0.5, OFF, t); pos = V3(lerp(1.6, 0.9, k), lerp(1.7, 1.55, k), lerp(5.8, 3.4, k)); look = V3(0, 1.25, lerp(-0.5, 0.6, k)); }
   else { const k = smooth(OFF, OFF + 2.0, t); pos = V3(lerp(0.9, 1.4, k), 1.55 + fy * 0.96 + lerp(0, 0.6, smooth(fallT0, SINK + 1, t)), lerp(3.4, 4.6, k)); look = V3(0, 1.2 + fy, 0.6); }
+  if (mode === 'up') pos.y = Math.max(0.75, pos.y); else pos.y = Math.min(-0.75, pos.y);   // never inside the floor: above / below views dissolve
   ptCam.position.copy(pos); ptCam.lookAt(look); }

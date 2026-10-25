@@ -1,8 +1,8 @@
 // =================== scene schedule: [start, id, dissolve] — the café -> atoms change is the scope reveal, so that boundary has no dissolve ===================
 const SCN = { cafe: [t => updateCafe(t, 'start'), t => cafeCamera(t, 'start'), cafe, () => cfCam, 1.0], atoms: [updateAtoms, atomCamera, atomS, () => atCam, 1.2], bohr: [updateBohr, bohrCamera, bohrS, () => bhCam, 1.2],
-  yard: [updateYard, yardCamera, yard, () => ydCam, 1.0], port: [updatePort, portCamera, port, () => ptCam, 1.0], earth: [updateEarth, earthCamera, earthS, () => eaCam, 1.1], nyc: [updateNyc, nycCamera, nycS, () => nyCam, 1.0],
+  yard: [updateYard, yardCamera, yard, () => ydCam, 1.0], port: [updatePort, t => portCamera(t, 'up'), port, () => ptCam, 1.0], portDown: [updatePort, t => portCamera(t, 'down'), port, () => ptCam, 1.0], earth: [updateEarth, earthCamera, earthS, () => eaCam, 1.1], nyc: [updateNyc, nycCamera, nycS, () => nyCam, 1.0],
   cell: [updateCell, cellCamera, cellS, () => ceCam, 1.1], cafeEnd: [t => updateCafe(t, 'end'), t => cafeCamera(t, 'end'), cafe, () => cfCam, 1.0] };
-const SEQ = [[0, 'cafe', 0.7], [LENS + 0.3, 'atoms', 0], [ATOM + 0.4, 'bohr', 0.7], [LAT0, 'atoms', 0.7], [HAM, 'yard', 0.7], [HUG, 'port', 0.7], [EARTH, 'earth', 0.7], [ESB, 'nyc', 0.7], [CELL, 'cell', 0.7], [ENDS, 'cafeEnd', 0.7]];
+const SEQ = [[0, 'cafe', 0.7], [LENS + 0.3, 'atoms', 0], [ATOM + 0.4, 'bohr', 0.7], [LAT0, 'atoms', 0.7], [HAM, 'yard', 0.7], [HUG, 'port', 0.7], [SINK + 0.2, 'portDown', 0.8], [EARTH, 'earth', 0.7], [ESB, 'nyc', 0.7], [CELL, 'cell', 0.7], [ENDS, 'cafeEnd', 0.7]];
 function shootScene(id, t, rt) { const S = SCN[id]; S[0](t); S[1](t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); return S[4]; }
 // =================== DOM ===================
 const $ = id => document.getElementById(id);

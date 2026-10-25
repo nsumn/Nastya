@@ -241,9 +241,10 @@ function updatePort(t) { travellers.forEach((T, k) => { const P = T.p; P.root.ro
   for (let i = 0; i < GSP_N; i++) { const a = i * 2.39, h = 1.0 + (i / GSP_N) * 0.62; _o2.position.set(0.0 + 0.012 * Math.sin(t * 5 + i), h + fy, 0.9 + Math.sin(a) * 0.16); _o2.rotation.set(t * 3 + i, t * 2, 0);
     _o2.scale.setScalar(Math.max(0.0001, spk * (0.5 + 0.5 * Math.sin(t * 9 + i * 1.7)))); _o2.updateMatrix(); gapSpk.setMatrixAt(i, _o2.matrix); } gapSpk.instanceMatrix.needsUpdate = true;
   ptFill.position.set(1.0, 1.8 + fy, 3.0); }
-function portCamera(t) { const fy = fallY(t); let pos, look;
+function portCamera(t, mode = 'up') { const fy = fallY(t); let pos, look;
   if (t < OFF) { const k = smooth(HUG - 0.5, OFF, t); pos = V3(lerp(1.6, 0.9, k), lerp(1.7, 1.55, k), lerp(5.8, 3.4, k)); look = V3(0, 1.25, lerp(-0.5, 0.6, k)); }
   else { const k = smooth(OFF, OFF + 2.0, t); pos = V3(lerp(0.9, 1.4, k), 1.55 + fy * 0.96 + lerp(0, 0.6, smooth(fallT0, SINK + 1, t)), lerp(3.4, 4.6, k)); look = V3(0, 1.2 + fy, 0.6); }
+  if (mode === 'up') pos.y = Math.max(0.75, pos.y); else pos.y = Math.min(-0.75, pos.y);   // never inside the floor: above / below views dissolve
   ptCam.position.copy(pos); ptCam.lookAt(look); }
 // =================== EARTH COLLAPSING: a smooth cartoon globe (real coastlines, built in two halves); with nothing keeping atoms apart it squeezes down
 // to a white-hot speck (at nuclear density Earth would be ~1,200 ft wide) ===================
@@ -329,9 +330,9 @@ function updateCell(t) { CELLS.forEach((C, i) => { C.m.position.set(C.p.x + Math
 function cellCamera(t) { const k = smooth(CELL - 0.5, ENDS + 0.5, t); ceCam.position.set(lerp(-6, 4, k), lerp(4, 1, k), lerp(48, 32, smooth(CELL + 0.6, CELL + 3.4, t))); ceCam.lookAt(0, 0, 0); }
 // =================== scene schedule: [start, id, dissolve] — the café -> atoms change is the scope reveal, so that boundary has no dissolve ===================
 const SCN = { cafe: [t => updateCafe(t, 'start'), t => cafeCamera(t, 'start'), cafe, () => cfCam, 1.0], atoms: [updateAtoms, atomCamera, atomS, () => atCam, 1.2], bohr: [updateBohr, bohrCamera, bohrS, () => bhCam, 1.2],
-  yard: [updateYard, yardCamera, yard, () => ydCam, 1.0], port: [updatePort, portCamera, port, () => ptCam, 1.0], earth: [updateEarth, earthCamera, earthS, () => eaCam, 1.1], nyc: [updateNyc, nycCamera, nycS, () => nyCam, 1.0],
+  yard: [updateYard, yardCamera, yard, () => ydCam, 1.0], port: [updatePort, t => portCamera(t, 'up'), port, () => ptCam, 1.0], portDown: [updatePort, t => portCamera(t, 'down'), port, () => ptCam, 1.0], earth: [updateEarth, earthCamera, earthS, () => eaCam, 1.1], nyc: [updateNyc, nycCamera, nycS, () => nyCam, 1.0],
   cell: [updateCell, cellCamera, cellS, () => ceCam, 1.1], cafeEnd: [t => updateCafe(t, 'end'), t => cafeCamera(t, 'end'), cafe, () => cfCam, 1.0] };
-const SEQ = [[0, 'cafe', 0.7], [LENS + 0.3, 'atoms', 0], [ATOM + 0.4, 'bohr', 0.7], [LAT0, 'atoms', 0.7], [HAM, 'yard', 0.7], [HUG, 'port', 0.7], [EARTH, 'earth', 0.7], [ESB, 'nyc', 0.7], [CELL, 'cell', 0.7], [ENDS, 'cafeEnd', 0.7]];
+const SEQ = [[0, 'cafe', 0.7], [LENS + 0.3, 'atoms', 0], [ATOM + 0.4, 'bohr', 0.7], [LAT0, 'atoms', 0.7], [HAM, 'yard', 0.7], [HUG, 'port', 0.7], [SINK + 0.2, 'portDown', 0.8], [EARTH, 'earth', 0.7], [ESB, 'nyc', 0.7], [CELL, 'cell', 0.7], [ENDS, 'cafeEnd', 0.7]];
 function shootScene(id, t, rt) { const S = SCN[id]; S[0](t); S[1](t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); return S[4]; }
 // =================== DOM ===================
 const $ = id => document.getElementById(id);
