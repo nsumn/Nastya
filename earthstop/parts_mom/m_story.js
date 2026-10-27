@@ -46,11 +46,12 @@ function updateHome(t, mode) { resetCast(t); if (mom.outer.parent !== room) room
     laptop.visible = true; lapGlow.intensity = 1.6; seat(P, STOOL.x, STOOL.y, STOOL.z); P.arms.forEach(a => a.rotation.set(-0.85, 0, 0)); P.elbows[0].rotation.x = -0.6 - 0.15 * Math.max(0, Math.sin(t * 7)); P.elbows[1].rotation.x = -0.6;
     P.face(t < B4 + 2.0 ? 'reading' : t < B4 + 4.2 ? 'squint' : t < B4 + 5.2 ? 'surprised' : 'proud', t); }
   else if (mode === 'b5') { atCounter(); holdPhone(P, t, 'type'); P.face(t < B5 + 1.2 ? 'reading' : t < B5 + 4.4 ? 'happy' : 'laugh', t); }
-  else if (mode === 'b6') {   // you missed her call: she sings to the voicemail on speaker, then lights a candle on your cake
-    atCounter(0.5); miniCake.visible = true; const lit = t > B6 + 5.0; flame.visible = lit; candleL.intensity = lit ? 0.45 + 0.08 * Math.sin(t * 17) : 0; flame.scale.y = 1 + 0.15 * Math.sin(t * 13);
-    counterPhone.scr.material.color.setRGB(t < B6 + 4.6 ? 1.4 : 0.05, t < B6 + 4.6 ? 1.5 : 0.05, t < B6 + 4.6 ? 1.7 : 0.06); P.root.rotation.x = 0.12;
-    if (t > B6 + 4.6) { P.arms[1].rotation.set(-0.9, 0, -0.35); P.elbows[1].rotation.x = -0.4; }
-    P.face(t < B6 + 1.4 ? 'neutral' : t < B6 + 2.2 ? 'sad' : t < B6 + 4.6 ? 'laugh' : t < B6 + 6.0 ? 'proud' : 'sad', t); }
+  else if (mode === 'b6') {   // 24: she video-calls at 7 a.m. and sings (you pick up, you laugh), then lights a candle and blows it out for you on camera
+    atCounter(0.5); miniCake.visible = true; counterPhone.visible = false; const lit = t > B6 + 4.6 && t < B6 + 6.15; flame.visible = lit; candleL.intensity = lit ? 0.45 + 0.08 * Math.sin(t * 17) : 0; flame.scale.y = 1 + 0.15 * Math.sin(t * 13);
+    holdPhone(P, t, 'far'); P.arms[1].rotation.z = lerp(0.05, -0.35, smooth(B6 + 3.8, B6 + 4.4, t));
+    if (t > B6 + 4.0) { const k = smooth(B6 + 4.0, B6 + 4.6, t) * (1 - smooth(B6 + 5.2, B6 + 5.7, t)); P.arms[0].rotation.set(-0.9 * k, 0, -0.3 * k); P.elbows[0].rotation.x = -0.6 * k; }
+    P.root.rotation.x = 0.15 * smooth(B6 + 5.6, B6 + 5.9, t) * (1 - smooth(B6 + 6.3, B6 + 6.8, t));
+    P.face(t < B6 + 0.5 ? 'happy' : t < B6 + 3.8 ? 'laugh' : t < B6 + 5.8 ? 'proud' : t < B6 + 6.25 ? 'surprised' : 'laugh', t); }
   else {   // tw: twenty-five — before she can reach for her phone, it lights up: you texted first
     atCounter(); const pick = t > TW + 1.7, lit = t > TW + 0.9; counterPhone.visible = !pick; if (lit && !pick) counterPhone.scr.material.color.setRGB(1.6, 1.7, 1.9);
     if (!pick) { P.arms[1].rotation.set(lerp(0, -0.7, smooth(TW + 0.2, TW + 1.6, t)), 0, -0.25 * smooth(TW + 0.2, TW + 1.6, t)); P.face(lit ? 'surprised' : 'happy', t); }

@@ -95,12 +95,12 @@ for a in [B4 + 2.4, B4 + 3.1, B4 + 3.8]: whoosh(a, db(-33), 0.3)
 voice(B4 + 4.7, 0.4, 260, db(-25), 0, vowels=((700, 1200), (600, 1000)), rate=2.0); chime(B4 + 5.6, db(-24), (79, 83, 86))
 # --- B5: the texts on your 20th: hers first, then a second one, then your friends hours later
 taps(B5 + 0.0, B5 + 0.4, 3, db(-28)); bloop(B5 + 0.5, db(-16)); bloop(B5 + 4.2, db(-18)); bloop(B5 + 5.4, db(-24), 0.3); bloop(B5 + 6.0, db(-24), 0.3); laugh(B5 + 4.6, db(-22))
-# --- B6: a missed call (two soft rings), the voicemail beep, her off-key song, a match, a sigh
-for a in [B6 + 0.2, B6 + 0.9]: x = tt(0.45); place(a, (np.sin(2 * np.pi * 523 * x) + np.sin(2 * np.pi * 659 * x)) * 0.5 * np.clip(x / 0.02, 0, 1) * np.clip((0.45 - x) / 0.05, 0, 1), db(-25), 0.3)
-x = tt(0.25); place(B6 + 1.45, np.sin(2 * np.pi * 1000 * x) * np.clip((0.25 - x) / 0.03, 0, 1), db(-30), 0.3)
-song = [(67, 0.3), (67, 0.15), (69, 0.45), (67, 0.45), (72, 0.45), (71, 0.8)]; a = B6 + 2.0
+# --- B6: a video call at 7 a.m. — you pick up, she sings off-key, you laugh; a match, a candle, she blows it out for you
+x = tt(0.45); place(B6 + 0.2, (np.sin(2 * np.pi * 523 * x) + np.sin(2 * np.pi * 659 * x)) * 0.5 * np.clip(x / 0.02, 0, 1) * np.clip((0.45 - x) / 0.05, 0, 1), db(-25), 0.3); bloop(B6 + 0.5, db(-24))
+song = [(67, 0.3), (67, 0.15), (69, 0.45), (67, 0.45), (72, 0.45), (71, 0.8)]; a = B6 + 0.8
 for n, d in song: f0 = hz(n) * 2 ** (35 / 1200) * 0.5; voice(a, d, f0, db(-22), 0, vowels=((750, 1200), (700, 1150)), rate=1.0 / d); a += d + 0.05
-x = tt(0.35); place(B6 + 4.9, filt(rng.standard_normal(len(x)), 'bandpass', [800, 3000]) * np.exp(-x * 9), db(-26)); place(B6 + 6.0, breath(1.4, 'out', 0.2, 170), db(-22))
+laugh(B6 + 3.6, db(-23), 200, 0.9)
+x = tt(0.35); place(B6 + 4.5, filt(rng.standard_normal(len(x)), 'bandpass', [800, 3000]) * np.exp(-x * 9), db(-26)); place(B6 + 5.85, breath(0.6, 'out'), db(-19)); laugh(B6 + 6.5, db(-22))
 # --- TW: 6:58 AM — the phone buzzes on the counter before she reaches it; your text; she cries and laughs; she texts back
 buzz(TW + 0.9, db(-19)); place(TW + 1.05, breath(0.4, 'in', 0.4, 260), db(-22)); bloop(TW + 1.9, db(-16))
 voice(TW + 3.4, 1.2, 240, db(-21), 0, vowels=((650, 1100), (550, 950)), rate=3.0); swish(REP + 0.4, db(-19)); laugh(REP + 1.1, db(-22), 250, 1.0)
@@ -108,7 +108,7 @@ voice(TW + 3.4, 1.2, 240, db(-21), 0, vowels=((650, 1100), (550, 950)), rate=3.0
 mel = np.zeros(N); beat_s = 60 / 84; line = [62, 66, 69, 66, 67, 71, 69, 66, 64, 67, 66, 62, 61, 64, 62, 57]; cache = {}
 k = 0; at = 0.2
 while at < T_END - 0.2:
-    n = line[k % len(line)]; g = db(-28) if (B6 + 1.2 <= at < B6 + 4.8) else db(-23)
+    n = line[k % len(line)]; g = db(-28) if (B6 + 0.6 <= at < B6 + 3.8) else db(-23)
     if n not in cache: cache[n] = pluck(n)
     place(at, cache[n], g, buf=mel)
     if k % 4 == 0: n2 = n - 12; cache.setdefault(n2, pluck(n2, 3.0)); place(at, cache[n2], g * 0.6, buf=mel)

@@ -23,18 +23,20 @@ function search(t) { const q = 'gift for 16 year old who says "nothing"', k = cl
   return `<div class="hd dp"><span>Search</span><em>11:48 PM</em></div><div class="bd"><div class="sq">🔍 ${q.slice(0, Math.round(q.length * k))}</div>${res ? `<div class="ct">${rows}</div>` : ''}${ordered ? `<div class="sent" style="${pop(t, B4 + 5.6)}">Order placed ✓ Arrives tomorrow</div>` : ''}</div>`; }
 function texts20(t) { return lock(t, notif(t, B5 + 0.5, 'Mom', '7:02 AM', 'HAPPY BIRTHDAY MY BABY!!! 🎂🎈🎉❤️') + notif(t, B5 + 4.2, 'Mom', '7:04 AM', '20 years ago right now I was in labor. 19 hours!! Worth every minute ❤️ – Mom') +
   notif(t, B5 + 5.4, 'Sam', '10:41 AM', 'hbd!!') + notif(t, B5 + 6.0, 'Jordan', '11:02 AM', 'happy bday 🎉')); }
-function voicemail(t) { const vm = t > B6 + 1.4; return lock(t, notif(t, B6 + 0.5, 'Mom', '6:15 PM', 'Missed call') + (vm ? `<div class="vm" style="${pop(t, B6 + 1.4)}"><b>▶</b><div class="wv">${Array.from({ length: 26 }, (_, i) => `<i style="height:${(10 + 34 * Math.abs(Math.sin(i * 1.7 + (t > B6 + 2.0 ? t * 6 : 0)) * hash(i))).toFixed(0)}px"></i>`).join('')}</div><span>Voicemail · Mom · 0:48</span></div>` : '')); }
+function videoCall(t) { const on = t > B6 + 0.5, sec = Math.max(0, Math.floor((t - B6 - 0.5) * 9)), mm = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+  if (!on) return `<div class="hd ls"><span>Your phone · 7:01 AM</span></div><div class="bd vc0"><div class="vcn">Mom</div><div class="vcs">FaceTime Video…</div><div class="vcb"><b class="no">✕</b><b class="ok${t > B6 + 0.3 ? ' tap' : ''}">✓</b></div></div>`;
+  return `<div class="hd ls"><span>Mom · ${mm}</span></div><div class="bd vc"><div class="vbig">${t > B6 + 4.6 && t < B6 + 6.15 ? '🎂🕯️' : t > B6 + 6.15 ? '🎂💨' : '🎶👩‍🦰🎶'}</div><div class="vme">😂</div></div>`; }
 function firstText(t) { return `<div class="hd dp"><span>⭐ MY KID ⭐</span><em>MOM’S PHONE · 6:58 AM</em></div><div class="bd">` +
   (t > TW + 1.9 ? `<div class="bub dad" style="${pop(t, TW + 1.9)}">Happy birthday to you too, Mom. 25 years ago today you became a mom ❤️</div>` : '') + (t > REP + 0.4 ? `<div class="bub you" style="${pop(t, REP + 0.4)}">calling you right now 😭❤️</div>` : '') + '</div>'; }
 // [from, to, content(t)]
-const CARDS = [[0.6, 3.9, introCard], [B1 + 4.0, B1 + 7.8, gallery], [B3 + 0.2, B3 + 7.8, post], [B4 + 0.2, B4 + 7.8, search], [B5 + 0.2, B5 + 7.8, texts20], [B6 + 0.2, B6 + 4.6, voicemail], [TW + 1.6, T_END - 0.1, firstText]];
+const CARDS = [[0.6, 3.9, introCard], [B1 + 4.0, B1 + 7.8, gallery], [B3 + 0.2, B3 + 7.8, post], [B4 + 0.2, B4 + 7.8, search], [B5 + 0.2, B5 + 7.8, texts20], [B6 + 0.2, B6 + 7.8, videoCall], [TW + 1.6, T_END - 0.1, firstText]];
 const captions = [
   [4.4, 7.9, 'Year 1: you wore the cake.'], [8.2, 11.8, 'She has 214 photos of it.'],
   [12.4, 15.9, 'Year 6: thirty balloons.'], [16.2, 19.8, 'She blew up every one.'],
   [20.4, 23.9, 'Year 13: the bathtub photo.'], [24.2, 27.8, 'Every. Single. Year.'],
   [28.4, 31.9, 'Year 16: you said<br>you wanted “nothing.”'], [32.2, 35.8, 'She found the perfect thing<br>anyway.'],
   [36.4, 39.9, 'You moved out.'], [40.2, 43.8, 'Her text still came first.'],
-  [44.4, 47.9, 'You missed her call.'], [48.2, 51.8, 'She sang anyway.<br>Then lit a candle on your cake.'],
+  [44.4, 47.9, 'Year 24: she called at 7 a.m.<br>to sing. Off-key.'], [48.2, 51.8, 'Then she blew out a candle<br>for you. 800 miles away.'],
   [52.4, 54.9, 'This year, you were first.'], [55.0, 57.8, 'It’s her birthday too —<br>the day she became a mom.'],
   [58.2, 60.9, 'Call your mom<br>on your birthday.'],
 ];
