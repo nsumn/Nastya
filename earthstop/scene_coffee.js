@@ -220,7 +220,7 @@ function shootScene(id, t, rt) { const S = SCN[id]; S[1](t); S[0](t);   // camer
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'end', 'endT', 'endS', 'hud'].map(k => [k, $(k)]));
 el.title.innerHTML = 'What if you quit<br><span class="hl">caffeine</span> today?'; el.endT.innerHTML = 'What if you quit <span class="hl">caffeine</span> today?';
-el.endS.innerHTML = 'JULIANO & GRIFFITHS 2004: WITHDRAWAL STARTS AT 12–24 H, PEAKS AT 20–51 H, LASTS 2–9 DAYS; HEADACHE IN ~50%.<br>ROGERS ET AL. 2010 (379 PEOPLE): DAILY DRINKERS GET NO NET ALERTNESS BOOST.<br>DRAKE ET AL. 2013: 400 MG 6 H BEFORE BED CUT SLEEP BY OVER 1 HOUR.';
+el.endS.innerHTML = 'THE FIRST 2 DAYS ARE ROUGH:<br>HEADACHE, FOG, BAD MOOD.<br>WITHIN ~9 DAYS IT’S GONE.<br>YOU’RE JUST AS ALERT AS BEFORE —<br>WITHOUT THE CUP.<br>AND YOU SLEEP DEEPER.';
 const captions = [
   [4.4, 7.6, 'Caffeine doesn’t give you energy.'],
   [7.7, 10.8, 'It blocks the signal that<br>says you’re tired.'],

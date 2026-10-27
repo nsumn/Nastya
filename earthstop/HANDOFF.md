@@ -9,6 +9,7 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - Commit + push engine changes (not frames / mp4 / wav / assets) after each step.
 
 ## Her feedback so far (keep it)
+- **End card = the answer to the title question** in plain words (e.g. "The first 2 days are rough… within ~9 days it's gone…"), NOT a list of studies/authors/years.
 - **No repeating high "ticking" sounds** under counters (sounds like a gas stove igniter). Keep the mix in the mids so it is audible on phone speakers.
 - **One melody only** — don't stack two music themes (spoon video: she asked to drop the extra fart2 theme).
 - **Visual continuity matters**: if we dive toward water, the next shot must lead to that water (spoon: street now runs down to a crowded beach).
