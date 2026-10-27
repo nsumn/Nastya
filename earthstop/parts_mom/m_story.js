@@ -4,7 +4,7 @@ const you1 = makeBlock({ ...YOU, top: '#f8e8a0', h: 0.5 }), you6 = makeBlock({ .
 room.add(you1.outer, you13.outer, you16.outer); yard.add(you6.outer);
 const you24 = makeBlock({ ...YOU, top: '#c88a3a' });   // only on the video call (a drawn face in the DOM tile)
 // cream on the baby's face (year 1)
-const cream = new THREE.Group(); { const cm = M('#fff6ec', { roughness: 0.6 }); for (const [x, y, s] of [[-0.08, 0.06, 0.035], [0.06, -0.05, 0.03], [0.1, 0.09, 0.025], [-0.02, -0.1, 0.04], [0.0, 0.17, 0.03]]) { const c = mesh(new THREE.SphereGeometry(s, 10, 8), cm); c.position.set(x, HEAD_Y + y, HEAD_D / 2 + 0.01); cream.add(c); } } you1.torso.add(cream);
+const cream = new THREE.Group(); { for (const [x, y, s, c] of [[-0.09, -0.07, 0.03, '#a8d8f4'], [0.08, -0.09, 0.025, '#f8d8e4'], [0.1, 0.1, 0.02, '#a8d8f4'], [-0.04, 0.15, 0.022, '#fff6ec'], [0.0, -0.13, 0.028, '#f8d8e4']]) { const m = mesh(new THREE.SphereGeometry(s, 10, 8), M(c, { roughness: 0.6 })); m.scale.set(1.3, 0.8, 0.25); m.position.set(x, HEAD_Y + y, HEAD_D / 2 + 0.003); cream.add(m); } } you1.torso.add(cream);
 // =================== kitchen additions: table + chairs, high chair with a smash cake, laptop, the little cake with a candle, Mom's phone on the counter ===================
 { bx(1.2, 0.05, 0.8, '#8a5a3a', 1.6, 0.75, -1.05, room); for (const [dx, dz] of [[-0.55, -0.35], [0.55, -0.35], [-0.55, 0.35], [0.55, 0.35]]) bx(0.05, 0.75, 0.05, '#6a4a30', 1.6 + dx, 0.375, -1.05 + dz, room);
   bx(0.45, 0.05, 0.45, '#6a4a30', 1.6, 0.47, -1.75, room); bx(0.45, 0.6, 0.05, '#6a4a30', 1.6, 0.78, -1.98, room); for (const [dx, dz] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) bx(0.04, 0.47, 0.04, '#6a4a30', 1.6 + dx, 0.235, -1.75 + dz, room); }
@@ -65,7 +65,7 @@ function updateHome(t, mode) { resetCast(t); if (mom.outer.parent !== room) room
 function homeCamera(t, mode) { updateHome(t, mode); const h = headOf(mom); let F;
   if (mode === 'intro') F = framing(h, V3(-0.2 + 0.04 * Math.sin(t * 0.5), 0.0, 1), lerp(2.8, 2.4, smooth(0, B1, t)), 0.55);
   else if (mode === 'b1') { const b = headOf(you1); F = blendF(framing(b, V3(0.1, 0.12, 1), 1.6, 0.6), framing(h.clone().lerp(b, 0.5), V3(0.25, 0.12, 1), 2.6, 0.55), smooth(B1 + 2.6, B1 + 5.0, t)); }
-  else if (mode === 'b3') { const y = headOf(you13); F = blendF(framing(h, V3(0.3, 0.06, 1), 2.3, 0.64), framing(y.clone().lerp(h, 0.5), V3(0.15, 0.08, 1), 2.9, 0.62), smooth(B3 + 3.0, B3 + 5.0, t)); }
+  else if (mode === 'b3') { const y = headOf(you13); F = blendF(framing(h, V3(0.3, 0.06, 1), 2.6, 0.7), framing(y.clone().lerp(h, 0.5), V3(0.15, 0.08, 1), 3.3, 0.72), smooth(B3 + 3.0, B3 + 5.0, t)); }
   else if (mode === 'b4') F = framing(h, V3(0.2 + 0.05 * Math.sin(t * 0.4), 0.12, 1), lerp(2.6, 2.1, smooth(B4, B5, t)), 0.66);
   else if (mode === 'b5') F = framing(h, V3(-0.15, 0.05, 1), lerp(2.6, 2.2, smooth(B5, B6, t)), 0.66);
   else if (mode === 'b6') F = blendF(framing(h, V3(-0.1, 0.05, 1), 2.5, 0.64), framing(h, V3(0.05, 0.08, 1), 2.4, 0.6), smooth(B6 + 3.6, B6 + 5.6, t));
@@ -80,3 +80,24 @@ function updateParty(t) { resetCast(t); if (mom.outer.parent !== yard) yard.add(
   dad.outer.position.set(1.6, 0.95, 4.35); dad.outer.rotation.y = 0; spatula.visible = true; dad.arms[0].rotation.set(-0.9 - 0.25 * Math.max(0, Math.sin(t * 2.2)), 0, -0.15); dad.elbows[0].rotation.x = -0.5; dad.face('happy', t + 0.8);
   grillSmoke.begin(); smokeMat.uniforms.uTint.value.set('#d8d4d0'); for (let k = 0; k < 40; k++) { const u = ((t * 0.35 + k / 40) % 1); grillSmoke.add(V3(1.6 + 0.1 * Math.sin(k * 3.1 + t) - u * 0.5, 0.95 + u * 1.6, 5.0 + u * 0.5), 0.12 + u * 0.4, 0.2 * (1 - u) * smooth(0, 0.1, u)); } grillSmoke.end(); }
 function partyCamera(t) { updateParty(t); const h = headOf(mom); applyF(ydCam, blendF(framing(h, V3(-0.25, 0.05, 1), 2.5, 0.6), framing(V3(0.2, 1.4, 3.3), V3(-0.12, 0.25, 1), 5.6, 0.5), smooth(B2 + 2.6, B2 + 6.2, t))); }
+// =================== real "photos" for the phone cards: rendered once at start-up from the 3D scenes, cropped square ===================
+const snapCam = new THREE.PerspectiveCamera(45, W / H, 0.03, 100);
+function snap(scene, pos, look, fov = 45, size = 360) { snapCam.fov = fov; snapCam.aspect = W / H; snapCam.updateProjectionMatrix(); snapCam.position.copy(pos); snapCam.lookAt(look);
+  renderer.setRenderTarget(null); renderer.render(scene, snapCam); const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(renderer.domElement, 0, (H - W) / 2, W, W, 0, 0, size, size); return c.toDataURL('image/jpeg', 0.88); }
+// the bathtub photo (year 13's post): baby in a tub of foam with a rubber duck, light blue tiles
+const bath = new THREE.Scene(); bath.background = new THREE.Color('#cfe6f2');
+bath.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.3)); { const k = new THREE.DirectionalLight(0xfff4e8, 1.6); k.position.set(1, 3, 2.5); bath.add(k); }
+{ const tiles = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#e8f4fa'; g.fillRect(0, 0, w, h); g.fillStyle = '#b8d4e4'; for (let i = 0; i <= w; i += 64) { g.fillRect(i, 0, 3, h); g.fillRect(0, i, w, 3); } }, [5, 3]);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(4, 2.4), new THREE.MeshStandardMaterial({ map: tiles, roughness: 0.5 })); wall.position.set(0, 1.0, -0.55); bath.add(wall);
+  bx(1.5, 0.55, 0.8, '#fbfbf8', 0, 0.275, 0, bath, { roughness: 0.3 }); const water = mesh(new THREE.PlaneGeometry(1.36, 0.66), M('#a8d8f0', { roughness: 0.1, transparent: true, opacity: 0.9 })); water.rotation.x = -Math.PI / 2; water.position.y = 0.56; bath.add(water);
+  const foamM = M('#ffffff', { roughness: 0.8 }); for (let i = 0; i < 60; i++) { const s = mesh(new THREE.SphereGeometry(R(0.04, 0.09), 10, 8), foamM); s.position.set(R(-0.65, 0.65), 0.57 + R(0, 0.04), R(-0.3, 0.3)); bath.add(s); }
+  const duck = grp(0.42, 0.6, 0.12, -0.5, bath); bx(0.16, 0.1, 0.12, '#f8d030', 0, 0, 0, duck); bx(0.08, 0.08, 0.08, '#f8d030', 0.06, 0.08, 0, duck); bx(0.05, 0.02, 0.04, '#f08a2a', 0.12, 0.08, 0, duck); }
+const bubbleHat = new THREE.Group(); { const fm = M('#ffffff', { roughness: 0.8 }); for (let i = 0; i < 7; i++) { const s = mesh(new THREE.SphereGeometry(0.05 + 0.02 * hash(i), 10, 8), fm); s.position.set(-0.1 + 0.035 * i, HEAD_Y + HEAD_H / 2 + 0.04 + 0.03 * Math.sin(i * 1.7), 0.02 * Math.cos(i)); bubbleHat.add(s); } } you1.torso.add(bubbleHat); bubbleHat.visible = false;
+function makePhotos() { const out = { gallery: [] };
+  // year 1: the smash cake, shot from Mom's side at different moments
+  [[0.6, V3(0.2, 0.2, 0.9)], [1.5, V3(-0.15, 0.1, 0.85)], [2.2, V3(0.3, 0.3, 0.75)], [2.9, V3(0.05, 0.15, 1.0)], [3.6, V3(-0.3, 0.25, 0.8)], [5.0, V3(0.15, 0.05, 0.8)]].forEach(([dt, off]) => {
+    updateHome(B1 + dt, 'b1'); mom.outer.visible = false; const h = headOf(you1); out.gallery.push(snap(room, h.clone().add(off), h.clone().add(V3(0, -0.16, 0)), 42)); });
+  // year 13's throwback: the bathtub photo
+  resetCast(0); bath.add(you1.outer); you1.outer.visible = true; seat(you1, 0, 0.42, 0.0); you1.arms[0].rotation.set(-0.3, 0, 0.5); you1.arms[1].rotation.set(-0.3, 0, -0.5); you1.outer.position.y += 0.05; you1.face('laugh', -1); bubbleHat.visible = true; cream.visible = false;
+  const hb = headOf(you1); out.bath = snap(bath, hb.clone().add(V3(0.2, 0.3, 1.35)), hb.clone().add(V3(0, -0.15, 0)), 42); bubbleHat.visible = false; room.add(you1.outer);
+  return out; }

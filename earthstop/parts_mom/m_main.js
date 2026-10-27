@@ -13,11 +13,14 @@ const pop = (t, at) => { const k = clamp((t - at) / 0.22, 0, 1); return `transfo
 const notif = (t, at, who, time, txt) => t < at ? '' : `<div class="nt" style="${pop(t, at)}"><b class="av">${who[0]}</b><div><div class="nh"><span>${who}</span><i>${time}</i></div><div class="nb">${txt}</div></div></div>`;
 const lock = (t, inner) => `<div class="hd ls"><span>Your phone</span><em>${t < B5 ? '' : ''}</em></div><div class="bd">${inner}</div>`;
 function introCard(t) { return lock(t, notif(t, 0.9, 'Mom', 'now', 'HAPPY BIRTHDAY!!! 🎂🎈🎉❤️')); }
-function gallery(t) { const n = Math.round(lerp(12, 214, clamp((t - B1 - 4.2) / 2.4, 0, 1)));
-  return `<div class="hd dp"><span>Recents</span><em>MOM’S PHONE · ${n} PHOTOS</em></div><div class="bd gal">` + Array.from({ length: 12 }, (_, i) => `<div class="gt" style="background:${['#f8e4ec', '#d8ecf8', '#fff2c8', '#e4f4dc'][i % 4]}">${['🎂', '👶', '🎂', '😂'][(i * 7) % 4]}</div>`).join('') + '</div>'; }
-function post(t) { const likes = Math.round(lerp(0, 47, clamp((t - B3 - 3.2) / 3.0, 0, 1)));
-  return `<div class="hd pt"><b class="av">L</b><div><div class="pn">Linda (Mom)</div><div class="pm">Just now · 🌎</div></div></div><div class="bd"><div class="ptx">Happy 13th birthday to my BABY!!! 🎂❤️ Throwback!!!</div>` +
-    (t > B3 + 1.4 ? `<div class="pph" style="${pop(t, B3 + 1.4)}">🛁👶🫧</div>` : '') + (t > B3 + 3.2 ? `<div class="pl">👍❤️ ${likes} · <span>Aunt Carol: OMG so cute!!!</span></div>` : '') + '</div>'; }
+let PH = null;   // photos rendered at start-up (makePhotos); window.__PH exposes them for checking
+function gallery(t) { const n = Math.round(lerp(12, 214, clamp((t - B1 - 4.2) / 2.4, 0, 1))), g = PH.gallery;
+  return `<div class="hd dp"><span>Recents</span><em>MOM’S PHONE · ${n} PHOTOS</em></div><div class="bd gal">` + Array.from({ length: 12 }, (_, i) => `<img class="gt" src="${g[(i * 5) % g.length]}"${i % 3 === 1 ? ' style="transform:scaleX(-1)"' : ''}>`).join('') + '</div>'; }
+function post(t) { const likes = Math.round(lerp(0, 47, clamp((t - B3 - 2.8) / 3.0, 0, 1))), cm = (at, who, txt) => t > at ? `<div class="cm" style="${pop(t, at)}"><b>${who}</b> ${txt}</div>` : '';
+  return `<div class="hd pt"><b class="av">L</b><div><div class="pn">Linda (Mom)</div><div class="pm">Just now · 🌎</div></div></div><div class="bd">` +
+    `<div class="ptx">Happy 13th birthday to my BABY!!! 🎂❤️ Throwback!!!</div>` + (t > B3 + 1.4 ? `<img class="pph" src="${PH.bath}" style="${pop(t, B3 + 1.4)}">` : '') +
+    (t > B3 + 2.8 ? `<div class="pl">❤️👍 ${likes} · ${Math.min(4, Math.max(0, Math.floor((t - B3 - 3.4)) + 1))} comments</div>` : '') +
+    cm(B3 + 3.4, 'Aunt Carol', 'OMG those cheeks!!! 😍') + cm(B3 + 4.4, 'Grandma Ruth', 'My sweet baby ❤️') + cm(B3 + 5.4, 'You', 'MOM. DELETE THIS.') + cm(B3 + 6.4, 'Linda (Mom)', 'never 😂') + '</div>'; }
 function search(t) { const q = 'gift for 16 year old who says "nothing"', k = clamp((t - B4 - 0.4) / 1.6, 0, 1), res = t > B4 + 2.2, found = t > B4 + 4.6, ordered = t > B4 + 5.6;
   const rows = ['Hoodie (they have 9)', 'Gift card (too boring)', 'Concert tickets — their favorite band'].map((r, i) => `<div class="row${found && i === 2 ? ' on' : ''}" style="${pop(t, B4 + 2.2 + i * 0.35)}">${r}</div>`).join('');
   return `<div class="hd dp"><span>Search</span><em>11:48 PM</em></div><div class="bd"><div class="sq">🔍 ${q.slice(0, Math.round(q.length * k))}</div>${res ? `<div class="ct">${rows}</div>` : ''}${ordered ? `<div class="sent" style="${pop(t, B4 + 5.6)}">Order placed ✓ Arrives tomorrow</div>` : ''}</div>`; }
@@ -66,6 +69,6 @@ window.renderAt = (t) => {
   composite(B ? mix : 0, 1.0, 1.0); updateDOM(t); return true;
 };
 // warm-up: upload every face texture and render every take once before the frame loop (lazy uploads once mixed up textures)
-window.sceneReady = (async () => { await document.fonts.ready;
+window.sceneReady = (async () => { await document.fonts.ready; PH = makePhotos(); window.__PH = PH;
   for (const p of [mom, dad, you1, you6, you13, you16]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
   for (const [t0, id] of SEQ) shootScene(id, t0 + 1, RTA); window.renderAt(0); return true; })();

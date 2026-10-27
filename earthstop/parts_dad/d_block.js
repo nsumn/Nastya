@@ -86,7 +86,7 @@ function makeBlock(o = {}) {
   const root = new THREE.Group(); root.scale.setScalar(o.h); body.add(root);
   const torso = new THREE.Group(); root.add(torso);
   const B = (w, h, d, col, x, y, z, par = torso) => { const m = mesh(BOX, typeof col === 'string' ? M(col, { roughness: 0.9 }) : col); m.scale.set(w, h, d); m.position.set(x, y, z); par.add(m); return m; };
-  B(0.4, 0.5, 0.22, o.top, 0, 1.24, 0); B(0.38, 0.16, 0.22, o.bottom, 0, 0.95, 0); B(0.1, 0.06, 0.1, o.skin, 0, 1.52, 0);
+  B(0.4, 0.5, 0.22, o.top, 0, 1.24, 0); B(0.38, 0.16, 0.205, o.bottom, 0, 0.95, 0);   // slightly thinner than the top: coplanar fronts flickered B(0.1, 0.06, 0.1, o.skin, 0, 1.52, 0);
   if (o.collar) B(0.22, 0.05, 0.03, o.collar, 0, 1.47, 0.11);
   // head: front face = the drawn face, other sides = skin
   const skinM = M(o.skin, { roughness: 0.85 }), shape = o.head || 'box'; let head, faceM;
