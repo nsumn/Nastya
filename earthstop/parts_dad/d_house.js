@@ -10,6 +10,7 @@ const dadPhone = makePhone(); dad.elbows[1].add(dadPhone);
 // hold poses: 'near' (both hands, reading), 'far' (arm's length, squinting), 'type' (one finger poking), 'show' (held out sideways), 'up' (taking a photo), 'none'
 function holdPhone(P, t, how) { dadPhone.visible = how !== 'none'; const [L, Rr] = [0, 1];
   if (how === 'none') return;
+  if (how === 'carry') { P.arms[Rr].rotation.x += -0.2; P.elbows[Rr].rotation.x = -0.5; dadPhone.position.set(0, -0.31, 0.03); dadPhone.rotation.set(-1.4, 0, 0); return; }
   if (how === 'far') { P.arms[Rr].rotation.set(-1.25, 0, 0.05); P.elbows[Rr].rotation.x = -0.25; P.arms[L].rotation.set(-0.2, 0, 0.05); P.elbows[L].rotation.x = -0.3; }
   else if (how === 'show') { P.arms[Rr].rotation.set(-1.15, 0, -0.35); P.elbows[Rr].rotation.x = -0.35; }
   else if (how === 'up') { P.arms[Rr].rotation.set(-1.7, 0, 0.05); P.elbows[Rr].rotation.x = -0.35; P.arms[L].rotation.set(-0.3, 0, 0.05); }
@@ -65,39 +66,48 @@ const keys = new THREE.Group(); { const r = mesh(new THREE.TorusGeometry(0.025, 
 function lightRoom(look) { const L = { day: [0.85, 2.0, [1.6, 1.7, 1.9], 0, 2.5, 0], eve: [0.6, 0.9, [1.6, 0.9, 0.6], 1.6, 2.0, 0], night: [0.22, 0, [0.12, 0.16, 0.34], 1.8, 0.6, 1.4], snow: [0.3, 0, [0.16, 0.2, 0.36], 2.2, 1.6, 0.6] }[look];
   rmHemi.intensity = L[0]; rmSun.intensity = L[1]; outsideM.color.setRGB(...L[2]); rmLamp.intensity = L[3]; rmFill.intensity = L[4]; rmGlow.intensity = L[5]; snowPts.visible = look === 'snow'; rmPorch.intensity = look === 'snow' ? 2.2 : 0; rmFace.intensity = look === 'snow' ? 2.0 : 0; }
 // modes: far (2016 intro), type, laugh, read, winIn, winOut (snow), kitchen, dogType, dogWide, night, reply
+// ---- one continuous take per beat: he sits and types, then (b2) gets up and walks to the window, (b3) walks to Mom in the kitchen ----
+const SEAT = V3(-1.0, 0.53, -1.3), STAND = V3(-1.0, 0.95, -0.8), WIN = { p: V3(2.3, 0.95, -2.5), ry: -1.21 }, KIT = { p: V3(2.2, 0.95, -1.5), ry: 1.0 };
+// seated until ts, stands up (0.6 s), walks tw0..tw1 to `to`, then turns to to.ry; returns 'sit' | 'stand' | 'walk' | 'there'
+function standWalk(P, t, ts, tw0, tw1, to) { const o = P.outer;
+  if (t < ts) { o.position.copy(SEAT); poseSit(P); P.root.rotation.x = -0.1; return 'sit'; }
+  const ks = ease(clamp((t - ts) / 0.6, 0, 1)); poseSit(P);
+  P.legs.forEach(l => l.rotation.x = lerp(-1.45, 0, ks)); P.knees.forEach(k => k.rotation.x = lerp(1.45, 0.02, ks)); P.root.rotation.x = lerp(-0.1, 0, ks) + 0.35 * Math.sin(Math.PI * ks);
+  o.position.lerpVectors(SEAT, STAND, ks); const dir = Math.atan2(to.p.x - STAND.x, to.p.z - STAND.z);
+  if (t < tw0) { o.rotation.y = lerp(0, dir, smooth(ts + 0.5, tw0, t)); return 'stand'; }
+  const u = clamp((t - tw0) / (tw1 - tw0), 0, 1), w = u * u * (3 - 2 * u); o.position.lerpVectors(STAND, to.p, w);
+  if (t < tw1) { o.rotation.y = dir; poseWalk(P, (t - tw0) * 10, Math.sin(Math.PI * u) * 0.9 + 0.1); P.root.rotation.x = 0; return 'walk'; }
+  o.rotation.y = lerp(dir, to.ry, smooth(tw1, tw1 + 0.5, t)); poseIdle(P, t, 0); return 'there'; }
 function updateRoom(t, mode) { if (dad.outer.parent !== room) room.add(dad.outer); const P = dad, o = P.outer; o.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); poseIdle(P, t, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); keys.visible = false; mom.outer.visible = false; dog.g.visible = false;
-  const look = { winIn: 'snow', winOut: 'snow', read: 'eve', kitchen: 'eve', night: 'night', dogType: 'eve', dogWide: 'eve' }[mode] || 'day'; lightRoom(look);
-  const seated = !['winIn', 'winOut', 'kitchen'].includes(mode);
-  if (seated) { o.position.set(-1.0, 0.53, -1.3); poseSit(P); P.root.rotation.x = -0.1; }
-  if (mode === 'far') { holdPhone(P, t, 'far'); P.face('squint', t); }
-  else if (mode === 'type') { holdPhone(P, t, 'type'); P.face(t > B1 + 1.2 ? 'happy' : 'squint', t); }
-  else if (mode === 'laugh') { holdPhone(P, t, 'near'); P.face('laugh', t); }
-  else if (mode === 'read') { holdPhone(P, t, 'near'); P.face(t > B3 + 2.2 ? 'proud' : 'reading', t); }
-  else if (mode === 'night') { holdPhone(P, t, 'near'); P.face(t < TW + 2.6 ? 'squint' : t < TW + 3.4 ? 'surprised' : 'proud', t); }
-  else if (mode === 'reply') { holdPhone(P, t, 'near'); P.face(t > REP + 1.3 ? 'laugh' : 'happy', t); }
-  else if (mode === 'dogType' || mode === 'dogWide') { holdPhone(P, t, 'type'); const del = mode === 'dogWide' ? t - B4 - 4 : 0; P.face(mode === 'dogType' ? (t > B4 + 2.2 ? 'worried' : 'reading') : del < 2.6 ? 'happy' : del < 3.3 ? 'worried' : 'neutral', t);
+  lightRoom({ b2: 'snow', b3: 'eve', b4: 'eve', tw: 'night' }[mode] || 'day');
+  if (mode === 'b1') { standWalk(P, t, 99, 99, 99, KIT);   // 0..B2: arm's-length squint, types "Hello this is Dad", laughs at his contacts
+    if (t < B1) { holdPhone(P, t, 'far'); P.face('squint', t); } else if (t < B1 + 4) { holdPhone(P, t, 'type'); P.face(t > B1 + 1.2 ? 'happy' : 'squint', t); } else { holdPhone(P, t, 'near'); P.face(t > B1 + 5.0 ? 'laugh' : 'reading', t); } }
+  else if (mode === 'b2') { const st = standWalk(P, t, B2 + 3.2, B2 + 3.9, B2 + 5.6, WIN);   // types the weather, gets up, walks to the window, keys in hand
+    if (st === 'sit') { holdPhone(P, t, t < B2 + 1.6 ? 'type' : 'near'); P.face(t < B2 + 1.6 ? 'reading' : 'neutral', t); }
+    else { holdPhone(P, t, 'carry'); P.face(st === 'there' ? 'worried' : 'neutral', t); if (st === 'there') { keys.visible = t > B2 + 6.0; P.arms[0].rotation.set(lerp(0, -0.5, smooth(B2 + 5.8, B2 + 6.3, t)), 0, 0.1); P.elbows[0].rotation.x = lerp(-0.15, -1.2, smooth(B2 + 5.8, B2 + 6.3, t)); } } }
+  else if (mode === 'b3') { const st = standWalk(P, t, B3 + 3.0, B3 + 3.5, B3 + 5.0, KIT);   // sends 👍, gets up, walks over and shows Mom
+    if (st === 'sit') { holdPhone(P, t, t > B3 + 1.3 && t < B3 + 2.6 ? 'type' : 'near'); P.face(t > B3 + 2.6 ? 'proud' : t > B3 + 1.3 ? 'squint' : 'reading', t); }
+    else if (st === 'there') { holdPhone(P, t, t > B3 + 5.1 ? 'show' : 'carry'); P.face('proud', t); } else { holdPhone(P, t, 'carry'); P.face('happy', t); }
+    mom.outer.visible = true; mom.outer.position.set(2.95, 0.95, -1.3); mom.outer.rotation.y = lerp(-1.6, -1.2, smooth(B3 + 4.6, B3 + 5.2, t)); poseIdle(mom, t, 1); mom.arms[1].rotation.set(-0.4, 0, 0); mom.elbows[1].rotation.x = -1.4; mom.face(t > B3 + 6.2 ? 'happy' : t > B3 + 5.2 ? 'surprised' : 'neutral', t + 0.7); }
+  else if (mode === 'b4') { standWalk(P, t, 99, 99, 99, KIT); holdPhone(P, t, 'type'); const d = t - B4 - 4;   // typing for six minutes, the dog watching; the draft, then "ok"
+    P.face(t < B4 + 2.2 ? 'reading' : t < B4 + 4 ? 'worried' : d < 2.6 ? 'happy' : d < 3.3 ? 'worried' : 'neutral', t);
     dog.g.visible = true; dog.g.position.set(-0.2, 0, -0.95); dog.g.rotation.y = 0.3; dog.body.rotation.x = -0.35; dog.head.rotation.set(-0.2, -0.85, 0.3 * Math.sin(t * 0.9)); dog.tail.rotation.y = 0.6 * Math.sin(t * 9); }
-  else if (mode === 'winIn' || mode === 'winOut') { o.position.set(1.3, 0.95, mode === 'winIn' ? -2.35 : -2.6); o.rotation.y = mode === 'winIn' ? 0 : Math.PI; poseIdle(P, t, 0); holdPhone(P, t, mode === 'winIn' ? 'type' : 'none');
-    if (mode === 'winOut') { keys.visible = true; P.arms[0].rotation.set(-0.5, 0, 0.1); P.elbows[0].rotation.x = -1.2; }
-    P.face(mode === 'winIn' ? 'reading' : 'worried', t); }
-  else if (mode === 'kitchen') { o.position.set(2.2, 0.95, -1.5); o.rotation.y = 1.0; holdPhone(P, t, 'show'); P.face('proud', t);
-    mom.outer.visible = true; mom.outer.position.set(2.95, 0.95, -1.3); mom.outer.rotation.y = -1.2; poseIdle(mom, t, 1); mom.arms[1].rotation.set(-0.4, 0, 0); mom.elbows[1].rotation.x = -1.4; mom.face(t > B3 + 5.6 ? 'happy' : 'surprised', t + 0.7); }
-  // snow outside the window
-  for (let i = 0; i < SN; i++) { const [x0, y0, z0, s] = SN0[i]; snowPos[i * 3] = x0 + 0.15 * Math.sin(t * 0.8 + i); snowPos[i * 3 + 1] = wrapR(y0 - t * 0.5 * s, 0, 4); snowPos[i * 3 + 2] = z0; } snowGeo.attributes.position.needsUpdate = true;
+  else { standWalk(P, t, 99, 99, 99, KIT); holdPhone(P, t, 'near'); P.face(t < TW + 2.6 ? 'squint' : t < TW + 3.4 ? 'surprised' : t < REP ? 'proud' : t < REP + 1.3 ? 'happy' : 'laugh', t); }   // tw: storage full … your text
+  for (let i = 0; i < SN; i++) { const [x0, y0, z0, sp] = SN0[i]; snowPos[i * 3] = x0 + 0.15 * Math.sin(t * 0.8 + i); snowPos[i * 3 + 1] = wrapR(y0 - t * 0.5 * sp, 0, 4); snowPos[i * 3 + 2] = z0; } snowGeo.attributes.position.needsUpdate = true;
   P.outer.updateMatrixWorld(true); dadPhone.getWorldPosition(rmGlow.position); rmGlow.position.y += 0.05; }
 function headOf(P) { P.outer.updateMatrixWorld(true); return P.head.getWorldPosition(V3(0, 0, 0)); }
-// frame a head: camera at h + dir·dist; headY = where the head sits on screen (0 top … 1 bottom) — phone cards take the top half, captions the bottom
-function frameCam(cam, h, dir, dist, headY, fov = 40) { const d = dir.clone().normalize(), visH = 2 * dist * Math.tan(fov * Math.PI / 360); cam.position.copy(h).addScaledVector(d, dist); cam.fov = fov; cam.lookAt(h.x, h.y + (headY - 0.5) * visH, h.z); }
-function roomCamera(t, mode) { updateRoom(t, mode); const h = headOf(dad), sw = (a, k) => Math.sin(t * 0.45 + a) * k;
-  const seg = (a, b) => smooth(a - 0.2, b + 0.2, t);
-  if (mode === 'far') frameCam(rmCam, h, V3(0.25 + sw(0, 0.05), -0.05, 1), lerp(3.1, 2.6, seg(0, B1)), 0.52);
-  else if (mode === 'type') frameCam(rmCam, h, V3(-0.35, 0.1, 1), lerp(2.5, 2.2, seg(B1, B1 + 4)), 0.62);
-  else if (mode === 'laugh') frameCam(rmCam, h, V3(0.4, 0.08, 1), lerp(2.6, 2.3, seg(B1 + 4, B2)), 0.66);
-  else if (mode === 'read') frameCam(rmCam, h, V3(0.4, 0.1, 1), lerp(2.5, 2.2, seg(B3, B3 + 4)), 0.62);
-  else if (mode === 'night') frameCam(rmCam, h, V3(-0.4, 0.05, 1), lerp(2.6, 2.3, seg(TW, REP)), 0.69);
-  else if (mode === 'reply') frameCam(rmCam, h, V3(0.3, 0.08, 1), lerp(2.5, 2.2, seg(REP, T_END)), 0.64);
-  else if (mode === 'dogType') frameCam(rmCam, h, V3(-0.3, 0.08, 1), lerp(2.5, 2.2, seg(B4, B4 + 4)), 0.62);
-  else if (mode === 'dogWide') frameCam(rmCam, h, V3(0.65, 0.05, 1), lerp(3.6, 3.3, seg(B4 + 4, B5)), 0.54);
-  else if (mode === 'winIn') frameCam(rmCam, h, V3(0.3, 0.05, 1), lerp(2.5, 2.2, seg(B2, B2 + 4)), 0.62);
-  else if (mode === 'winOut') frameCam(rmCam, h, V3(0.08 + sw(1, 0.03), 0.02, -1), lerp(2.9, 2.5, seg(B2 + 4, B3)), 0.48, 38);
-  else frameCam(rmCam, V3(2.55, 1.45, -1.4), V3(0.05, 0.1, 1), lerp(3.0, 2.7, seg(B3 + 4, B4)), 0.5); }
+// a framing = {pos, look}: camera at h + dir·dist with the head at screen height headY (0 top … 1 bottom); cameras blend between framings, no cuts
+function framing(h, dir, dist, headY, fov = 40) { const d = dir.clone().normalize(), visH = 2 * dist * Math.tan(fov * Math.PI / 360); return { pos: h.clone().addScaledVector(d, dist), look: V3(h.x, h.y + (headY - 0.5) * visH, h.z), fov }; }
+function blendF(A, B, k) { return { pos: A.pos.clone().lerp(B.pos, k), look: A.look.clone().lerp(B.look, k), fov: lerp(A.fov, B.fov, k) }; }
+function applyF(cam, F) { cam.position.copy(F.pos); cam.lookAt(F.look); cam.fov = F.fov; }
+function frameCam(cam, h, dir, dist, headY, fov = 40) { applyF(cam, framing(h, dir, dist, headY, fov)); }
+function roomCamera(t, mode) { updateRoom(t, mode); const h = headOf(dad), sw = a => Math.sin(t * 0.45 + a) * 0.04; let F;
+  if (mode === 'b1') { const intro = framing(h, V3(0.25 + sw(0), -0.05, 1), lerp(3.1, 2.6, smooth(0, B1, t)), 0.52), card = framing(h, V3(-0.35, 0.1, 1), 2.3, 0.62), ct = framing(h, V3(0.4, 0.08, 1), 2.4, 0.66);
+    F = t < B1 + 2 ? blendF(intro, card, smooth(B1 - 1.2, B1 + 0.6, t)) : blendF(card, ct, smooth(B1 + 3.2, B1 + 5.0, t)); }
+  else if (mode === 'b2') { const card = framing(h, V3(-0.3, 0.1, 1), lerp(2.5, 2.3, smooth(B2, B2 + 3, t)), 0.62), walk = framing(h, V3(-0.2, 0.15, 1), 3.0, 0.5), win = framing(h.clone().add(V3(-0.22, 0, -0.08)), V3(-0.56, 0.05, 0.83), 2.7, 0.52, 46);
+    F = t < B2 + 4.5 ? blendF(card, walk, smooth(B2 + 3.0, B2 + 4.5, t)) : blendF(walk, win, smooth(B2 + 4.5, B2 + 6.2, t)); }
+  else if (mode === 'b3') { const card = framing(h, V3(0.4, 0.1, 1), lerp(2.9, 2.6, smooth(B3, B3 + 3, t)), 0.68), walk = framing(h, V3(0.1, 0.15, 1), 3.0, 0.5), kit = framing(V3(2.55, 1.45, -1.4), V3(0.05, 0.1, 1), lerp(3.0, 2.7, smooth(B3 + 5, B4, t)), 0.5);
+    F = t < B3 + 4.2 ? blendF(card, walk, smooth(B3 + 2.8, B3 + 4.2, t)) : blendF(walk, kit, smooth(B3 + 4.2, B3 + 5.6, t)); }
+  else if (mode === 'b4') F = blendF(framing(h, V3(-0.3, 0.08, 1), 2.3, 0.62), framing(h, V3(0.65, 0.05, 1), lerp(3.4, 3.2, smooth(B4 + 5, B5, t)), 0.54), smooth(B4 + 3.0, B4 + 5.0, t));
+  else F = blendF(framing(h, V3(-0.4, 0.05, 1), 2.5, 0.69), framing(h, V3(0.3, 0.08, 1), 2.3, 0.64), smooth(TW + 4.5, REP + 0.5, t));
+  applyF(rmCam, F); }

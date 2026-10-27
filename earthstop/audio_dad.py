@@ -53,7 +53,7 @@ def step(at, g, pan=0.0): thud(at, g, 90, 0.18, pan); x = tt(0.08); place(at, fi
 def plop(at, g, f=300, pan=0.0): x = tt(0.25); ff = f * (1 + 1.2 * np.exp(-x * 25)); place(at, np.sin(2 * np.pi * np.cumsum(ff) / SR) * np.exp(-x * 14), g, pan)
 def sweep(at, d, f0, f1, g, pan=0.0): x = tt(d); f = f0 * (f1 / f0) ** (x / d); place(at, (np.sin(2 * np.pi * np.cumsum(f) / SR) + 0.3 * np.sin(4 * np.pi * np.cumsum(f) / SR)) * np.sin(np.pi * x / d), g, pan)
 
-CUTS = [B1, B1 + 4, B2, B2 + 4, B3, B3 + 4, B4, B4 + 4, B5, B5 + 4, B6, B6 + 4, TW, REP]
+CUTS = [B2, B3, B4, B5, B6, TW]   # soft dissolves between the years (each beat is one continuous take)
 def bloop(at, g, pan=-0.2):   # his message arrives: two soft sine notes
     for dt, f in [(0, 660), (0.07, 990)]: x = tt(0.22); place(at + dt, np.sin(2 * np.pi * f * x) * np.exp(-x * 18) * np.clip(x / 0.004, 0, 1), g, pan)
 def swish(at, g, pan=0.2): x = tt(0.25); f = 500 * (1 + 3 * x / 0.25); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3200]) * np.sin(np.pi * x / 0.25) * 0.6 + 0.4 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 9), g, pan)
@@ -72,7 +72,13 @@ def pluck(n, d=2.4, b=0.996):   # Karplus-Strong string
 add(BN(150, 900) * (win(-1, B2 + 0.2, 0.3) + win(B3 - 0.2, B5 + 0.2, 0.3) + win(TW - 0.2, DUR, 0.3)), db(-41))
 add(BN(250, 1100) * win(B2 - 0.2, B3 + 0.2, 0.3) * (0.7 + 0.3 * np.sin(2 * np.pi * 0.23 * t)), db(-33))   # snowy wind
 add(BN(300, 1500) * win(B5 - 0.2, TW + 0.2, 0.3), db(-42))   # evening air outside
-for c in CUTS: whoosh(c, db(-26), pan=0.3 if CUTS.index(c) % 2 else -0.3)
+for c in CUTS: whoosh(c, db(-31), 0.9, pan=0.3 if CUTS.index(c) % 2 else -0.3)
+def creak(at, g): x = tt(0.5); f = 180 * (1 + 0.4 * x / 0.5); place(at, filt(np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * (0.5 + 0.5 * np.sin(2 * np.pi * 23 * x)), 'bandpass', [200, 900]) * np.sin(np.pi * x / 0.5), g)
+for a, b in [(B2 + 3.9, B2 + 5.6), (B3 + 3.5, B3 + 5.0)]:
+    for at in np.arange(a, b, 0.42): step(at, db(-24), 0.2)
+creak(B2 + 3.2, db(-26)); creak(B3 + 3.0, db(-26))
+thud(B5 + 3.9, db(-24), 260, 0.08)   # phone set down on the table
+x = tt(0.2); place(B6 + 3.5, filt(rng.standard_normal(len(x)), 'bandpass', [800, 2500]) * np.exp(-x * 25), db(-28))   # spatula off the hook
 # --- intro: a puzzled "hm?", one-finger taps
 voice(1.2, 0.5, 115, db(-23), 0, vowels=((500, 900), (450, 850)), rate=2.0); taps(1.9, 3.6, 2.5, db(-27))
 # --- B1: "Hello this is Dad." / contacts, his laugh
@@ -83,7 +89,7 @@ bloop(B2 + 0.6, db(-18)); bloop(B2 + 1.5, db(-18)); taps(B2 + 2.0, B2 + 3.5, 2.5
 for k in range(5): x = tt(0.18); place(B2 + 4.8 + k * 0.11, np.sin(2 * np.pi * rng.uniform(2200, 3200) * x) * np.exp(-x * 30), db(-34), 0.2)   # keys
 place(B2 + 5.6, breath(1.4, 'out', 0.2, 110), db(-22))
 # --- B3: your long text, his 👍, Mom's "oh!" and a laugh
-swish(B3 + 0.5, db(-20)); bloop(B3 + 2.3, db(-17))
+bloop(B3 + 0.5, db(-18)); thud(B3 + 1.7, db(-24), 420, 0.06); thud(B3 + 2.25, db(-24), 420, 0.06); swish(B3 + 2.45, db(-17))
 voice(B3 + 4.4, 0.45, 260, db(-19), 0.2, vowels=((600, 1000), (500, 900)), rate=2.0); voice(B3 + 5.8, 0.9, 230, db(-22), 0.2, vowels=((750, 1250), (650, 1100)), rate=6.5)
 # --- B4: your news, the endless typing, the draft typed and erased, "ok", sent; the dog
 swish(B4 + 0.5, db(-20)); taps(B4 + 1.2, B4 + 3.6, 2.2, db(-30)); taps(B4 + 4.0, B4 + 5.7, 4.0, db(-26)); taps(B4 + 6.1, B4 + 7.0, 4.5, db(-29)); taps(B4 + 7.05, B4 + 7.3, 6, db(-26)); swish(B4 + 7.45, db(-22))

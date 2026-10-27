@@ -37,19 +37,21 @@ const spatula = new THREE.Group(); { bx(0.012, 0.3, 0.02, '#3a2a20', 0, 0.12, 0,
 const grillSmoke = makeSmoke(yard, 160);
 // modes: porchType (close, typing "Call me"), porchWide (phone face-up on the table; he jumps at each buzz), grillPhoto (phone up, taking a photo), grillWide (the extra burger)
 const BUZZ = [B5 + 4.6, B5 + 6.3];
-function updateYard(t, mode) { if (dad.outer.parent !== yard) yard.add(dad.outer); const P = dad, o = P.outer; o.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); poseIdle(P, t, 0); keys.visible = false; spatula.visible = false; tablePhone.visible = false; ydBuzz.intensity = 0;
-  if (mode === 'porchType' || mode === 'porchWide') { o.position.set(-0.6, 0.53 + 0.3, 1.05); poseSit(P); P.root.rotation.x = -0.05;
-    if (mode === 'porchType') { holdPhone(P, t, 'type'); P.face(t > B5 + 2.0 ? 'reading' : 'squint', t); }
-    else { holdPhone(P, t, 'none'); tablePhone.visible = true; P.arms[1].rotation.set(-0.5, 0, -0.3); P.elbows[1].rotation.x = -0.6; P.arms[0].rotation.set(-0.35, 0, 0.1); P.elbows[0].rotation.x = -0.9;
+function updateYard(t, mode) { if (dad.outer.parent !== yard) yard.add(dad.outer); const P = dad, o = P.outer; o.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); poseIdle(P, t, 0); keys.visible = false; spatula.visible = false; tablePhone.visible = false; ydBuzz.intensity = 0; tablePhone.scr.material.color.setRGB(0.05, 0.05, 0.06);
+  if (mode === 'b5') { o.position.set(-0.6, 0.83, 1.05); poseSit(P); P.root.rotation.x = -0.05;   // types "Call me. Not urgent.", sets the phone face-up on the table, waits; jumps at each buzz
+    const put = smooth(B5 + 3.2, B5 + 3.9, t), back = smooth(B5 + 4.0, B5 + 4.6, t);
+    if (t < B5 + 3.2) { holdPhone(P, t, 'type'); P.face(t > B5 + 2.0 ? 'reading' : 'squint', t); }
+    else if (t < B5 + 4.0) { holdPhone(P, t, 'near'); P.arms[1].rotation.set(lerp(-0.4, -0.85, put), 0, lerp(0.12, -0.55, put)); P.elbows[1].rotation.x = lerp(-1.35, -0.5, put); P.face('neutral', t); }
+    else { holdPhone(P, t, 'none'); tablePhone.visible = true; P.arms[1].rotation.set(lerp(-0.85, -0.5, back), 0, lerp(-0.55, -0.3, back)); P.elbows[1].rotation.x = lerp(-0.5, -0.6, back); P.arms[0].rotation.set(-0.35, 0, 0.1); P.elbows[0].rotation.x = -0.9;
       let jump = 0; for (const b of BUZZ) jump = Math.max(jump, Math.exp(-Math.pow((t - b - 0.15) / 0.18, 2))); o.position.y += 0.05 * jump; P.torso.rotation.y = -0.6 * Math.max(jump, smooth(BUZZ[0], BUZZ[0] + 0.3, t) * (1 - smooth(BUZZ[0] + 1.0, BUZZ[0] + 1.4, t)), smooth(BUZZ[1], BUZZ[1] + 0.3, t));
-      const bz = BUZZ.some(b => t > b && t < b + 0.5); tablePhone.scr.material.color.setRGB(bz ? 1.6 : 0.05, bz ? 1.7 : 0.05, bz ? 1.9 : 0.06); tablePhone.position.x = 0.15 + (bz ? 0.004 * Math.sin(t * 90) : 0); ydBuzz.position.set(0.15, 1.0, 1.25); ydBuzz.intensity = bz ? 1.2 : 0;
+      const bz = BUZZ.some(b => t > b && t < b + 0.5); if (bz) tablePhone.scr.material.color.setRGB(1.6, 1.7, 1.9); tablePhone.position.x = 0.15 + (bz ? 0.004 * Math.sin(t * 90) : 0); ydBuzz.position.set(0.15, 1.0, 1.25); ydBuzz.intensity = bz ? 1.2 : 0;
       P.face(t < BUZZ[0] ? 'neutral' : t < BUZZ[0] + 1.2 ? 'surprised' : t < BUZZ[1] ? 'sad' : t < BUZZ[1] + 1.0 ? 'surprised' : 'sad', t); } }
-  else { o.position.set(1.6, 0.95, 4.35); o.rotation.y = 0; spatula.visible = mode === 'grillWide'; holdPhone(P, t, mode === 'grillPhoto' ? 'up' : 'none');
-    if (mode === 'grillWide') { P.arms[0].rotation.set(-0.9 - 0.25 * Math.max(0, Math.sin(t * 2.2)), 0, -0.15); P.elbows[0].rotation.x = -0.5; P.face(t < B6 + 6.0 ? 'happy' : 'sad', t); }
-    else P.face('happy', t); }
+  else { o.position.set(1.6, 0.95, 4.35); P.torso.rotation.y = 0;   // b6: snaps the grill, sends it, pockets the phone, flips burgers; one too many
+    if (t < B6 + 1.1) { holdPhone(P, t, 'up'); P.face('happy', t); }
+    else if (t < B6 + 3.3) { holdPhone(P, t, 'type'); P.face(t > B6 + 2.0 ? 'proud' : 'reading', t); }
+    else { holdPhone(P, t, 'none'); spatula.visible = t > B6 + 3.6; const fl = smooth(B6 + 3.3, B6 + 3.9, t); P.arms[0].rotation.set(lerp(-0.2, -0.9, fl) - 0.25 * fl * Math.max(0, Math.sin(t * 2.2)), 0, -0.15 * fl); P.elbows[0].rotation.x = lerp(-0.15, -0.5, fl); P.face(t < B6 + 6.0 ? 'happy' : 'sad', t); } }
   grillSmoke.begin(); smokeMat.uniforms.uTint.value.set('#d8d4d0'); for (let k = 0; k < 60; k++) { const u = ((t * 0.35 + k / 60) % 1); grillSmoke.add(V3(1.6 + 0.1 * Math.sin(k * 3.1 + t) - u * 0.5, 0.95 + u * 1.6, 5.0 + 0.1 * Math.cos(k * 2.3) + u * 0.5), 0.12 + u * 0.4, 0.22 * (1 - u) * smooth(0, 0.1, u)); } grillSmoke.end(); }
-function yardCamera(t, mode) { updateYard(t, mode); const h = headOf(dad), seg = (a, b) => smooth(a - 0.2, b + 0.2, t);
-  if (mode === 'porchType') frameCam(ydCam, h, V3(0.4, 0.05, 1), lerp(2.5, 2.2, seg(B5, B5 + 4)), 0.62);
-  else if (mode === 'porchWide') frameCam(ydCam, V3(-0.2, 1.2, 1.15), V3(0.45, 0.3, 1), lerp(2.8, 2.5, seg(B5 + 4, B6)), 0.5);
-  else if (mode === 'grillPhoto') frameCam(ydCam, h, V3(-0.5, 0.05, 1), lerp(2.6, 2.3, seg(B6, B6 + 4)), 0.62);
-  else frameCam(ydCam, V3(1.6, 1.45, 4.6), V3(0.7, 0.15, 1), lerp(3.1, 2.8, seg(B6 + 4, TW)), 0.55); }
+function yardCamera(t, mode) { updateYard(t, mode); const h = headOf(dad); let F;
+  if (mode === 'b5') F = blendF(framing(h, V3(0.4, 0.05, 1), lerp(2.5, 2.3, smooth(B5, B5 + 3, t)), 0.62), framing(V3(-0.2, 1.2, 1.15), V3(0.45, 0.3, 1), lerp(2.8, 2.5, smooth(B5 + 5, B6, t)), 0.5), smooth(B5 + 3.0, B5 + 4.8, t));
+  else F = blendF(framing(h, V3(-0.5, 0.05, 1), 2.4, 0.62), framing(V3(1.6, 1.45, 4.6), V3(0.7, 0.15, 1), lerp(3.1, 2.8, smooth(B6 + 5, TW, t)), 0.55), smooth(B6 + 3.0, B6 + 5.0, t));
+  applyF(ydCam, F); }

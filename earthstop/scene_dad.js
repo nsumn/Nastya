@@ -246,6 +246,7 @@ const dadPhone = makePhone(); dad.elbows[1].add(dadPhone);
 // hold poses: 'near' (both hands, reading), 'far' (arm's length, squinting), 'type' (one finger poking), 'show' (held out sideways), 'up' (taking a photo), 'none'
 function holdPhone(P, t, how) { dadPhone.visible = how !== 'none'; const [L, Rr] = [0, 1];
   if (how === 'none') return;
+  if (how === 'carry') { P.arms[Rr].rotation.x += -0.2; P.elbows[Rr].rotation.x = -0.5; dadPhone.position.set(0, -0.31, 0.03); dadPhone.rotation.set(-1.4, 0, 0); return; }
   if (how === 'far') { P.arms[Rr].rotation.set(-1.25, 0, 0.05); P.elbows[Rr].rotation.x = -0.25; P.arms[L].rotation.set(-0.2, 0, 0.05); P.elbows[L].rotation.x = -0.3; }
   else if (how === 'show') { P.arms[Rr].rotation.set(-1.15, 0, -0.35); P.elbows[Rr].rotation.x = -0.35; }
   else if (how === 'up') { P.arms[Rr].rotation.set(-1.7, 0, 0.05); P.elbows[Rr].rotation.x = -0.35; P.arms[L].rotation.set(-0.3, 0, 0.05); }
@@ -301,42 +302,51 @@ const keys = new THREE.Group(); { const r = mesh(new THREE.TorusGeometry(0.025, 
 function lightRoom(look) { const L = { day: [0.85, 2.0, [1.6, 1.7, 1.9], 0, 2.5, 0], eve: [0.6, 0.9, [1.6, 0.9, 0.6], 1.6, 2.0, 0], night: [0.22, 0, [0.12, 0.16, 0.34], 1.8, 0.6, 1.4], snow: [0.3, 0, [0.16, 0.2, 0.36], 2.2, 1.6, 0.6] }[look];
   rmHemi.intensity = L[0]; rmSun.intensity = L[1]; outsideM.color.setRGB(...L[2]); rmLamp.intensity = L[3]; rmFill.intensity = L[4]; rmGlow.intensity = L[5]; snowPts.visible = look === 'snow'; rmPorch.intensity = look === 'snow' ? 2.2 : 0; rmFace.intensity = look === 'snow' ? 2.0 : 0; }
 // modes: far (2016 intro), type, laugh, read, winIn, winOut (snow), kitchen, dogType, dogWide, night, reply
+// ---- one continuous take per beat: he sits and types, then (b2) gets up and walks to the window, (b3) walks to Mom in the kitchen ----
+const SEAT = V3(-1.0, 0.53, -1.3), STAND = V3(-1.0, 0.95, -0.8), WIN = { p: V3(2.3, 0.95, -2.5), ry: -1.21 }, KIT = { p: V3(2.2, 0.95, -1.5), ry: 1.0 };
+// seated until ts, stands up (0.6 s), walks tw0..tw1 to `to`, then turns to to.ry; returns 'sit' | 'stand' | 'walk' | 'there'
+function standWalk(P, t, ts, tw0, tw1, to) { const o = P.outer;
+  if (t < ts) { o.position.copy(SEAT); poseSit(P); P.root.rotation.x = -0.1; return 'sit'; }
+  const ks = ease(clamp((t - ts) / 0.6, 0, 1)); poseSit(P);
+  P.legs.forEach(l => l.rotation.x = lerp(-1.45, 0, ks)); P.knees.forEach(k => k.rotation.x = lerp(1.45, 0.02, ks)); P.root.rotation.x = lerp(-0.1, 0, ks) + 0.35 * Math.sin(Math.PI * ks);
+  o.position.lerpVectors(SEAT, STAND, ks); const dir = Math.atan2(to.p.x - STAND.x, to.p.z - STAND.z);
+  if (t < tw0) { o.rotation.y = lerp(0, dir, smooth(ts + 0.5, tw0, t)); return 'stand'; }
+  const u = clamp((t - tw0) / (tw1 - tw0), 0, 1), w = u * u * (3 - 2 * u); o.position.lerpVectors(STAND, to.p, w);
+  if (t < tw1) { o.rotation.y = dir; poseWalk(P, (t - tw0) * 10, Math.sin(Math.PI * u) * 0.9 + 0.1); P.root.rotation.x = 0; return 'walk'; }
+  o.rotation.y = lerp(dir, to.ry, smooth(tw1, tw1 + 0.5, t)); poseIdle(P, t, 0); return 'there'; }
 function updateRoom(t, mode) { if (dad.outer.parent !== room) room.add(dad.outer); const P = dad, o = P.outer; o.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); poseIdle(P, t, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); keys.visible = false; mom.outer.visible = false; dog.g.visible = false;
-  const look = { winIn: 'snow', winOut: 'snow', read: 'eve', kitchen: 'eve', night: 'night', dogType: 'eve', dogWide: 'eve' }[mode] || 'day'; lightRoom(look);
-  const seated = !['winIn', 'winOut', 'kitchen'].includes(mode);
-  if (seated) { o.position.set(-1.0, 0.53, -1.3); poseSit(P); P.root.rotation.x = -0.1; }
-  if (mode === 'far') { holdPhone(P, t, 'far'); P.face('squint', t); }
-  else if (mode === 'type') { holdPhone(P, t, 'type'); P.face(t > B1 + 1.2 ? 'happy' : 'squint', t); }
-  else if (mode === 'laugh') { holdPhone(P, t, 'near'); P.face('laugh', t); }
-  else if (mode === 'read') { holdPhone(P, t, 'near'); P.face(t > B3 + 2.2 ? 'proud' : 'reading', t); }
-  else if (mode === 'night') { holdPhone(P, t, 'near'); P.face(t < TW + 2.6 ? 'squint' : t < TW + 3.4 ? 'surprised' : 'proud', t); }
-  else if (mode === 'reply') { holdPhone(P, t, 'near'); P.face(t > REP + 1.3 ? 'laugh' : 'happy', t); }
-  else if (mode === 'dogType' || mode === 'dogWide') { holdPhone(P, t, 'type'); const del = mode === 'dogWide' ? t - B4 - 4 : 0; P.face(mode === 'dogType' ? (t > B4 + 2.2 ? 'worried' : 'reading') : del < 2.6 ? 'happy' : del < 3.3 ? 'worried' : 'neutral', t);
+  lightRoom({ b2: 'snow', b3: 'eve', b4: 'eve', tw: 'night' }[mode] || 'day');
+  if (mode === 'b1') { standWalk(P, t, 99, 99, 99, KIT);   // 0..B2: arm's-length squint, types "Hello this is Dad", laughs at his contacts
+    if (t < B1) { holdPhone(P, t, 'far'); P.face('squint', t); } else if (t < B1 + 4) { holdPhone(P, t, 'type'); P.face(t > B1 + 1.2 ? 'happy' : 'squint', t); } else { holdPhone(P, t, 'near'); P.face(t > B1 + 5.0 ? 'laugh' : 'reading', t); } }
+  else if (mode === 'b2') { const st = standWalk(P, t, B2 + 3.2, B2 + 3.9, B2 + 5.6, WIN);   // types the weather, gets up, walks to the window, keys in hand
+    if (st === 'sit') { holdPhone(P, t, t < B2 + 1.6 ? 'type' : 'near'); P.face(t < B2 + 1.6 ? 'reading' : 'neutral', t); }
+    else { holdPhone(P, t, 'carry'); P.face(st === 'there' ? 'worried' : 'neutral', t); if (st === 'there') { keys.visible = t > B2 + 6.0; P.arms[0].rotation.set(lerp(0, -0.5, smooth(B2 + 5.8, B2 + 6.3, t)), 0, 0.1); P.elbows[0].rotation.x = lerp(-0.15, -1.2, smooth(B2 + 5.8, B2 + 6.3, t)); } } }
+  else if (mode === 'b3') { const st = standWalk(P, t, B3 + 3.0, B3 + 3.5, B3 + 5.0, KIT);   // sends 👍, gets up, walks over and shows Mom
+    if (st === 'sit') { holdPhone(P, t, t > B3 + 1.3 && t < B3 + 2.6 ? 'type' : 'near'); P.face(t > B3 + 2.6 ? 'proud' : t > B3 + 1.3 ? 'squint' : 'reading', t); }
+    else if (st === 'there') { holdPhone(P, t, t > B3 + 5.1 ? 'show' : 'carry'); P.face('proud', t); } else { holdPhone(P, t, 'carry'); P.face('happy', t); }
+    mom.outer.visible = true; mom.outer.position.set(2.95, 0.95, -1.3); mom.outer.rotation.y = lerp(-1.6, -1.2, smooth(B3 + 4.6, B3 + 5.2, t)); poseIdle(mom, t, 1); mom.arms[1].rotation.set(-0.4, 0, 0); mom.elbows[1].rotation.x = -1.4; mom.face(t > B3 + 6.2 ? 'happy' : t > B3 + 5.2 ? 'surprised' : 'neutral', t + 0.7); }
+  else if (mode === 'b4') { standWalk(P, t, 99, 99, 99, KIT); holdPhone(P, t, 'type'); const d = t - B4 - 4;   // typing for six minutes, the dog watching; the draft, then "ok"
+    P.face(t < B4 + 2.2 ? 'reading' : t < B4 + 4 ? 'worried' : d < 2.6 ? 'happy' : d < 3.3 ? 'worried' : 'neutral', t);
     dog.g.visible = true; dog.g.position.set(-0.2, 0, -0.95); dog.g.rotation.y = 0.3; dog.body.rotation.x = -0.35; dog.head.rotation.set(-0.2, -0.85, 0.3 * Math.sin(t * 0.9)); dog.tail.rotation.y = 0.6 * Math.sin(t * 9); }
-  else if (mode === 'winIn' || mode === 'winOut') { o.position.set(1.3, 0.95, mode === 'winIn' ? -2.35 : -2.6); o.rotation.y = mode === 'winIn' ? 0 : Math.PI; poseIdle(P, t, 0); holdPhone(P, t, mode === 'winIn' ? 'type' : 'none');
-    if (mode === 'winOut') { keys.visible = true; P.arms[0].rotation.set(-0.5, 0, 0.1); P.elbows[0].rotation.x = -1.2; }
-    P.face(mode === 'winIn' ? 'reading' : 'worried', t); }
-  else if (mode === 'kitchen') { o.position.set(2.2, 0.95, -1.5); o.rotation.y = 1.0; holdPhone(P, t, 'show'); P.face('proud', t);
-    mom.outer.visible = true; mom.outer.position.set(2.95, 0.95, -1.3); mom.outer.rotation.y = -1.2; poseIdle(mom, t, 1); mom.arms[1].rotation.set(-0.4, 0, 0); mom.elbows[1].rotation.x = -1.4; mom.face(t > B3 + 5.6 ? 'happy' : 'surprised', t + 0.7); }
-  // snow outside the window
-  for (let i = 0; i < SN; i++) { const [x0, y0, z0, s] = SN0[i]; snowPos[i * 3] = x0 + 0.15 * Math.sin(t * 0.8 + i); snowPos[i * 3 + 1] = wrapR(y0 - t * 0.5 * s, 0, 4); snowPos[i * 3 + 2] = z0; } snowGeo.attributes.position.needsUpdate = true;
+  else { standWalk(P, t, 99, 99, 99, KIT); holdPhone(P, t, 'near'); P.face(t < TW + 2.6 ? 'squint' : t < TW + 3.4 ? 'surprised' : t < REP ? 'proud' : t < REP + 1.3 ? 'happy' : 'laugh', t); }   // tw: storage full … your text
+  for (let i = 0; i < SN; i++) { const [x0, y0, z0, sp] = SN0[i]; snowPos[i * 3] = x0 + 0.15 * Math.sin(t * 0.8 + i); snowPos[i * 3 + 1] = wrapR(y0 - t * 0.5 * sp, 0, 4); snowPos[i * 3 + 2] = z0; } snowGeo.attributes.position.needsUpdate = true;
   P.outer.updateMatrixWorld(true); dadPhone.getWorldPosition(rmGlow.position); rmGlow.position.y += 0.05; }
 function headOf(P) { P.outer.updateMatrixWorld(true); return P.head.getWorldPosition(V3(0, 0, 0)); }
-// frame a head: camera at h + dir·dist; headY = where the head sits on screen (0 top … 1 bottom) — phone cards take the top half, captions the bottom
-function frameCam(cam, h, dir, dist, headY, fov = 40) { const d = dir.clone().normalize(), visH = 2 * dist * Math.tan(fov * Math.PI / 360); cam.position.copy(h).addScaledVector(d, dist); cam.fov = fov; cam.lookAt(h.x, h.y + (headY - 0.5) * visH, h.z); }
-function roomCamera(t, mode) { updateRoom(t, mode); const h = headOf(dad), sw = (a, k) => Math.sin(t * 0.45 + a) * k;
-  const seg = (a, b) => smooth(a - 0.2, b + 0.2, t);
-  if (mode === 'far') frameCam(rmCam, h, V3(0.25 + sw(0, 0.05), -0.05, 1), lerp(3.1, 2.6, seg(0, B1)), 0.52);
-  else if (mode === 'type') frameCam(rmCam, h, V3(-0.35, 0.1, 1), lerp(2.5, 2.2, seg(B1, B1 + 4)), 0.62);
-  else if (mode === 'laugh') frameCam(rmCam, h, V3(0.4, 0.08, 1), lerp(2.6, 2.3, seg(B1 + 4, B2)), 0.66);
-  else if (mode === 'read') frameCam(rmCam, h, V3(0.4, 0.1, 1), lerp(2.5, 2.2, seg(B3, B3 + 4)), 0.62);
-  else if (mode === 'night') frameCam(rmCam, h, V3(-0.4, 0.05, 1), lerp(2.6, 2.3, seg(TW, REP)), 0.69);
-  else if (mode === 'reply') frameCam(rmCam, h, V3(0.3, 0.08, 1), lerp(2.5, 2.2, seg(REP, T_END)), 0.64);
-  else if (mode === 'dogType') frameCam(rmCam, h, V3(-0.3, 0.08, 1), lerp(2.5, 2.2, seg(B4, B4 + 4)), 0.62);
-  else if (mode === 'dogWide') frameCam(rmCam, h, V3(0.65, 0.05, 1), lerp(3.6, 3.3, seg(B4 + 4, B5)), 0.54);
-  else if (mode === 'winIn') frameCam(rmCam, h, V3(0.3, 0.05, 1), lerp(2.5, 2.2, seg(B2, B2 + 4)), 0.62);
-  else if (mode === 'winOut') frameCam(rmCam, h, V3(0.08 + sw(1, 0.03), 0.02, -1), lerp(2.9, 2.5, seg(B2 + 4, B3)), 0.48, 38);
-  else frameCam(rmCam, V3(2.55, 1.45, -1.4), V3(0.05, 0.1, 1), lerp(3.0, 2.7, seg(B3 + 4, B4)), 0.5); }
+// a framing = {pos, look}: camera at h + dir·dist with the head at screen height headY (0 top … 1 bottom); cameras blend between framings, no cuts
+function framing(h, dir, dist, headY, fov = 40) { const d = dir.clone().normalize(), visH = 2 * dist * Math.tan(fov * Math.PI / 360); return { pos: h.clone().addScaledVector(d, dist), look: V3(h.x, h.y + (headY - 0.5) * visH, h.z), fov }; }
+function blendF(A, B, k) { return { pos: A.pos.clone().lerp(B.pos, k), look: A.look.clone().lerp(B.look, k), fov: lerp(A.fov, B.fov, k) }; }
+function applyF(cam, F) { cam.position.copy(F.pos); cam.lookAt(F.look); cam.fov = F.fov; }
+function frameCam(cam, h, dir, dist, headY, fov = 40) { applyF(cam, framing(h, dir, dist, headY, fov)); }
+function roomCamera(t, mode) { updateRoom(t, mode); const h = headOf(dad), sw = a => Math.sin(t * 0.45 + a) * 0.04; let F;
+  if (mode === 'b1') { const intro = framing(h, V3(0.25 + sw(0), -0.05, 1), lerp(3.1, 2.6, smooth(0, B1, t)), 0.52), card = framing(h, V3(-0.35, 0.1, 1), 2.3, 0.62), ct = framing(h, V3(0.4, 0.08, 1), 2.4, 0.66);
+    F = t < B1 + 2 ? blendF(intro, card, smooth(B1 - 1.2, B1 + 0.6, t)) : blendF(card, ct, smooth(B1 + 3.2, B1 + 5.0, t)); }
+  else if (mode === 'b2') { const card = framing(h, V3(-0.3, 0.1, 1), lerp(2.5, 2.3, smooth(B2, B2 + 3, t)), 0.62), walk = framing(h, V3(-0.2, 0.15, 1), 3.0, 0.5), win = framing(h.clone().add(V3(-0.22, 0, -0.08)), V3(-0.56, 0.05, 0.83), 2.7, 0.52, 46);
+    F = t < B2 + 4.5 ? blendF(card, walk, smooth(B2 + 3.0, B2 + 4.5, t)) : blendF(walk, win, smooth(B2 + 4.5, B2 + 6.2, t)); }
+  else if (mode === 'b3') { const card = framing(h, V3(0.4, 0.1, 1), lerp(2.9, 2.6, smooth(B3, B3 + 3, t)), 0.68), walk = framing(h, V3(0.1, 0.15, 1), 3.0, 0.5), kit = framing(V3(2.55, 1.45, -1.4), V3(0.05, 0.1, 1), lerp(3.0, 2.7, smooth(B3 + 5, B4, t)), 0.5);
+    F = t < B3 + 4.2 ? blendF(card, walk, smooth(B3 + 2.8, B3 + 4.2, t)) : blendF(walk, kit, smooth(B3 + 4.2, B3 + 5.6, t)); }
+  else if (mode === 'b4') F = blendF(framing(h, V3(-0.3, 0.08, 1), 2.3, 0.62), framing(h, V3(0.65, 0.05, 1), lerp(3.4, 3.2, smooth(B4 + 5, B5, t)), 0.54), smooth(B4 + 3.0, B4 + 5.0, t));
+  else F = blendF(framing(h, V3(-0.4, 0.05, 1), 2.5, 0.69), framing(h, V3(0.3, 0.08, 1), 2.3, 0.64), smooth(TW + 4.5, REP + 0.5, t));
+  applyF(rmCam, F); }
 // =================== THE BACKYARD at sunset (meters): the back porch (two chairs, a little table, his phone face-up), the grill on the lawn, a fence, trees ===================
 const yard = new THREE.Scene(); const ydCam = new THREE.PerspectiveCamera(42, W / H, 0.03, 300);
 { const skyT = canvasTex(16, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#3a4a8a'); gr.addColorStop(0.45, '#c87a8a'); gr.addColorStop(0.7, '#f4a860'); gr.addColorStop(1, '#ffd890'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
@@ -376,26 +386,29 @@ const spatula = new THREE.Group(); { bx(0.012, 0.3, 0.02, '#3a2a20', 0, 0.12, 0,
 const grillSmoke = makeSmoke(yard, 160);
 // modes: porchType (close, typing "Call me"), porchWide (phone face-up on the table; he jumps at each buzz), grillPhoto (phone up, taking a photo), grillWide (the extra burger)
 const BUZZ = [B5 + 4.6, B5 + 6.3];
-function updateYard(t, mode) { if (dad.outer.parent !== yard) yard.add(dad.outer); const P = dad, o = P.outer; o.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); poseIdle(P, t, 0); keys.visible = false; spatula.visible = false; tablePhone.visible = false; ydBuzz.intensity = 0;
-  if (mode === 'porchType' || mode === 'porchWide') { o.position.set(-0.6, 0.53 + 0.3, 1.05); poseSit(P); P.root.rotation.x = -0.05;
-    if (mode === 'porchType') { holdPhone(P, t, 'type'); P.face(t > B5 + 2.0 ? 'reading' : 'squint', t); }
-    else { holdPhone(P, t, 'none'); tablePhone.visible = true; P.arms[1].rotation.set(-0.5, 0, -0.3); P.elbows[1].rotation.x = -0.6; P.arms[0].rotation.set(-0.35, 0, 0.1); P.elbows[0].rotation.x = -0.9;
+function updateYard(t, mode) { if (dad.outer.parent !== yard) yard.add(dad.outer); const P = dad, o = P.outer; o.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); poseIdle(P, t, 0); keys.visible = false; spatula.visible = false; tablePhone.visible = false; ydBuzz.intensity = 0; tablePhone.scr.material.color.setRGB(0.05, 0.05, 0.06);
+  if (mode === 'b5') { o.position.set(-0.6, 0.83, 1.05); poseSit(P); P.root.rotation.x = -0.05;   // types "Call me. Not urgent.", sets the phone face-up on the table, waits; jumps at each buzz
+    const put = smooth(B5 + 3.2, B5 + 3.9, t), back = smooth(B5 + 4.0, B5 + 4.6, t);
+    if (t < B5 + 3.2) { holdPhone(P, t, 'type'); P.face(t > B5 + 2.0 ? 'reading' : 'squint', t); }
+    else if (t < B5 + 4.0) { holdPhone(P, t, 'near'); P.arms[1].rotation.set(lerp(-0.4, -0.85, put), 0, lerp(0.12, -0.55, put)); P.elbows[1].rotation.x = lerp(-1.35, -0.5, put); P.face('neutral', t); }
+    else { holdPhone(P, t, 'none'); tablePhone.visible = true; P.arms[1].rotation.set(lerp(-0.85, -0.5, back), 0, lerp(-0.55, -0.3, back)); P.elbows[1].rotation.x = lerp(-0.5, -0.6, back); P.arms[0].rotation.set(-0.35, 0, 0.1); P.elbows[0].rotation.x = -0.9;
       let jump = 0; for (const b of BUZZ) jump = Math.max(jump, Math.exp(-Math.pow((t - b - 0.15) / 0.18, 2))); o.position.y += 0.05 * jump; P.torso.rotation.y = -0.6 * Math.max(jump, smooth(BUZZ[0], BUZZ[0] + 0.3, t) * (1 - smooth(BUZZ[0] + 1.0, BUZZ[0] + 1.4, t)), smooth(BUZZ[1], BUZZ[1] + 0.3, t));
-      const bz = BUZZ.some(b => t > b && t < b + 0.5); tablePhone.scr.material.color.setRGB(bz ? 1.6 : 0.05, bz ? 1.7 : 0.05, bz ? 1.9 : 0.06); tablePhone.position.x = 0.15 + (bz ? 0.004 * Math.sin(t * 90) : 0); ydBuzz.position.set(0.15, 1.0, 1.25); ydBuzz.intensity = bz ? 1.2 : 0;
+      const bz = BUZZ.some(b => t > b && t < b + 0.5); if (bz) tablePhone.scr.material.color.setRGB(1.6, 1.7, 1.9); tablePhone.position.x = 0.15 + (bz ? 0.004 * Math.sin(t * 90) : 0); ydBuzz.position.set(0.15, 1.0, 1.25); ydBuzz.intensity = bz ? 1.2 : 0;
       P.face(t < BUZZ[0] ? 'neutral' : t < BUZZ[0] + 1.2 ? 'surprised' : t < BUZZ[1] ? 'sad' : t < BUZZ[1] + 1.0 ? 'surprised' : 'sad', t); } }
-  else { o.position.set(1.6, 0.95, 4.35); o.rotation.y = 0; spatula.visible = mode === 'grillWide'; holdPhone(P, t, mode === 'grillPhoto' ? 'up' : 'none');
-    if (mode === 'grillWide') { P.arms[0].rotation.set(-0.9 - 0.25 * Math.max(0, Math.sin(t * 2.2)), 0, -0.15); P.elbows[0].rotation.x = -0.5; P.face(t < B6 + 6.0 ? 'happy' : 'sad', t); }
-    else P.face('happy', t); }
+  else { o.position.set(1.6, 0.95, 4.35); P.torso.rotation.y = 0;   // b6: snaps the grill, sends it, pockets the phone, flips burgers; one too many
+    if (t < B6 + 1.1) { holdPhone(P, t, 'up'); P.face('happy', t); }
+    else if (t < B6 + 3.3) { holdPhone(P, t, 'type'); P.face(t > B6 + 2.0 ? 'proud' : 'reading', t); }
+    else { holdPhone(P, t, 'none'); spatula.visible = t > B6 + 3.6; const fl = smooth(B6 + 3.3, B6 + 3.9, t); P.arms[0].rotation.set(lerp(-0.2, -0.9, fl) - 0.25 * fl * Math.max(0, Math.sin(t * 2.2)), 0, -0.15 * fl); P.elbows[0].rotation.x = lerp(-0.15, -0.5, fl); P.face(t < B6 + 6.0 ? 'happy' : 'sad', t); } }
   grillSmoke.begin(); smokeMat.uniforms.uTint.value.set('#d8d4d0'); for (let k = 0; k < 60; k++) { const u = ((t * 0.35 + k / 60) % 1); grillSmoke.add(V3(1.6 + 0.1 * Math.sin(k * 3.1 + t) - u * 0.5, 0.95 + u * 1.6, 5.0 + 0.1 * Math.cos(k * 2.3) + u * 0.5), 0.12 + u * 0.4, 0.22 * (1 - u) * smooth(0, 0.1, u)); } grillSmoke.end(); }
-function yardCamera(t, mode) { updateYard(t, mode); const h = headOf(dad), seg = (a, b) => smooth(a - 0.2, b + 0.2, t);
-  if (mode === 'porchType') frameCam(ydCam, h, V3(0.4, 0.05, 1), lerp(2.5, 2.2, seg(B5, B5 + 4)), 0.62);
-  else if (mode === 'porchWide') frameCam(ydCam, V3(-0.2, 1.2, 1.15), V3(0.45, 0.3, 1), lerp(2.8, 2.5, seg(B5 + 4, B6)), 0.5);
-  else if (mode === 'grillPhoto') frameCam(ydCam, h, V3(-0.5, 0.05, 1), lerp(2.6, 2.3, seg(B6, B6 + 4)), 0.62);
-  else frameCam(ydCam, V3(1.6, 1.45, 4.6), V3(0.7, 0.15, 1), lerp(3.1, 2.8, seg(B6 + 4, TW)), 0.55); }
+function yardCamera(t, mode) { updateYard(t, mode); const h = headOf(dad); let F;
+  if (mode === 'b5') F = blendF(framing(h, V3(0.4, 0.05, 1), lerp(2.5, 2.3, smooth(B5, B5 + 3, t)), 0.62), framing(V3(-0.2, 1.2, 1.15), V3(0.45, 0.3, 1), lerp(2.8, 2.5, smooth(B5 + 5, B6, t)), 0.5), smooth(B5 + 3.0, B5 + 4.8, t));
+  else F = blendF(framing(h, V3(-0.5, 0.05, 1), 2.4, 0.62), framing(V3(1.6, 1.45, 4.6), V3(0.7, 0.15, 1), lerp(3.1, 2.8, smooth(B6 + 5, TW, t)), 0.55), smooth(B6 + 3.0, B6 + 5.0, t));
+  applyF(ydCam, F); }
 // =================== schedule, the phone cards (DOM), HUD, captions, render ===================
-const SCN = {}; for (const m of ['far', 'type', 'laugh', 'read', 'winIn', 'winOut', 'kitchen', 'dogType', 'dogWide', 'night', 'reply']) SCN[m] = [t => updateRoom(t, m), t => roomCamera(t, m), room, () => rmCam];
-for (const m of ['porchType', 'porchWide', 'grillPhoto', 'grillWide']) SCN[m] = [t => updateYard(t, m), t => yardCamera(t, m), yard, () => ydCam];
-const SEQ = [[0, 'far'], [B1, 'type'], [B1 + 4, 'laugh'], [B2, 'winIn'], [B2 + 4, 'winOut'], [B3, 'read'], [B3 + 4, 'kitchen'], [B4, 'dogType'], [B4 + 4, 'dogWide'], [B5, 'porchType'], [B5 + 4, 'porchWide'], [B6, 'grillPhoto'], [B6 + 4, 'grillWide'], [TW, 'night'], [REP, 'reply']]; const XF = 0.36;
+const SCN = {}; for (const m of ['b1', 'b2', 'b3', 'b4', 'tw']) SCN[m] = [t => updateRoom(t, m), t => roomCamera(t, m), room, () => rmCam];
+for (const m of ['b5', 'b6']) SCN[m] = [t => updateYard(t, m), t => yardCamera(t, m), yard, () => ydCam];
+// one continuous take per beat; between the years a soft dissolve (no whip)
+const SEQ = [[0, 'b1'], [B2, 'b2'], [B3, 'b3'], [B4, 'b4'], [B5, 'b5'], [B6, 'b6'], [TW, 'tw']]; const XF = 0.8;
 function shootScene(id, t, rt) { const S = SCN[id]; S[1](t); S[0](t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); }
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'end', 'endT', 'endS', 'hud', 'card'].map(k => [k, $(k)]));
@@ -414,16 +427,24 @@ function draft(t) { const a = B4 + 4.0; let txt;
   if (t < a + 1.7) txt = DRAFT.slice(0, Math.round(DRAFT.length * clamp((t - a) / 1.7, 0, 1)));
   else if (t < a + 2.1) txt = DRAFT; else if (t < a + 3.0) txt = DRAFT.slice(0, Math.round(DRAFT.length * (1 - clamp((t - a - 2.1) / 0.9, 0, 1)))); else txt = 'ok'.slice(0, Math.round(clamp((t - a - 3.05) / 0.25, 0, 1) * 2));
   const sent = t > a + 3.45; return `<div class="hd dp"><span>To: ⭐ MY KID ⭐</span></div><div class="bd"><div class="draft">${txt}<u></u></div>${sent ? `<div class="sent" style="${pop(t, a + 3.45)}">Sent ✓</div>` : ''}</div>`; }
+// Dad's side of B3: your long text arrives, he opens the emoji row, taps 👍, taps send — and 👍 flies into the chat
+function thumbs(t) { const a = B3, pick = t > a + 1.7, sent = t > a + 2.45, tapS = t > a + 2.2 && t < a + 2.6;
+  const emo = ['😀', '😂', '❤️', '👍', '🙏', '😢'].map(e => `<span class="em${e === '👍' && pick ? ' on' : ''}">${e}</span>`).join('');
+  const field = sent ? '<span class="phd">Text Message</span>' : pick ? `<span style="${pop(t, a + 1.7)}" class="fe">👍</span>` : '<span class="phd">Text Message</span>';
+  return `<div class="hd dp"><span>⭐ MY KID ⭐</span><em>DAD’S PHONE</em></div><div class="bd">` +
+    bubble({ at: a + 0.5, from: 'dad', html: 'I know I messed up this semester. I talked to my professor and I’m retaking the class. I really want to make you proud.' }, t).replace('bub dad', 'bub dad sm') +
+    (sent ? `<div class="bub you big" style="${pop(t, a + 2.45)}">👍</div><div class="dl" style="opacity:${smooth(a + 2.8, a + 3.0, t)}">Delivered</div>` : '') +
+    `</div><div class="kb"><div class="fld">${field}<b class="snd${pick && !sent ? ' go' : ''}${tapS ? ' tap' : ''}">↑</b></div>${t > a + 1.2 && !sent ? `<div class="emr">${emo}</div>` : ''}</div>`; }
 function contacts(t) { const hl = t > B1 + 5.0; return `<div class="hd dp"><span>Contacts</span><em>Text size: LARGEST</em></div><div class="bd ct">` +
   ['Bob (work)', 'Dentist', '⭐ MY KID ⭐', 'Pizza Place', 'Steve next door'].map((n, i) => `<div class="row${i === 2 && hl ? ' on' : ''}">${n}</div>`).join('') + '</div>'; }
 function storage(t) { const rows = [['🍬', 'Candy Crush', '1.2 GB', TW + 1.6], ['🎣', 'Fishing Clash', '0.9 GB', TW + 2.3], ['🖼️', 'Photos: lawn', '2.1 GB', TW + 3.0], ['💬', '⭐ MY KID ⭐', '4,218 texts', 0]];
   return `<div class="hd dp"><span>iPhone Storage</span></div><div class="bd st"><div class="full">Storage Full</div>` + rows.map(([ic, n, sz, del]) => { const k = del ? clamp((t - del) / 0.35, 0, 1) : 0, keep = !del && t > TW + 3.6;
     return `<div class="row${keep ? ' on' : ''}" style="opacity:${(1 - k).toFixed(2)};max-height:${(110 * (1 - k)).toFixed(0)}px;transform:translateX(${(-260 * k).toFixed(0)}px)"><span>${ic} ${n}</span><b>${del ? (t > del - 0.5 ? '<i class="del">Delete</i>' : sz) : keep ? '❤️ Keep' : sz}</b></div>`; }).join('') + '</div>'; }
 // [from, to, content(t)]
-const CARDS = [[B1 + 0.2, B1 + 3.9, t => chat([{ at: B1 + 0.7, from: 'dad', html: 'Hello this is Dad.<br>– Dad' }], t)], [B1 + 4.1, B1 + 7.8, contacts],
+const CARDS = [[B1 + 0.2, B1 + 4.0, t => chat([{ at: B1 + 0.7, from: 'dad', html: 'Hello this is Dad.<br>– Dad' }], t)], [B1 + 4.0, B1 + 7.8, contacts],
   [B2 + 0.2, B2 + 3.9, t => chat([{ at: B2 + 0.6, from: 'dad', kind: 'weather' }, { at: B2 + 1.5, from: 'dad', html: 'Snow tonight. 34°F.' }], t)],
-  [B3 + 0.2, B3 + 3.9, t => chat([{ at: B3 + 0.5, from: 'you', html: 'I know I messed up this semester. I talked to my professor and I’m retaking the class. I really want to make you proud.' }, { at: B3 + 2.3, from: 'dad', html: '👍', big: true }], t)],
-  [B4 + 0.2, B4 + 3.9, t => chat([{ at: B4 + 0.5, from: 'you', html: 'I GOT THE JOB!!! 🎉' }, { at: B4 + 1.1, from: 'dad', kind: 'typing', dur: 2.6 }], t)], [B4 + 4.0, B4 + 7.8, draft],
+  [B3 + 0.2, B3 + 3.9, thumbs],
+  [B4 + 0.2, B4 + 4.0, t => chat([{ at: B4 + 0.5, from: 'you', html: 'I GOT THE JOB!!! 🎉' }, { at: B4 + 1.1, from: 'dad', kind: 'typing', dur: 2.6 }], t)], [B4 + 4.0, B4 + 7.8, draft],
   [B5 + 0.2, B5 + 3.9, t => chat([{ at: B5 + 0.6, from: 'dad', html: 'Call me. Not urgent.' }], t)],
   [B6 + 0.2, B6 + 3.9, t => chat([{ at: B6 + 0.6, from: 'dad', kind: 'photo' }], t)],
   [TW + 0.2, REP - 0.2, storage],
@@ -454,8 +475,12 @@ window.renderAt = (t) => {
   if (i < SEQ.length - 1 && t > SEQ[i + 1][0] - XF / 2) { B = SEQ[i + 1][1]; cut = i + 1; mix = smooth(SEQ[i + 1][0] - XF / 2, SEQ[i + 1][0] + XF / 2, t); }
   else if (i > 0 && t < SEQ[i][0] + XF / 2) { B = A; A = SEQ[i - 1][1]; cut = i; mix = smooth(SEQ[i][0] - XF / 2, SEQ[i][0] + XF / 2, t); }
   if (!B || mix < 1) shootScene(A, t, RTA); if (B) shootScene(B, t, RTB);
-  compMat.uniforms.uWhip.value = B ? (cut % 2 ? 1 : -1) * 0.09 * Math.sin(Math.PI * clamp((t - (SEQ[cut][0] - XF / 2)) / XF, 0, 1)) : 0;
+  compMat.uniforms.uWhip.value = 0;
   compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; compMat.uniforms.uT.value = t;
   composite(B ? mix : 0, 1.0, 1.0); updateDOM(t); return true;
 };
-window.sceneReady = (async () => { await document.fonts.ready; window.renderAt(0); return true; })();
+// warm-up: upload every face texture and render every take once, so all textures reach the GPU before the frame loop
+// (lazy uploads in the middle of a run once showed another canvas's picture on the yard siding)
+window.sceneReady = (async () => { await document.fonts.ready;
+  for (const p of [dad, mom]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
+  for (const [t0, id] of SEQ) shootScene(id, t0 + 1, RTA); window.renderAt(0); return true; })();
