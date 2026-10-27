@@ -23,9 +23,15 @@ function search(t) { const q = 'gift for 16 year old who says "nothing"', k = cl
   return `<div class="hd dp"><span>Search</span><em>11:48 PM</em></div><div class="bd"><div class="sq">🔍 ${q.slice(0, Math.round(q.length * k))}</div>${res ? `<div class="ct">${rows}</div>` : ''}${ordered ? `<div class="sent" style="${pop(t, B4 + 5.6)}">Order placed ✓ Arrives tomorrow</div>` : ''}</div>`; }
 function texts20(t) { return lock(t, notif(t, B5 + 0.5, 'Mom', '7:02 AM', 'HAPPY BIRTHDAY MY BABY!!! 🎂🎈🎉❤️') + notif(t, B5 + 4.2, 'Mom', '7:04 AM', '20 years ago right now I was in labor. 19 hours!! Worth every minute ❤️ – Mom') +
   notif(t, B5 + 5.4, 'Sam', '10:41 AM', 'hbd!!') + notif(t, B5 + 6.0, 'Jordan', '11:02 AM', 'happy bday 🎉')); }
-function videoCall(t) { const on = t > B6 + 0.5, sec = Math.max(0, Math.floor((t - B6 - 0.5) * 9)), mm = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-  if (!on) return `<div class="hd ls"><span>Your phone · 7:01 AM</span></div><div class="bd vc0"><div class="vcn">Mom</div><div class="vcs">FaceTime Video…</div><div class="vcb"><b class="no">✕</b><b class="ok${t > B6 + 0.3 ? ' tap' : ''}">✓</b></div></div>`;
-  return `<div class="hd ls"><span>Mom · ${mm}</span></div><div class="bd vc"><div class="vbig">${t > B6 + 4.6 && t < B6 + 6.15 ? '🎂🕯️' : t > B6 + 6.15 ? '🎂💨' : '🎶👩‍🦰🎶'}</div><div class="vme">😂</div></div>`; }
+// video-call tiles: the same drawn square faces as in 3D (face canvas + hair + top), so the call shows Mom big and you small
+const faceURLs = {}; const faceURL = (P, n, b) => { const k = P.o.key + n + b; return faceURLs[k] || (faceURLs[k] = faceTex(P.o, n, b).image.toDataURL()); };
+const blinkAt = (t, off) => ((t + off) % 3.9) < 0.12;
+function tile(P, expr, t, off, cls, top, extra = '') { const o = P.o; return `<div class="${cls}" style="background:linear-gradient(#efe6dc,#d8c8b8)"><div class="hh" style="background:${o.hair}"></div>${o.hairStyle === 'long' ? `<div class="lh" style="background:${o.hair}"></div>` : ''}<img src="${faceURL(P, expr, blinkAt(t, off))}"><div class="tb" style="background:${top}"></div>${extra}</div>`; }
+function momExpr(t) { return t < B6 + 0.5 ? 'happy' : t < B6 + 3.8 ? 'laugh' : t < B6 + 5.8 ? 'proud' : t < B6 + 6.25 ? 'surprised' : 'laugh'; }
+function videoCall(t) { const on = t > B6 + 0.5, sec = Math.max(0, Math.floor((t - B6 - 0.5) * 9)), mm = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;   // Mom's phone: she calls you, you pick up
+  if (!on) return `<div class="hd dp"><span>Calling ⭐ MY KID ⭐…</span><em>MOM’S PHONE · 7:01 AM</em></div><div class="bd vc0"><div class="vcs">Ringing…</div></div>`;
+  const youE = t < B6 + 3.8 ? 'laugh' : t < B6 + 6.3 ? 'love' : 'happy';
+  return `<div class="hd dp"><span>⭐ MY KID ⭐ · ${mm}</span><em>MOM’S PHONE</em></div><div class="bd vc">${tile(you24, youE, t, 1.7, 'vbig', '#c88a3a')}</div>`; }
 function firstText(t) { return `<div class="hd dp"><span>⭐ MY KID ⭐</span><em>MOM’S PHONE · 6:58 AM</em></div><div class="bd">` +
   (t > TW + 1.9 ? `<div class="bub dad" style="${pop(t, TW + 1.9)}">Happy birthday to you too, Mom. 25 years ago today you became a mom ❤️</div>` : '') + (t > REP + 0.4 ? `<div class="bub you" style="${pop(t, REP + 0.4)}">calling you right now 😭❤️</div>` : '') + '</div>'; }
 // [from, to, content(t)]

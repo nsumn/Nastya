@@ -350,6 +350,7 @@ const grillSmoke = makeSmoke(yard, 160);
 const YOU = { skin: '#e9b98f', hair: '#4a3020', bottom: '#3a4a6a', shoe: '#f4f4f4', hairStyle: 'bangs' };
 const you1 = makeBlock({ ...YOU, top: '#f8e8a0', h: 0.5 }), you6 = makeBlock({ ...YOU, top: '#f2c040', h: 0.66 }), you13 = makeBlock({ ...YOU, top: '#e8a83a', h: 0.88 }), you16 = makeBlock({ ...YOU, top: '#d89030', h: 0.97 });
 room.add(you1.outer, you13.outer, you16.outer); yard.add(you6.outer);
+const you24 = makeBlock({ ...YOU, top: '#c88a3a' });   // only on the video call (a drawn face in the DOM tile)
 // cream on the baby's face (year 1)
 const cream = new THREE.Group(); { const cm = M('#fff6ec', { roughness: 0.6 }); for (const [x, y, s] of [[-0.08, 0.06, 0.035], [0.06, -0.05, 0.03], [0.1, 0.09, 0.025], [-0.02, -0.1, 0.04], [0.0, 0.17, 0.03]]) { const c = mesh(new THREE.SphereGeometry(s, 10, 8), cm); c.position.set(x, HEAD_Y + y, HEAD_D / 2 + 0.01); cream.add(c); } } you1.torso.add(cream);
 // =================== kitchen additions: table + chairs, high chair with a smash cake, laptop, the little cake with a candle, Mom's phone on the counter ===================
@@ -398,7 +399,10 @@ function updateHome(t, mode) { resetCast(t); if (mom.outer.parent !== room) room
     atCounter(0.5); miniCake.visible = true; counterPhone.visible = false; const lit = t > B6 + 4.6 && t < B6 + 6.15; flame.visible = lit; candleL.intensity = lit ? 0.45 + 0.08 * Math.sin(t * 17) : 0; flame.scale.y = 1 + 0.15 * Math.sin(t * 13);
     holdPhone(P, t, 'far'); P.arms[1].rotation.z = lerp(0.05, -0.35, smooth(B6 + 3.8, B6 + 4.4, t));
     if (t > B6 + 4.0) { const k = smooth(B6 + 4.0, B6 + 4.6, t) * (1 - smooth(B6 + 5.2, B6 + 5.7, t)); P.arms[0].rotation.set(-0.9 * k, 0, -0.3 * k); P.elbows[0].rotation.x = -0.6 * k; }
-    P.root.rotation.x = 0.15 * smooth(B6 + 5.6, B6 + 5.9, t) * (1 - smooth(B6 + 6.3, B6 + 6.8, t));
+    P.root.rotation.x = 0.08 * smooth(B6 + 5.6, B6 + 5.9, t) * (1 - smooth(B6 + 6.3, B6 + 6.8, t));
+    // she lifts the little cake up to her face (and the phone camera), then blows
+    o.updateMatrixWorld(true); const hd = P.head.getWorldPosition(V3(0, 0, 0)), up = smooth(B6 + 4.0, B6 + 4.6, t), dir = V3(Math.sin(0.5), 0, Math.cos(0.5));
+    miniCake.position.copy(V3(3.15, 0.95, -0.95)).lerp(hd.clone().addScaledVector(dir, 0.3).add(V3(0.08, -0.32, 0)), up); flame.position.copy(miniCake.position).add(V3(0, 0.155, 0)); candleL.position.copy(miniCake.position).add(V3(0, 0.2, 0));
     P.face(t < B6 + 0.5 ? 'happy' : t < B6 + 3.8 ? 'laugh' : t < B6 + 5.8 ? 'proud' : t < B6 + 6.25 ? 'surprised' : 'laugh', t); }
   else {   // tw: twenty-five — before she can reach for her phone, it lights up: you texted first
     atCounter(); const pick = t > TW + 1.7, lit = t > TW + 0.9; counterPhone.visible = !pick; if (lit && !pick) counterPhone.scr.material.color.setRGB(1.6, 1.7, 1.9);
@@ -412,7 +416,7 @@ function homeCamera(t, mode) { updateHome(t, mode); const h = headOf(mom); let F
   else if (mode === 'b3') { const y = headOf(you13); F = blendF(framing(h, V3(0.3, 0.06, 1), 2.3, 0.64), framing(y.clone().lerp(h, 0.5), V3(0.15, 0.08, 1), 2.9, 0.62), smooth(B3 + 3.0, B3 + 5.0, t)); }
   else if (mode === 'b4') F = framing(h, V3(0.2 + 0.05 * Math.sin(t * 0.4), 0.12, 1), lerp(2.6, 2.1, smooth(B4, B5, t)), 0.66);
   else if (mode === 'b5') F = framing(h, V3(-0.15, 0.05, 1), lerp(2.6, 2.2, smooth(B5, B6, t)), 0.66);
-  else if (mode === 'b6') F = blendF(framing(h, V3(-0.1, 0.05, 1), 2.5, 0.66), framing(h, V3(0.05, 0.12, 1), 2.3, 0.42), smooth(B6 + 3.6, B6 + 5.6, t));
+  else if (mode === 'b6') F = blendF(framing(h, V3(-0.1, 0.05, 1), 2.5, 0.64), framing(h, V3(0.05, 0.08, 1), 2.4, 0.6), smooth(B6 + 3.6, B6 + 5.6, t));
   else F = blendF(framing(h, V3(-0.2, 0.05, 1), 2.6, 0.64), framing(h, V3(-0.05, 0.05, 1), 2.0, 0.66), smooth(TW + 1.0, REP + 1.0, t));
   applyF(rmCam, F); }
 // b2: year six in the backyard — thirty balloons on the railing; she blows up the last ones on the porch, you run in circles, Dad at the grill
@@ -449,9 +453,15 @@ function search(t) { const q = 'gift for 16 year old who says "nothing"', k = cl
   return `<div class="hd dp"><span>Search</span><em>11:48 PM</em></div><div class="bd"><div class="sq">🔍 ${q.slice(0, Math.round(q.length * k))}</div>${res ? `<div class="ct">${rows}</div>` : ''}${ordered ? `<div class="sent" style="${pop(t, B4 + 5.6)}">Order placed ✓ Arrives tomorrow</div>` : ''}</div>`; }
 function texts20(t) { return lock(t, notif(t, B5 + 0.5, 'Mom', '7:02 AM', 'HAPPY BIRTHDAY MY BABY!!! 🎂🎈🎉❤️') + notif(t, B5 + 4.2, 'Mom', '7:04 AM', '20 years ago right now I was in labor. 19 hours!! Worth every minute ❤️ – Mom') +
   notif(t, B5 + 5.4, 'Sam', '10:41 AM', 'hbd!!') + notif(t, B5 + 6.0, 'Jordan', '11:02 AM', 'happy bday 🎉')); }
-function videoCall(t) { const on = t > B6 + 0.5, sec = Math.max(0, Math.floor((t - B6 - 0.5) * 9)), mm = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-  if (!on) return `<div class="hd ls"><span>Your phone · 7:01 AM</span></div><div class="bd vc0"><div class="vcn">Mom</div><div class="vcs">FaceTime Video…</div><div class="vcb"><b class="no">✕</b><b class="ok${t > B6 + 0.3 ? ' tap' : ''}">✓</b></div></div>`;
-  return `<div class="hd ls"><span>Mom · ${mm}</span></div><div class="bd vc"><div class="vbig">${t > B6 + 4.6 && t < B6 + 6.15 ? '🎂🕯️' : t > B6 + 6.15 ? '🎂💨' : '🎶👩‍🦰🎶'}</div><div class="vme">😂</div></div>`; }
+// video-call tiles: the same drawn square faces as in 3D (face canvas + hair + top), so the call shows Mom big and you small
+const faceURLs = {}; const faceURL = (P, n, b) => { const k = P.o.key + n + b; return faceURLs[k] || (faceURLs[k] = faceTex(P.o, n, b).image.toDataURL()); };
+const blinkAt = (t, off) => ((t + off) % 3.9) < 0.12;
+function tile(P, expr, t, off, cls, top, extra = '') { const o = P.o; return `<div class="${cls}" style="background:linear-gradient(#efe6dc,#d8c8b8)"><div class="hh" style="background:${o.hair}"></div>${o.hairStyle === 'long' ? `<div class="lh" style="background:${o.hair}"></div>` : ''}<img src="${faceURL(P, expr, blinkAt(t, off))}"><div class="tb" style="background:${top}"></div>${extra}</div>`; }
+function momExpr(t) { return t < B6 + 0.5 ? 'happy' : t < B6 + 3.8 ? 'laugh' : t < B6 + 5.8 ? 'proud' : t < B6 + 6.25 ? 'surprised' : 'laugh'; }
+function videoCall(t) { const on = t > B6 + 0.5, sec = Math.max(0, Math.floor((t - B6 - 0.5) * 9)), mm = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;   // Mom's phone: she calls you, you pick up
+  if (!on) return `<div class="hd dp"><span>Calling ⭐ MY KID ⭐…</span><em>MOM’S PHONE · 7:01 AM</em></div><div class="bd vc0"><div class="vcs">Ringing…</div></div>`;
+  const youE = t < B6 + 3.8 ? 'laugh' : t < B6 + 6.3 ? 'love' : 'happy';
+  return `<div class="hd dp"><span>⭐ MY KID ⭐ · ${mm}</span><em>MOM’S PHONE</em></div><div class="bd vc">${tile(you24, youE, t, 1.7, 'vbig', '#c88a3a')}</div>`; }
 function firstText(t) { return `<div class="hd dp"><span>⭐ MY KID ⭐</span><em>MOM’S PHONE · 6:58 AM</em></div><div class="bd">` +
   (t > TW + 1.9 ? `<div class="bub dad" style="${pop(t, TW + 1.9)}">Happy birthday to you too, Mom. 25 years ago today you became a mom ❤️</div>` : '') + (t > REP + 0.4 ? `<div class="bub you" style="${pop(t, REP + 0.4)}">calling you right now 😭❤️</div>` : '') + '</div>'; }
 // [from, to, content(t)]
