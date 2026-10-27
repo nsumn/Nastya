@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js';
 
 // "What your dad's texts actually mean" (64 s, US family story): six texts over ten years, each one followed by its "translation" (what Dad is really doing).

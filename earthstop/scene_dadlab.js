@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js';
 
 // "What your dad's texts actually mean" (64 s, US family story): six texts over ten years, each one followed by its "translation" (what Dad is really doing).
@@ -124,7 +125,7 @@ const FACE = {
 };
 function drawFace(g, w, h, e, o, blink) {
   const U = x => x * w, Vv = y => y * h, ink = '#1c1614';
-  g.fillStyle = o.skin; g.fillRect(0, 0, w, h);
+  if (o.decal) g.clearRect(0, 0, w, h); else { g.fillStyle = o.skin; g.fillRect(0, 0, w, h); }
   g.lineCap = 'round'; g.lineJoin = 'round';
   const ex = [0.31, 0.69], ey = 0.5, ext = e.extra || [], look = e.look || [0, 0];
   // cheeks
@@ -173,6 +174,11 @@ function drawFace(g, w, h, e, o, blink) {
   if (ext.includes('sweat')) drop(0.86, 0.3, U(0.03), '#8ccaf2');
 }
 const faceCache = {};
+// the face as a decal on a curved head: the front triangles of the head geometry with a flat front projection for UVs
+function decalGeo(geo, span) { const g = geo.toNonIndexed(), P = g.attributes.position, N = g.attributes.normal, pos = [], nor = [], uv = [];
+  for (let i = 0; i < P.count; i += 3) { let cz = 0; for (let k = 0; k < 3; k++) cz += N.getZ(i + k); if (cz / 3 < 0.25) continue;
+    for (let k = 0; k < 3; k++) { const x = P.getX(i + k), y = P.getY(i + k), z = P.getZ(i + k); pos.push(x, y, z); nor.push(N.getX(i + k), N.getY(i + k), N.getZ(i + k)); uv.push(x / span + 0.5, y / span + 0.5); } }
+  const d = new THREE.BufferGeometry(); d.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); d.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); d.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); return d; }
 function faceTex(o, name, blink) { const k = o.key + name + (blink ? 'b' : ''); if (!faceCache[k]) { const c = document.createElement('canvas'); c.width = FACE_PX; c.height = Math.round(FACE_PX * HEAD_H / HEAD_W); drawFace(c.getContext('2d'), c.width, c.height, FACE[name] || FACE.neutral, o, blink); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; faceCache[k] = t; } return faceCache[k]; }
 let blockN = 0;
 function makeBlock(o = {}) {
@@ -185,8 +191,27 @@ function makeBlock(o = {}) {
   B(0.4, 0.5, 0.22, o.top, 0, 1.24, 0); B(0.38, 0.16, 0.22, o.bottom, 0, 0.95, 0); B(0.1, 0.06, 0.1, o.skin, 0, 1.52, 0);
   if (o.collar) B(0.22, 0.05, 0.03, o.collar, 0, 1.47, 0.11);
   // head: front face = the drawn face, other sides = skin
-  const skinM = M(o.skin, { roughness: 0.85 }), faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), roughness: 0.85 });
-  const head = new THREE.Mesh(BOX, [skinM, skinM, skinM, skinM, faceM, skinM]); head.scale.set(HEAD_W, HEAD_H, HEAD_D); head.position.set(0, HEAD_Y, 0); head.castShadow = true; torso.add(head);
+  const skinM = M(o.skin, { roughness: 0.85 }), shape = o.head || 'box'; let head, faceM;
+  if (shape === 'box') { faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), roughness: 0.85 });
+    head = new THREE.Mesh(BOX, [skinM, skinM, skinM, skinM, faceM, skinM]); head.scale.set(HEAD_W, HEAD_H, HEAD_D); }
+  else {   // 'round' = a ball, 'soft' = a cube with rounded corners; the face is a transparent decal on the front
+    o.decal = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
+    head = new THREE.Mesh(geo, skinM); head.scale.set(HEAD_W * (shape === 'round' ? 1.1 : 1), HEAD_H * (shape === 'round' ? 1.08 : 1), HEAD_D * (shape === 'round' ? 1.15 : 1));
+    faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.85 });
+    head.add(new THREE.Mesh(decalGeo(geo, 1), faceM)); }
+  head.position.set(0, HEAD_Y, 0); head.castShadow = true; torso.add(head);
+  if (shape === 'round') {   // round head: ears are balls, hair is a tilted cap of a slightly bigger sphere
+    const hsx = head.scale, hm = M(o.hair, { roughness: 0.95 }), hs = o.hairStyle;
+    for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.035, 10, 8), skinM); e.position.set(s * hsx.x * 0.5, HEAD_Y - 0.01, 0); torso.add(e); }
+    const cap = (theta, tilt, k = 1.07) => { const m = mesh(new THREE.SphereGeometry(0.5, 32, 20, 0, Math.PI * 2, 0, theta), hm); m.scale.set(hsx.x * k, hsx.y * k, hsx.z * k); m.position.set(0, HEAD_Y, 0); m.rotation.x = tilt; torso.add(m); return m; };
+    if (hs === 'short') cap(Math.PI * 0.42, -0.55);
+    if (hs === 'bangs') cap(Math.PI * 0.5, -0.42);
+    if (hs === 'long') { cap(Math.PI * 0.55, -0.5); const b = mesh(new RoundedBoxGeometry(1, 1, 1, 4, 0.3), hm); b.scale.set(hsx.x * 1.05, 0.42, 0.12); b.position.set(0, HEAD_Y - 0.17, -hsx.z * 0.36); torso.add(b);
+      for (const s of [-1, 1]) { const l = mesh(new THREE.CapsuleGeometry(0.045, 0.24, 4, 10), hm); l.position.set(s * hsx.x * 0.47, HEAD_Y - 0.12, -0.03); torso.add(l); } }
+    if (hs === 'curly') for (let i = 0; i < 60; i++) { const a = hash(i * 3.1 + 7) * Math.PI * 2, el = Math.acos(1 - hash(i * 5.7 + 1) * 1.1) * 0.95, d = V3(Math.sin(el) * Math.cos(a), Math.cos(el), Math.sin(el) * Math.sin(a)); d.applyAxisAngle(V3(1, 0, 0), -0.45); if (d.z > 0.55 && d.y < 0.75) continue;
+      const c = mesh(new THREE.SphereGeometry(0.04, 8, 6), hm); c.position.set(d.x * hsx.x * 0.52, HEAD_Y + d.y * hsx.y * 0.52, d.z * hsx.z * 0.52); torso.add(c); }
+    if (hs === 'bald') for (const s of [-1, 1]) { const c = mesh(new THREE.SphereGeometry(0.05, 10, 8), hm); c.scale.set(0.5, 1, 1.4); c.position.set(s * hsx.x * 0.48, HEAD_Y + 0.02, -0.04); torso.add(c); }
+  } else {
   B(0.03, 0.06, 0.05, o.skin, -HEAD_W / 2 - 0.012, HEAD_Y - 0.01, 0); B(0.03, 0.06, 0.05, o.skin, HEAD_W / 2 + 0.012, HEAD_Y - 0.01, 0);   // ears
   const top = HEAD_Y + HEAD_H / 2, hs = o.hairStyle, hc = o.hair;
   if (hs === 'short' || hs === 'bangs' || hs === 'long') { B(HEAD_W + 0.02, 0.06, HEAD_D + 0.02, hc, 0, top + 0.02, -0.002); B(HEAD_W + 0.02, HEAD_H * 0.75, 0.04, hc, 0, top - HEAD_H * 0.35, -HEAD_D / 2 - 0.012); for (const s of [-1, 1]) B(0.02, 0.09, HEAD_D * 0.8, hc, s * (HEAD_W / 2 + 0.006), top - 0.05, -0.02); }
@@ -196,6 +221,7 @@ function makeBlock(o = {}) {
   if (hs === 'curly') { const cm = M(hc, { roughness: 1 }); for (let i = 0; i < 46; i++) { const a = hash(i * 3.1 + 7) * Math.PI * 2, r = Math.sqrt(hash(i * 5.7 + 1)), s = mesh(new THREE.SphereGeometry(0.034, 8, 6), cm); s.position.set(Math.cos(a) * r * HEAD_W * 0.55, top + 0.02 + 0.03 * hash(i), Math.sin(a) * r * HEAD_D * 0.55 - 0.01); torso.add(s); }
     for (let i = 0; i < 18; i++) { const s = mesh(new THREE.SphereGeometry(0.03, 8, 6), cm), side = i % 2 ? 1 : -1, k = Math.floor(i / 2) / 8; s.position.set(side * (HEAD_W / 2 + 0.005), top - 0.02 - k * 0.06, lerp(0.06, -0.12, hash(i * 9.1))); torso.add(s); } }
   if (hs === 'bald') { for (const s of [-1, 1]) B(0.02, 0.07, HEAD_D * 0.7, hc, s * (HEAD_W / 2 + 0.006), top - 0.09, -0.03); B(HEAD_W + 0.02, 0.08, 0.03, hc, 0, top - 0.1, -HEAD_D / 2 - 0.01); }
+  }
   // limbs (groups at the joints)
   const arms = [], elbows = [], legs = [], knees = [];
   for (const sx of [-0.255, 0.255]) { const sh = new THREE.Group(); sh.position.set(sx, 1.45, 0); root.add(sh); B(0.11, 0.3, 0.12, o.top, 0, -0.13, 0, sh);
@@ -216,18 +242,31 @@ const CAST = {
   kid: makeBlock({ skin: '#c98d62', hair: '#1c1612', top: '#f2c040', bottom: '#3a4a6a', hairStyle: 'bangs', h: 0.86 }),
   grandma: makeBlock({ skin: '#f2d0b4', hair: '#eeeae4', browCol: '#b8b0a8', top: '#3a5ab8', bottom: '#5a4a5a', hairStyle: 'curly', glasses: '#8a6a3a', wrinkles: true }),
 };
-Object.values(CAST).forEach(p => { lab.add(p.outer); p.outer.visible = false; });
+// the same family with ROUND heads and with SOFT (rounded-cube) heads
+const variant = (shape) => ({
+  dad: makeBlock({ head: shape, skin: '#e2ae86', hair: '#5a4434', top: '#3f6e9a', bottom: '#4a4a52', hairStyle: 'short', mustache: '#5a4434', glasses: '#2a2420' }),
+  mom: makeBlock({ head: shape, skin: '#f0c8a4', hair: '#7a3a1e', top: '#d85a5a', bottom: '#2f3a5a', hairStyle: 'long', lip: '#c8303c' }),
+  kid: makeBlock({ head: shape, skin: '#c98d62', hair: '#1c1612', top: '#f2c040', bottom: '#3a4a6a', hairStyle: 'bangs', h: 0.86 }),
+  grandma: makeBlock({ head: shape, skin: '#f2d0b4', hair: '#eeeae4', browCol: '#b8b0a8', top: '#3a5ab8', bottom: '#5a4a5a', hairStyle: 'curly', glasses: '#8a6a3a', wrinkles: true }) });
+const CASTS = { box: CAST, round: variant('round'), soft: variant('soft') };
+Object.values(CASTS).forEach(c => Object.values(c).forEach(p => { lab.add(p.outer); p.outer.visible = false; }));
+const SHOTS2 = [['round', 'dad', 'happy'], ['round', 'dad', 'laugh'], ['round', 'dad', 'squint'], ['round', 'dad', 'worried'], ['round', 'dad', 'sad'], ['round', 'dad', 'proud'],
+  ['round', 'mom', 'happy'], ['round', 'mom', 'crying'], ['round', 'kid', 'laugh'], ['round', 'grandma', 'proud'],
+  ['soft', 'dad', 'laugh'], ['soft', 'dad', 'worried'], ['soft', 'mom', 'surprised'], ['soft', 'mom', 'happy'], ['soft', 'kid', 'love'], ['soft', 'grandma', 'sleepy']];
+const hideAll = () => Object.values(CASTS).forEach(c => Object.values(c).forEach(p => p.outer.visible = false));
 const SHOTS = [['dad', 'neutral'], ['dad', 'happy'], ['dad', 'laugh'], ['dad', 'squint'], ['dad', 'reading'], ['dad', 'worried'], ['dad', 'sad'], ['dad', 'proud'],
   ['mom', 'happy'], ['mom', 'surprised'], ['mom', 'crying'], ['mom', 'angry'], ['kid', 'laugh'], ['kid', 'love'], ['grandma', 'proud'], ['grandma', 'sleepy']];
 const lbl = document.getElementById('lbl');
-function familyShot() { const xs = { grandma: -0.84, dad: -0.28, mom: 0.3, kid: 0.82 }, ex = { grandma: 'proud', dad: 'laugh', mom: 'happy', kid: 'love' };
+function familyShot(CAST, name) { hideAll(); const xs = { grandma: -0.84, dad: -0.28, mom: 0.3, kid: 0.82 }, ex = { grandma: 'proud', dad: 'laugh', mom: 'happy', kid: 'love' };
   for (const [k, P] of Object.entries(CAST)) { P.outer.visible = true; P.outer.position.set(xs[k], 0.95, 0); P.outer.rotation.y = -xs[k] * 0.25; poseIdle(P, 0, 0); P.face(ex[k], -1); }
   CAST.kid.arms[1].rotation.set(-2.7, 0, -0.25); CAST.kid.elbows[1].rotation.x = -0.4;
-  labCam.position.set(0, 1.3, 7.6); labCam.lookAt(0, 1.05, 0); shootTo(RTA, lab, labCam); composite(0, 1.0, 1.0); lbl.textContent = 'THE FAMILY'; }
-window.renderAt = (t) => { if (t > 15.5) { familyShot(); return true; } const i = clamp(Math.round(t), 0, SHOTS.length - 1), [who, ex] = SHOTS[i];
-  Object.values(CAST).forEach(p => p.outer.visible = false); const P = CAST[who]; P.outer.visible = true; P.outer.position.set(0, 0.95, 0); poseIdle(P, 0, 0); P.face(ex, -1);
+  labCam.position.set(0, 1.3, 7.6); labCam.lookAt(0, 1.05, 0); shootTo(RTA, lab, labCam); composite(0, 1.0, 1.0); lbl.textContent = name; }
+window.renderAt = (t) => { const n = Math.round(t);
+  if (n === 16) { familyShot(CASTS.box, 'SQUARE'); return true; } if (n === 40) { familyShot(CASTS.round, 'ROUND'); return true; } if (n === 41) { familyShot(CASTS.soft, 'SOFT CUBE'); return true; }
+  const [shape, who, ex] = n >= 20 ? SHOTS2[clamp(n - 20, 0, SHOTS2.length - 1)] : ['box', ...SHOTS[clamp(n, 0, SHOTS.length - 1)]];
+  hideAll(); const P = CASTS[shape][who]; P.outer.visible = true; P.outer.position.set(0, 0.95, 0); poseIdle(P, 0, 0); P.face(ex, -1);
   P.outer.updateMatrixWorld(true); const hd = P.head.getWorldPosition(V3(0, 0, 0));
   labCam.position.set(hd.x + 0.4, hd.y + 0.05, hd.z + 1.8); labCam.lookAt(hd.x + 0.02, hd.y - 0.12, hd.z);
   shootTo(RTA, lab, labCam); compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; composite(0, 1.0, 1.0);
-  lbl.textContent = who.toUpperCase() + ' · ' + ex; return true; };
+  lbl.textContent = (shape === 'box' ? '' : shape.toUpperCase() + ' ') + who.toUpperCase() + ' · ' + ex; return true; };
 window.sceneReady = (async () => { await document.fonts.ready; window.renderAt(0); return true; })();
