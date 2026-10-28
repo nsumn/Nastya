@@ -179,24 +179,24 @@ hv, hf = mesh(head_sdf, (-0.45, -0.55, -0.55), (0.45, 0.6, 0.6), 0.01, 1100)
 print('head', len(hv), len(hf), 'y', hv[:, 1].min(), hv[:, 1].max(), 'z', hv[:, 2].max())
 
 def hairline(p, front, back):
-    z = p[:, 2]; return np.where(z > 0, 0.06 + (front - 0.06) * np.clip(z / 0.36, 0, 1), 0.06 + (back - 0.06) * np.clip(-z / 0.38, 0, 1))
+    """y of the hairline: high in the middle of the forehead, down at the temples and over the ears, low at the nape"""
+    x, z = np.abs(p[:, 0]), p[:, 2]; lf = front - 0.13 * np.clip(x / 0.33, 0, 1) ** 2
+    return np.where(z > 0, 0.09 + (lf - 0.09) * np.clip(z / 0.3, 0, 1), 0.09 + (back - 0.09) * np.clip(-z / 0.38, 0, 1))
 
 def hair_sdf_fn(style):
     def f(p):
-        shell = ell(p, np.array([0, 0.11, -0.05]), np.array([0.385, 0.465, 0.485]))
-        if style == 'quiff':   # short sides, volume on top, a quiff pushed up at the front
-            top = ell(p, np.array([0, 0.42, 0.04]), np.array([0.27, 0.16, 0.34]))
-            q = ell(p, np.array([0.03, 0.5, 0.2]), np.array([0.2, 0.09, 0.15]))
-            tips = [((-0.16, 0.45, 0.16), (-0.2, 0.58, 0.3)), ((-0.05, 0.5, 0.15), (-0.03, 0.66, 0.31)), ((0.07, 0.5, 0.14), (0.11, 0.65, 0.29)), ((0.17, 0.45, 0.12), (0.23, 0.56, 0.25)),
-                    ((-0.1, 0.52, -0.05), (-0.13, 0.62, 0.08)), ((0.1, 0.52, -0.06), (0.14, 0.61, 0.06))]
-            spikes = np.min(np.stack([cap(p, a_, b_, 0.065, 0.012) for a_, b_ in tips]), axis=0)
-            s = smin(smin(shell, top, 0.08), smin(q, spikes, 0.04), 0.05); fr, bk = 0.28, -0.22
-        else:   # 'fringe': short with a messy fringe over the forehead
-            spikes = np.min(np.stack([cap(p, (sx, 0.3, 0.3), (sx * 1.15, 0.2, 0.43), 0.06, 0.012) for sx in (-0.2, -0.07, 0.07, 0.2)]), axis=0)
-            s = smin(shell, spikes, 0.03); fr, bk = 0.2, -0.22
-        cut = hairline(p, fr, bk) - p[:, 1]
-        s = smax(s, cut, 0.02)
-        return s
+        shell = head_sdf(p) - 0.03   # hair hugs the real skull (no helmet / cone)
+        top = ell(p, np.array([0, 0.33, -0.01]), np.array([0.345, 0.22, 0.44]))   # a bit of volume on top, as wide as the head
+        if style == 'quiff':   # short sides; the front pushed up and swept to one side in chunky strands
+            tips = [((-0.2, 0.42, 0.24), (-0.08, 0.5, 0.4)), ((-0.08, 0.47, 0.22), (0.04, 0.53, 0.38)), ((0.05, 0.48, 0.2), (0.16, 0.52, 0.36)), ((0.17, 0.44, 0.2), (0.27, 0.45, 0.32)),
+                    ((-0.12, 0.52, 0.05), (-0.02, 0.57, 0.2)), ((0.08, 0.53, 0.03), (0.17, 0.56, 0.17)), ((-0.02, 0.55, -0.12), (0.06, 0.58, 0.02))]
+            fr = 0.27
+        else:   # 'fringe': strands combed down over the forehead
+            tips = [((sx, 0.36, 0.26), (sx + 0.05, 0.21, 0.42)) for sx in (-0.22, -0.1, 0.02, 0.14)]
+            fr = 0.2
+        strands = np.min(np.stack([cap(p, a_, b_, 0.055, 0.014) for a_, b_ in tips]), axis=0)
+        s = smin(smin(shell, top, 0.06), strands, 0.035)
+        return smax(s, hairline(p, fr, -0.24) - p[:, 1], 0.02)
     return f
 
 hair = {}
