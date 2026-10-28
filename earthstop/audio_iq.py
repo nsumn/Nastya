@@ -2,12 +2,12 @@ import numpy as np, sys
 from scipy.signal import butter, sosfilt
 from scipy.io import wavfile
 # "What if your IQ jumped to 500?" (64 s): the bonk on the PULL door (thud + boing), the IQ jump (rising whoosh + bright ding + sparkle chimes),
-# the curve (a long dolly whoosh), the test (pencil scribble, paper slap), the library (page flips), the bulb (a rising glow tone, then a glass pop),
-# small talk and the argument (soft speech-bubble pops — no synthetic voices), the second bonk. ONE theme: a playful pizzicato line, cooler after the jump.
+# fast cuts (a short swish on every shot change), the curve markers pinging past, the test + the teacher's mug, the cube clacking into place, the argument,
+# the flood of "help me" texts, the chess knock + the king tipping, a sad "womp" for the joke nobody gets, the second bonk. No synthetic voices. ONE playful pluck theme.
 SR = 44100; DUR = 64.5; N = int(SR * DUR); t = np.arange(N) / SR
 MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no theme, pads or end chord)
 rng = np.random.default_rng(500); L = np.zeros(N); Rr = np.zeros(N)
-POP, CURVE, TEST, LIB, BULB, TALK, ARGUE, DOOR, CTA, T_END = 3.0, 4.0, 12.0, 20.0, 28.0, 36.0, 44.0, 52.0, 58.0, 61.0
+POP, CURVE, TEST, RUBIK, ARGUE, NOTIF, CHESS, TALK, DOOR, CTA, T_END = 3.0, 6.0, 14.0, 22.0, 30.0, 38.0, 41.6, 46.0, 52.0, 58.0, 61.0
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
 def db(x): return 10 ** (x / 20)
 def norm(x): return x / (np.abs(x).max() + 1e-9)
@@ -53,7 +53,7 @@ def step(at, g, pan=0.0): thud(at, g, 90, 0.18, pan); x = tt(0.08); place(at, fi
 def plop(at, g, f=300, pan=0.0): x = tt(0.25); ff = f * (1 + 1.2 * np.exp(-x * 25)); place(at, np.sin(2 * np.pi * np.cumsum(ff) / SR) * np.exp(-x * 14), g, pan)
 def sweep(at, d, f0, f1, g, pan=0.0): x = tt(d); f = f0 * (f1 / f0) ** (x / d); place(at, (np.sin(2 * np.pi * np.cumsum(f) / SR) + 0.3 * np.sin(4 * np.pi * np.cumsum(f) / SR)) * np.sin(np.pi * x / d), g, pan)
 
-CUTS = [CURVE, TEST, LIB, BULB, TALK, ARGUE, DOOR]
+CUTS = [1.9, 3.0, 4.4, CURVE, CURVE + 2.6, CURVE + 5.0, TEST, TEST + 2.4, TEST + 5.0, RUBIK, RUBIK + 2.6, RUBIK + 5.2, ARGUE, ARGUE + 3.2, ARGUE + 5.1, NOTIF, CHESS, CHESS + 2.2, TALK, TALK + 3.0, DOOR, DOOR + 2.3, DOOR + 4.0]   # every shot change
 def bloop(at, g, pan=-0.2):   # his message arrives: two soft sine notes
     for dt, f in [(0, 660), (0.07, 990)]: x = tt(0.22); place(at + dt, np.sin(2 * np.pi * f * x) * np.exp(-x * 18) * np.clip(x / 0.004, 0, 1), g, pan)
 def swish(at, g, pan=0.2): x = tt(0.25); f = 500 * (1 + 3 * x / 0.25); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3200]) * np.sin(np.pi * x / 0.25) * 0.6 + 0.4 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 9), g, pan)
@@ -68,44 +68,46 @@ def pluck(n, d=2.4, b=0.996):   # Karplus-Strong string
     f = hz(n); p = int(SR / f); buf = rng.uniform(-1, 1, p); out = np.zeros(int(d * SR))
     for i in range(len(out)): out[i] = buf[i % p]; buf[i % p] = b * 0.5 * (buf[i % p] + buf[(i + 1) % p])
     return filt(out, 'lowpass', 3000) * np.clip(np.arange(len(out)) / SR / 0.003, 0, 1)
-for c in CUTS: whoosh(c, db(-31), 0.8, pan=0.3 if CUTS.index(c) % 2 else -0.3)
-def bonk(at, g): thud(at, g, 160, 0.25); x = tt(0.12); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [800, 3000]) * np.exp(-x * 40), g * 0.6); sweep(at + 0.03, 0.5, 520, 180, g * 0.5)   # glass knock + a cartoon boing
+for c in CUTS: whoosh(c, db(-30), 0.35, pan=0.3 if CUTS.index(c) % 2 else -0.3)
+def bonk(at, g): thud(at, g, 160, 0.25); x = tt(0.12); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [800, 3000]) * np.exp(-x * 40), g * 0.6); sweep(at + 0.03, 0.5, 520, 180, g * 0.5)
 def ding(at, g): chime(at, g, (88, 95, 100))
-def popb(at, g, pan=0.0): x = tt(0.12); f = 500 * (1 + 2 * np.exp(-x * 30)); place(at, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 20), g, pan)
+def popb(at, g, pan=0.0, f0=500): x = tt(0.12); f = f0 * (1 + 2 * np.exp(-x * 30)); place(at, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 20), g, pan)
 def scribble(a, b, g): x = tt(b - a); place(a, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 4000]) * (0.4 + 0.6 * np.abs(np.sin(2 * np.pi * 7 * x))) * np.sin(np.pi * x / (b - a)), g, 0.2)
-def flip(at, g, pan=0.0): x = tt(0.18); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3500]) * np.sin(np.pi * x / 0.18) ** 2, g, pan)
-# --- 0-4: steps up, BONK, the jump
+def clack(at, g): x = tt(0.07); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [400, 1200]) * np.exp(-x * 60), g, 0.1)
+# --- SECOND 1: steps, BONK, the jump (rise, ding, sparkles, crackle), cars outside
 for k in range(4): step(0.25 + k * 0.33, db(-25), -0.1)
 bonk(1.95, db(-13))
-x = tt(1.0); f = 200 * (1 + 6 * (x / 1.0) ** 2); place(POP - 0.9, (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 + filt(rng.standard_normal(len(x)), 'bandpass', [1500, 5000]) * 0.5) * (x / 1.0) ** 2, db(-20))   # power-up rise
+x = tt(1.0); f = 200 * (1 + 6 * (x / 1.0) ** 2); place(POP - 0.9, (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 + filt(rng.standard_normal(len(x)), 'bandpass', [1500, 5000]) * 0.5) * (x / 1.0) ** 2, db(-20))
 ding(POP, db(-15)); [chime(POP + 0.1 + k * 0.11, db(-28), (100 + (k % 3) * 3,), 0.4 * (k % 2 * 2 - 1)) for k in range(6)]
-# --- the jump extras: lightning crackle, street cars passing
 for k in range(9): x = tt(0.05); place(POP + 0.05 + k * 0.09 + rng.uniform(0, 0.04), filt(rng.standard_normal(len(x)), 'bandpass', [1800, 6000]) * np.exp(-x * 60), db(-27), rng.uniform(-0.5, 0.5))
-for a0 in [0.6, 2.6]: x = tt(1.6); place(a0, filt(rng.standard_normal(len(x)), 'bandpass', [300, 1500]) * np.sin(np.pi * x / 1.6) ** 2, db(-33), 0.6)
-# --- the curve: a long dolly whoosh to the far right, a soft spotlight "thunk"
-x = tt(6.0); place(CURVE + 0.3, filt(rng.standard_normal(len(x)), 'bandpass', [400, 1800]) * np.sin(np.pi * x / 6.0) ** 2, db(-28), 0.3); thud(CURVE + 4.2, db(-24), 220, 0.2); chime(CURVE + 6.2, db(-26), (76,))
-# --- the test: scribble 1 s, the paper up (slap), a chime for 100%
-scribble(TEST + 0.3, TEST + 1.3, db(-24)); flip(TEST + 1.4, db(-20)); chime(TEST + 1.7, db(-23), (84, 88, 91)); popb(TEST + 2.0, db(-26), -0.3)
-x = tt(0.3); place(TEST + 2.25, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 5000]) * np.exp(-x * 14), db(-20), 0.3); thud(TEST + 2.25, db(-24), 300, 0.1, 0.3)   # the teacher's mug hits the floor
-# --- the library: page flips as books fly in and out
-for i in range(14): flip(LIB + i * 0.55 + 0.15, db(-25), 0.3 * np.sin(i)); flip(LIB + i * 0.55 + 0.42, db(-29), -0.3 * np.sin(i))
-x = tt(5.6); place(LIB + 2.2, filt(rng.standard_normal(len(x)), 'bandpass', [500, 2500]) * np.sin(np.pi * x / 5.6) * (0.6 + 0.4 * np.sin(2 * np.pi * 2.4 * x)), db(-28))   # the book tornado
-# --- the bulb: a rising glow tone, then a glass pop + tinkle
-x = tt(4.8); f = 300 * (1 + 2.2 * x / 4.8); place(BULB + 0.5, np.sin(2 * np.pi * np.cumsum(f) / SR) * (x / 4.8) ** 1.5 * 0.6, db(-24))
-x = tt(0.25); place(BULB + 5.4, filt(rng.standard_normal(len(x)), 'bandpass', [1200, 5000]) * np.exp(-x * 18), db(-14)); [chime(BULB + 5.5 + k * 0.07, db(-30), (96 + k % 4,), 0.3) for k in range(6)]
-# --- small talk + the argument: speech-bubble pops
-for a in [TALK + 0.6, TALK + 2.6, ARGUE + 0.5, ARGUE + 3.4]: popb(a, db(-20), 0.2)
-chime(ARGUE + 3.6, db(-24), (79, 86)); place(TALK + 5.0, breath(1.2, 'in'), db(-24))
-sweep(BULB + 3.0, 2.2, 420, 160, db(-30))   # the lights draining
-for k in range(6): step(ARGUE + 5.0 + k * 0.38, db(-21), -0.2)   # the sibling stomps off
-# --- the second door: confident steps, BONK
+for a0 in [0.6, 4.0]: x = tt(1.6); place(a0, filt(rng.standard_normal(len(x)), 'bandpass', [300, 1500]) * np.sin(np.pi * x / 1.6) ** 2, db(-33), 0.6)
+# --- MINUTE 1: the crowd, the markers ping past, the spotlight on you
+for a in [CURVE + 2.9, CURVE + 3.3, CURVE + 3.7, CURVE + 4.5]: chime(a, db(-27), (84,), 0.2)
+thud(CURVE + 5.0, db(-22), 220, 0.2); ding(CURVE + 5.1, db(-24))
+# --- HOUR 1: the test in seconds, the teacher's mug
+scribble(TEST + 0.3, TEST + 1.3, db(-24)); x = tt(0.18); place(TEST + 1.4, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3500]) * np.sin(np.pi * x / 0.18) ** 2, db(-20)); chime(TEST + 1.7, db(-23), (84, 88, 91))
+x = tt(0.3); place(TEST + 2.25, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 5000]) * np.exp(-x * 14), db(-19), 0.3); thud(TEST + 2.25, db(-24), 300, 0.1, 0.3)
+# --- DAY 1: the cube clacks into place, a ding, a toss
+for k in range(6): clack(RUBIK + 3.0 + k * 0.3, db(-21))
+ding(RUBIK + 4.7, db(-19)); whoosh(RUBIK + 5.6, db(-26), 0.5)
+# --- WEEK 1: the argument (bubble pops), the win (chime), the stomps
+popb(ARGUE + 0.4, db(-20), 0.2); popb(ARGUE + 3.3, db(-20), -0.2, 620); chime(ARGUE + 3.6, db(-24), (79, 86))
+for k in range(6): step(ARGUE + 5.0 + k * 0.38, db(-21), -0.2)
+# --- MONTH 1: the flood of texts (bloops, rising pitch), the chess knock, the king tips
+for k in range(8): popb(NOTIF + 0.6 + k * 0.38, db(-21), 0.25 * np.sin(k), 520 + 40 * k)
+x = tt(0.8); place(CHESS + 0.8, filt(rng.standard_normal(len(x)), 'bandpass', [600, 2000]) * np.sin(np.pi * x / 0.8) * 0.5, db(-28)); thud(CHESS + 1.6, db(-18), 340, 0.1)
+clack(CHESS + 2.8, db(-18)); chime(CHESS + 2.9, db(-22), (72, 79, 84))
+# --- YEAR 1: the joke — a bubble pop, then a sad "womp womp" in soft tones
+popb(TALK + 0.4, db(-20)); x = tt(0.5)
+for k, n in enumerate([62, 61, 60, 59]): x = tt(0.42 if k < 3 else 0.9); f = hz(n) * (1 - (0.03 * x if k == 3 else 0)); place(TALK + 2.5 + k * 0.45, (np.sin(2 * np.pi * f * x) + 0.35 * np.sin(4 * np.pi * f * x) + 0.15 * np.sin(6 * np.pi * f * x)) * np.clip(x / 0.03, 0, 1) * np.exp(-x * 2.2), db(-21))   # pure tones, no square wave (no buzz)
+# --- EVERY DAY: confident steps, BONK, the formulas fall away
 for k in range(5): step(DOOR + 0.6 + k * 0.3, db(-24), 0.1)
-bonk(DOOR + 2.35, db(-12))
-# --- ONE theme: a playful pizzicato line (A minor, 104 bpm) — before the jump a clumsy version, after it the same line with a cool bass
-mel = np.zeros(N); beat_s = 60 / 104; line = [69, 72, 76, 72, 74, 71, 67, 71, 69, 72, 76, 79, 77, 74, 72, 71]; cache = {}
+bonk(DOOR + 2.35, db(-12)); [chime(DOOR + 2.5 + k * 0.08, db(-28), (96 - k * 3,), 0.3 * (k % 2 * 2 - 1)) for k in range(6)]
+# --- ONE theme: a playful pizzicato line (A minor, 108 bpm) — clumsy and low before the jump, with a cool bass after; hushed for "lonely"
+mel = np.zeros(N); beat_s = 60 / 108; line = [69, 72, 76, 72, 74, 71, 67, 71, 69, 72, 76, 79, 77, 74, 72, 71]; cache = {}
 k = 0; at = 0.2
 while at < T_END - 0.2:
-    n = line[k % len(line)] - (12 if at < POP else 0); g = db(-26) if at < POP else db(-24)
+    n = line[k % len(line)] - (12 if at < POP else 0); g = db(-26) if at < POP else db(-30) if TALK + 2.4 <= at < DOOR else db(-24)
     if n not in cache: cache[n] = pluck(n, 0.9)
     place(at, cache[n], g, buf=mel)
     if at >= POP and k % 2 == 0: n2 = line[(k // 4 * 4) % len(line)] - 24; cache.setdefault(n2, pluck(n2, 1.2)); place(at, cache[n2], g * 0.8, buf=mel)

@@ -5,7 +5,7 @@ const FORMULAS = ['E=mc²', 'π', '∑', '√2', 'a²+b²=c²', '∫x dx', '∞'
 const formTex = FORMULAS.map(f => canvasTex(256, 96, (g, w, h) => { g.clearRect(0, 0, w, h); g.font = 'bold 54px "Source Serif 4", serif'; g.textAlign = 'center'; g.shadowColor = '#7ae8ff'; g.shadowBlur = 14; g.fillStyle = '#e8fcff'; g.fillText(f, w / 2, 66); }));
 function makeAura(scene) { return FORMULAS.map((f, i) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: formTex[i], color: new THREE.Color(1.6, 1.9, 2.2), transparent: true, depthWrite: false })); s.visible = false; scene.add(s); return { s, a: i / FORMULAS.length * Math.PI * 2, y: 0.25 * Math.sin(i * 2.1), r: 0.55 + 0.15 * hash(i * 7) }; }); }
 function aura(A, h, t, k) { A.forEach(({ s, a, y, r }, i) => { s.visible = k > 0.01; if (!s.visible) return; const ang = a + t * 0.6, fall = 1 - k;
-  s.position.set(h.x + Math.cos(ang) * r, h.y + 0.1 + y + 0.05 * Math.sin(t * 2 + i) - fall * 0.8, h.z + Math.sin(ang) * r * 0.7); s.material.opacity = k * (0.55 + 0.45 * (Math.sin(ang) * 0.5 + 0.5)); s.scale.set(0.34, 0.13, 1); }); }
+  s.position.set(h.x + Math.cos(ang) * r, h.y + 0.1 + y + 0.05 * Math.sin(t * 2 + i) - fall * 0.8, h.z + Math.sin(ang) * r * 0.7); s.material.opacity = k * (0.55 + 0.45 * (Math.sin(ang) * 0.5 + 0.5)); s.scale.set(0.26, 0.1, 1); }); }
 const auras = { shop: makeAura(shop), curve: makeAura(curve), cls: makeAura(cls), lib: makeAura(lib), room: makeAura(room) };
 // ---- the street (seen through the glass): storefronts with signs, people walking, cars ----
 const signTex = txt => canvasTex(256, 64, (g, w, h) => { g.fillStyle = '#1e2a3a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd060'; g.font = 'bold 40px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(txt, w / 2, 46); });
@@ -62,4 +62,6 @@ function talkExtras(t, mode) { fr3.outer.visible = fr4.outer.visible = false; sn
 function curveExtras(t) { aura(auras.curve, headOf(hero), t, smooth(CURVE + 5, CURVE + 6, t)); }
 // hide every aura except the current scene's
 function extras(id, t) { Object.values(auras).forEach(A => A.forEach(a => a.s.visible = false)); bolts.forEach(B => B.forEach(m => m.visible = false));
-  if (id === 'open') shopExtras(t, 'open'); else if (id === 'door') shopExtras(t, 'end'); else if (id === 'test') classExtras(t); else if (id === 'books' || id === 'bulb') libExtras(t, id); else if (id === 'talk' || id === 'argue') talkExtras(t, id); else if (id === 'curve') curveExtras(t); }
+  if (id !== 'room') hero.phone.visible = false; if (id === 'argue' || id === 'joke') hideRoomExtras();
+  if (id === 'open') shopExtras(t, 'open'); else if (id === 'door') shopExtras(t, 'end'); else if (id === 'test') classExtras(t); else if (id === 'books' || id === 'bulb') libExtras(t, id);
+  else if (id === 'talk' || id === 'argue' || id === 'joke') talkExtras(t, id === 'argue' ? 'argue' : 'talk'); else if (id === 'curve') curveExtras(t); else if (id === 'room') { fr3.outer.visible = fr4.outer.visible = false; snacks.visible = false; aura(auras.room, headOf(hero), t, 1); } }

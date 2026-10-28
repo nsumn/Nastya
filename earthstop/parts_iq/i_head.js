@@ -7,7 +7,7 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // the bell curve (1 in 10^156, nobody ever), the 3-second test (real tests stop ~160, highest listed 228), a library by lunch, the 20-watt brain bulb,
 // small talk, winning an argument in one line — and the same PULL door at the end. Numbers: tools/iq_math.py.
 // =================== timeline ===================
-const POP = 3.0, CURVE = 4.0, TEST = 12.0, LIB = 20.0, BULB = 28.0, TALK = 36.0, ARGUE = 44.0, DOOR = 52.0, CTA = 58.0, T_END = 61.0;
+const POP = 3.0, CURVE = 6.0, TEST = 14.0, RUBIK = 22.0, ARGUE = 30.0, NOTIF = 38.0, CHESS = 41.6, TALK = 46.0, DOOR = 52.0, CTA = 58.0, T_END = 61.0, LIB = 99, BULB = 99;   // SECOND 1 · MINUTE 1 · HOUR 1 · DAY 1 · WEEK 1 · MONTH 1 · YEAR 1 · EVERY DAY
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================

@@ -1,5 +1,5 @@
 // =================== THE CAST: you (gender-neutral: bangs, teal top), two friends, your little sibling, the teacher, classmates ===================
-const hero = makeBlock({ skin: '#e9b98f', hair: '#4a3020', top: '#2fa89a', bottom: '#2a2e3a', shoe: '#f4f4f4', hairStyle: 'bangs' });
+const hero = makeBlock({ skin: '#e9b98f', hair: '#4a3020', top: '#f28a2a', hoodie: '#f28a2a', bottom: '#2a3a5c', shoe: '#f4f4f4', hairStyle: 'bangs', headS: 1.25 });
 const fr1 = makeBlock({ skin: '#b98260', hair: '#1a1a1a', top: '#e8a83a', bottom: '#3a3a40', hairStyle: 'short' }), fr2 = makeBlock({ skin: '#f0c8a4', hair: '#c8903a', top: '#7a5ac8', bottom: '#2f3a5a', hairStyle: 'long' });
 const sib = makeBlock({ skin: '#e9b98f', hair: '#4a3020', top: '#e84a5a', bottom: '#3a4a6a', hairStyle: 'bangs', h: 0.78 });
 const teacher = makeBlock({ skin: '#d7a47e', hair: '#9a9a9a', top: '#5a6a4a', bottom: '#3a3a40', hairStyle: 'bald', glasses: '#2a2420', mustache: '#8a8a8a' });
@@ -56,12 +56,14 @@ const curve = new THREE.Scene(); curve.background = new THREE.Color('#141a2e'); 
 curve.add(new THREE.HemisphereLight(0xc8d4ff, 0x2a2440, 1.1)); { const k = new THREE.DirectionalLight(0xffffff, 1.4); k.position.set(2, 6, 8); curve.add(k); }
 const SD = 1.2, iqX = iq => (iq - 100) / 15 * SD;
 { const gr = mesh(new THREE.PlaneGeometry(90, 30), M('#232a44', { roughness: 1 }), false, true); gr.rotation.x = -Math.PI / 2; gr.position.set(15, 0, 0); curve.add(gr);
+  const gridT = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#232a44'; g.fillRect(0, 0, w, h); g.fillStyle = '#3a4a7a'; g.fillRect(0, 0, w, 3); g.fillRect(0, 0, 3, h); }, [90, 30]); gr.material = new THREE.MeshStandardMaterial({ map: gridT, roughness: 1 });
   // the glowing curve line above the crowd
   const pts = []; for (let i = 0; i <= 200; i++) { const x = -6 + i * 0.25, z = x / SD; pts.push(V3(x, 0.12 + 3.2 * Math.exp(-z * z / 2), -1.4)); }
   curve.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, 0.03, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 1.6, 0.5) })));
   // markers
-  for (const iq of [100, 130, 160, 228, 500]) { const x = iqX(iq), t = canvasTex(256, 128, (g, w, h) => { g.fillStyle = 'rgba(0,0,0,0)'; g.clearRect(0, 0, w, h); g.fillStyle = iq === 500 ? '#ffd060' : '#ffffff'; g.font = 'bold 84px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(String(iq), w / 2, 92); });
-    bx(0.03, 1.0, 0.03, '#8a90a8', x, 0.5, -1.6, curve); const s = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.35), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); s.position.set(x, 1.25, -1.6); curve.add(s); } }
+  const RARE = { 100: 'average', 130: '1 in 44', 145: '1 in 741', 160: '1 in 31,600', 228: '1 in 10¹⁷', 500: '1 in 10¹⁵⁶' };   // tools/iq_math.py
+  for (const iq of [100, 130, 145, 160, 228, 500]) { const x = iqX(iq), t = canvasTex(256, 128, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = iq === 500 ? '#ffd060' : '#ffffff'; g.font = 'bold 72px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(String(iq), w / 2, 68); g.font = '600 30px Inter, sans-serif'; g.fillStyle = '#9ad8ff'; g.fillText(RARE[iq], w / 2, 112); });
+    bx(0.04, 1.2, 0.04, '#8a90a8', x, 0.6, -1.6, curve); const s = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); s.position.set(x, 1.55, -1.6); curve.add(s); } }
 // the crowd: simple blocky people as two instanced meshes (body + head), density follows the curve
 const CROWD = []; for (let c = -48; c <= 48; c++) { const x = c * 0.12, z = x / SD, n = Math.round(14 * Math.exp(-z * z / 2)); for (let k = 0; k < n; k++) CROWD.push([x + R(-0.04, 0.04), -1.0 + k * 0.32 + R(-0.05, 0.05)]); }
 const crowdBody = new THREE.InstancedMesh(BOX, new THREE.MeshStandardMaterial({ roughness: 0.9 }), CROWD.length), crowdHead = new THREE.InstancedMesh(BOX, new THREE.MeshStandardMaterial({ roughness: 0.9 }), CROWD.length);

@@ -7,7 +7,7 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // the bell curve (1 in 10^156, nobody ever), the 3-second test (real tests stop ~160, highest listed 228), a library by lunch, the 20-watt brain bulb,
 // small talk, winning an argument in one line — and the same PULL door at the end. Numbers: tools/iq_math.py.
 // =================== timeline ===================
-const POP = 3.0, CURVE = 4.0, TEST = 12.0, LIB = 20.0, BULB = 28.0, TALK = 36.0, ARGUE = 44.0, DOOR = 52.0, CTA = 58.0, T_END = 61.0;
+const POP = 3.0, CURVE = 6.0, TEST = 14.0, RUBIK = 22.0, ARGUE = 30.0, NOTIF = 38.0, CHESS = 41.6, TALK = 46.0, DOOR = 52.0, CTA = 58.0, T_END = 61.0, LIB = 99, BULB = 99;   // SECOND 1 · MINUTE 1 · HOUR 1 · DAY 1 · WEEK 1 · MONTH 1 · YEAR 1 · EVERY DAY
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
@@ -199,10 +199,13 @@ function makeBlock(o = {}) {
   const root = new THREE.Group(); root.scale.setScalar(o.h); body.add(root);
   const torso = new THREE.Group(); root.add(torso);
   const B = (w, h, d, col, x, y, z, par = torso) => { const m = mesh(BOX, typeof col === 'string' ? M(col, { roughness: 0.9 }) : col); m.scale.set(w, h, d); m.position.set(x, y, z); par.add(m); return m; };
-  B(0.4, 0.5, 0.22, o.top, 0, 1.24, 0); B(0.38, 0.16, 0.205, o.bottom, 0, 0.95, 0);   // slightly thinner than the top: coplanar fronts flickered B(0.1, 0.06, 0.1, o.skin, 0, 1.52, 0);
+  B(0.4, 0.5, 0.22, o.top, 0, 1.24, 0); B(0.38, 0.16, 0.205, o.bottom, 0, 0.95, 0); B(0.1, 0.08, 0.1, o.skin, 0, 1.52, 0);   // hips slightly thinner than the top (coplanar fronts flickered); neck
+  if (o.belt) B(0.385, 0.035, 0.212, o.belt, 0, 1.0, 0);
+  if (o.hoodie) { B(0.36, 0.16, 0.1, o.hoodie, 0, 1.5, -0.13); B(0.22, 0.1, 0.02, o.hoodie, 0, 1.12, 0.115); for (const x of [-0.04, 0.04]) B(0.012, 0.12, 0.012, '#f4f4f4', x, 1.38, 0.118); }
+  if (o.tee) B(0.16, 0.12, 0.01, o.tee, 0, 1.3, 0.112);
   if (o.collar) B(0.22, 0.05, 0.03, o.collar, 0, 1.47, 0.11);
   // head: front face = the drawn face, other sides = skin
-  const skinM = M(o.skin, { roughness: 0.85 }), shape = o.head || 'box'; let head, faceM;
+  const skinM = M(o.skin, { roughness: 0.85 }), shape = o.head || 'box'; let head, faceM; const nBefore = torso.children.length;
   if (shape === 'box') { faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), roughness: 0.85 });
     head = new THREE.Mesh(BOX, [skinM, skinM, skinM, skinM, faceM, skinM]); head.scale.set(HEAD_W, HEAD_H, HEAD_D); }
   else {   // 'round' = a ball, 'soft' = a cube with rounded corners; the face is a transparent decal on the front
@@ -233,6 +236,9 @@ function makeBlock(o = {}) {
     for (let i = 0; i < 18; i++) { const s = mesh(new THREE.SphereGeometry(0.03, 8, 6), cm), side = i % 2 ? 1 : -1, k = Math.floor(i / 2) / 8; s.position.set(side * (HEAD_W / 2 + 0.005), top - 0.02 - k * 0.06, lerp(0.06, -0.12, hash(i * 9.1))); torso.add(s); } }
   if (hs === 'bald') { for (const s of [-1, 1]) B(0.02, 0.07, HEAD_D * 0.7, hc, s * (HEAD_W / 2 + 0.006), top - 0.09, -0.03); B(HEAD_W + 0.02, 0.08, 0.03, hc, 0, top - 0.1, -HEAD_D / 2 - 0.01); }
   }
+  if (o.cap) { const top = HEAD_Y + HEAD_H / 2; B(HEAD_W + 0.03, 0.07, HEAD_D + 0.03, o.cap, 0, top + 0.025, 0); B(HEAD_W * 0.9, 0.02, 0.13, o.cap, 0, top - 0.005, (o.capBack ? -1 : 1) * (HEAD_D / 2 + 0.06)); }
+  // the head and everything on it go into one group, so o.headS can make the head bigger (cuter proportions)
+  const headG = new THREE.Group(); headG.position.set(0, HEAD_Y, 0); torso.add(headG); for (const c of torso.children.slice(nBefore, -1)) { c.position.y -= HEAD_Y; headG.add(c); } headG.scale.setScalar(o.headS || 1); headG.position.y = HEAD_Y + (HEAD_H / 2) * ((o.headS || 1) - 1) * 0.9;
   // limbs (groups at the joints)
   const arms = [], elbows = [], legs = [], knees = [];
   for (const sx of [-0.255, 0.255]) { const sh = new THREE.Group(); sh.position.set(sx, 1.45, 0); root.add(sh); B(0.11, 0.3, 0.12, o.top, 0, -0.13, 0, sh);
@@ -356,7 +362,7 @@ const burgers = [[-0.14, -0.1], [0.12, -0.12], [-0.1, 0.13], [0.15, 0.12]].map((
 const spatula = new THREE.Group(); { bx(0.012, 0.3, 0.02, '#3a2a20', 0, 0.12, 0, spatula); bx(0.08, 0.004, 0.09, '#c8c8d0', 0, -0.04, 0.03, spatula); } dad.elbows[0].add(spatula); spatula.position.set(0, -0.3, 0.03); spatula.rotation.x = -0.9;
 const grillSmoke = makeSmoke(yard, 160);
 // =================== THE CAST: you (gender-neutral: bangs, teal top), two friends, your little sibling, the teacher, classmates ===================
-const hero = makeBlock({ skin: '#e9b98f', hair: '#4a3020', top: '#2fa89a', bottom: '#2a2e3a', shoe: '#f4f4f4', hairStyle: 'bangs' });
+const hero = makeBlock({ skin: '#e9b98f', hair: '#4a3020', top: '#f28a2a', hoodie: '#f28a2a', bottom: '#2a3a5c', shoe: '#f4f4f4', hairStyle: 'bangs', headS: 1.25 });
 const fr1 = makeBlock({ skin: '#b98260', hair: '#1a1a1a', top: '#e8a83a', bottom: '#3a3a40', hairStyle: 'short' }), fr2 = makeBlock({ skin: '#f0c8a4', hair: '#c8903a', top: '#7a5ac8', bottom: '#2f3a5a', hairStyle: 'long' });
 const sib = makeBlock({ skin: '#e9b98f', hair: '#4a3020', top: '#e84a5a', bottom: '#3a4a6a', hairStyle: 'bangs', h: 0.78 });
 const teacher = makeBlock({ skin: '#d7a47e', hair: '#9a9a9a', top: '#5a6a4a', bottom: '#3a3a40', hairStyle: 'bald', glasses: '#2a2420', mustache: '#8a8a8a' });
@@ -413,12 +419,14 @@ const curve = new THREE.Scene(); curve.background = new THREE.Color('#141a2e'); 
 curve.add(new THREE.HemisphereLight(0xc8d4ff, 0x2a2440, 1.1)); { const k = new THREE.DirectionalLight(0xffffff, 1.4); k.position.set(2, 6, 8); curve.add(k); }
 const SD = 1.2, iqX = iq => (iq - 100) / 15 * SD;
 { const gr = mesh(new THREE.PlaneGeometry(90, 30), M('#232a44', { roughness: 1 }), false, true); gr.rotation.x = -Math.PI / 2; gr.position.set(15, 0, 0); curve.add(gr);
+  const gridT = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#232a44'; g.fillRect(0, 0, w, h); g.fillStyle = '#3a4a7a'; g.fillRect(0, 0, w, 3); g.fillRect(0, 0, 3, h); }, [90, 30]); gr.material = new THREE.MeshStandardMaterial({ map: gridT, roughness: 1 });
   // the glowing curve line above the crowd
   const pts = []; for (let i = 0; i <= 200; i++) { const x = -6 + i * 0.25, z = x / SD; pts.push(V3(x, 0.12 + 3.2 * Math.exp(-z * z / 2), -1.4)); }
   curve.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, 0.03, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 1.6, 0.5) })));
   // markers
-  for (const iq of [100, 130, 160, 228, 500]) { const x = iqX(iq), t = canvasTex(256, 128, (g, w, h) => { g.fillStyle = 'rgba(0,0,0,0)'; g.clearRect(0, 0, w, h); g.fillStyle = iq === 500 ? '#ffd060' : '#ffffff'; g.font = 'bold 84px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(String(iq), w / 2, 92); });
-    bx(0.03, 1.0, 0.03, '#8a90a8', x, 0.5, -1.6, curve); const s = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.35), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); s.position.set(x, 1.25, -1.6); curve.add(s); } }
+  const RARE = { 100: 'average', 130: '1 in 44', 145: '1 in 741', 160: '1 in 31,600', 228: '1 in 10¹⁷', 500: '1 in 10¹⁵⁶' };   // tools/iq_math.py
+  for (const iq of [100, 130, 145, 160, 228, 500]) { const x = iqX(iq), t = canvasTex(256, 128, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = iq === 500 ? '#ffd060' : '#ffffff'; g.font = 'bold 72px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(String(iq), w / 2, 68); g.font = '600 30px Inter, sans-serif'; g.fillStyle = '#9ad8ff'; g.fillText(RARE[iq], w / 2, 112); });
+    bx(0.04, 1.2, 0.04, '#8a90a8', x, 0.6, -1.6, curve); const s = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); s.position.set(x, 1.55, -1.6); curve.add(s); } }
 // the crowd: simple blocky people as two instanced meshes (body + head), density follows the curve
 const CROWD = []; for (let c = -48; c <= 48; c++) { const x = c * 0.12, z = x / SD, n = Math.round(14 * Math.exp(-z * z / 2)); for (let k = 0; k < n; k++) CROWD.push([x + R(-0.04, 0.04), -1.0 + k * 0.32 + R(-0.05, 0.05)]); }
 const crowdBody = new THREE.InstancedMesh(BOX, new THREE.MeshStandardMaterial({ roughness: 0.9 }), CROWD.length), crowdHead = new THREE.InstancedMesh(BOX, new THREE.MeshStandardMaterial({ roughness: 0.9 }), CROWD.length);
@@ -500,7 +508,7 @@ const FORMULAS = ['E=mc²', 'π', '∑', '√2', 'a²+b²=c²', '∫x dx', '∞'
 const formTex = FORMULAS.map(f => canvasTex(256, 96, (g, w, h) => { g.clearRect(0, 0, w, h); g.font = 'bold 54px "Source Serif 4", serif'; g.textAlign = 'center'; g.shadowColor = '#7ae8ff'; g.shadowBlur = 14; g.fillStyle = '#e8fcff'; g.fillText(f, w / 2, 66); }));
 function makeAura(scene) { return FORMULAS.map((f, i) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: formTex[i], color: new THREE.Color(1.6, 1.9, 2.2), transparent: true, depthWrite: false })); s.visible = false; scene.add(s); return { s, a: i / FORMULAS.length * Math.PI * 2, y: 0.25 * Math.sin(i * 2.1), r: 0.55 + 0.15 * hash(i * 7) }; }); }
 function aura(A, h, t, k) { A.forEach(({ s, a, y, r }, i) => { s.visible = k > 0.01; if (!s.visible) return; const ang = a + t * 0.6, fall = 1 - k;
-  s.position.set(h.x + Math.cos(ang) * r, h.y + 0.1 + y + 0.05 * Math.sin(t * 2 + i) - fall * 0.8, h.z + Math.sin(ang) * r * 0.7); s.material.opacity = k * (0.55 + 0.45 * (Math.sin(ang) * 0.5 + 0.5)); s.scale.set(0.34, 0.13, 1); }); }
+  s.position.set(h.x + Math.cos(ang) * r, h.y + 0.1 + y + 0.05 * Math.sin(t * 2 + i) - fall * 0.8, h.z + Math.sin(ang) * r * 0.7); s.material.opacity = k * (0.55 + 0.45 * (Math.sin(ang) * 0.5 + 0.5)); s.scale.set(0.26, 0.1, 1); }); }
 const auras = { shop: makeAura(shop), curve: makeAura(curve), cls: makeAura(cls), lib: makeAura(lib), room: makeAura(room) };
 // ---- the street (seen through the glass): storefronts with signs, people walking, cars ----
 const signTex = txt => canvasTex(256, 64, (g, w, h) => { g.fillStyle = '#1e2a3a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd060'; g.font = 'bold 40px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(txt, w / 2, 46); });
@@ -557,52 +565,123 @@ function talkExtras(t, mode) { fr3.outer.visible = fr4.outer.visible = false; sn
 function curveExtras(t) { aura(auras.curve, headOf(hero), t, smooth(CURVE + 5, CURVE + 6, t)); }
 // hide every aura except the current scene's
 function extras(id, t) { Object.values(auras).forEach(A => A.forEach(a => a.s.visible = false)); bolts.forEach(B => B.forEach(m => m.visible = false));
-  if (id === 'open') shopExtras(t, 'open'); else if (id === 'door') shopExtras(t, 'end'); else if (id === 'test') classExtras(t); else if (id === 'books' || id === 'bulb') libExtras(t, id); else if (id === 'talk' || id === 'argue') talkExtras(t, id); else if (id === 'curve') curveExtras(t); }
-// =================== schedule, HUD, speech bubbles, captions, render ===================
-const SCN = { open: [t => updateShop(t, 'open'), t => shopCamera(t, 'open'), shop, () => spCam], curve: [updateCurve, curveCamera, curve, () => cvCam], test: [updateClass, classCamera, cls, () => clCam],
-  books: [t => updateLib(t, 'books'), t => libCamera(t, 'books'), lib, () => lbCam], bulb: [t => updateLib(t, 'bulb'), t => libCamera(t, 'bulb'), lib, () => lbCam],
-  talk: [t => updateTalk(t, 'talk'), t => talkCamera(t, 'talk'), room, () => rmCam], argue: [t => updateTalk(t, 'argue'), t => talkCamera(t, 'argue'), room, () => rmCam], door: [t => updateShop(t, 'end'), t => shopCamera(t, 'end'), shop, () => spCam] };
-const SEQ = [[0, 'open'], [CURVE, 'curve'], [TEST, 'test'], [LIB, 'books'], [BULB, 'bulb'], [TALK, 'talk'], [ARGUE, 'argue'], [DOOR, 'door']]; const XF = 0.7;
-function shootScene(id, t, rt) { const S = SCN[id]; S[1](t); S[0](t); extras(id, t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); }
+  if (id !== 'room') hero.phone.visible = false; if (id === 'argue' || id === 'joke') hideRoomExtras();
+  if (id === 'open') shopExtras(t, 'open'); else if (id === 'door') shopExtras(t, 'end'); else if (id === 'test') classExtras(t); else if (id === 'books' || id === 'bulb') libExtras(t, id);
+  else if (id === 'talk' || id === 'argue' || id === 'joke') talkExtras(t, id === 'argue' ? 'argue' : 'talk'); else if (id === 'curve') curveExtras(t); else if (id === 'room') { fr3.outer.visible = fr4.outer.visible = false; snacks.visible = false; aura(auras.room, headOf(hero), t, 1); } }
+// =================== NEW BEATS (fast-cut version): the Rubik's cube solved with one look, a flood of "help me" texts, chess vs a grandmaster, the joke nobody gets ===================
+hero.phone = makePhone(); hero.elbows[1].add(hero.phone); hero.phone.visible = false;
+// ---- the cube: 27 cubelets; the stickers go from scrambled to solved, the cube spins in your hands ----
+const RUB_C = ['#e8303a', '#f28a2a', '#f4f4f2', '#f2d030', '#30a050', '#2f6ad8'];   // +x -x +y -y +z -z
+const rubik = new THREE.Group(); room.add(rubik); const cubelets = [];
+for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+  const mats = [0, 1, 2, 3, 4, 5].map(f => { const out = [x === 1, x === -1, y === 1, y === -1, z === 1, z === -1][f]; return new THREE.MeshStandardMaterial({ color: out ? RUB_C[f] : '#111114', roughness: 0.4 }); });
+  const m = new THREE.Mesh(BOX, mats); m.scale.setScalar(0.031); m.position.set(x * 0.033, y * 0.033, z * 0.033); rubik.add(m); cubelets.push({ m, mats, scr: [0, 1, 2, 3, 4, 5].map(f => RUB_C[Math.floor(hash(cubelets.length * 6 + f + 0.5) * 6)]), x, y, z }); }
+function setRubik(k) {   // k = 0 scrambled … 1 solved (stickers flip to their right colours one by one)
+  cubelets.forEach((c, i) => c.mats.forEach((mt, f) => { const out = [c.x === 1, c.x === -1, c.y === 1, c.y === -1, c.z === 1, c.z === -1][f]; if (!out) return; mt.color.set(hash(i * 13 + f) < k ? RUB_C[f] : c.scr[f]); })); }
+const chessGrp = new THREE.Group(); room.add(chessGrp);
+{ bx(0.9, 0.05, 0.9, '#6a4a30', 0, 0.72, 0, chessGrp); for (const [x, z] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]]) bx(0.05, 0.72, 0.05, '#5a3a24', x, 0.36, z, chessGrp);
+  const boardT = canvasTex(256, 256, (g, w, h) => { for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { g.fillStyle = (i + j) % 2 ? '#7a5a3a' : '#e8d8b8'; g.fillRect(i * 32, j * 32, 32, 32); } });
+  const bd = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.56), new THREE.MeshStandardMaterial({ map: boardT, roughness: 0.7 })); bd.rotation.x = -Math.PI / 2; bd.position.y = 0.752; chessGrp.add(bd); }
+const PIECES = []; function piece(col, kind, i, j) { const g = new THREE.Group(), m = M(col, { roughness: 0.4 }); const base = mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.02, 12), m); base.position.y = 0.01; g.add(base);
+  const body = mesh(new THREE.CylinderGeometry(0.013, 0.02, kind === 'K' ? 0.08 : kind === 'Q' ? 0.07 : 0.045, 12), m); body.position.y = kind === 'p' ? 0.035 : 0.05; g.add(body); const top = mesh(new THREE.SphereGeometry(kind === 'p' ? 0.014 : 0.017, 10, 8), m); top.position.y = kind === 'K' ? 0.1 : kind === 'Q' ? 0.09 : 0.06; g.add(top);
+  g.position.set(-0.245 + i * 0.07, 0.752, -0.245 + j * 0.07); chessGrp.add(g); const P = { g, i, j }; PIECES.push(P); return P; }
+['R', 'p', 'K', 'p', 'Q', 'p'].forEach((k, n) => piece('#f4f0e8', k, [0, 3, 4, 5, 3, 6][n], [7, 6, 7, 6, 7, 6][n])); const wQ = PIECES[4];
+['R', 'p', 'K', 'p', 'p', 'B'].forEach((k, n) => piece('#2a2a2e', k, [0, 2, 4, 5, 6, 2][n], [0, 1, 0, 1, 1, 0][n])); const bK = PIECES[8];
+chessGrp.position.set(0.9, 0, 0.6);
+const gm = makeBlock({ skin: '#e2ae86', hair: '#c8c8c8', top: '#3a3a40', collar: '#f4f4f4', bottom: '#2a2a2e', hairStyle: 'bald', glasses: '#2a2420', mustache: '#c8c8c8' }); room.add(gm.outer);
+// ---- per-beat updates in the living room ----
+function hideRoomExtras() { rubik.visible = false; chessGrp.visible = false; gm.outer.visible = false; hero.phone.visible = false; }
+function updateRubik(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); const P = hero; poseReset(P, t); seatAt(P, -1.0, 0.42, -1.3, 0); P.root.rotation.x = -0.05;
+  P.arms.forEach((a, i) => a.rotation.set(-0.75, 0, i ? 0.25 : -0.25)); P.elbows.forEach(e => e.rotation.x = -1.0); rubik.visible = true; P.outer.updateMatrixWorld(true); const h = headOf(P);
+  const k = smooth(RUBIK + 3.0, RUBIK + 4.6, t); setRubik(k); rubik.position.copy(h).add(V3(0, -0.42 + 0.25 * smooth(RUBIK + 5.4, RUBIK + 6.0, t), 0.3)); rubik.rotation.set(t * 0.5 + k * 9, t * 0.7 + k * 11, 0); rubik.scale.setScalar(1 + 0.6 * smooth(RUBIK + 5.4, RUBIK + 6.0, t));
+  if (t > RUBIK + 5.4) { P.arms[1].rotation.set(-2.2, 0, -0.1); P.elbows[1].rotation.x = -0.4; }
+  P.face(t < RUBIK + 2.4 ? 'reading' : t < RUBIK + 3.0 ? 'squint' : 'smirk', t); }
+function updateNotif(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); const P = hero; poseReset(P, t); P.outer.position.set(2.6, 0.95, -1.3); P.outer.rotation.y = 0.5; holdPhone(P, t, 'near');
+  P.face(t < NOTIF + 1.0 ? 'neutral' : t < NOTIF + 2.2 ? 'surprised' : 'sleepy', t); }
+function updateChess(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); chessGrp.visible = true; const P = hero; poseReset(P, t); seatAt(P, 0.9, 0.47, 0.12, 0);
+  P.arms[1].rotation.set(-1.0 - 0.25 * smooth(CHESS + 0.6, CHESS + 1.0, t) * (1 - smooth(CHESS + 1.6, CHESS + 2.0, t)), 0, -0.1); P.elbows[1].rotation.x = -0.6;
+  const mv = smooth(CHESS + 0.8, CHESS + 1.6, t); wQ.g.position.set(-0.245 + lerp(3, 4, mv) * 0.07, 0.752 + 0.06 * Math.sin(Math.PI * mv), -0.245 + lerp(7, 1, mv) * 0.07);   // queen up the board: checkmate
+  bK.g.rotation.z = 1.4 * smooth(CHESS + 2.6, CHESS + 3.0, t); bK.g.position.y = 0.752 + 0.01 * smooth(CHESS + 2.6, CHESS + 3.0, t);   // the black king tips over
+  P.face(t < CHESS + 0.8 ? 'smirk' : t < CHESS + 2.4 ? 'squint' : 'smirk', t);
+  gm.outer.visible = true; poseReset(gm, t); seatAt(gm, 0.9, 0.47, 1.1, Math.PI); gm.arms.forEach(a => a.rotation.set(-0.8, 0, 0)); gm.elbows.forEach(e => e.rotation.x = -0.8); gm.face(t < CHESS + 1.6 ? 'reading' : t < CHESS + 2.6 ? 'surprised' : 'crying', t + 0.5); }
+function updateJoke(t) { updateTalk(t, 'talk'); hideRoomExtras(); hero.face(t < TALK + 2.6 ? 'laugh' : t < TALK + 4.0 ? 'neutral' : 'sad', t); fr1.face(t < TALK + 2.4 ? 'neutral' : 'squint', t); fr2.face('worried', t + 1);
+  if (t > TALK + 3.0) { const k = smooth(TALK + 3.0, TALK + 4.0, t); fr1.outer.rotation.y = lerp(-0.7, 2.2, k); fr2.outer.rotation.y = lerp(0.7, -2.4, k); hero.arms.forEach(a => a.rotation.set(0, 0, 0)); } }
+// =================== FAST CUTS: a new shot every 2–3 s; timeline HUD (SECOND 1 → YEAR 1), big stat pop-ups, captions that pop word by word ===================
+const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy, fov);
+const H_ = P => headOf(P);
+// [start, scene, camera, update(t), framing(t) -> F, extras key]
+const SHOTS = [
+  [0.0, shop, () => spCam, t => updateShop(t, 'open'), t => fr(V3(0.05, H_(hero).y, Math.max(H_(hero).z, 0.4)), V3(0.15, -0.02, -1), lerp(3.6, 3.0, t / 1.9), 0.58), 'open'],
+  [1.9, shop, () => spCam, t => updateShop(t, 'open'), t => fr(H_(hero), V3(0.1, 0.0, -1), lerp(1.5, 1.25, (t - 1.9) / 1.1), 0.56), 'open'],
+  [3.0, shop, () => spCam, t => updateShop(t, 'open'), t => fr(H_(hero), V3(-0.25, -0.18, -1), lerp(1.2, 1.6, (t - 3) / 1.4), 0.5, 46), 'open'],
+  [4.4, shop, () => spCam, t => updateShop(t, 'open'), t => fr(H_(hero), V3(0.45 + 0.2 * (t - 4.4), 0.12, -1), 3.3, 0.6, 46), 'open'],
+  [CURVE, curve, () => cvCam, updateCurve, t => fr(V3(-0.5, 1.0, -1.0), V3(0.05, 1.2, 1), lerp(8, 7, (t - CURVE) / 2.6), 0.5, 46), 'curve'],
+  [CURVE + 2.6, curve, () => cvCam, updateCurve, t => fr(V3(iqX(lerp(125, 240, smooth(CURVE + 2.6, CURVE + 5.0, t))), 1.3, -1.6), V3(0.25, 0.1, 1), 3.2, 0.5, 46), 'curve'],   // the markers slide past: 130, 145, 160, 228
+  [CURVE + 5.0, curve, () => cvCam, updateCurve, t => fr(H_(hero), V3(0.25, 0.08, 1), lerp(3.0, 2.2, (t - CURVE - 5) / 3), 0.6), 'curve'],
+  [TEST, cls, () => clCam, updateClass, t => fr(H_(hero), V3(0.2, 0.35, -1), lerp(1.7, 1.45, (t - TEST) / 2.4), 0.66), 'test'],
+  [TEST + 2.4, cls, () => clCam, updateClass, t => fr(H_(hero), V3(-0.5, 0.15, -1), lerp(3.4, 3.0, (t - TEST - 2.4) / 2.6), 0.55, 46), 'test'],
+  [TEST + 5.0, cls, () => clCam, updateClass, t => fr(H_(teacher), V3(-0.6, 0.0, -1), lerp(1.9, 1.6, (t - TEST - 5) / 3), 0.6), 'test'],
+  [RUBIK, room, () => rmCam, updateRubik, t => fr(rubik.position, V3(0.2, 0.25, 1), lerp(0.7, 0.55, (t - RUBIK) / 2.6), 0.62), 'room'],
+  [RUBIK + 2.6, room, () => rmCam, updateRubik, t => fr(H_(hero), V3(-0.2, 0.05, 1), lerp(1.8, 1.5, (t - RUBIK - 2.6) / 2.6), 0.6), 'room'],
+  [RUBIK + 5.2, room, () => rmCam, updateRubik, t => fr(H_(hero), V3(0.35, 0.12, 1), lerp(2.4, 2.8, (t - RUBIK - 5.2) / 2.8), 0.62), 'room'],
+  [ARGUE, room, () => rmCam, t => updateTalk(t, 'argue'), t => fr(H_(sib), V3(-0.3, 0.1, 1), lerp(1.8, 1.5, (t - ARGUE) / 3.2), 0.6), 'argue'],
+  [ARGUE + 3.2, room, () => rmCam, t => updateTalk(t, 'argue'), t => fr(H_(hero), V3(0.4, 0.05, 1), lerp(1.7, 1.5, (t - ARGUE - 3.2) / 1.9), 0.6), 'argue'],
+  [ARGUE + 5.1, room, () => rmCam, t => updateTalk(t, 'argue'), t => fr(V3(2.0, 1.4, -0.5), V3(0.2, 0.25, 1), 4.2, 0.55, 46), 'argue'],
+  [NOTIF, room, () => rmCam, updateNotif, t => fr(H_(hero), V3(0.3, 0.05, 1), lerp(2.2, 1.8, (t - NOTIF) / 3.6), 0.68), 'room'],
+  [CHESS, room, () => rmCam, updateChess, t => fr(V3(0.9, 0.8, 0.6), V3(-0.6, 1.0, 0.3), lerp(1.1, 0.9, (t - CHESS) / 2.2), 0.5), 'room'],
+  [CHESS + 2.2, room, () => rmCam, updateChess, t => fr(H_(gm), V3(0.3, 0.05, -1), lerp(1.5, 1.3, (t - CHESS - 2.2) / 2.2), 0.6), 'room'],
+  [TALK, room, () => rmCam, updateJoke, t => fr(H_(hero).lerp(H_(fr1), 0.5), V3(0.12, 0.08, 1), 3.3, 0.6), 'joke'],
+  [TALK + 3.0, room, () => rmCam, updateJoke, t => fr(H_(hero), V3(-0.25, 0.05, 1), lerp(1.8, 1.4, (t - TALK - 3) / 3), 0.62), 'joke'],
+  [DOOR, shop, () => spCam, t => updateShop(t, 'end'), t => fr(V3(0.05, H_(hero).y, Math.max(H_(hero).z, 0.4)), V3(-0.2, 0.05, -1), lerp(4.2, 3.4, (t - DOOR) / 2.3), 0.58, 46), 'door'],
+  [DOOR + 2.3, shop, () => spCam, t => updateShop(t, 'end'), t => fr(H_(hero), V3(0.12, -0.05, -1), 1.3, 0.55), 'door'],
+  [DOOR + 4.0, shop, () => spCam, t => updateShop(t, 'end'), t => fr(H_(hero), V3(-0.15, 0.03, -1), lerp(2.2, 2.6, (t - DOOR - 4) / 5), 0.6), 'door']];
+function shootShot(S, t, rt) { const [, scene, cam, upd, frm, key] = S; upd(t); extras(key, t); const c = cam(); applyF(c, frm(t)); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, scene, c); }
 const $ = id => document.getElementById(id);
-const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'end', 'endT', 'endS', 'hud', 'flash', 'sb1', 'sb2'].map(k => [k, $(k)]));
+const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'hud', 'flash', 'sb1', 'sb2', 'tl', 'tlBar', 'tlT', 'tlV', 'pop', 'card'].map(k => [k, $(k)]));
 el.title.innerHTML = 'What if your <span class="hl">IQ</span><br>jumped to 500?'; el.endT.innerHTML = 'What if your <span class="hl">IQ</span> jumped to 500?';
 el.endS.innerHTML = 'AN IQ OF 500 IS SO RARE<br>THAT NO HUMAN HAS EVER HAD IT.<br>REAL TESTS STOP AT ~160.<br>THE HIGHEST EVER LISTED: 228.';
 const captions = [
-  [4.4, 7.9, 'IQ is ranked on a curve.<br>100 is average.'], [8.1, 11.8, '500 is 1 in 10<sup>156</sup>.<br>No human has ever been born with it.'],
-  [12.4, 15.9, 'Real IQ tests stop<br>at about 160.'], [16.2, 19.8, 'The highest IQ ever listed:<br>228.'],
-  [20.4, 23.9, 'Average reader: 238 words a minute —<br>a book in about 6 hours.'], [24.2, 27.8, 'You’d finish the library<br>by lunch.'],
-  [28.4, 31.9, 'Your brain is 2% of your body<br>but burns 20% of your energy.'], [32.2, 35.8, 'About 20 watts.<br>Yours would need a lot more.'],
-  [36.4, 39.9, 'You’d know how every<br>sentence ends.'], [40.2, 43.8, 'Small talk would feel<br>like a kids’ puzzle.'],
-  [44.4, 47.9, 'You’d win every argument.'], [48.2, 51.8, 'In one sentence.'],
-  [52.4, 54.9, 'Even with an IQ of 500…'], [55.0, 57.8, '…some doors just say PULL.'],
+  [4.4, 5.9, 'Your IQ just hit 500.'],
+  [6.3, 9.8, '100 is average.'], [10.1, 13.8, '500 is 1 in 10¹⁵⁶. No human has ever had it.'],
+  [14.3, 17.8, 'Real IQ tests stop at about 160.'], [18.1, 21.8, 'The highest ever listed: 228. You’re off the chart.'],
+  [22.3, 25.8, 'A Rubik’s cube?'], [26.1, 29.8, 'One look. Solved.'],
+  [30.3, 33.8, 'You win every argument —'], [34.1, 37.8, '— in one sentence.'],
+  [38.3, 41.3, 'Everyone needs your help.'], [41.8, 45.8, 'A grandmaster? Checkmate in one move.'],
+  [46.3, 49.2, 'But nobody gets your jokes.'], [49.4, 51.8, 'It’s lonely at 500.'],
+  [52.4, 54.3, 'And some things'], [54.4, 57.8, 'no IQ can fix.'],
   [58.2, 60.9, 'What would you do first? 👇'],
 ];
-const SUBS = [[0, 'AVERAGE'], [CURVE, '1 IN 10¹⁵⁶ PEOPLE'], [TEST, 'TEST LIMIT ≈ 160'], [LIB, 'AVERAGE: 238 WORDS/MIN'], [BULB, 'BRAIN ≈ 20 WATTS'], [TALK, 'SMALL TALK: SOLVED'], [ARGUE, 'ARGUMENTS WON: ALL'], [DOOR, 'DOORS: STILL HARD']];
-// speech bubbles above heads (projected from 3D)
-const BUBBLES = [[TALK + 0.6, TALK + 3.1, () => fr1, 'So I went to the store, and guess what—'], [TALK + 2.6, TALK + 4.8, () => hero, '—they were out of oat milk.'],
-  [ARGUE + 0.5, ARGUE + 3.4, () => sib, 'It’s MY turn to pick the movie!'], [ARGUE + 3.4, ARGUE + 6.6, () => hero, 'You picked last Friday. And the one before.']];
+const TIMELINE = [[0, 'SECOND 1'], [CURVE, 'MINUTE 1'], [TEST, 'HOUR 1'], [RUBIK, 'DAY 1'], [ARGUE, 'WEEK 1'], [NOTIF, 'MONTH 1'], [TALK, 'YEAR 1'], [DOOR, 'EVERY DAY']];
+const POPS = [[11.0, 13.7, '1 in 10¹⁵⁶'], [14.3, 17.6, '≈160'], [18.1, 21.6, '228'], [26.1, 29.6, '1 LOOK'], [41.8, 45.6, '1 MOVE']];
+const BUBBLES = [[ARGUE + 0.4, ARGUE + 3.2, () => sib, 'It’s MY turn to pick the movie!'], [ARGUE + 3.3, ARGUE + 5.1, () => hero, 'You picked last Friday. And the one before.'],
+  [TALK + 0.4, TALK + 3.0, () => hero, '…and THAT’S why the integral diverged! 😂'], [TALK + 2.4, TALK + 3.0, () => fr1, '…what?']];
+const NOTES = [['Mom', 'how do i turn off caps lock'], ['Boss', 'can u fix the budget by 5'], ['Neighbor', 'whats 15% of $84.50'], ['Sam', 'help w my homework??'], ['Grandpa', 'the TV says NO SIGNAL'], ['Group chat', 'settle this: is a hot dog a sandwich'], ['Unknown', 'Hi! Are you the genius?'], ['Mom', 'never mind i turned the computer off']];
 const scr = (v, cam) => { const p = v.clone().project(cam); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; };
-function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t);
-  el.hud.style.opacity = smooth(0.4, 0.8, t) * (1 - smooth(T_END - 0.4, T_END, t)) * (t < 3.0 ? 1 - smooth(1.0, 1.2, t) * 0 : 1);
-  el.hud.style.setProperty('top', t < CURVE - 0.35 ? '600px' : '350px', 'important'); el.stat.textContent = 'YOUR IQ'; const roll = clamp((t - POP) / 0.5, 0, 1); el.val.textContent = t < POP ? '100' : String(Math.round(100 + 400 * roll * roll)); el.val.style.color = t > POP ? '#ffd060' : '';
-  el.sub.textContent = [...SUBS].reverse().find(([a]) => t >= a)[1];
+const popWords = (txt, t, a, b) => { const ws = txt.split(' '), span = Math.min(1.2, (b - a) * 0.4); return ws.map((w, i) => { const k = clamp((t - a - i * span / ws.length) / 0.12, 0, 1); return `<span style="display:inline-block;opacity:${k.toFixed(2)};transform:scale(${(0.6 + 0.4 * k + 0.1 * Math.sin(Math.PI * k)).toFixed(3)})">${w}</span>`; }).join(' '); };
+const popStyle = (t, at) => { const k = clamp((t - at) / 0.2, 0, 1); return `transform:scale(${(0.7 + 0.3 * k).toFixed(3)});opacity:${k.toFixed(2)};transform-origin:50% 0`; };
+function updateDOM(t, cam) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t); el.hud.style.opacity = 0;
+  // timeline HUD: YOUR IQ bar + the time label
+  el.tl.style.opacity = smooth(0.3, 0.7, t) * (1 - smooth(T_END - 0.4, T_END, t)); const roll = clamp((t - POP) / 0.5, 0, 1), iq = t < POP ? 100 : Math.round(100 + 400 * roll * roll);
+  el.tlV.textContent = iq; el.tlV.style.color = t > POP ? '#ffd060' : '#ffffff'; el.tlBar.style.width = (20 + 80 * (iq - 100) / 400) + '%'; el.tlT.textContent = [...TIMELINE].reverse().find(([a]) => t >= a)[1];
   el.flash.style.opacity = Math.exp(-Math.pow((t - POP - 0.05) / 0.12, 2)) * 0.85;
+  const pp = POPS.find(([a, b]) => t >= a && t < b); el.pop.textContent = pp ? pp[2] : ''; el.pop.style.opacity = pp ? fadeWin(t, pp[0], pp[1], 0.2) : 0; el.pop.style.transform = pp ? `translateX(-50%) scale(${(0.7 + 0.3 * smooth(pp[0], pp[0] + 0.2, t) + 0.08 * Math.sin(Math.PI * clamp((t - pp[0]) / 0.3, 0, 1))).toFixed(3)})` : '';
   [el.sb1, el.sb2].forEach(b => b.style.opacity = 0); let k = 0;
-  for (const [a, b, who, txt] of BUBBLES) { if (t < a || t >= b || k > 1) continue; const box = k ? el.sb2 : el.sb1; k++; const P = who(), cam = rmCam, [x, y] = scr(headOf(P).add(V3(0, 0.32, 0)), cam);
-    box.textContent = txt; box.style.left = clamp(x, 300, 780) + 'px'; box.style.top = clamp(y, 420, 1300) + 'px'; box.style.opacity = fadeWin(t, a, b, 0.2); box.style.transform = `translate(-50%,-100%) scale(${(0.85 + 0.15 * smooth(a, a + 0.2, t)).toFixed(3)})`; }
-  const cp = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.25) : 0;
+  for (const [a, b, who, txt] of BUBBLES) { if (t < a || t >= b || k > 1) continue; const box = k ? el.sb2 : el.sb1; k++; const [x, y] = scr(headOf(who()).add(V3(0, 0.36, 0)), cam);
+    box.textContent = txt; box.style.left = clamp(x, 300, 780) + 'px'; box.style.top = clamp(y, 470, 1300) + 'px'; box.style.opacity = fadeWin(t, a, b, 0.15); box.style.transform = `translate(-50%,-100%) scale(${(0.8 + 0.2 * smooth(a, a + 0.15, t)).toFixed(3)})`; }
+  // the "help me" flood (month 1)
+  if (t >= NOTIF + 0.6 && t < CHESS) { const n = Math.min(NOTES.length, Math.floor((t - NOTIF - 0.6) / 0.38) + 1); el.card.style.opacity = 1;
+    el.card.innerHTML = `<div class="hd ls"><span>Your phone</span></div><div class="bd">` + NOTES.slice(0, n).reverse().slice(0, 5).map(([who, msg], i) => `<div class="nt"${i === 0 ? ` style="${popStyle(t, NOTIF + 0.6 + (n - 1) * 0.38)}"` : ''}><b class="av">${who[0]}</b><div><div class="nh"><span>${who}</span><i>now</i></div><div class="nb">${msg}</div></div></div>`).join('') + '</div>'; }
+  else el.card.style.opacity = 0;
+  const cp = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? popWords(cp[2], t, cp[0], cp[1]) : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.2) : 0;
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t); }
 window.renderAt = (t) => {
-  let i = 0; while (i < SEQ.length - 1 && t >= SEQ[i + 1][0]) i++;
-  let A = SEQ[i][1], B = null, mix = 0;
-  if (i < SEQ.length - 1 && t > SEQ[i + 1][0] - XF / 2) { B = SEQ[i + 1][1]; mix = smooth(SEQ[i + 1][0] - XF / 2, SEQ[i + 1][0] + XF / 2, t); }
-  else if (i > 0 && t < SEQ[i][0] + XF / 2) { B = A; A = SEQ[i - 1][1]; mix = smooth(SEQ[i][0] - XF / 2, SEQ[i][0] + XF / 2, t); }
-  if (!B || mix < 1) shootScene(A, t, RTA); if (B) shootScene(B, t, RTB);
+  let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
+  // hard cuts inside a beat; a short 0.25 s dissolve when the place changes
+  const S = SHOTS[i], P = i > 0 ? SHOTS[i - 1] : null, mix = P && P[1] !== S[1] ? smooth(S[0] - 0.001, S[0] + 0.25, t) : 1;
+  if (mix < 1) { shootShot(P, t, RTA); shootShot(S, t, RTB); } else shootShot(S, t, RTA);
   compMat.uniforms.uWhip.value = 0; compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; compMat.uniforms.uT.value = t;
-  composite(B ? mix : 0, 1.0, 1.0); updateDOM(t); return true;
+  composite(mix < 1 ? mix : 0, 1.0, 1.0); updateDOM(t, S[2]()); return true;
 };
-// warm-up: upload every face texture and render every take once before the frame loop (lazy uploads once mixed up textures)
 window.sceneReady = (async () => { await document.fonts.ready;
-  for (const p of [hero, fr1, fr2, fr3, fr4, sib, teacher, mom, ...mates, ...mates2, ...walkers.map(w => w.p)]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
-  for (const [t0, id] of SEQ) shootScene(id, t0 + 1, RTA); window.renderAt(0); return true; })();
+  for (const p of [hero, fr1, fr2, fr3, fr4, sib, teacher, mom, gm, ...mates, ...mates2, ...walkers.map(w => w.p)]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
+  for (const S of SHOTS) shootShot(S, S[0] + 0.5, RTA); window.renderAt(0); return true; })();
