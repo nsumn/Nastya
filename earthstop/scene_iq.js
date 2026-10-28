@@ -701,6 +701,7 @@ function updateDOM(t, cam) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t); e
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t); }
 window.renderAt = (t) => {
   let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
+  if (window.PASS === 'text') { const S = SHOTS[i]; S[3](t); extras(S[5], t); applyF(S[2](), S[4](t)); updateDOM(t, S[2]()); return true; }   // text pass: no 3D, just pose + camera for the bubbles
   // hard cuts inside a beat; a short 0.25 s dissolve when the place changes
   const S = SHOTS[i], P = i > 0 ? SHOTS[i - 1] : null, mix = P && P[1] !== S[1] ? smooth(S[0] - 0.001, S[0] + 0.25, t) : 1;
   if (mix < 1) { shootShot(P, t, RTA); shootShot(S, t, RTB); } else shootShot(S, t, RTA);
