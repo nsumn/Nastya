@@ -57,7 +57,7 @@ function drawFace(g, w, h, e, o, blink) {
   g.strokeStyle = o.browCol; g.lineWidth = U(0.035);
   for (const [x, s] of [[ex[0], 1], [ex[1], -1]]) { const [tilt, lift] = s < 0 && e.brow2 ? e.brow2 : e.brow; const by = Vv(0.37 - lift - (o.glasses ? 0.03 : 0)), half = U(0.075); g.beginPath(); g.moveTo(U(x) - s * half, by + U(0.01)); g.lineTo(U(x) + s * half, by - tilt * U(0.09)); g.stroke(); }
   // nose: a thin "L"
-  g.strokeStyle = 'rgba(110,60,40,0.75)'; g.lineWidth = U(0.014); g.beginPath(); g.moveTo(U(0.5), Vv(0.53)); g.lineTo(U(0.48), Vv(0.63)); g.lineTo(U(0.53), Vv(0.635)); g.stroke();
+  if (!o.noNose) g.strokeStyle = 'rgba(110,60,40,0.75)'; else g.strokeStyle = 'rgba(0,0,0,0)'; g.lineWidth = U(0.014); g.beginPath(); g.moveTo(U(0.5), Vv(0.53)); g.lineTo(U(0.48), Vv(0.63)); g.lineTo(U(0.53), Vv(0.635)); g.stroke();
   if (o.mustache) { g.fillStyle = o.mustache; g.beginPath(); g.ellipse(U(0.44), Vv(0.69), U(0.075), U(0.028), 0.15, 0, 7); g.ellipse(U(0.56), Vv(0.69), U(0.075), U(0.028), -0.15, 0, 7); g.fill(); }
   // mouth
   const my = Vv(0.77), lip = o.lip || '#b8323a'; g.strokeStyle = lip; g.lineWidth = U(0.022);
@@ -94,6 +94,30 @@ const denimTex = (pocket) => canvasTex(128, 256, (g, w, h) => { g.fillStyle = '#
   g.strokeStyle = '#d89040'; g.lineWidth = 2; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(8, 0); g.lineTo(8, h); g.moveTo(w - 8, 0); g.lineTo(w - 8, h); g.stroke();
   if (pocket) { g.beginPath(); g.arc(18, 40, 46, 0, Math.PI / 2); g.stroke(); g.beginPath(); g.arc(w - 18, 40, 46, Math.PI / 2, Math.PI); g.stroke(); g.setLineDash([]); g.fillStyle = '#c8a050'; g.fillRect(w / 2 - 6, 10, 12, 12); } });
 let denimLeg = null, denimHip = null;
+// 'human' head: a low-poly sphere pushed into a real head shape — narrower, tapering jaw, chin, bigger skull at the back, brow ridge, eye sockets, a nose, cheekbones
+let HUMAN_GEO = null;
+function humanHeadGeo() { if (HUMAN_GEO) return HUMAN_GEO; const g = new THREE.SphereGeometry(0.5, 20, 18), P = g.attributes.position;   
+  const key = (x, y, z) => Math.round(x * 1e3) * 7 + Math.round(y * 1e3) * 131 + Math.round(z * 1e3) * 1031;   // same jitter for the duplicated seam vertices
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), j = hash(key(x, y, z)) - 0.5, j2 = hash(key(x, y, z) + 17) - 0.5;
+    let X = x * 0.84 * (1 + 0.04 * j), Y = y + 0.012 * j2, Z = z * (1 + 0.03 * j);
+    const jy = Math.max(0, -(y + 0.08) / 0.42); X *= 1 - 0.2 * jy * jy; Z *= 1 - 0.12 * jy * jy;   // jaw taper (kept wide = strong jaw)
+    if (y < -0.4) Y = -0.4 + (y + 0.4) * 0.45;   // flat chin bottom
+    if (z < 0) Z *= 1.08 + 0.08 * Math.max(0, y);   // bigger back skull
+    if (z > 0) { Z *= 0.92; Z += 0.05 * Math.exp(-((y + 0.38) ** 2) / 0.006) * Math.exp(-x * x / 0.02);   // chin
+      Z += 0.045 * Math.exp(-((y - 0.13) ** 2) / 0.003) * Math.exp(-x * x / 0.08);   // brow ridge
+      for (const s of [-1, 1]) Z -= 0.035 * Math.exp(-((x - s * 0.19) ** 2) / 0.006 - ((y - 0.02) ** 2) / 0.004);   // eye sockets
+      X *= 1 + 0.06 * Math.exp(-((y + 0.03) ** 2) / 0.01); }   // cheekbones
+    P.setXYZ(i, X, Y, Z); }
+  g.computeVertexNormals(); return (HUMAN_GEO = g); }
+// human nose: a small faceted wedge (bridge, tip, two wings) stuck on the face, in head-geometry units
+function humanNoseGeo() { const v = [[0, 0.08, 0.4], [0, -0.075, 0.53], [-0.055, -0.1, 0.43], [0.055, -0.1, 0.43], [0, -0.1, 0.44]], f = [[0, 2, 1], [0, 1, 3], [2, 4, 1], [1, 4, 3]], pos = [];
+  for (const t of f) for (const k of t) pos.push(...v[k]); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); return g; }
+// hair for the human head: the same faceted skull, a bit bigger, cut along a hairline that is high on the forehead and low at the nape
+function humanHairGeo(front, back) { const g = humanHeadGeo().toNonIndexed(), P = g.attributes.position, pos = [];
+  for (let i = 0; i < P.count; i += 3) { let cy = 0, cz = 0, ok = true; for (let k = 0; k < 3; k++) { cy += P.getY(i + k) / 3; cz += P.getZ(i + k) / 3; }
+    const line = cz > 0 ? 0.05 + (front - 0.05) * Math.min(1, cz / 0.38) : 0.05 + (back - 0.05) * Math.min(1, -cz / 0.4);
+    if (cy < line) ok = false; if (ok) for (let k = 0; k < 3; k++) pos.push(P.getX(i + k), P.getY(i + k), P.getZ(i + k)); }
+  const d = new THREE.BufferGeometry(); d.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); d.computeVertexNormals(); return d; }
 let blockN = 0;
 function makeBlock(o = {}) {
   o = { skin: '#e9b98f', hair: '#3a2416', top: '#3a6aa8', bottom: '#2a2e3a', shoe: '#3a2a20', sleeve: true, hairStyle: 'short', h: 1, ...o };
@@ -112,17 +136,22 @@ function makeBlock(o = {}) {
   if (shape === 'box') { faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), roughness: 0.85 });
     head = new THREE.Mesh(BOX, [skinM, skinM, skinM, skinM, faceM, skinM]); head.scale.set(HEAD_W, HEAD_H, HEAD_D); }
   else {   // 'round' = a ball, 'soft' = a cube with rounded corners; the face is a transparent decal on the front
-    o.decal = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
-    head = new THREE.Mesh(geo, skinM); head.scale.set(HEAD_W * (shape === 'round' ? 1.1 : 1), HEAD_H * (shape === 'round' ? 1.08 : 1), HEAD_D * (shape === 'round' ? 1.15 : 1));
+    o.decal = true; if (shape === 'human') o.noNose = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : shape === 'human' ? humanHeadGeo() : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
+    const sc = { round: [1.1, 1.08, 1.15], human: [1.12, 1.2, 1.2], soft: [1, 1, 1] }[shape]; head = new THREE.Mesh(geo, shape === 'human' ? M(o.skin, { roughness: 0.8, flatShading: true }) : skinM); head.scale.set(HEAD_W * sc[0], HEAD_H * sc[1], HEAD_D * sc[2]);
     faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.85 });
-    head.add(new THREE.Mesh(decalGeo(geo, 1), faceM)); }
+    head.add(new THREE.Mesh(decalGeo(geo, 1), faceM)); if (shape === 'human') head.add(new THREE.Mesh(humanNoseGeo(), head.material)); }
   head.position.set(0, HEAD_Y, 0); head.castShadow = true; torso.add(head);
-  if (shape === 'round') {   // round head: ears are balls, hair is a tilted cap of a slightly bigger sphere
+  if (shape === 'round' || shape === 'human') {   // round / human head: ears are balls, hair is a tilted cap of a slightly bigger sphere
     const hsx = head.scale, hm = M(o.hair, { roughness: 0.95 }), hs = o.hairStyle;
+    if (shape === 'human') { const fm = M(o.skin, { roughness: 0.8, flatShading: true }), hf = M(o.hair, { roughness: 0.95, flatShading: true });
+      for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.045, 6, 5), fm); e.scale.set(0.45, 1.25, 0.85); e.position.set(s * hsx.x * 0.43, HEAD_Y - 0.015, -0.01); e.rotation.y = s * 0.3; torso.add(e); }
+      const hl = { short: [0.25, -0.2], bangs: [0.16, -0.22], long: [0.2, -0.4], curly: [0.22, -0.25], bald: null }[hs];
+      if (hl) { const m = mesh(humanHairGeo(hl[0], hl[1]), hf); m.scale.set(hsx.x * 1.06, hsx.y * 1.05, hsx.z * 1.06); m.position.set(0, HEAD_Y + 0.008, -0.004); torso.add(m); }
+    } else
     for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.035, 10, 8), skinM); e.position.set(s * hsx.x * 0.5, HEAD_Y - 0.01, 0); torso.add(e); }
     const cap = (theta, tilt, k = 1.07) => { const m = mesh(new THREE.SphereGeometry(0.5, 32, 20, 0, Math.PI * 2, 0, theta), hm); m.scale.set(hsx.x * k, hsx.y * k, hsx.z * k); m.position.set(0, HEAD_Y, 0); m.rotation.x = tilt; torso.add(m); return m; };
-    if (hs === 'short') cap(Math.PI * 0.42, -0.55);
-    if (hs === 'bangs') cap(Math.PI * 0.5, -0.42);
+    if (shape !== 'human' && hs === 'short') cap(Math.PI * 0.42, -0.55);
+    if (shape !== 'human' && hs === 'bangs') cap(Math.PI * 0.5, -0.42);
     if (hs === 'long') { cap(Math.PI * 0.55, -0.5); const b = mesh(new RoundedBoxGeometry(1, 1, 1, 4, 0.3), hm); b.scale.set(hsx.x * 1.05, 0.42, 0.12); b.position.set(0, HEAD_Y - 0.17, -hsx.z * 0.36); torso.add(b);
       for (const s of [-1, 1]) { const l = mesh(new THREE.CapsuleGeometry(0.045, 0.24, 4, 10), hm); l.position.set(s * hsx.x * 0.47, HEAD_Y - 0.12, -0.03); torso.add(l); } }
     if (hs === 'curly') for (let i = 0; i < 60; i++) { const a = hash(i * 3.1 + 7) * Math.PI * 2, el = Math.acos(1 - hash(i * 5.7 + 1) * 1.1) * 0.95, d = V3(Math.sin(el) * Math.cos(a), Math.cos(el), Math.sin(el) * Math.sin(a)); d.applyAxisAngle(V3(1, 0, 0), -0.45); if (d.z > 0.55 && d.y < 0.75) continue;
