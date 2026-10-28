@@ -69,41 +69,34 @@ def pluck(n, d=2.4, b=0.996):   # Karplus-Strong string
     for i in range(len(out)): out[i] = buf[i % p]; buf[i % p] = b * 0.5 * (buf[i % p] + buf[(i + 1) % p])
     return filt(out, 'lowpass', 3000) * np.clip(np.arange(len(out)) / SR / 0.003, 0, 1)
 # --- room tones
-add(BN(150, 900) * (win(-1, B2 + 0.3, 0.3) + win(B3 - 0.3, B4 + 0.3, 0.3) + win(B5 - 0.3, DUR, 0.3)), db(-41)); add(BN(300, 1500) * win(B2 - 0.3, B3 + 0.3, 0.3), db(-37)); add(BN(120, 600) * win(B4 - 0.3, B5 + 0.3, 0.3), db(-44))
+add(BN(300, 1500) * win(B2 - 0.3, B3 + 0.3, 0.3), db(-48))   # only a faint outdoor air; indoor room tone removed (it read as a constant hum)
 for c in CUTS: whoosh(c, db(-32), 0.9, pan=0.3 if CUTS.index(c) % 2 else -0.3)
 def shutter(at, g): x = tt(0.09); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [600, 2200]) * np.exp(-x * 50), g, 0.25)
-def giggle(at, g, n=4): voice(at, 0.18 * n, 420, g, -0.2, vowels=((900, 1500), (800, 1300)), rate=7.0)
-def laugh(at, g, f0=230, d=0.8): voice(at, d, f0, g, 0.15, vowels=((750, 1250), (650, 1100)), rate=6.0)
 # --- intro: she types, your phone lights up
 taps(0.2, 0.8, 3, db(-28)); bloop(0.9, db(-16))
 # --- B1: the smash cake
 for a in [B1 + 0.6, B1 + 2.0, B1 + 3.4]: shutter(a, db(-25))
 for a in [B1 + 1.1, B1 + 1.7, B1 + 2.3]: thud(a, db(-27), 180, 0.15); x = tt(0.2); place(a, filt(rng.standard_normal(len(x)), 'bandpass', [300, 1200]) * np.exp(-x * 20), db(-30))
-giggle(B1 + 1.3, db(-21)); giggle(B1 + 3.0, db(-22), 5); giggle(B1 + 5.6, db(-23)); laugh(B1 + 1.8, db(-22))
 # --- B2: thirty balloons — a breath into each one, a rubbery squeak; kids, Dad's grill
-for k in range(6): a = B2 + k * 1.3; place(a + 0.05, breath(1.0, 'out', 0.1, 140), db(-25)); sweep(a + 1.05, 0.15, 650, 980, db(-31), -0.2)
-for k in range(10): voice(B2 + 0.3 + k * 0.75, 0.6, rng.uniform(300, 420), db(-33), rng.uniform(-0.7, 0.7), vowels=((900, 1500), (750, 1300)), rate=5.0)
+for k in range(6): a = B2 + k * 1.3; place(a + 0.05, breath(1.0, 'out'), db(-25)); sweep(a + 1.05, 0.15, 650, 980, db(-31), -0.2)
 add(filt(rng.standard_normal(N), 'bandpass', [1200, 4000]) * win(B2, B3, 0.4), db(-41), 0.4)
-giggle(B2 + 5.0, db(-24))
 # --- B3: the bathtub photo — posted, two likes land, the teen groans, she laughs
 swish(B3 + 1.0, db(-21))
 for a in [B3 + 3.4, B3 + 4.4]: chime(a, db(-31), (84,), 0.2)
-voice(B3 + 4.7, 0.7, 175, db(-24), -0.2, vowels=((550, 900), (500, 850)), rate=1.6); laugh(B3 + 5.2, db(-21))
 # --- B4: 11:48 PM — typing on the laptop, scrolling, "aha!", order placed
 taps(B4 + 0.4, B4 + 2.0, 4.0, db(-29))
 for a in [B4 + 2.4, B4 + 3.1, B4 + 3.8]: whoosh(a, db(-33), 0.3)
-voice(B4 + 4.7, 0.4, 260, db(-25), 0, vowels=((700, 1200), (600, 1000)), rate=2.0); chime(B4 + 5.6, db(-24), (79, 83, 86))
+chime(B4 + 5.6, db(-24), (79, 83, 86))
 # --- B5: the texts on your 20th: hers first, then a second one, then your friends hours later
-taps(B5 + 0.0, B5 + 0.4, 3, db(-28)); bloop(B5 + 0.5, db(-16)); bloop(B5 + 4.2, db(-18)); bloop(B5 + 5.4, db(-24), 0.3); bloop(B5 + 6.0, db(-24), 0.3); laugh(B5 + 4.6, db(-22))
+taps(B5 + 0.0, B5 + 0.4, 3, db(-28)); bloop(B5 + 0.5, db(-16)); bloop(B5 + 4.2, db(-18)); bloop(B5 + 5.4, db(-24), 0.3); bloop(B5 + 6.0, db(-24), 0.3)
 # --- B6: a video call at 7 a.m. — you pick up, she sings off-key, you laugh; a match, a candle, she blows it out for you
 x = tt(0.45); place(B6 + 0.2, (np.sin(2 * np.pi * 523 * x) + np.sin(2 * np.pi * 659 * x)) * 0.5 * np.clip(x / 0.02, 0, 1) * np.clip((0.45 - x) / 0.05, 0, 1), db(-25), 0.3); bloop(B6 + 0.5, db(-24))
 song = [(67, 0.3), (67, 0.15), (69, 0.45), (67, 0.45), (72, 0.45), (71, 0.8)]; a = B6 + 0.8
-for n, d in song: f0 = hz(n) * 2 ** (35 / 1200) * 0.5; voice(a, d, f0, db(-22), 0, vowels=((750, 1200), (700, 1150)), rate=1.0 / d); a += d + 0.05
-laugh(B6 + 3.6, db(-23), 200, 0.9)
-x = tt(0.35); place(B6 + 4.5, filt(rng.standard_normal(len(x)), 'bandpass', [800, 3000]) * np.exp(-x * 9), db(-26)); place(B6 + 5.85, breath(0.6, 'out'), db(-19)); laugh(B6 + 6.5, db(-22))
+for n, d in song: place(a, pluck(n, d + 0.7), db(-19), 0.1); a += d + 0.05   # her song, played on the string (synthetic voices buzzed)
+x = tt(0.35); place(B6 + 4.5, filt(rng.standard_normal(len(x)), 'bandpass', [800, 3000]) * np.exp(-x * 9), db(-26)); place(B6 + 5.85, breath(0.6, 'out'), db(-19))
 # --- TW: 6:58 AM — the phone buzzes on the counter before she reaches it; your text; she cries and laughs; she texts back
-buzz(TW + 0.9, db(-19)); place(TW + 1.05, breath(0.4, 'in', 0.4, 260), db(-22)); bloop(TW + 1.9, db(-16))
-voice(TW + 3.4, 1.2, 240, db(-21), 0, vowels=((650, 1100), (550, 950)), rate=3.0); swish(REP + 0.4, db(-19)); laugh(REP + 1.1, db(-22), 250, 1.0)
+buzz(TW + 0.9, db(-19)); place(TW + 1.05, breath(0.4, 'in'), db(-22)); bloop(TW + 1.9, db(-16))
+swish(REP + 0.4, db(-19))
 # --- ONE theme: a warm plucked line in D major, 84 bpm, quieter under the missed call; a last chord on the end card
 mel = np.zeros(N); beat_s = 60 / 84; line = [62, 66, 69, 66, 67, 71, 69, 66, 64, 67, 66, 62, 61, 64, 62, 57]; cache = {}
 k = 0; at = 0.2

@@ -37,6 +37,7 @@ Anastasia runs a TikTok channel of low-poly 3D "What if…" videos for a US audi
 - Mention any known small flaws and offer a quick fix. Posting tip: schedule for 7–9 pm US Eastern (2–4 am Moscow).
 
 ## 6. Pitfalls seen before
+- Audio: NO synthetic "voices" — the `voice()` helper (square-wave buzz through formants) and voiced `breath(..., voice, f0)` read as a constant BUZZING on a phone; she hates it (mom birthday video, Oct 2026). No laughs/giggles/singing/chatter via synthesis; carry a song on an instrument (e.g. `pluck`) instead. Also no constant room-tone noise beds under whole scenes.
 - Audio: no repeating high clicks under counters/timers (1.8–2.6 kHz ticks at 4–14/s read as a gas-stove igniter — she disliked it in the asteroid video). Keep most of the mix above ~200 Hz: phone speakers drop sub-bass rumbles and booms, so the track sounds empty on a phone.
 - `pkill -f render.mjs` / `pgrep -f "node render.mjs" | xargs kill` kills your own shell when the pattern appears in the same command — use a bracket pattern (`pgrep -f "[r]ender.mjs"`) in a separate command.
 - llvmpipe silently falls back to SwiftShader without an X display (`DISPLAY=:99` + Xvfb) or with extra flags like `--enable-gpu`.
