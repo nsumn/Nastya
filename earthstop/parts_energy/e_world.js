@@ -1,5 +1,5 @@
 // =================== THE CAST (ROUND heads — she says round heads land better): you in the orange hoodie, ER crowd ===================
-const hero = makeBlock({ head: 'round', skin: '#e9b98f', hair: '#4a3020', top: '#f28a2a', hoodie: '#f28a2a', bottom: '#2a3a5c', shoe: '#f4f4f4', hairStyle: 'bangs', headS: 1.2 });
+const hero = makeBlock({ head: 'round', skin: '#e9b98f', hair: '#4a3020', top: '#5e636c', hoodie: '#5e636c', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'bangs', headS: 1.2 });   // charcoal hoodie, real-looking jeans
 room.add(hero.outer); [dad, mom].forEach(p => p.outer.visible = false); dog.g.visible = false;
 function poseReset(P, t) { P.outer.visible = true; P.outer.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); P.torso.rotation.set(0, 0, 0); poseIdle(P, t, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); }
 function seatAt(P, x, y, z, ry = 0) { P.outer.position.set(x, y + 0.95 - 0.87 * P.h, z); P.outer.rotation.set(0, ry, 0); poseSit(P); }
