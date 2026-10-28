@@ -1,6 +1,7 @@
-// =================== THE CAST (ROUND heads — she says round heads land better): you in the orange hoodie, ER crowd ===================
-const hero = makeBlock({ head: 'round', skin: '#e9b98f', hair: '#4a3020', top: '#5e636c', hoodie: '#5e636c', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'bangs', headS: 1.2 });   // charcoal hoodie, real-looking jeans
+// =================== THE CAST: you (the low-poly human she approved: faceted head with drawn emotions, oversized tee, jeans) ===================
+const hero = makeBlock({ head: 'human', body: 'human', skin: '#e9b98f', hair: '#4a3020', top: '#4b4f57', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'short', headS: 0.88 });   // low-poly human: charcoal oversized tee, jeans
 room.add(hero.outer); [dad, mom].forEach(p => p.outer.visible = false); dog.g.visible = false;
+const camKey = new THREE.PointLight(0xfff0e0, 1.4, 6, 1.2); rmCam.add(camKey); room.add(rmCam);   // a soft key light riding with the camera: faces never go dark against the window
 function poseReset(P, t) { P.outer.visible = true; P.outer.rotation.set(0, 0, 0); P.root.rotation.set(0, 0, 0); P.torso.rotation.set(0, 0, 0); poseIdle(P, t, 0); P.arms.forEach(a => a.rotation.set(0, 0, 0)); }
 function seatAt(P, x, y, z, ry = 0) { P.outer.position.set(x, y + 0.95 - 0.87 * P.h, z); P.outer.rotation.set(0, ry, 0); poseSit(P); }
 // ---- the can (no brand: a black can with a green bolt) ----
@@ -27,10 +28,10 @@ const zzz = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128,
 function hideProps() { SPOONS.forEach(s => s.visible = false); sugarPile.visible = false; BAGS.forEach(b => b.visible = false); cash.forEach(c => c.visible = false); RINGS.forEach(r => r.visible = false); zzz.visible = false; can.visible = false; can2.visible = false; }
 // ---- home beats ----
 function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.outer); hideProps(); const P = hero; poseReset(P, t); [dad, mom].forEach(p => p.outer.visible = false); dog.g.visible = false; keys.visible = false;
-  lightRoom({ night: 'night', sleep: t < SLEEP + 3.2 ? 'night' : 'day', month: 'eve' }[mode] || 'day'); fizz.begin(); smokeMat.uniforms.uTint.value.set('#e8f4e8');
+  const look = { night: 'night', sleep: t < SLEEP + 3.2 ? 'night' : 'day', month: 'eve' }[mode] || 'day'; lightRoom(look); camKey.intensity = look === 'night' ? 0.5 : 1.4; fizz.begin(); smokeMat.uniforms.uTint.value.set('#e8f4e8');
   if (mode === 'open') {   // tired, the crack, the gulp, eyes snap open
     P.outer.position.set(2.75, 0.95, -1.3); P.outer.rotation.y = 0.3; can.visible = true; const drink = smooth(CRACK + 0.3, CRACK + 0.8, t) * (1 - smooth(CRACK + 1.5, CRACK + 1.9, t));
-    P.arms[1].rotation.set(lerp(-0.5, -2.4, drink), 0, lerp(0.15, -0.2, drink)); P.elbows[1].rotation.x = lerp(-1.3, -1.6, drink); can.rotation.x = lerp(-1.4, -2.6, drink);
+    P.arms[1].rotation.set(lerp(-0.7, -1.25, drink), 0, lerp(-0.3, -0.5, drink)); P.elbows[1].rotation.x = lerp(-1.15, -1.95, drink); can.rotation.x = lerp(-1.3, -2.3, drink);   // can in front of the chest -> to the mouth
     if (t > CRACK && t < CRACK + 1.0) { P.outer.updateMatrixWorld(true); const top = can.localToWorld(V3(0, 0.17, 0)); for (let k = 0; k < 20; k++) { const u = ((t - CRACK) * 2 + k / 20) % 1; fizz.add(top.clone().add(V3(0.02 * Math.sin(k * 3), u * 0.12, 0.02 * Math.cos(k * 2))), 0.012 + u * 0.02, 0.5 * (1 - u)); } }
     P.root.rotation.x = 0.12 * (1 - smooth(CRACK + 1.6, CRACK + 1.9, t)); P.face(t < CRACK ? 'sleepy' : t < CRACK + 1.7 ? 'neutral' : 'wired', t); }
   else if (mode === 'sugar') {   // 13 teaspoons of sugar lined up next to the can, then a pile
@@ -43,7 +44,7 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     P.arms[0].rotation.set(lerp(-0.2, -1.1, reach), 0, lerp(0, 0.6, reach)); P.elbows[0].rotation.x = -0.3; P.face(t < HOUR4 + 2.6 ? 'sleepy' : 'reading', t);
     if (t > HOUR4 + 3.8) { can2.visible = false; can.visible = true; P.arms[1].rotation.set(-0.6, 0, 0.1); P.elbows[1].rotation.x = -1.3; } }
   else if (mode === 'night') {   // 2 AM: in bed, eyes wide open
-    P.outer.position.set(-2.9, 0.72, 1.12); P.outer.rotation.set(-Math.PI / 2, 0, 0); drawClock('2:00'); P.face(t < NIGHT + 4 ? 'surprised' : 'worried', t); }
+    P.outer.position.set(-2.9, 0.72, 1.34); P.outer.rotation.set(-Math.PI / 2, 0, 0); drawClock('2:00'); P.face(t < NIGHT + 4 ? 'surprised' : 'worried', t); }
   else if (mode === 'month') {   // skipped a day: the headache rings
     seatAt(P, -1.0, 0.42, -1.3, 0); P.arms.forEach((a, i) => a.rotation.set(-2.4, 0, i ? -0.5 : 0.5)); P.elbows.forEach(e => e.rotation.x = -1.6); P.face('worried', t);
     P.outer.updateMatrixWorld(true); const hd = headOf(P); RINGS.forEach((r, k) => { const u = ((t * 1.5) + k / 3) % 1; r.visible = true; r.position.copy(hd); r.scale.setScalar(0.7 + 1.4 * u); r.material.opacity = 1 - u; r.lookAt(rmCam.position); }); }
@@ -52,18 +53,18 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     BAGS.forEach((b, i) => { b.visible = i < n; const row = i < 5 ? 0 : i < 9 ? 1 : 2, col = i < 5 ? i : i < 9 ? i - 5 : i - 9; b.position.set(2.3 + (col - (row === 0 ? 2 : row === 1 ? 1.5 : 0.5)) * 0.28, row * 0.36, -0.9); b.rotation.y = 0.05 * Math.sin(i * 3); });
     cash.forEach((c, i) => { c.visible = t > YEAR + 3.4; c.position.set(1.05 + (i % 4) * 0.16, 0.02 + Math.floor(i / 4) * 0.032, -0.35); }); }
   else {   // sleep: lights off, the can untouched on the nightstand, sunrise, wakes up happy
-    const morning = t > SLEEP + 3.2; P.outer.position.set(-2.9, 0.72, 1.12); P.outer.rotation.set(-Math.PI / 2, 0, 0); drawClock(morning ? '7:30' : '11:00');
+    const morning = t > SLEEP + 3.2; P.outer.position.set(-2.9, 0.72, 1.34); P.outer.rotation.set(-Math.PI / 2, 0, 0); drawClock(morning ? '7:30' : '11:00');
     can2.visible = true; can2.position.set(-3.75, 0.5, 0.35); zzz.visible = !morning; zzz.position.copy(headOf(P)).add(V3(0.25, 0.35, 0)); P.face(morning ? 'happy' : 'sleep', t);
-    if (morning && t > SLEEP + 4.6) { P.outer.position.set(-2.9, 0.95, 0.5); P.outer.rotation.set(0, 0.6, 0); P.arms.forEach((a, i) => a.rotation.set(-2.8, 0, i ? -0.4 : 0.4)); P.face('laugh', t); } }
+    if (morning && t > SLEEP + 4.6) { P.outer.position.set(-2.9, 0.95, 0.5); P.outer.rotation.set(0, 0.6, 0); P.arms.forEach((a, i) => a.rotation.set(0, 0, i ? 2.55 : -2.55)); P.elbows.forEach(e => e.rotation.x = -0.25); P.face('laugh', t); } }
   fizz.end(); }
 
 // =================== THE X-RAY BODY (reworked from the quit-nicotine video, so it is not a copy): amber glow, YOUR round-headed silhouette,
-// the heart speeding up with a monitor line, sugar crystals riding the vessels; the camera spirals in from behind ===================
+// the heart speeding up, sugar crystals riding the vessels; the camera spirals in from behind ===================
 const xr = new THREE.Scene(); xr.background = new THREE.Color('#140a06'); const xCam = new THREE.PerspectiveCamera(40, W / H, 0.01, 100);
 xr.add(new THREE.AmbientLight(0xb08a6a, 0.8)); { const k = new THREE.DirectionalLight(0xffffff, 1.4); k.position.set(1, 2, 3); xr.add(k); }
 { const ringT = canvasTex(512, 512, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(255,150,60,0.35)'; g.lineWidth = 2; for (let r = 40; r < 256; r += 36) { g.beginPath(); g.arc(256, 256, r, 0, 7); g.stroke(); } });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ map: ringT, transparent: true, depthWrite: false })); floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001; xr.add(floor); }
-const ghost = makeBlock({ head: 'round', skin: '#ffffff', hair: '#ffffff', top: '#ffffff', hoodie: '#ffffff', bottom: '#ffffff', shoe: '#ffffff', hairStyle: 'bangs', headS: 1.2 }); xr.add(ghost.outer); ghost.outer.position.set(0, 0.95, 0); poseIdle(ghost, 0, 0);
+const ghost = makeBlock({ head: 'human', body: 'human', skin: '#ffffff', hair: '#ffffff', top: '#ffffff', bottom: '#ffffff', shoe: '#ffffff', hairStyle: 'short', headS: 0.88 }); xr.add(ghost.outer); ghost.outer.position.set(0, 0.95, 0); poseIdle(ghost, 0, 0);
 const ghostMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 0.55, 0.22), transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
 ghost.outer.traverse(o => { if (o.isMesh) { o.material = ghostMat; o.castShadow = false; } });
 const organs = new THREE.Group(); xr.add(organs);

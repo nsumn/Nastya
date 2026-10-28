@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/500-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  .ov{position:absolute;left:0;right:0;pointer-events:none}
+  .hl{color:#ffd98a;text-shadow:0 2px 16px rgba(40,15,0,.85),0 0 4px rgba(40,15,0,.8)}
+  .bl{color:#9cc2ff;text-shadow:0 2px 18px rgba(0,10,40,.8),0 0 4px rgba(0,10,40,.7)}
+  .lb{position:absolute;transform:translate(-50%,-100%);font-family:'Inter';font-weight:600;font-size:26px;letter-spacing:.16em;color:#fff;white-space:nowrap;text-shadow:0 1px 10px rgba(0,0,0,.75)}
+  /* TikTok safe zones: top < 320, right column x > 900 (y 950-1670), bottom > 1650, ~57px side crop */
+  #title{top:345px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#fff;
+    font-size:82px;line-height:1.12;padding:0 100px;text-shadow:0 2px 18px rgba(0,0,0,.6),0 0 4px rgba(0,0,0,.5)}
+  #hud{left:100px;top:900px;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.9),0 1px 12px rgba(0,0,0,.85),0 0 28px rgba(0,0,0,.5)}
+  #stat{font-family:'Inter';font-weight:600;font-size:23px;letter-spacing:.18em;opacity:.92;height:34px}
+  #stat b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff3b30;margin-right:12px;vertical-align:1px}
+  #lab{font-family:'Inter';font-weight:600;font-size:27px;letter-spacing:.16em}
+  #val{font-family:'Source Serif 4';font-weight:400;font-size:98px;line-height:1.02;margin-top:2px}
+  #sub{font-family:'Inter';font-weight:500;font-size:22px;letter-spacing:.14em;opacity:.85;margin-top:14px;max-width:760px}
+  #cap{top:1250px;text-align:center;font-family:'Source Serif 4';font-style:italic;font-weight:400;
+    color:#fff;font-size:52px;font-weight:500;line-height:1.2;padding:0 190px;text-shadow:0 0 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.9),0 2px 24px rgba(0,0,0,.85),0 0 40px rgba(0,0,0,.6)}
+  #shade{top:0;bottom:0;background:radial-gradient(ellipse 70% 26% at 26% 52%,rgba(0,0,0,.30),transparent 70%),linear-gradient(to bottom,rgba(0,0,0,.22),transparent 16%,transparent 60%,rgba(0,0,0,.32));}
+  #vig{top:0;bottom:0;background:radial-gradient(ellipse 85% 70% at 50% 50%,transparent 60%,rgba(0,0,0,.35))}
+  #veil{top:0;bottom:0;background:#eef3f8;opacity:0}
+  #flash{top:0;bottom:0;background:#ffffff;opacity:0}
+  #cracks{top:0;bottom:0;opacity:0}
+  #end{top:0;bottom:0;background:#141414;opacity:0}
+  #endT{top:700px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#f2f0ea;font-size:70px;line-height:1.12;opacity:0;padding:0 120px}
+  #endS{top:1080px;text-align:center;font-family:'Inter';font-weight:500;color:#c9c6be;font-size:30px;letter-spacing:.08em;line-height:1.7;opacity:0;padding:0 190px}
+
+  /* dad video: HUD = a small centered year badge at the top; the phone card in the middle */
+  #hud{left:0!important;right:0;top:350px!important;text-align:center}
+  #stat{font-size:22px!important} #lab{display:none} #val{font-size:84px!important} #sub{font-size:22px!important;margin:4px auto 0!important}
+
+  #card{left:190px;width:700px;top:560px;border-radius:46px;background:#f8f8fa;box-shadow:0 24px 70px rgba(0,0,0,.4),0 0 0 6px rgba(20,20,24,.9);overflow:hidden;opacity:0;font-family:'Inter';color:#111;transform-origin:50% 60%}
+  #card .hd{height:100px;display:flex;align-items:center;justify-content:center;gap:18px;border-bottom:2px solid #e4e4e8;font-weight:600;font-size:36px;background:#fff}
+  #card .hd.dp{background:#1c1c22;color:#fff;flex-direction:column;gap:2px;border:0} #card .hd em{font-style:normal;font-size:20px;letter-spacing:.12em;color:#ffd060}
+  #card .av{width:62px;height:62px;border-radius:50%;background:linear-gradient(#9aa0aa,#6a707a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px}
+  #card .bd{padding:28px 30px 34px;display:flex;flex-direction:column;gap:16px;min-height:120px}
+  #card .bub{max-width:80%;padding:18px 28px;border-radius:36px;font-size:40px;line-height:1.24;font-weight:500;transform-origin:0 100%}
+  #card .bub.dad{align-self:flex-start;background:#e6e6eb;border-bottom-left-radius:10px}
+  #card .bub.you{align-self:flex-end;background:#2f7cf6;color:#fff;border-bottom-right-radius:10px;transform-origin:100% 100%;font-size:34px}
+  #card .bub.big{font-size:96px;background:transparent;padding:0 10px}
+  #card .wx{display:flex;align-items:center;gap:22px;background:linear-gradient(#5a7ab8,#8aa8d8)!important;color:#fff} .wxI{font-size:70px} .wxT{font-size:58px;font-weight:600} .wxS{font-size:26px;opacity:.9}
+  #card .ph{width:400px;height:300px;padding:0!important;border-radius:30px!important;background:linear-gradient(#f4a860,#c87a8a 60%,#4a5a8a)!important;position:relative;overflow:hidden}
+  .phB{position:absolute;left:0;right:0;top:60px;text-align:center;font-size:92px;line-height:1.05} .phS{position:absolute;left:0;right:0;bottom:-6px;text-align:center;font-size:80px}
+  #card .typ{display:flex;gap:12px;padding:26px 30px} #card .typ i{width:18px;height:18px;border-radius:50%;background:#8a8a92;display:block}
+  .tyT{font-size:26px;color:#7a7a82;font-weight:600;margin-left:12px}
+  .draft{font-size:38px;line-height:1.3;min-height:60px} .draft u{display:inline-block;width:4px;height:42px;background:#2f7cf6;vertical-align:-8px;margin-left:3px}
+  .sent{align-self:flex-end;font-size:28px;color:#2f9a4a;font-weight:600}
+  #card .ct .row,#card .st .row{font-size:46px;font-weight:600;padding:16px 10px;border-bottom:2px solid #e8e8ec;display:flex;justify-content:space-between;overflow:hidden}
+  #card .row.on{background:#fff3c4;border-radius:18px} #card .st .row{font-size:28px} #card .st .row b{color:#8a8a92;font-weight:600} .del{color:#e8303a;font-style:normal}
+  .full{font-size:30px;color:#fff;background:#e8303a;border-radius:16px;padding:12px 18px;font-weight:600;text-align:center}
+  #card .bub.sm{font-size:30px} #card .bub.you.big{align-self:flex-end;background:transparent;transform-origin:100% 100%} .dl{align-self:flex-end;font-size:22px;color:#8a8a92;font-weight:600;margin-top:-10px}
+  #card .kb{border-top:2px solid #e4e4e8;background:#fff;padding:16px 22px 20px}
+  #card .fld{height:74px;border:2px solid #d8d8de;border-radius:40px;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 26px;font-size:30px;color:#a0a0a8}
+  #card .fld .fe{font-size:48px;display:inline-block} #card .snd{width:56px;height:56px;border-radius:50%;background:#c8c8d0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:34px;font-style:normal}
+  #card .snd.go{background:#2f7cf6} #card .snd.tap{box-shadow:0 0 0 14px rgba(47,124,246,.3);transform:scale(.9)}
+  #card .emr{display:flex;justify-content:space-around;margin-top:14px;font-size:54px} #card .em{display:inline-block;border-radius:20px;padding:4px 8px} #card .em.on{background:#cfe0ff;transform:scale(1.25)}
+  #card .hd.ls{background:linear-gradient(#3a4a7a,#6a5a8a);color:#fff;border:0;height:84px;font-size:28px}
+  #card .nt{display:flex;gap:18px;align-items:flex-start;background:#ffffff;border-radius:28px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.08);transform-origin:50% 0}
+  #card .nt .av{flex:none} .nh{display:flex;justify-content:space-between;font-size:26px;font-weight:600;color:#111;width:520px} .nh i{font-style:normal;color:#8a8a92;font-weight:500;font-size:22px} .nb{font-size:32px;line-height:1.25;color:#222;margin-top:4px;max-width:520px}
+  #card .gal{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px} .gt{width:100%;height:150px;object-fit:cover;border-radius:10px;display:block}
+  #card .hd.pt{justify-content:flex-start;padding:0 26px;gap:16px;text-align:left} .pn{font-size:30px;font-weight:600} .pm{font-size:20px;color:#8a8a92;font-weight:500}
+  .ptx{font-size:30px;line-height:1.25;font-weight:500} .pph{width:100%;height:250px;object-fit:cover;border-radius:16px;display:block;transform-origin:50% 0} #card .cm{font-size:24px;line-height:1.25;color:#2a2a30;background:#f0f0f4;border-radius:18px;padding:8px 16px;align-self:flex-start;transform-origin:0 50%} #card .cm b{font-weight:600}
+  .pl{font-size:26px;color:#5a5a62;font-weight:600} .pl span{font-weight:500;color:#2a2a30}
+  .sq{font-size:30px;border:2px solid #d8d8de;border-radius:40px;padding:16px 24px;font-weight:500;min-height:44px}
+  #card .vm{display:flex;align-items:center;gap:18px;background:#fff;border-radius:28px;padding:18px 22px;flex-wrap:wrap;transform-origin:50% 0} #card .vm b{width:60px;height:60px;border-radius:50%;background:#2f7cf6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .wv{display:flex;gap:5px;align-items:center;height:50px} .wv i{width:8px;background:#2f7cf6;border-radius:4px;display:block} #card .vm span{width:100%;font-size:24px;color:#6a6a72;font-weight:600}
+  #card .vc0{align-items:center;padding:30px} .vcn{font-size:52px;font-weight:600} .vcs{font-size:26px;color:#7a7a82} .vcb{display:flex;gap:120px;margin-top:20px} .vcb b{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:44px}
+  .vcb .no{background:#e8303a} .vcb .ok{background:#30c050} .vcb .ok.tap{box-shadow:0 0 0 16px rgba(48,192,80,.3)}
+  #card .vc{position:relative;height:330px;padding:0;background:#2a2a30}
+  #card .vbig,#card .vme{position:absolute;overflow:hidden} #card .vbig{inset:0} #card .vme{right:16px;bottom:16px;width:130px;height:170px;border-radius:18px;border:4px solid #fff;z-index:2}
+  #card .vbig img{position:absolute;left:50%;top:58px;width:200px;height:212px;transform:translateX(-50%)} #card .vbig .hh{position:absolute;left:50%;top:22px;width:226px;height:48px;transform:translateX(-50%)} #card .vbig .lh{position:absolute;left:50%;top:40px;width:250px;height:250px;transform:translateX(-50%);z-index:0}
+  #card .vbig img,#card .vbig .hh{z-index:1} #card .vbig .tb{position:absolute;left:50%;bottom:-40px;width:360px;height:70px;transform:translateX(-50%);z-index:1}
+  #card .vme img{position:absolute;left:50%;top:34px;width:92px;height:98px;transform:translateX(-50%)} #card .vme .hh{position:absolute;left:50%;top:18px;width:104px;height:30px;transform:translateX(-50%)} #card .vme .tb{position:absolute;left:50%;bottom:-6px;width:130px;height:40px;transform:translateX(-50%)}
+  #card .cdl{position:absolute;left:66%;bottom:24px;font-size:70px;z-index:3} #card .cdl i{position:absolute;left:22px;top:-46px;font-size:46px;font-style:normal} #card .nts{position:absolute;left:12%;top:40px;font-size:60px;z-index:3}
+  .sb{position:absolute;left:0;top:0;max-width:520px;background:#ffffff;color:#111;font-family:'Inter';font-weight:600;font-size:36px;line-height:1.2;padding:18px 26px;border-radius:32px;box-shadow:0 8px 26px rgba(0,0,0,.3);opacity:0;transform-origin:50% 100%}
+  #cap sup{font-size:60%}
+  #title{top:430px!important;font-size:70px!important;padding:0 80px!important}
+  #tl{top:330px;left:150px;right:150px;font-family:'Inter';color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7);opacity:0}
+  #tl .row{display:flex;align-items:center;gap:18px} #tl .lb{font-weight:600;font-size:24px;letter-spacing:.16em;position:static;transform:none} #tl .bar{flex:1;height:14px;border-radius:8px;background:rgba(255,255,255,.25);overflow:hidden;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+  #tlBar{height:100%;width:20%;background:linear-gradient(90deg,#5ad8ff,#ffd060);border-radius:8px} #tlV{font-family:'Source Serif 4';font-size:56px;min-width:140px;text-align:right} #tlT{margin-top:6px;font-weight:600;font-size:22px;letter-spacing:.22em;opacity:.9}
+  #pop{top:560px;left:50%;font-family:'Inter';font-weight:600;font-size:132px;color:#ffd060;text-shadow:0 4px 30px rgba(0,0,0,.7),0 0 6px rgba(0,0,0,.6);white-space:nowrap;opacity:0;right:auto}
+  .pass-scene .txt{visibility:hidden!important}
+  .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
+  html.pass-text,html.pass-text body{background:transparent!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  
+  <div id="veil" class="ov gfx"></div>
+  <svg id="cracks" class="ov gfx" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="flash" class="ov gfx"></div>
+  <div id="title" class="ov txt">What if you took off<br>your <span class="hl">helmet</span> in space?</div>
+  <div id="card" class="ov txt"></div>
+  <div id="tl" class="ov txt"><div class="row"><span class="lb">ENERGY</span><div class="bar"><div id="tlBar"></div></div><span id="tlV">22%</span></div><div id="tlT">12 PM</div></div>
+  <div id="pop" class="ov txt"></div>
+  <div id="sb1" class="sb txt"></div><div id="sb2" class="sb txt"></div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="cap" class="ov txt"></div>
+  <div id="labels" class="ov txt" style="top:0;bottom:0"></div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">What if you took off your <span class="hl">helmet</span> in space?</div>
+  <div id="endS" class="ov txt">IN SUDDEN DECOMPRESSION YOU STAY AWARE FOR ABOUT 10–15 SECONDS.<br>RECOMPRESSION WITHIN ~90 SECONDS CAN BE SURVIVABLE.<br>JIM LEBLANC, 1966: SUIT LEAK IN A NASA VACUUM CHAMBER — FULL RECOVERY.</div>
+</div>
+<script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
+<script src="node_modules/topojson-client/dist/topojson-client.min.js"></script>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="scene_energy.js"></script>
+</body>
+</html>

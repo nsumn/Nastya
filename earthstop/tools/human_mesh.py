@@ -164,15 +164,15 @@ def head_sdf(p):
     x = p[:, 0]; pm = np.c_[np.abs(x), p[:, 1], p[:, 2]]
     cran = ell(p, np.array([0, 0.1, -0.05]), np.array([0.355, 0.43, 0.45]))
     face = ell(p, np.array([0, -0.1, 0.08]), np.array([0.3, 0.33, 0.31]))
-    jaw = ell(pm, np.array([0.13, -0.27, 0.055]), np.array([0.13, 0.15, 0.22]))
-    chin = ell(p, np.array([0, -0.38, 0.256]), np.array([0.12, 0.085, 0.1]))   # chin forward (no overbite look)
+    jaw = ell(pm, np.array([0.12, -0.29, 0.07]), np.array([0.145, 0.15, 0.23]))   # wider lower jaw
+    chin = ell(p, np.array([0, -0.37, 0.215]), np.array([0.18, 0.1, 0.13]))   # broad chin in line with the lips, melts into the jaw
     cheek = ell(pm, np.array([0.2, -0.05, 0.18]), np.array([0.11, 0.08, 0.11]))
     brow = ell(p, np.array([0, 0.125, 0.25]), np.array([0.3, 0.07, 0.13]))
     muzz = ell(p, np.array([0, -0.24, 0.26]), np.array([0.14, 0.08, 0.1]))
     nose = smin(cap(p, (0, 0.06, 0.35), (0, -0.1, 0.45), 0.032, 0.042), ell(p, np.array([0, -0.115, 0.39]), np.array([0.075, 0.042, 0.05])), 0.03)
     ear = ell(pm, np.array([0.355, -0.0, -0.03]), np.array([0.045, 0.11, 0.075]))
     sock = np.linalg.norm(pm - np.array([0.18, 0.02, 0.43]), axis=1) - 0.075
-    h = smin(cran, face, 0.12); h = smin(h, jaw, 0.08); h = smin(h, chin, 0.07); h = smin(h, cheek, 0.06); h = smin(h, brow, 0.06); h = smin(h, muzz, 0.06)
+    h = smin(cran, face, 0.12); h = smin(h, jaw, 0.1); h = smin(h, chin, 0.12); h = smin(h, cheek, 0.06); h = smin(h, brow, 0.06); h = smin(h, muzz, 0.06)
     h = smax(h, -sock, 0.05); h = smin(h, nose, 0.03); h = smin(h, ear, 0.03)
     return h
 
