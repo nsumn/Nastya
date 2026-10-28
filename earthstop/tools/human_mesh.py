@@ -62,8 +62,9 @@ def groups(p):
     tor = smin(smin(smin(abd, chest, 0.1), girdle, 0.07), traps, 0.07)   # slim, no muscles
     d['hood'] = hood; d['neck'] = neck
     if OUTFIT == 'tee':   # oversized tee: a loose box from the shoulders to below the hips, dropped shoulders
-        tee = rbox(p, np.array([0, 1.165, 0.0]), (0.2, 0.345, 0.128), 0.09)
-        tor = smin(smin(tor, tee, 0.05), cap(p, (-0.2, 1.43, -0.005), (0.2, 1.43, -0.005), 0.075, 0.075), 0.06)
+        tee = rbox(p, np.array([0, 1.12, 0.0]), (0.2, 0.29, 0.128), 0.1)   # body of the tee, top at 1.41
+        slope = cap(pm, (0.0, 1.49, -0.01), (0.215, 1.395, -0.005), 0.07, 0.075)   # shoulders slope down from the neck (no square top)
+        tor = smin(smin(tor, tee, 0.05), slope, 0.07)
         d['hood'] = smin(tor, tee, 0.05)   # (for the neckline test below)
         d[1] = smin(tor, neck, 0.02)
     else: d[1] = smin(smin(tor, hood, 0.02), neck, 0.03)
@@ -76,7 +77,7 @@ def groups(p):
         thumb = cap(q, (0.248, 0.93, 0.035), (0.243, 0.88, 0.06), 0.014, 0.012)
         d[bs] = smin(delt, up, 0.05)
         if OUTFIT == 'tee':   # wide short sleeve, hanging a bit away from the arm, open end just above the elbow
-            sl = smax(cap(q, (0.215, 1.44, 0), (0.275, 1.1, 0.0), 0.092, 0.082), 1.095 - q[:, 1], 0.012)
+            sl = smax(cap(q, (0.228, 1.385, 0), (0.28, 1.1, 0.0), 0.085, 0.082), 1.095 - q[:, 1], 0.012)
             d[bs] = np.minimum(d[bs], sl)
         d[be] = smin(fore, smin(palm, thumb, 0.01), 0.025)
         d[('hand', side)] = smin(palm, thumb, 0.01)
