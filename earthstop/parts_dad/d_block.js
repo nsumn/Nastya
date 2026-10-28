@@ -93,42 +93,21 @@ const denimTex = (pocket) => canvasTex(128, 256, (g, w, h) => { g.fillStyle = '#
   if (!pocket) { const gr = g.createRadialGradient(w / 2, h * 0.45, 4, w / 2, h * 0.45, 60); gr.addColorStop(0, 'rgba(200,220,240,0.35)'); gr.addColorStop(1, 'rgba(200,220,240,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
   g.strokeStyle = '#d89040'; g.lineWidth = 2; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(8, 0); g.lineTo(8, h); g.moveTo(w - 8, 0); g.lineTo(w - 8, h); g.stroke();
   if (pocket) { g.beginPath(); g.arc(18, 40, 46, 0, Math.PI / 2); g.stroke(); g.beginPath(); g.arc(w - 18, 40, 46, Math.PI / 2, Math.PI); g.stroke(); g.setLineDash([]); g.fillStyle = '#c8a050'; g.fillRect(w / 2 - 6, 10, 12, 12); } });
-let denimLeg = null, denimHip = null, denimLegF = null;
-// 'human' head: a low-poly sphere pushed into a real head shape — narrower, tapering jaw, chin, bigger skull at the back, brow ridge, eye sockets, a nose, cheekbones
-let HUMAN_GEO = null;
-function humanHeadGeo() { if (HUMAN_GEO) return HUMAN_GEO; const g = new THREE.SphereGeometry(0.5, 20, 18), P = g.attributes.position;   
-  const key = (x, y, z) => Math.round(x * 1e3) * 7 + Math.round(y * 1e3) * 131 + Math.round(z * 1e3) * 1031;   // same jitter for the duplicated seam vertices
-  for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), j = hash(key(x, y, z)) - 0.5, j2 = hash(key(x, y, z) + 17) - 0.5;
-    let X = x * 0.84 * (1 + 0.04 * j), Y = y + 0.012 * j2, Z = z * (1 + 0.03 * j);
-    const jy = Math.max(0, -(y + 0.08) / 0.42); X *= 1 - 0.2 * jy * jy; Z *= 1 - 0.12 * jy * jy;   // jaw taper (kept wide = strong jaw)
-    if (y < -0.4) Y = -0.4 + (y + 0.4) * 0.45;   // flat chin bottom
-    if (z < 0) Z *= 1.08 + 0.08 * Math.max(0, y);   // bigger back skull
-    if (z > 0) { Z *= 0.92; Z += 0.05 * Math.exp(-((y + 0.38) ** 2) / 0.006) * Math.exp(-x * x / 0.02);   // chin
-      Z += 0.045 * Math.exp(-((y - 0.13) ** 2) / 0.003) * Math.exp(-x * x / 0.08);   // brow ridge
-      for (const s of [-1, 1]) Z -= 0.035 * Math.exp(-((x - s * 0.19) ** 2) / 0.006 - ((y - 0.02) ** 2) / 0.004);   // eye sockets
-      X *= 1 + 0.06 * Math.exp(-((y + 0.03) ** 2) / 0.01); }   // cheekbones
-    P.setXYZ(i, X, Y, Z); }
-  g.computeVertexNormals(); return (HUMAN_GEO = g); }
-// human nose: a small faceted wedge (bridge, tip, two wings) stuck on the face, in head-geometry units
-function humanNoseGeo() { const v = [[0, 0.08, 0.4], [0, -0.075, 0.53], [-0.055, -0.1, 0.43], [0.055, -0.1, 0.43], [0, -0.1, 0.44]], f = [[0, 2, 1], [0, 1, 3], [2, 4, 1], [1, 4, 3]], pos = [];
-  for (const t of f) for (const k of t) pos.push(...v[k]); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); return g; }
-// hair for the human head: the same faceted skull, a bit bigger, cut along a hairline that is high on the forehead and low at the nape
-function humanHairGeo(front, back) { const g = humanHeadGeo().toNonIndexed(), P = g.attributes.position, pos = [];
-  for (let i = 0; i < P.count; i += 3) { let cy = 0, cz = 0, ok = true; for (let k = 0; k < 3; k++) { cy += P.getY(i + k) / 3; cz += P.getZ(i + k) / 3; }
-    const line = cz > 0 ? 0.05 + (front - 0.05) * Math.min(1, cz / 0.38) : 0.05 + (back - 0.05) * Math.min(1, -cz / 0.4);
-    if (cy < line) ok = false; if (ok) for (let k = 0; k < 3; k++) pos.push(P.getX(i + k), P.getY(i + k), P.getZ(i + k)); }
-  const d = new THREE.BufferGeometry(); d.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); d.computeVertexNormals(); return d; }
-// 'human' body: faceted, tapered torso and limbs (same joints as the box body, so every pose still works)
-const HB = { y: [0.98, 1.12, 1.3, 1.42, 1.5, 1.555], w: [0.34, 0.31, 0.42, 0.5, 0.44, 0.13], d: [0.2, 0.19, 0.235, 0.22, 0.19, 0.11] };
-const hbAt = (k, y) => { const Y = HB.y, A = HB[k]; if (y <= Y[0]) return A[0]; for (let i = 1; i < Y.length; i++) if (y <= Y[i]) return lerp(A[i - 1], A[i], (y - Y[i - 1]) / (Y[i] - Y[i - 1])); return A[A.length - 1]; };
-const hbFront = (y) => hbAt('d', y) / 2 + 0.012 * Math.exp(-((y - 1.32) ** 2) / 0.004);   // front surface z (chest a bit forward)
-let HTORSO = null;
-function humanTorsoGeo() { if (HTORSO) return HTORSO; const y0 = HB.y[0], y1 = HB.y[HB.y.length - 1], g = new THREE.CylinderGeometry(1, 1, 1, 10, 10), P = g.attributes.position;
-  for (let i = 0; i < P.count; i++) { const y = lerp(y0, y1, P.getY(i) + 0.5), x = P.getX(i), z = P.getZ(i), front = z > 0 ? hbFront(y) - hbAt('d', y) / 2 : 0;
-    P.setXYZ(i, x * hbAt('w', y) / 2, y, z * hbAt('d', y) / 2 + (z > 0 ? front * z : 0)); }
-  g.computeVertexNormals(); return (HTORSO = g); }
-// a tapered faceted limb segment hanging down from its joint; thetaStart puts the texture seam on the outer side
-const limbGeo = (r0, r1, len, seg = 7, th = 0) => { const g = new THREE.CylinderGeometry(r0, r1, len, seg, 1, false, th); g.translate(0, -len / 2, 0); return g; };
+let denimLeg = null, denimHip = null;
+// 'human' head / body: low-poly meshes made by tools/human_mesh.py (SDF -> marching cubes -> decimation), loaded once.
+// Head and hair are in head units (eyes at y=0, x=+-0.19 like the drawn face texture); the body is ONE skinned mesh
+// (shoulders flow into the arms) on the makeBlock joints, in two outfits (hoodie | oversized tee), with faces grouped by region (skin, top, top2, sleeve, bottom, cuff, shoe, sole).
+const HUMAN_MESH = await fetch('data/human_mesh.json').then(r => r.json()).catch(() => null);
+const HUMAN_GEO = {};
+function humanGeo(k) { if (HUMAN_GEO[k]) return HUMAN_GEO[k]; const src = k === 'head' ? HUMAN_MESH.head : HUMAN_MESH.hair[k], g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(src.pos, 3)); g.setIndex(src.idx); g.computeVertexNormals(); return (HUMAN_GEO[k] = g); }
+function humanBodyGeo(k) { if (HUMAN_GEO[k]) return HUMAN_GEO[k]; const b = HUMAN_MESH.body[k], g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
+  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(b.skinIndex, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(b.skinWeight, 4));
+  g.computeVertexNormals(); b.groups.forEach(([, st, n], i) => g.addGroup(st, n, i)); return (HUMAN_GEO[k] = g); }
+// front surface of the human body at (x, y): for things stuck on the chest (hoodie strings)
+const humanFront = (x, y) => { const P = HUMAN_MESH.body.hoodie.pos; let z = 0; for (let i = 0; i < P.length; i += 3) if (Math.abs(P[i] - x) < 0.03 && Math.abs(P[i + 1] - y) < 0.03 && P[i + 2] > z) z = P[i + 2]; return z; };
+let denimHuman = null;
 let blockN = 0;
 function makeBlock(o = {}) {
   o = { skin: '#e9b98f', hair: '#3a2416', top: '#3a6aa8', bottom: '#2a2e3a', shoe: '#3a2a20', sleeve: true, hairStyle: 'short', h: 1, ...o };
@@ -137,40 +116,30 @@ function makeBlock(o = {}) {
   const root = new THREE.Group(); root.scale.setScalar(o.h); body.add(root);
   const torso = new THREE.Group(); root.add(torso);
   const B = (w, h, d, col, x, y, z, par = torso) => { const m = mesh(BOX, typeof col === 'string' ? M(col, { roughness: 0.9 }) : col); m.scale.set(w, h, d); m.position.set(x, y, z); par.add(m); return m; };
-  const hum = o.body === 'human', FM = (col) => typeof col === 'string' ? M(col, { roughness: 0.9, flatShading: true }) : col;
-  if (o.jeans) { denimLeg = denimLeg || new THREE.MeshStandardMaterial({ map: denimTex(false), roughness: 0.95 }); denimLegF = denimLegF || new THREE.MeshStandardMaterial({ map: denimLeg.map, roughness: 0.95, flatShading: true }); }
-  const legM = o.jeans ? (hum ? denimLegF : denimLeg) : o.bottom;
+  const hum = o.body === 'human' && HUMAN_MESH;
+  const legM = o.jeans ? (denimLeg = denimLeg || new THREE.MeshStandardMaterial({ map: denimTex(false), roughness: 0.95 })) : o.bottom;
   if (!hum) {
     B(0.4, 0.5, 0.22, o.top, 0, 1.24, 0); B(0.38, 0.16, 0.205, o.jeans ? (denimHip = denimHip || new THREE.MeshStandardMaterial({ map: denimTex(true), roughness: 0.95 })) : o.bottom, 0, 0.95, 0); B(0.1, 0.08, 0.1, o.skin, 0, 1.52, 0);   // hips slightly thinner than the top (coplanar fronts flickered); neck
     if (o.belt) B(0.385, 0.035, 0.212, o.belt, 0, 1.0, 0);
     if (o.hoodie) { B(0.36, 0.16, 0.1, o.hoodie, 0, 1.5, -0.13); B(0.22, 0.1, 0.02, o.hoodie, 0, 1.12, 0.115); for (const x of [-0.04, 0.04]) B(0.012, 0.12, 0.012, '#f4f4f4', x, 1.38, 0.118); }
     if (o.tee) B(0.16, 0.12, 0.01, o.tee, 0, 1.3, 0.112);
     if (o.collar) B(0.22, 0.05, 0.03, o.collar, 0, 1.47, 0.11);
-  } else {   // human body: faceted torso + pelvis + neck, hoodie details sit on the curved front
-    torso.add(mesh(humanTorsoGeo(), FM(o.top)));
-    const pel = mesh(limbGeo(0.17, 0.185, 0.2, 10, Math.PI), FM(legM)); pel.scale.z = 0.58; pel.position.y = 1.04; torso.add(pel);
-    const nk = mesh(limbGeo(0.05, 0.055, 0.12, 7), FM(o.skin)); nk.position.y = 1.6; torso.add(nk);
-    if (o.belt) { const b = mesh(limbGeo(0.176, 0.177, 0.035, 10), FM(o.belt)); b.scale.z = 0.6; b.position.y = 1.0; torso.add(b); }
-    if (o.hoodie) { const hd = mesh(new THREE.TorusGeometry(0.11, 0.045, 5, 10), FM(o.hoodie)); hd.rotation.x = Math.PI / 2 + 0.25; hd.scale.set(1.25, 1, 1); hd.position.set(0, 1.535, -0.015); torso.add(hd);
-      B(0.22, 0.1, 0.02, FM(o.hoodie), 0, 1.13, hbFront(1.13) + 0.004); for (const x of [-0.04, 0.04]) B(0.012, 0.12, 0.012, '#f4f4f4', x, 1.42, hbFront(1.42) + 0.01); }
-    if (o.tee) B(0.16, 0.12, 0.01, o.tee, 0, 1.3, hbFront(1.3));
-    if (o.collar) B(0.22, 0.05, 0.03, o.collar, 0, 1.52, hbFront(1.52)); }
+  } else {   // human body: the skinned mesh is built after the joints (below); here only the hoodie strings
+    if (o.hoodie) for (const x of [-0.04, 0.04]) { const st = B(0.012, 0.13, 0.012, '#f4f4f4', x, 1.41, humanFront(x, 1.41) + 0.006); st.rotation.x = -0.15; } }
   // head: front face = the drawn face, other sides = skin
   const skinM = M(o.skin, { roughness: 0.85 }), shape = o.head || 'box'; let head, faceM; const nBefore = torso.children.length;
   if (shape === 'box') { faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), roughness: 0.85 });
     head = new THREE.Mesh(BOX, [skinM, skinM, skinM, skinM, faceM, skinM]); head.scale.set(HEAD_W, HEAD_H, HEAD_D); }
   else {   // 'round' = a ball, 'soft' = a cube with rounded corners; the face is a transparent decal on the front
-    o.decal = true; if (shape === 'human') o.noNose = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : shape === 'human' ? humanHeadGeo() : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
-    const sc = { round: [1.1, 1.08, 1.15], human: [1.12, 1.2, 1.2], soft: [1, 1, 1] }[shape]; head = new THREE.Mesh(geo, shape === 'human' ? M(o.skin, { roughness: 0.8, flatShading: true }) : skinM); head.scale.set(HEAD_W * sc[0], HEAD_H * sc[1], HEAD_D * sc[2]);
+    o.decal = true; if (shape === 'human') o.noNose = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : shape === 'human' ? humanGeo('head') : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
+    const sc = { round: [1.1, 1.08, 1.15], human: [1.12, 1.2, 1.2], soft: [1, 1, 1] }[shape]; head = new THREE.Mesh(geo, shape === 'human' ? M(o.skin, { roughness: 0.8, flatShading: true }) : skinM); if (shape === 'human') head.scale.setScalar(0.42); else head.scale.set(HEAD_W * sc[0], HEAD_H * sc[1], HEAD_D * sc[2]);
     faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.85 });
-    head.add(new THREE.Mesh(decalGeo(geo, 1), faceM)); if (shape === 'human') head.add(new THREE.Mesh(humanNoseGeo(), head.material)); }
+    head.add(new THREE.Mesh(decalGeo(geo, 1), faceM)); }
   head.position.set(0, HEAD_Y, 0); head.castShadow = true; torso.add(head);
   if (shape === 'round' || shape === 'human') {   // round / human head: ears are balls, hair is a tilted cap of a slightly bigger sphere
     const hsx = head.scale, hm = M(o.hair, { roughness: 0.95 }), hs = o.hairStyle;
-    if (shape === 'human') { const fm = M(o.skin, { roughness: 0.8, flatShading: true }), hf = M(o.hair, { roughness: 0.95, flatShading: true });
-      for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.045, 6, 5), fm); e.scale.set(0.45, 1.25, 0.85); e.position.set(s * hsx.x * 0.43, HEAD_Y - 0.015, -0.01); e.rotation.y = s * 0.3; torso.add(e); }
-      const hl = { short: [0.25, -0.2], bangs: [0.16, -0.22], long: [0.2, -0.4], curly: [0.22, -0.25], bald: null }[hs];
-      if (hl) { const m = mesh(humanHairGeo(hl[0], hl[1]), hf); m.scale.set(hsx.x * 1.06, hsx.y * 1.05, hsx.z * 1.06); m.position.set(0, HEAD_Y + 0.008, -0.004); torso.add(m); }
+    if (shape === 'human') { const hk = { short: 'quiff', quiff: 'quiff', bangs: 'fringe', fringe: 'fringe' }[hs];   // ears are part of the head mesh
+      if (hk) { const m = mesh(humanGeo(hk), M(o.hair, { roughness: 0.95, flatShading: true })); m.scale.setScalar(0.42); m.position.set(0, HEAD_Y, 0); torso.add(m); }
     } else
     for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.035, 10, 8), skinM); e.position.set(s * hsx.x * 0.5, HEAD_Y - 0.01, 0); torso.add(e); }
     const cap = (theta, tilt, k = 1.07) => { const m = mesh(new THREE.SphereGeometry(0.5, 32, 20, 0, Math.PI * 2, 0, theta), hm); m.scale.set(hsx.x * k, hsx.y * k, hsx.z * k); m.position.set(0, HEAD_Y, 0); m.rotation.x = tilt; torso.add(m); return m; };
@@ -194,7 +163,7 @@ function makeBlock(o = {}) {
   }
   if (o.cap) { const top = HEAD_Y + HEAD_H / 2; B(HEAD_W + 0.03, 0.07, HEAD_D + 0.03, o.cap, 0, top + 0.025, 0); B(HEAD_W * 0.9, 0.02, 0.13, o.cap, 0, top - 0.005, (o.capBack ? -1 : 1) * (HEAD_D / 2 + 0.06)); }
   // the head and everything on it go into one group, so o.headS can make the head bigger (cuter proportions)
-  const headG = new THREE.Group(); headG.position.set(0, HEAD_Y, 0); torso.add(headG); for (const c of torso.children.slice(nBefore, -1)) { c.position.y -= HEAD_Y; headG.add(c); } headG.scale.setScalar(o.headS || 1); headG.position.y = HEAD_Y + (HEAD_H / 2) * ((o.headS || 1) - 1) * 0.9;
+  const headG = new THREE.Group(); headG.position.set(0, HEAD_Y, 0); torso.add(headG); for (const c of torso.children.slice(nBefore, -1)) { c.position.y -= HEAD_Y; headG.add(c); } headG.scale.setScalar(o.headS || 1); headG.position.y = HEAD_Y + (HEAD_H / 2) * ((o.headS || 1) - 1) * 0.9; if (hum) headG.position.y += 0.06;   // the human body has a real neck
   // limbs (groups at the joints)
   const arms = [], elbows = [], legs = [], knees = [];
   if (!hum) {
@@ -202,16 +171,16 @@ function makeBlock(o = {}) {
     const el = new THREE.Group(); el.position.y = -0.28; sh.add(el); B(0.1, 0.24, 0.11, o.sleeve ? o.top : o.skin, 0, -0.11, 0, el); B(0.085, 0.09, 0.1, o.skin, 0, -0.27, 0, el); arms.push(sh); elbows.push(el); }
   for (const sx of [-0.1, 0.1]) { const hp = new THREE.Group(); hp.position.set(sx, 0.9, 0); root.add(hp); B(0.15, 0.42, 0.16, legM, 0, -0.2, 0, hp);
     const kn = new THREE.Group(); kn.position.y = -0.42; hp.add(kn); B(0.14, 0.4, 0.15, legM, 0, -0.2, 0, kn); if (o.jeans) B(0.152, 0.05, 0.162, '#5a7aa8', 0, -0.37, 0, kn); B(0.15, 0.08, 0.24, o.shoe, 0, -0.43, 0.04, kn); legs.push(hp); knees.push(kn); }   // (jeans: rolled cuff)
-  } else {   // human limbs: tapered faceted segments, low-poly balls at elbows/knees so bends have no gaps
-    const L = (geo, col, par, y = 0) => { const m = mesh(geo, FM(col)); m.position.y = y; par.add(m); return m; }, ball = (r, col, par) => L(new THREE.SphereGeometry(r, 7, 5), col, par);
-    for (const sx of [-0.25, 0.25]) { const sh = new THREE.Group(); sh.position.set(sx, 1.44, 0); root.add(sh); ball(0.058, o.top, sh); L(limbGeo(0.056, 0.044, 0.29), o.top, sh);
-      const el = new THREE.Group(); el.position.y = -0.28; sh.add(el); const fc = o.sleeve ? o.top : o.skin; ball(0.044, fc, el); L(limbGeo(0.044, 0.035, 0.22), fc, el); if (o.sleeve && o.hoodie) L(limbGeo(0.04, 0.04, 0.03), o.top, el, -0.2);
-      const hand = L(new THREE.SphereGeometry(0.043, 6, 4), o.skin, el, -0.27); hand.scale.set(0.7, 1.3, 0.95); arms.push(sh); elbows.push(el); }
-    for (const sx of [-0.095, 0.095]) { const hp = new THREE.Group(); hp.position.set(sx, 0.9, 0); root.add(hp); const th = sx < 0 ? -Math.PI / 2 : Math.PI / 2;
-      ball(0.09, legM, hp); L(limbGeo(0.09, 0.065, 0.43, 7, th), legM, hp);
-      const kn = new THREE.Group(); kn.position.y = -0.42; hp.add(kn); ball(0.064, legM, kn); L(limbGeo(0.064, 0.05, 0.36, 7, th), legM, kn);
-      if (o.jeans) L(limbGeo(0.058, 0.06, 0.05, 7), '#5a7aa8', kn, -0.33);
-      const sh = mesh(new RoundedBoxGeometry(1, 1, 1, 1, 0.25), FM(o.shoe)); sh.scale.set(0.11, 0.08, 0.25); sh.position.set(0, -0.42, 0.045); kn.add(sh); legs.push(hp); knees.push(kn); } }
+  } else {   // human: bare joints, then one skinned mesh bound to them (rest pose = arms down, legs straight)
+    for (const sx of [-0.255, 0.255]) { const sh = new THREE.Group(); sh.position.set(sx, 1.45, 0); root.add(sh); const el = new THREE.Group(); el.position.y = -0.28; sh.add(el); arms.push(sh); elbows.push(el); }
+    for (const sx of [-0.1, 0.1]) { const hp = new THREE.Group(); hp.position.set(sx, 0.9, 0); root.add(hp); const kn = new THREE.Group(); kn.position.y = -0.42; hp.add(kn); legs.push(hp); knees.push(kn); }
+    if (o.jeans && !denimHuman) { const t = denimTex(false); t.wrapS = t.wrapT = THREE.RepeatWrapping; denimHuman = new THREE.MeshStandardMaterial({ map: t, roughness: 0.95, flatShading: true }); }
+    const F = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, flatShading: true }), topC = new THREE.Color(o.top);
+    const mats = { skin: F(o.skin), top: F(o.top), top2: F(topC.clone().multiplyScalar(0.82)), sleeve: F(o.sleeve ? o.top : o.skin), bottom: o.jeans ? denimHuman : F(o.bottom),
+      cuff: F(o.jeans ? '#5a7aa8' : o.bottom), shoe: F(o.shoe), sole: F(o.sole || '#e6e2da') };
+    const outfit = o.hoodie ? 'hoodie' : 'tee', geo = humanBodyGeo(outfit), bodyM = new THREE.SkinnedMesh(geo, HUMAN_MESH.body[outfit].groups.map(([r]) => mats[r]));   // no hoodie = oversized tee bodyM.castShadow = bodyM.receiveShadow = true; bodyM.frustumCulled = false;
+    root.add(bodyM); outer.updateMatrixWorld(true);
+    bodyM.bind(new THREE.Skeleton([root, torso, arms[0], elbows[0], arms[1], elbows[1], legs[0], knees[0], legs[1], knees[1]]), bodyM.matrixWorld); }
   const p = { outer, root, torso, head, arms, elbows, legs, knees, h: o.h, sx: [-1, 1], o };
   p.face = (name, t = 0) => { const ph = (t + blinkOff) % 3.9, blink = t >= 0 && ph < 0.12; faceM.map = faceTex(o, name, blink); };
   return p;
