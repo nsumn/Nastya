@@ -626,13 +626,15 @@ function updateRich(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer
   const o = new THREE.Object3D(); B0.forEach(([x, y0, z, sp, ph], i) => { const y = wrapR(y0 - (t - RICH) * sp * 1.4, -0.2, 3); o.position.set(x, rain > 0.01 ? y : -5, z); o.rotation.set(t * 2 + ph, ph + t * 1.3, Math.sin(t * 3 + ph) * 0.6); o.updateMatrix(); bills.setMatrixAt(i, o.matrix); }); bills.instanceMatrix.needsUpdate = true; bills.visible = rain > 0.01;
   P.face(t < RICH + 1.2 ? 'squint' : t < RICH + 2.6 ? 'smirk' : 'laugh', t); }
 // =================== FAST CUTS: a new shot every 2–3 s; timeline HUD (SECOND 1 → YEAR 1), big stat pop-ups, captions that pop word by word ===================
-const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy, fov);
+// faces sit between the top HUD and the captions (1250 px); under a phone card (hy 0.68) the face goes below the caption instead
+const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy >= 0.68 ? 0.79 : hy - 0.15, fov);
 const H_ = P => headOf(P);
 // [start, scene, camera, update(t), framing(t) -> F, extras key]
+// the first three shots keep the face low: the title sits above it and there is no caption yet
 const SHOTS = [
-  [0.0, shop, () => spCam, t => updateShop(t, 'open'), t => fr(V3(0.05, H_(hero).y, Math.max(H_(hero).z, 0.4)), V3(0.15, -0.02, -1), lerp(3.6, 3.0, t / 1.9), 0.58), 'open'],
-  [1.9, shop, () => spCam, t => updateShop(t, 'open'), t => fr(H_(hero), V3(0.1, 0.0, -1), lerp(1.5, 1.25, (t - 1.9) / 1.1), 0.56), 'open'],
-  [3.0, shop, () => spCam, t => updateShop(t, 'open'), t => fr(H_(hero), V3(-0.25, -0.18, -1), lerp(1.2, 1.6, (t - 3) / 1.4), 0.5, 46), 'open'],
+  [0.0, shop, () => spCam, t => updateShop(t, 'open'), t => framing(V3(0.05, H_(hero).y, Math.max(H_(hero).z, 0.4)), V3(0.15, -0.02, -1), lerp(3.6, 3.0, t / 1.9), 0.58), 'open'],
+  [1.9, shop, () => spCam, t => updateShop(t, 'open'), t => framing(H_(hero), V3(0.1, 0.0, -1), lerp(1.5, 1.25, (t - 1.9) / 1.1), 0.56), 'open'],
+  [3.0, shop, () => spCam, t => updateShop(t, 'open'), t => framing(H_(hero), V3(-0.25, -0.18, -1), lerp(1.2, 1.6, (t - 3) / 1.4), 0.5, 46), 'open'],
   [4.4, shop, () => spCam, t => updateShop(t, 'open'), t => fr(H_(hero), V3(0.45 + 0.2 * (t - 4.4), 0.12, -1), 3.3, 0.6, 46), 'open'],
   [CURVE, curve, () => cvCam, updateCurve, t => fr(V3(-0.5, 1.0, -1.0), V3(0.05, 1.2, 1), lerp(8, 7, (t - CURVE) / 2.6), 0.5, 46), 'curve'],
   [CURVE + 2.6, curve, () => cvCam, updateCurve, t => fr(V3(iqX(lerp(125, 240, smooth(CURVE + 2.6, CURVE + 5.0, t))), 1.3, -1.6), V3(0.25, 0.1, 1), 3.2, 0.5, 46), 'curve'],   // the markers slide past: 130, 145, 160, 228
