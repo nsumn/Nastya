@@ -164,8 +164,8 @@ def head_sdf(p):
     x = p[:, 0]; pm = np.c_[np.abs(x), p[:, 1], p[:, 2]]
     cran = ell(p, np.array([0, 0.1, -0.05]), np.array([0.355, 0.43, 0.45]))
     face = ell(p, np.array([0, -0.1, 0.08]), np.array([0.3, 0.33, 0.31]))
-    jaw = ell(pm, np.array([0.13, -0.27, 0.07]), np.array([0.13, 0.15, 0.22]))
-    chin = ell(p, np.array([0, -0.38, 0.27]), np.array([0.12, 0.085, 0.1]))   # chin forward (no overbite look)
+    jaw = ell(pm, np.array([0.13, -0.27, 0.055]), np.array([0.13, 0.15, 0.22]))
+    chin = ell(p, np.array([0, -0.38, 0.256]), np.array([0.12, 0.085, 0.1]))   # chin forward (no overbite look)
     cheek = ell(pm, np.array([0.2, -0.05, 0.18]), np.array([0.11, 0.08, 0.11]))
     brow = ell(p, np.array([0, 0.125, 0.25]), np.array([0.3, 0.07, 0.13]))
     muzz = ell(p, np.array([0, -0.24, 0.26]), np.array([0.14, 0.08, 0.1]))
