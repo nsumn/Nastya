@@ -3,7 +3,7 @@ const SCN = { open: [t => updateShop(t, 'open'), t => shopCamera(t, 'open'), sho
   books: [t => updateLib(t, 'books'), t => libCamera(t, 'books'), lib, () => lbCam], bulb: [t => updateLib(t, 'bulb'), t => libCamera(t, 'bulb'), lib, () => lbCam],
   talk: [t => updateTalk(t, 'talk'), t => talkCamera(t, 'talk'), room, () => rmCam], argue: [t => updateTalk(t, 'argue'), t => talkCamera(t, 'argue'), room, () => rmCam], door: [t => updateShop(t, 'end'), t => shopCamera(t, 'end'), shop, () => spCam] };
 const SEQ = [[0, 'open'], [CURVE, 'curve'], [TEST, 'test'], [LIB, 'books'], [BULB, 'bulb'], [TALK, 'talk'], [ARGUE, 'argue'], [DOOR, 'door']]; const XF = 0.7;
-function shootScene(id, t, rt) { const S = SCN[id]; S[1](t); S[0](t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); }
+function shootScene(id, t, rt) { const S = SCN[id]; S[1](t); S[0](t); extras(id, t); const c = S[3](); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, S[2], c); }
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'stat', 'lab', 'val', 'sub', 'cap', 'end', 'endT', 'endS', 'hud', 'flash', 'sb1', 'sb2'].map(k => [k, $(k)]));
 el.title.innerHTML = 'What if your <span class="hl">IQ</span><br>jumped to 500?'; el.endT.innerHTML = 'What if your <span class="hl">IQ</span> jumped to 500?';
@@ -44,5 +44,5 @@ window.renderAt = (t) => {
 };
 // warm-up: upload every face texture and render every take once before the frame loop (lazy uploads once mixed up textures)
 window.sceneReady = (async () => { await document.fonts.ready;
-  for (const p of [hero, fr1, fr2, sib, teacher, ...mates]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
+  for (const p of [hero, fr1, fr2, fr3, fr4, sib, teacher, mom, ...mates, ...mates2, ...walkers.map(w => w.p)]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
   for (const [t0, id] of SEQ) shootScene(id, t0 + 1, RTA); window.renderAt(0); return true; })();

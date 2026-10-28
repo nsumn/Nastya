@@ -97,7 +97,7 @@ function classCamera(t) { updateClass(t); const h = headOf(hero); applyF(clCam, 
 
 // =================== THE LIBRARY: books fly into your hands and back; then the reading table, and the brain bulb that pops ===================
 const lib = new THREE.Scene(); const lbCam = new THREE.PerspectiveCamera(42, W / H, 0.03, 100); lib.fog = new THREE.Fog(0x3a2a20, 8, 20); lib.background = new THREE.Color('#3a2a20');
-const lbHemi = new THREE.HemisphereLight(0xffe8c8, 0x4a3a2a, 0.9); lib.add(lbHemi); { const k = new THREE.PointLight(0xffd8a0, 4, 12, 1.2); k.position.set(0, 3, 2); lib.add(k); }
+const lbHemi = new THREE.HemisphereLight(0xffe8c8, 0x4a3a2a, 0.9); lib.add(lbHemi); const lbLamp = new THREE.PointLight(0xffd8a0, 4, 12, 1.2); lbLamp.position.set(0, 3, 2); lib.add(lbLamp);
 const spineT = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#4a3020'; g.fillRect(0, 0, w, h); for (let row = 0; row < 4; row++) { let x = 4; while (x < w - 10) { const bw = R(10, 22), bh = R(40, 58); g.fillStyle = pick(['#a83a2a', '#2a5a8a', '#3a7a4a', '#c8902a', '#6a3a7a', '#d8c8a8', '#1a3a5a']); g.fillRect(x, row * 64 + 62 - bh, bw, bh); x += bw + 2; } g.fillStyle = '#6a4a30'; g.fillRect(0, row * 64 + 60, w, 6); } });
 { const fl = mesh(new THREE.PlaneGeometry(14, 14), M('#7a5034', { roughness: 0.85 }), false, true); fl.rotation.x = -Math.PI / 2; lib.add(fl);
   for (const [x, z, ry] of [[0, -2.2, 0], [-2.6, -0.6, Math.PI / 2], [2.6, -0.6, -Math.PI / 2], [-1.6, -2.2, 0], [1.6, -2.2, 0]]) { const s = mesh(BOX, [M('#5a3a24'), M('#5a3a24'), M('#5a3a24'), M('#5a3a24'), new THREE.MeshStandardMaterial({ map: spineT, roughness: 0.9 }), M('#5a3a24')]); s.scale.set(1.6, 2.6, 0.4); s.position.set(x, 1.3, z); s.rotation.y = ry; lib.add(s); }
@@ -127,8 +127,8 @@ function libCamera(t, mode) { updateLib(t, mode); const h = headOf(hero);
 room.add(fr1.outer, fr2.outer, sib.outer); const sparkRoom = makeSparks(room);
 function updateTalk(t, mode) { if (hero.outer.parent !== room) room.add(hero.outer); [dad, mom].forEach(p => p.outer.visible = false); dog.g.visible = false; keys.visible = false; lightRoom('day'); for (const P of [fr1, fr2, sib]) P.outer.visible = false; sparkRoom.forEach(p => p.s.visible = false);
   const P = hero; poseReset(P, t);
-  if (mode === 'talk') { P.outer.position.set(-0.2, 0.95, -0.9); P.outer.rotation.y = 0.3; P.face(t < TALK + 2.4 ? 'sleepy' : t < TALK + 4.2 ? 'smirk' : 'sleepy', t);
-    poseReset(fr1, t); poseReset(fr2, t); fr1.outer.position.set(0.75, 0.95, -0.6); fr1.outer.rotation.y = -1.2; fr2.outer.position.set(0.55, 0.95, 0.15); fr2.outer.rotation.y = -1.9;
+  if (mode === 'talk') { P.outer.position.set(-0.3, 0.95, -1.2); P.outer.rotation.y = 0.15; P.face(t < TALK + 2.4 ? 'sleepy' : t < TALK + 4.2 ? 'smirk' : 'sleepy', t);
+    poseReset(fr1, t); poseReset(fr2, t); fr1.outer.position.set(0.55, 0.95, -1.45); fr1.outer.rotation.y = -0.7; fr2.outer.position.set(-1.15, 0.95, -1.5); fr2.outer.rotation.y = 0.7;
     fr1.arms[1].rotation.set(-0.6 - 0.3 * Math.max(0, Math.sin(t * 4)), 0, -0.2); fr1.face(t < TALK + 3.0 ? 'happy' : 'surprised', t); fr2.face(t < TALK + 3.0 ? 'laugh' : 'surprised', t + 1.1);
     if (t > TALK + 5.0) { P.arms[1].rotation.set(-2.3, 0, -0.2); P.elbows[1].rotation.x = -1.4; } }   // a yawn behind the hand
   else { P.outer.position.set(2.2, 0.95, -0.9); P.outer.rotation.y = 0.9; P.face(t < ARGUE + 3.4 ? 'neutral' : 'smirk', t);

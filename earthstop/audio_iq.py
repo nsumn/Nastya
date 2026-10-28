@@ -79,18 +79,25 @@ for k in range(4): step(0.25 + k * 0.33, db(-25), -0.1)
 bonk(1.95, db(-13))
 x = tt(1.0); f = 200 * (1 + 6 * (x / 1.0) ** 2); place(POP - 0.9, (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 + filt(rng.standard_normal(len(x)), 'bandpass', [1500, 5000]) * 0.5) * (x / 1.0) ** 2, db(-20))   # power-up rise
 ding(POP, db(-15)); [chime(POP + 0.1 + k * 0.11, db(-28), (100 + (k % 3) * 3,), 0.4 * (k % 2 * 2 - 1)) for k in range(6)]
+# --- the jump extras: lightning crackle, street cars passing
+for k in range(9): x = tt(0.05); place(POP + 0.05 + k * 0.09 + rng.uniform(0, 0.04), filt(rng.standard_normal(len(x)), 'bandpass', [1800, 6000]) * np.exp(-x * 60), db(-27), rng.uniform(-0.5, 0.5))
+for a0 in [0.6, 2.6]: x = tt(1.6); place(a0, filt(rng.standard_normal(len(x)), 'bandpass', [300, 1500]) * np.sin(np.pi * x / 1.6) ** 2, db(-33), 0.6)
 # --- the curve: a long dolly whoosh to the far right, a soft spotlight "thunk"
 x = tt(6.0); place(CURVE + 0.3, filt(rng.standard_normal(len(x)), 'bandpass', [400, 1800]) * np.sin(np.pi * x / 6.0) ** 2, db(-28), 0.3); thud(CURVE + 4.2, db(-24), 220, 0.2); chime(CURVE + 6.2, db(-26), (76,))
 # --- the test: scribble 1 s, the paper up (slap), a chime for 100%
 scribble(TEST + 0.3, TEST + 1.3, db(-24)); flip(TEST + 1.4, db(-20)); chime(TEST + 1.7, db(-23), (84, 88, 91)); popb(TEST + 2.0, db(-26), -0.3)
+x = tt(0.3); place(TEST + 2.25, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 5000]) * np.exp(-x * 14), db(-20), 0.3); thud(TEST + 2.25, db(-24), 300, 0.1, 0.3)   # the teacher's mug hits the floor
 # --- the library: page flips as books fly in and out
 for i in range(14): flip(LIB + i * 0.55 + 0.15, db(-25), 0.3 * np.sin(i)); flip(LIB + i * 0.55 + 0.42, db(-29), -0.3 * np.sin(i))
+x = tt(5.6); place(LIB + 2.2, filt(rng.standard_normal(len(x)), 'bandpass', [500, 2500]) * np.sin(np.pi * x / 5.6) * (0.6 + 0.4 * np.sin(2 * np.pi * 2.4 * x)), db(-28))   # the book tornado
 # --- the bulb: a rising glow tone, then a glass pop + tinkle
 x = tt(4.8); f = 300 * (1 + 2.2 * x / 4.8); place(BULB + 0.5, np.sin(2 * np.pi * np.cumsum(f) / SR) * (x / 4.8) ** 1.5 * 0.6, db(-24))
 x = tt(0.25); place(BULB + 5.4, filt(rng.standard_normal(len(x)), 'bandpass', [1200, 5000]) * np.exp(-x * 18), db(-14)); [chime(BULB + 5.5 + k * 0.07, db(-30), (96 + k % 4,), 0.3) for k in range(6)]
 # --- small talk + the argument: speech-bubble pops
 for a in [TALK + 0.6, TALK + 2.6, ARGUE + 0.5, ARGUE + 3.4]: popb(a, db(-20), 0.2)
 chime(ARGUE + 3.6, db(-24), (79, 86)); place(TALK + 5.0, breath(1.2, 'in'), db(-24))
+sweep(BULB + 3.0, 2.2, 420, 160, db(-30))   # the lights draining
+for k in range(6): step(ARGUE + 5.0 + k * 0.38, db(-21), -0.2)   # the sibling stomps off
 # --- the second door: confident steps, BONK
 for k in range(5): step(DOOR + 0.6 + k * 0.3, db(-24), 0.1)
 bonk(DOOR + 2.35, db(-12))
