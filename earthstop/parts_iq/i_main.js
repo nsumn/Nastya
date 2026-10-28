@@ -22,6 +22,8 @@ const SHOTS = [
   [NOTIF, room, () => rmCam, updateNotif, t => fr(H_(hero), V3(0.3, 0.05, 1), lerp(2.2, 1.8, (t - NOTIF) / 3.6), 0.68), 'room'],
   [CHESS, room, () => rmCam, updateChess, t => fr(V3(0.9, 0.8, 0.6), V3(-0.6, 1.0, 0.3), lerp(1.1, 0.9, (t - CHESS) / 2.2), 0.5), 'room'],
   [CHESS + 2.2, room, () => rmCam, updateChess, t => fr(H_(gm), V3(0.3, 0.05, -1), lerp(1.5, 1.3, (t - CHESS - 2.2) / 2.2), 0.6), 'room'],
+  [RICH, room, () => rmCam, updateRich, t => fr(H_(hero), V3(-0.25, 0.1, 1), lerp(2.0, 1.7, (t - RICH) / 2.4), 0.68), 'room'],
+  [RICH + 2.4, room, () => rmCam, updateRich, t => fr(H_(hero), V3(0.2, 0.12, 1), lerp(2.2, 2.9, (t - RICH - 2.4) / 2.6), 0.6, 46), 'room'],
   [TALK, room, () => rmCam, updateJoke, t => fr(H_(hero).lerp(H_(fr1), 0.5), V3(0.12, 0.08, 1), 3.3, 0.6), 'joke'],
   [TALK + 3.0, room, () => rmCam, updateJoke, t => fr(H_(hero), V3(-0.25, 0.05, 1), lerp(1.8, 1.4, (t - TALK - 3) / 3), 0.62), 'joke'],
   [DOOR, shop, () => spCam, t => updateShop(t, 'end'), t => fr(V3(0.05, H_(hero).y, Math.max(H_(hero).z, 0.4)), V3(-0.2, 0.05, -1), lerp(4.2, 3.4, (t - DOOR) / 2.3), 0.58, 46), 'door'],
@@ -39,12 +41,13 @@ const captions = [
   [22.3, 25.8, 'A Rubik’s cube?'], [26.1, 29.8, 'One look. Solved.'],
   [30.3, 33.8, 'You win every argument —'], [34.1, 37.8, '— in one sentence.'],
   [38.3, 41.3, 'Everyone needs your help.'], [41.8, 45.8, 'A grandmaster? Checkmate in one move.'],
-  [46.3, 49.2, 'But nobody gets your jokes.'], [49.4, 51.8, 'It’s lonely at 500.'],
-  [52.4, 54.3, 'And some things'], [54.4, 57.8, 'no IQ can fix.'],
-  [58.2, 60.9, 'What would you do first? 👇'],
+  [RICH + 0.3, RICH + 2.4, 'You see patterns nobody else sees.'], [RICH + 2.6, RICH + 4.8, 'Month 6: you’re a millionaire.'],
+  [TALK + 0.3, TALK + 3.2, 'But nobody gets your jokes.'], [TALK + 3.4, TALK + 5.8, 'It’s lonely at 500.'],
+  [DOOR + 0.4, DOOR + 2.3, 'And some things'], [DOOR + 2.4, DOOR + 5.8, 'no IQ can fix.'],
+  [CTA + 0.2, CTA + 2.9, 'What would you do first? 👇'],
 ];
-const TIMELINE = [[0, 'SECOND 1'], [CURVE, 'MINUTE 1'], [TEST, 'HOUR 1'], [RUBIK, 'DAY 1'], [ARGUE, 'WEEK 1'], [NOTIF, 'MONTH 1'], [TALK, 'YEAR 1'], [DOOR, 'EVERY DAY']];
-const POPS = [[11.0, 13.7, '1 in 10¹⁵⁶'], [14.3, 17.6, '≈160'], [18.1, 21.6, '228'], [26.1, 29.6, '1 LOOK'], [41.8, 45.6, '1 MOVE']];
+const TIMELINE = [[0, 'SECOND 1'], [CURVE, 'MINUTE 1'], [TEST, 'HOUR 1'], [RUBIK, 'DAY 1'], [ARGUE, 'WEEK 1'], [NOTIF, 'MONTH 1'], [RICH, 'MONTH 6'], [TALK, 'YEAR 1'], [DOOR, 'EVERY DAY']];
+const POPS = [[11.0, 13.7, '1 in 10¹⁵⁶'], [14.3, 17.6, '≈160'], [18.1, 21.6, '228'], [26.1, 29.6, '1 LOOK'], [41.8, 45.6, '1 MOVE'], [RICH + 2.6, RICH + 4.8, '$1,000,000']];
 const BUBBLES = [[ARGUE + 0.4, ARGUE + 3.2, () => sib, 'It’s MY turn to pick the movie!'], [ARGUE + 3.3, ARGUE + 5.1, () => hero, 'You picked last Friday. And the one before.'],
   [TALK + 0.4, TALK + 3.0, () => hero, '…and THAT’S why the integral diverged! 😂'], [TALK + 2.4, TALK + 3.0, () => fr1, '…what?']];
 const NOTES = [['Mom', 'how do i turn off caps lock'], ['Boss', 'can u fix the budget by 5'], ['Neighbor', 'whats 15% of $84.50'], ['Sam', 'help w my homework??'], ['Grandpa', 'the TV says NO SIGNAL'], ['Group chat', 'settle this: is a hot dog a sandwich'], ['Unknown', 'Hi! Are you the genius?'], ['Mom', 'never mind i turned the computer off']];
@@ -63,6 +66,9 @@ function updateDOM(t, cam) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t); e
   // the "help me" flood (month 1)
   if (t >= NOTIF + 0.6 && t < CHESS) { const n = Math.min(NOTES.length, Math.floor((t - NOTIF - 0.6) / 0.38) + 1); el.card.style.opacity = 1;
     el.card.innerHTML = `<div class="hd ls"><span>Your phone</span></div><div class="bd">` + NOTES.slice(0, n).reverse().slice(0, 5).map(([who, msg], i) => `<div class="nt"${i === 0 ? ` style="${popStyle(t, NOTIF + 0.6 + (n - 1) * 0.38)}"` : ''}><b class="av">${who[0]}</b><div><div class="nh"><span>${who}</span><i>now</i></div><div class="nb">${msg}</div></div></div>`).join('') + '</div>'; }
+  else if (t >= RICH + 0.2 && t < RICH + 2.5) { const k = smooth(RICH + 0.3, RICH + 2.4, t), n = Math.max(2, Math.floor(60 * k)); let d = '';
+    for (let i = 0; i < n; i++) { const x = 10 + i * 10, y = 330 - 300 * Math.pow(i / 60, 2.2) - 20 * Math.sin(i * 1.7) * (1 - i / 60); d += (i ? 'L' : 'M') + x.toFixed(0) + ' ' + y.toFixed(0); }
+    el.card.style.opacity = smooth(RICH + 0.2, RICH + 0.4, t); el.card.innerHTML = `<div class="hd dp"><span>Your portfolio</span><em>THE PATTERN NOBODY ELSE SEES</em></div><div class="bd" style="background:#0c1420"><svg viewBox="0 0 640 350" width="640" height="350"><path d="${d}" stroke="#30e070" stroke-width="8" fill="none" stroke-linejoin="round"/></svg><div style="font-size:64px;font-weight:600;color:#30e070;text-align:right">+${Math.round(9000 * k * k).toLocaleString('en-US')}%</div></div>`; }
   else el.card.style.opacity = 0;
   const cp = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? popWords(cp[2], t, cp[0], cp[1]) : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.2) : 0;
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t); }

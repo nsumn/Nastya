@@ -20,6 +20,8 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add MOVING film grain (a static screen-space paper texture, as in `parts_coffee/c_head.js`, is fine — it doesn't change between frames).
 
+## NEXT TOPIC (her request, Oct 28): comment from @VIOLET — "Show what happens when you drink energy drinks every day". Post it as a Reply to that comment (sticker). Body/habit timeline = her best format (quit nicotine 633K). Research caffeine/sugar/taurine per can, heart rate, sleep, teeth, FDA 400 mg; no unproven claims.
+
 ## Note (Oct 28): the mom birthday video did NOT take off (dad texts unknown). Family stories may not fit this channel — back to body/what-if hits. Next: "What if your IQ jumped to 500?" (`tools/iq_math.py`; script sent, waiting for approval): dumb face → 500 → smirk with a whoosh+ding, loop ending on a PULL door.
 
 ## Latest: What your mom does on your birthday every year (`parts_mom/`, `index_mom.html`, `scene_mom.js`, `audio_mom.py`, 64 s)

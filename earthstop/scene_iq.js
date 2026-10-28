@@ -7,7 +7,7 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // the bell curve (1 in 10^156, nobody ever), the 3-second test (real tests stop ~160, highest listed 228), a library by lunch, the 20-watt brain bulb,
 // small talk, winning an argument in one line — and the same PULL door at the end. Numbers: tools/iq_math.py.
 // =================== timeline ===================
-const POP = 3.0, CURVE = 6.0, TEST = 14.0, RUBIK = 22.0, ARGUE = 30.0, NOTIF = 38.0, CHESS = 41.6, TALK = 46.0, DOOR = 52.0, CTA = 58.0, T_END = 61.0, LIB = 99, BULB = 99;   // SECOND 1 · MINUTE 1 · HOUR 1 · DAY 1 · WEEK 1 · MONTH 1 · YEAR 1 · EVERY DAY
+const POP = 3.0, CURVE = 6.0, TEST = 14.0, RUBIK = 22.0, ARGUE = 30.0, NOTIF = 38.0, CHESS = 41.6, RICH = 46.0, TALK = 51.0, DOOR = 57.0, CTA = 63.0, T_END = 66.0, LIB = 99, BULB = 99;   // SECOND 1 · MINUTE 1 · HOUR 1 · DAY 1 · WEEK 1 · MONTH 1 · YEAR 1 · EVERY DAY
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
@@ -590,7 +590,7 @@ const PIECES = []; function piece(col, kind, i, j) { const g = new THREE.Group()
 chessGrp.position.set(0.9, 0, 0.6);
 const gm = makeBlock({ skin: '#e2ae86', hair: '#c8c8c8', top: '#3a3a40', collar: '#f4f4f4', bottom: '#2a2a2e', hairStyle: 'bald', glasses: '#2a2420', mustache: '#c8c8c8' }); room.add(gm.outer);
 // ---- per-beat updates in the living room ----
-function hideRoomExtras() { rubik.visible = false; chessGrp.visible = false; gm.outer.visible = false; hero.phone.visible = false; }
+function hideRoomExtras() { desk.visible = false; bills.visible = false; rubik.visible = false; chessGrp.visible = false; gm.outer.visible = false; hero.phone.visible = false; }
 function updateRubik(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); const P = hero; poseReset(P, t); seatAt(P, -1.0, 0.42, -1.3, 0); P.root.rotation.x = -0.05;
   P.arms.forEach((a, i) => a.rotation.set(-0.75, 0, i ? 0.25 : -0.25)); P.elbows.forEach(e => e.rotation.x = -1.0); rubik.visible = true; P.outer.updateMatrixWorld(true); const h = headOf(P);
   const k = smooth(RUBIK + 3.0, RUBIK + 4.6, t); setRubik(k); rubik.position.copy(h).add(V3(0, -0.42 + 0.25 * smooth(RUBIK + 5.4, RUBIK + 6.0, t), 0.3)); rubik.rotation.set(t * 0.5 + k * 9, t * 0.7 + k * 11, 0); rubik.scale.setScalar(1 + 0.6 * smooth(RUBIK + 5.4, RUBIK + 6.0, t));
@@ -606,6 +606,25 @@ function updateChess(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.oute
   gm.outer.visible = true; poseReset(gm, t); seatAt(gm, 0.9, 0.47, 1.1, Math.PI); gm.arms.forEach(a => a.rotation.set(-0.8, 0, 0)); gm.elbows.forEach(e => e.rotation.x = -0.8); gm.face(t < CHESS + 1.6 ? 'reading' : t < CHESS + 2.6 ? 'surprised' : 'crying', t + 0.5); }
 function updateJoke(t) { updateTalk(t, 'talk'); hideRoomExtras(); hero.face(t < TALK + 2.6 ? 'laugh' : t < TALK + 4.0 ? 'neutral' : 'sad', t); fr1.face(t < TALK + 2.4 ? 'neutral' : 'squint', t); fr2.face('worried', t + 1);
   if (t > TALK + 3.0) { const k = smooth(TALK + 3.0, TALK + 4.0, t); fr1.outer.rotation.y = lerp(-0.7, 2.2, k); fr2.outer.rotation.y = lerp(0.7, -2.4, k); hero.arms.forEach(a => a.rotation.set(0, 0, 0)); } }
+// ---- MONTH 6: rich — the chart only you can read, a laptop, cash stacks, money raining down ----
+const desk = new THREE.Group(); room.add(desk); desk.position.set(-0.2, 0, 0.6);
+{ bx(1.1, 0.05, 0.6, '#6a4a30', 0, 0.74, 0, desk); for (const [x, z] of [[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]]) bx(0.05, 0.74, 0.05, '#5a3a24', x, 0.37, z, desk); }
+const chartCv = document.createElement('canvas'); chartCv.width = 320; chartCv.height = 200; const chartTex = new THREE.CanvasTexture(chartCv); chartTex.colorSpace = THREE.SRGBColorSpace;
+function drawChart(k) { const g = chartCv.getContext('2d'); g.fillStyle = '#0c1420'; g.fillRect(0, 0, 320, 200); g.strokeStyle = '#1e2e44'; g.lineWidth = 1; for (let y = 20; y < 200; y += 30) { g.beginPath(); g.moveTo(0, y); g.lineTo(320, y); g.stroke(); }
+  g.strokeStyle = '#30e070'; g.lineWidth = 5; g.beginPath(); const n = Math.max(2, Math.floor(60 * k)); for (let i = 0; i < n; i++) { const x = 10 + i * 5, y = 170 - 150 * Math.pow(i / 60, 2.2) - 12 * Math.sin(i * 1.7) * (1 - i / 60); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  g.fillStyle = '#30e070'; g.font = 'bold 30px Inter, sans-serif'; g.fillText('+' + Math.round(9000 * k * k) + '%', 190, 40); chartTex.needsUpdate = true; }
+const lap = new THREE.Group(); lap.position.set(0, 0.765, -0.05); desk.add(lap); { bx(0.36, 0.02, 0.25, '#b8bcc4', 0, 0.01, 0, lap); const lid = grp(0, 0.02, 0.12, 0, lap); lid.rotation.x = 0.25; bx(0.36, 0.24, 0.015, '#b8bcc4', 0, 0.12, 0, lid);
+  const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.33, 0.21), new THREE.MeshBasicMaterial({ map: chartTex, color: new THREE.Color(1.4, 1.4, 1.4) })); sc.position.set(0, 0.12, -0.009); sc.rotation.y = Math.PI; lid.add(sc); }
+const stacks = Array.from({ length: 12 }, (_, i) => bx(0.15, 0.04, 0.07, '#5aa86a', (i % 4 - 1.5) * 0.17 + 0.28 * (i % 2 ? 1 : -1) * 0, 0.785 + Math.floor(i / 4) * 0.042, 0.18, desk));
+stacks.forEach((b, i) => { b.position.x = -0.42 + (i % 3) * 0.16 + (i >= 6 ? 0.56 : 0); b.position.y = 0.785 + Math.floor((i % 6) / 3) * 0.042; });
+const billM = new THREE.MeshStandardMaterial({ color: '#8ac88a', side: THREE.DoubleSide, roughness: 0.8 }); const BILLS = 140; const bills = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.15, 0.065), billM, BILLS); bills.frustumCulled = false; room.add(bills);
+const B0 = Array.from({ length: BILLS }, () => [R(-1.4, 1.2), R(0, 3), R(-0.4, 1.8), R(0.4, 0.9), R(0, 6)]);
+function updateRich(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); desk.visible = true; const P = hero; poseReset(P, t); seatAt(P, -0.2, 0.47, 0.18, 0);
+  const k = smooth(RICH + 0.3, RICH + 2.4, t); drawChart(k); P.arms.forEach((a, i) => a.rotation.set(-0.95, 0, i ? 0.15 : -0.15)); P.elbows.forEach(e => e.rotation.x = -0.5 - 0.15 * Math.max(0, Math.sin(t * 8 + 1)));
+  const rain = smooth(RICH + 2.4, RICH + 2.8, t); stacks.forEach((b, i) => b.visible = i < Math.floor(12 * smooth(RICH + 1.0, RICH + 2.6, t)));
+  if (t > RICH + 2.6) { P.arms.forEach((a, i) => a.rotation.set(-2.7, 0, i ? -0.35 : 0.35)); P.elbows.forEach(e => e.rotation.x = -0.3); }   // arms up
+  const o = new THREE.Object3D(); B0.forEach(([x, y0, z, sp, ph], i) => { const y = wrapR(y0 - (t - RICH) * sp * 1.4, -0.2, 3); o.position.set(x, rain > 0.01 ? y : -5, z); o.rotation.set(t * 2 + ph, ph + t * 1.3, Math.sin(t * 3 + ph) * 0.6); o.updateMatrix(); bills.setMatrixAt(i, o.matrix); }); bills.instanceMatrix.needsUpdate = true; bills.visible = rain > 0.01;
+  P.face(t < RICH + 1.2 ? 'squint' : t < RICH + 2.6 ? 'smirk' : 'laugh', t); }
 // =================== FAST CUTS: a new shot every 2–3 s; timeline HUD (SECOND 1 → YEAR 1), big stat pop-ups, captions that pop word by word ===================
 const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy, fov);
 const H_ = P => headOf(P);
@@ -630,6 +649,8 @@ const SHOTS = [
   [NOTIF, room, () => rmCam, updateNotif, t => fr(H_(hero), V3(0.3, 0.05, 1), lerp(2.2, 1.8, (t - NOTIF) / 3.6), 0.68), 'room'],
   [CHESS, room, () => rmCam, updateChess, t => fr(V3(0.9, 0.8, 0.6), V3(-0.6, 1.0, 0.3), lerp(1.1, 0.9, (t - CHESS) / 2.2), 0.5), 'room'],
   [CHESS + 2.2, room, () => rmCam, updateChess, t => fr(H_(gm), V3(0.3, 0.05, -1), lerp(1.5, 1.3, (t - CHESS - 2.2) / 2.2), 0.6), 'room'],
+  [RICH, room, () => rmCam, updateRich, t => fr(H_(hero), V3(-0.25, 0.1, 1), lerp(2.0, 1.7, (t - RICH) / 2.4), 0.68), 'room'],
+  [RICH + 2.4, room, () => rmCam, updateRich, t => fr(H_(hero), V3(0.2, 0.12, 1), lerp(2.2, 2.9, (t - RICH - 2.4) / 2.6), 0.6, 46), 'room'],
   [TALK, room, () => rmCam, updateJoke, t => fr(H_(hero).lerp(H_(fr1), 0.5), V3(0.12, 0.08, 1), 3.3, 0.6), 'joke'],
   [TALK + 3.0, room, () => rmCam, updateJoke, t => fr(H_(hero), V3(-0.25, 0.05, 1), lerp(1.8, 1.4, (t - TALK - 3) / 3), 0.62), 'joke'],
   [DOOR, shop, () => spCam, t => updateShop(t, 'end'), t => fr(V3(0.05, H_(hero).y, Math.max(H_(hero).z, 0.4)), V3(-0.2, 0.05, -1), lerp(4.2, 3.4, (t - DOOR) / 2.3), 0.58, 46), 'door'],
@@ -647,12 +668,13 @@ const captions = [
   [22.3, 25.8, 'A Rubik’s cube?'], [26.1, 29.8, 'One look. Solved.'],
   [30.3, 33.8, 'You win every argument —'], [34.1, 37.8, '— in one sentence.'],
   [38.3, 41.3, 'Everyone needs your help.'], [41.8, 45.8, 'A grandmaster? Checkmate in one move.'],
-  [46.3, 49.2, 'But nobody gets your jokes.'], [49.4, 51.8, 'It’s lonely at 500.'],
-  [52.4, 54.3, 'And some things'], [54.4, 57.8, 'no IQ can fix.'],
-  [58.2, 60.9, 'What would you do first? 👇'],
+  [RICH + 0.3, RICH + 2.4, 'You see patterns nobody else sees.'], [RICH + 2.6, RICH + 4.8, 'Month 6: you’re a millionaire.'],
+  [TALK + 0.3, TALK + 3.2, 'But nobody gets your jokes.'], [TALK + 3.4, TALK + 5.8, 'It’s lonely at 500.'],
+  [DOOR + 0.4, DOOR + 2.3, 'And some things'], [DOOR + 2.4, DOOR + 5.8, 'no IQ can fix.'],
+  [CTA + 0.2, CTA + 2.9, 'What would you do first? 👇'],
 ];
-const TIMELINE = [[0, 'SECOND 1'], [CURVE, 'MINUTE 1'], [TEST, 'HOUR 1'], [RUBIK, 'DAY 1'], [ARGUE, 'WEEK 1'], [NOTIF, 'MONTH 1'], [TALK, 'YEAR 1'], [DOOR, 'EVERY DAY']];
-const POPS = [[11.0, 13.7, '1 in 10¹⁵⁶'], [14.3, 17.6, '≈160'], [18.1, 21.6, '228'], [26.1, 29.6, '1 LOOK'], [41.8, 45.6, '1 MOVE']];
+const TIMELINE = [[0, 'SECOND 1'], [CURVE, 'MINUTE 1'], [TEST, 'HOUR 1'], [RUBIK, 'DAY 1'], [ARGUE, 'WEEK 1'], [NOTIF, 'MONTH 1'], [RICH, 'MONTH 6'], [TALK, 'YEAR 1'], [DOOR, 'EVERY DAY']];
+const POPS = [[11.0, 13.7, '1 in 10¹⁵⁶'], [14.3, 17.6, '≈160'], [18.1, 21.6, '228'], [26.1, 29.6, '1 LOOK'], [41.8, 45.6, '1 MOVE'], [RICH + 2.6, RICH + 4.8, '$1,000,000']];
 const BUBBLES = [[ARGUE + 0.4, ARGUE + 3.2, () => sib, 'It’s MY turn to pick the movie!'], [ARGUE + 3.3, ARGUE + 5.1, () => hero, 'You picked last Friday. And the one before.'],
   [TALK + 0.4, TALK + 3.0, () => hero, '…and THAT’S why the integral diverged! 😂'], [TALK + 2.4, TALK + 3.0, () => fr1, '…what?']];
 const NOTES = [['Mom', 'how do i turn off caps lock'], ['Boss', 'can u fix the budget by 5'], ['Neighbor', 'whats 15% of $84.50'], ['Sam', 'help w my homework??'], ['Grandpa', 'the TV says NO SIGNAL'], ['Group chat', 'settle this: is a hot dog a sandwich'], ['Unknown', 'Hi! Are you the genius?'], ['Mom', 'never mind i turned the computer off']];
@@ -671,6 +693,9 @@ function updateDOM(t, cam) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t); e
   // the "help me" flood (month 1)
   if (t >= NOTIF + 0.6 && t < CHESS) { const n = Math.min(NOTES.length, Math.floor((t - NOTIF - 0.6) / 0.38) + 1); el.card.style.opacity = 1;
     el.card.innerHTML = `<div class="hd ls"><span>Your phone</span></div><div class="bd">` + NOTES.slice(0, n).reverse().slice(0, 5).map(([who, msg], i) => `<div class="nt"${i === 0 ? ` style="${popStyle(t, NOTIF + 0.6 + (n - 1) * 0.38)}"` : ''}><b class="av">${who[0]}</b><div><div class="nh"><span>${who}</span><i>now</i></div><div class="nb">${msg}</div></div></div>`).join('') + '</div>'; }
+  else if (t >= RICH + 0.2 && t < RICH + 2.5) { const k = smooth(RICH + 0.3, RICH + 2.4, t), n = Math.max(2, Math.floor(60 * k)); let d = '';
+    for (let i = 0; i < n; i++) { const x = 10 + i * 10, y = 330 - 300 * Math.pow(i / 60, 2.2) - 20 * Math.sin(i * 1.7) * (1 - i / 60); d += (i ? 'L' : 'M') + x.toFixed(0) + ' ' + y.toFixed(0); }
+    el.card.style.opacity = smooth(RICH + 0.2, RICH + 0.4, t); el.card.innerHTML = `<div class="hd dp"><span>Your portfolio</span><em>THE PATTERN NOBODY ELSE SEES</em></div><div class="bd" style="background:#0c1420"><svg viewBox="0 0 640 350" width="640" height="350"><path d="${d}" stroke="#30e070" stroke-width="8" fill="none" stroke-linejoin="round"/></svg><div style="font-size:64px;font-weight:600;color:#30e070;text-align:right">+${Math.round(9000 * k * k).toLocaleString('en-US')}%</div></div>`; }
   else el.card.style.opacity = 0;
   const cp = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? popWords(cp[2], t, cp[0], cp[1]) : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.2) : 0;
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t); }

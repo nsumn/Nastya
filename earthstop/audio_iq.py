@@ -4,10 +4,10 @@ from scipy.io import wavfile
 # "What if your IQ jumped to 500?" (64 s): the bonk on the PULL door (thud + boing), the IQ jump (rising whoosh + bright ding + sparkle chimes),
 # fast cuts (a short swish on every shot change), the curve markers pinging past, the test + the teacher's mug, the cube clacking into place, the argument,
 # the flood of "help me" texts, the chess knock + the king tipping, a sad "womp" for the joke nobody gets, the second bonk. No synthetic voices. ONE playful pluck theme.
-SR = 44100; DUR = 64.5; N = int(SR * DUR); t = np.arange(N) / SR
+SR = 44100; DUR = 69.5; N = int(SR * DUR); t = np.arange(N) / SR
 MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no theme, pads or end chord)
 rng = np.random.default_rng(500); L = np.zeros(N); Rr = np.zeros(N)
-POP, CURVE, TEST, RUBIK, ARGUE, NOTIF, CHESS, TALK, DOOR, CTA, T_END = 3.0, 6.0, 14.0, 22.0, 30.0, 38.0, 41.6, 46.0, 52.0, 58.0, 61.0
+POP, CURVE, TEST, RUBIK, ARGUE, NOTIF, CHESS, RICH, TALK, DOOR, CTA, T_END = 3.0, 6.0, 14.0, 22.0, 30.0, 38.0, 41.6, 46.0, 51.0, 57.0, 63.0, 66.0
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
 def db(x): return 10 ** (x / 20)
 def norm(x): return x / (np.abs(x).max() + 1e-9)
@@ -53,7 +53,7 @@ def step(at, g, pan=0.0): thud(at, g, 90, 0.18, pan); x = tt(0.08); place(at, fi
 def plop(at, g, f=300, pan=0.0): x = tt(0.25); ff = f * (1 + 1.2 * np.exp(-x * 25)); place(at, np.sin(2 * np.pi * np.cumsum(ff) / SR) * np.exp(-x * 14), g, pan)
 def sweep(at, d, f0, f1, g, pan=0.0): x = tt(d); f = f0 * (f1 / f0) ** (x / d); place(at, (np.sin(2 * np.pi * np.cumsum(f) / SR) + 0.3 * np.sin(4 * np.pi * np.cumsum(f) / SR)) * np.sin(np.pi * x / d), g, pan)
 
-CUTS = [1.9, 3.0, 4.4, CURVE, CURVE + 2.6, CURVE + 5.0, TEST, TEST + 2.4, TEST + 5.0, RUBIK, RUBIK + 2.6, RUBIK + 5.2, ARGUE, ARGUE + 3.2, ARGUE + 5.1, NOTIF, CHESS, CHESS + 2.2, TALK, TALK + 3.0, DOOR, DOOR + 2.3, DOOR + 4.0]   # every shot change
+CUTS = [1.9, 3.0, 4.4, CURVE, CURVE + 2.6, CURVE + 5.0, TEST, TEST + 2.4, TEST + 5.0, RUBIK, RUBIK + 2.6, RUBIK + 5.2, ARGUE, ARGUE + 3.2, ARGUE + 5.1, NOTIF, CHESS, CHESS + 2.2, RICH, RICH + 2.4, TALK, TALK + 3.0, DOOR, DOOR + 2.3, DOOR + 4.0]   # every shot change
 def bloop(at, g, pan=-0.2):   # his message arrives: two soft sine notes
     for dt, f in [(0, 660), (0.07, 990)]: x = tt(0.22); place(at + dt, np.sin(2 * np.pi * f * x) * np.exp(-x * 18) * np.clip(x / 0.004, 0, 1), g, pan)
 def swish(at, g, pan=0.2): x = tt(0.25); f = 500 * (1 + 3 * x / 0.25); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [900, 3200]) * np.sin(np.pi * x / 0.25) * 0.6 + 0.4 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 9), g, pan)
@@ -97,6 +97,9 @@ for k in range(6): step(ARGUE + 5.0 + k * 0.38, db(-21), -0.2)
 for k in range(8): popb(NOTIF + 0.6 + k * 0.38, db(-21), 0.25 * np.sin(k), 520 + 40 * k)
 x = tt(0.8); place(CHESS + 0.8, filt(rng.standard_normal(len(x)), 'bandpass', [600, 2000]) * np.sin(np.pi * x / 0.8) * 0.5, db(-28)); thud(CHESS + 1.6, db(-18), 340, 0.1)
 clack(CHESS + 2.8, db(-18)); chime(CHESS + 2.9, db(-22), (72, 79, 84))
+# --- MONTH 6: the chart climbs (a rising tone), cha-ching, money raining
+x = tt(2.1); f = 300 * (1 + 2 * (x / 2.1) ** 2); place(RICH + 0.3, np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 * (x / 2.1), db(-24))
+thud(RICH + 2.5, db(-20), 330, 0.08); chime(RICH + 2.55, db(-15), (86, 91, 98)); x = tt(2.3); place(RICH + 2.6, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 4500]) * (0.5 + 0.5 * (rng.random(len(x)) < 0.05)) * np.sin(np.pi * x / 2.3), db(-30))
 # --- YEAR 1: the joke — a bubble pop, then a sad "womp womp" in soft tones
 popb(TALK + 0.4, db(-20)); x = tt(0.5)
 for k, n in enumerate([62, 61, 60, 59]): x = tt(0.42 if k < 3 else 0.9); f = hz(n) * (1 - (0.03 * x if k == 3 else 0)); place(TALK + 2.5 + k * 0.45, (np.sin(2 * np.pi * f * x) + 0.35 * np.sin(4 * np.pi * f * x) + 0.15 * np.sin(6 * np.pi * f * x)) * np.clip(x / 0.03, 0, 1) * np.exp(-x * 2.2), db(-21))   # pure tones, no square wave (no buzz)

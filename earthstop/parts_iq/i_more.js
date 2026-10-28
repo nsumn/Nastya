@@ -20,7 +20,7 @@ const PIECES = []; function piece(col, kind, i, j) { const g = new THREE.Group()
 chessGrp.position.set(0.9, 0, 0.6);
 const gm = makeBlock({ skin: '#e2ae86', hair: '#c8c8c8', top: '#3a3a40', collar: '#f4f4f4', bottom: '#2a2a2e', hairStyle: 'bald', glasses: '#2a2420', mustache: '#c8c8c8' }); room.add(gm.outer);
 // ---- per-beat updates in the living room ----
-function hideRoomExtras() { rubik.visible = false; chessGrp.visible = false; gm.outer.visible = false; hero.phone.visible = false; }
+function hideRoomExtras() { desk.visible = false; bills.visible = false; rubik.visible = false; chessGrp.visible = false; gm.outer.visible = false; hero.phone.visible = false; }
 function updateRubik(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); const P = hero; poseReset(P, t); seatAt(P, -1.0, 0.42, -1.3, 0); P.root.rotation.x = -0.05;
   P.arms.forEach((a, i) => a.rotation.set(-0.75, 0, i ? 0.25 : -0.25)); P.elbows.forEach(e => e.rotation.x = -1.0); rubik.visible = true; P.outer.updateMatrixWorld(true); const h = headOf(P);
   const k = smooth(RUBIK + 3.0, RUBIK + 4.6, t); setRubik(k); rubik.position.copy(h).add(V3(0, -0.42 + 0.25 * smooth(RUBIK + 5.4, RUBIK + 6.0, t), 0.3)); rubik.rotation.set(t * 0.5 + k * 9, t * 0.7 + k * 11, 0); rubik.scale.setScalar(1 + 0.6 * smooth(RUBIK + 5.4, RUBIK + 6.0, t));
@@ -36,3 +36,22 @@ function updateChess(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.oute
   gm.outer.visible = true; poseReset(gm, t); seatAt(gm, 0.9, 0.47, 1.1, Math.PI); gm.arms.forEach(a => a.rotation.set(-0.8, 0, 0)); gm.elbows.forEach(e => e.rotation.x = -0.8); gm.face(t < CHESS + 1.6 ? 'reading' : t < CHESS + 2.6 ? 'surprised' : 'crying', t + 0.5); }
 function updateJoke(t) { updateTalk(t, 'talk'); hideRoomExtras(); hero.face(t < TALK + 2.6 ? 'laugh' : t < TALK + 4.0 ? 'neutral' : 'sad', t); fr1.face(t < TALK + 2.4 ? 'neutral' : 'squint', t); fr2.face('worried', t + 1);
   if (t > TALK + 3.0) { const k = smooth(TALK + 3.0, TALK + 4.0, t); fr1.outer.rotation.y = lerp(-0.7, 2.2, k); fr2.outer.rotation.y = lerp(0.7, -2.4, k); hero.arms.forEach(a => a.rotation.set(0, 0, 0)); } }
+// ---- MONTH 6: rich — the chart only you can read, a laptop, cash stacks, money raining down ----
+const desk = new THREE.Group(); room.add(desk); desk.position.set(-0.2, 0, 0.6);
+{ bx(1.1, 0.05, 0.6, '#6a4a30', 0, 0.74, 0, desk); for (const [x, z] of [[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]]) bx(0.05, 0.74, 0.05, '#5a3a24', x, 0.37, z, desk); }
+const chartCv = document.createElement('canvas'); chartCv.width = 320; chartCv.height = 200; const chartTex = new THREE.CanvasTexture(chartCv); chartTex.colorSpace = THREE.SRGBColorSpace;
+function drawChart(k) { const g = chartCv.getContext('2d'); g.fillStyle = '#0c1420'; g.fillRect(0, 0, 320, 200); g.strokeStyle = '#1e2e44'; g.lineWidth = 1; for (let y = 20; y < 200; y += 30) { g.beginPath(); g.moveTo(0, y); g.lineTo(320, y); g.stroke(); }
+  g.strokeStyle = '#30e070'; g.lineWidth = 5; g.beginPath(); const n = Math.max(2, Math.floor(60 * k)); for (let i = 0; i < n; i++) { const x = 10 + i * 5, y = 170 - 150 * Math.pow(i / 60, 2.2) - 12 * Math.sin(i * 1.7) * (1 - i / 60); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  g.fillStyle = '#30e070'; g.font = 'bold 30px Inter, sans-serif'; g.fillText('+' + Math.round(9000 * k * k) + '%', 190, 40); chartTex.needsUpdate = true; }
+const lap = new THREE.Group(); lap.position.set(0, 0.765, -0.05); desk.add(lap); { bx(0.36, 0.02, 0.25, '#b8bcc4', 0, 0.01, 0, lap); const lid = grp(0, 0.02, 0.12, 0, lap); lid.rotation.x = 0.25; bx(0.36, 0.24, 0.015, '#b8bcc4', 0, 0.12, 0, lid);
+  const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.33, 0.21), new THREE.MeshBasicMaterial({ map: chartTex, color: new THREE.Color(1.4, 1.4, 1.4) })); sc.position.set(0, 0.12, -0.009); sc.rotation.y = Math.PI; lid.add(sc); }
+const stacks = Array.from({ length: 12 }, (_, i) => bx(0.15, 0.04, 0.07, '#5aa86a', (i % 4 - 1.5) * 0.17 + 0.28 * (i % 2 ? 1 : -1) * 0, 0.785 + Math.floor(i / 4) * 0.042, 0.18, desk));
+stacks.forEach((b, i) => { b.position.x = -0.42 + (i % 3) * 0.16 + (i >= 6 ? 0.56 : 0); b.position.y = 0.785 + Math.floor((i % 6) / 3) * 0.042; });
+const billM = new THREE.MeshStandardMaterial({ color: '#8ac88a', side: THREE.DoubleSide, roughness: 0.8 }); const BILLS = 140; const bills = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.15, 0.065), billM, BILLS); bills.frustumCulled = false; room.add(bills);
+const B0 = Array.from({ length: BILLS }, () => [R(-1.4, 1.2), R(0, 3), R(-0.4, 1.8), R(0.4, 0.9), R(0, 6)]);
+function updateRich(t) { updateTalk(t, 'argue'); [sib, mom].forEach(p => p.outer.visible = false); hideRoomExtras(); desk.visible = true; const P = hero; poseReset(P, t); seatAt(P, -0.2, 0.47, 0.18, 0);
+  const k = smooth(RICH + 0.3, RICH + 2.4, t); drawChart(k); P.arms.forEach((a, i) => a.rotation.set(-0.95, 0, i ? 0.15 : -0.15)); P.elbows.forEach(e => e.rotation.x = -0.5 - 0.15 * Math.max(0, Math.sin(t * 8 + 1)));
+  const rain = smooth(RICH + 2.4, RICH + 2.8, t); stacks.forEach((b, i) => b.visible = i < Math.floor(12 * smooth(RICH + 1.0, RICH + 2.6, t)));
+  if (t > RICH + 2.6) { P.arms.forEach((a, i) => a.rotation.set(-2.7, 0, i ? -0.35 : 0.35)); P.elbows.forEach(e => e.rotation.x = -0.3); }   // arms up
+  const o = new THREE.Object3D(); B0.forEach(([x, y0, z, sp, ph], i) => { const y = wrapR(y0 - (t - RICH) * sp * 1.4, -0.2, 3); o.position.set(x, rain > 0.01 ? y : -5, z); o.rotation.set(t * 2 + ph, ph + t * 1.3, Math.sin(t * 3 + ph) * 0.6); o.updateMatrix(); bills.setMatrixAt(i, o.matrix); }); bills.instanceMatrix.needsUpdate = true; bills.visible = rain > 0.01;
+  P.face(t < RICH + 1.2 ? 'squint' : t < RICH + 2.6 ? 'smirk' : 'laugh', t); }
