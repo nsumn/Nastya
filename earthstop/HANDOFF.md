@@ -20,6 +20,8 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - **Style decision (latest):** after the realistic hole video came out pixelated on TikTok she said the realistic/"high quality" look is out — **use the classic series low-poly style** ("как раньше"). The cat video was rebuilt that way in `parts_cat2/` (`index_cat2.html`, `scene_cat2.js`, audio = `audio_cat.py`). Keep the realistic pipeline only as reference.
 - TikTok pixelation lesson: heavy grain/dark gradients + 3.3 Mbit/s source get mangled by TikTok's re-encode; tell her to enable "Upload HD"/turn off Data Saver, and don't add MOVING film grain (a static screen-space paper texture, as in `parts_coffee/c_head.js`, is fine — it doesn't change between frames).
 
+## Note (Oct 28): the mom birthday video did NOT take off (dad texts unknown). Family stories may not fit this channel — back to body/what-if hits. Next: "What if your IQ jumped to 500?" (`tools/iq_math.py`; script sent, waiting for approval): dumb face → 500 → smirk with a whoosh+ding, loop ending on a PULL door.
+
 ## Latest: What your mom does on your birthday every year (`parts_mom/`, `index_mom.html`, `scene_mom.js`, `audio_mom.py`, 64 s)
 Her notes while scripting: "who gets up at 4 a.m.?" and no "exact minute you were born" ritual (not relatable to her) — use ordinary things most moms really do (first to text, the baby photo post, "I want nothing" → perfect gift anyway, the labor story, singing on voicemail). Twist: at 25 you text her first — your birthday is the day she became a mom. Also from the dad video: she wants ONE continuous take per beat (camera follows the action, no hard cuts inside an episode) and soft dissolves between years.
 
