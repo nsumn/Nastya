@@ -10,8 +10,8 @@ const brainW = () => brainG.getWorldPosition(V3(0, 0, 0));
 // [start, scene, camera, update(t), framing(t)]
 const SHOTS = [
   [0.0, room, () => rmCam, home('open'), t => framing(H_(hero), V3(0.25, 0.02, 1), lerp(2.0, 1.6, t / 1.6), 0.6)],   // under the title: face low
-  [1.6, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.5, 0.12, 1), lerp(2.1, 1.85, (t - 1.6) / 1.1), 0.45)],   // the crack
-  [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.55, 0.05, 1), lerp(1.45, 1.6, (t - 2.7) / 1.3), 0.55)],   // eyes snap open
+  [1.6, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.5, 0.12, 1), lerp(2.1, 1.85, (t - 1.6) / 1.1), 0.58)],   // the crack
+  [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.55, 0.05, 1), lerp(1.45, 1.6, (t - 2.7) / 1.3), 0.63)],   // eyes snap open
   [MIN30, xr, () => xCam, t => updateXray(t, 'x'), t => { const a = lerp(Math.PI * 0.95, 0.35, ease((t - MIN30) / 2.6)); return fr(heartW(), V3(Math.sin(a), 0.15, Math.cos(a)), lerp(2.6, 1.3, ease((t - MIN30) / 2.6)), 0.5); }],   // spirals in from behind
   [MIN30 + 2.6, xr, () => xCam, t => updateXray(t, 'x'), t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.55, 0.42, (t - MIN30 - 2.6) / 2.4), 0.5)],
   [BRAIN, xr, () => xCam, t => updateXray(t, 'x'), t => { const k = ease((t - BRAIN) / 1.8); return fr(heartW().lerp(brainW(), k), V3(0.45, 0.1, 1), lerp(0.55, 0.62, k), lerp(0.5, 0.55, k)); }],   // up from the heart into the head
