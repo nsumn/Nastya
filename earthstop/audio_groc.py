@@ -7,7 +7,7 @@ from scipy.io import wavfile
 SR = 44100; MUSIC = '--no-music' not in sys.argv
 js = open('parts_groc/g_times.js').read()
 T_END = float(re.search(r'const T_END = ([\d.]+)', js).group(1)); CUE = json.loads(re.search(r'const CUE = (\{.*?\});', js).group(1))
-N = int(SR * T_END); t = np.arange(N) / SR; L = np.zeros(N); Rr = np.zeros(N)
+N = int(SR * T_END); t = np.arange(N) / SR; L = np.zeros(N); Rr = np.zeros(N)   # L/Rr = the SFX bus (ducked under the voice below)
 def load(path):
     raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-ac', '2', '-ar', str(SR), '-f', 'f32le', '-'], capture_output=True, check=True).stdout
     return np.frombuffer(raw, np.float32).reshape(-1, 2).astype(np.float64)
@@ -34,7 +34,10 @@ place(C['addtwomore'] + 0.1, SFX['legs'], db(-17)); place(C['addtwomore'] + 0.1,
 for k in ['installafreeze', 'andafridge', 'apantry', 'acounterfor', 'andatv']: place(C[k] + 0.05, SFX['pop'], db(-17))
 place(C['adishwasher'] + 0.1, SFX['dish'], db(-16)); place(C['andacoffee'] + 0.1, SFX['brew'], db(-16))
 place(C['onetrip'] + 0.1, SFX['legs'], db(-19)); place(keys + 0.05, SFX['door'], db(-13)); place(keys + 1.5, SFX['keysj'], db(-15))
-voice = load('out/groc/voice.wav')[:, 0][:N]; v = np.zeros(N); v[:len(voice)] = voice
+voice = load('out/groc/voice.wav')[:, 0][:N]; v = np.zeros(N); v[:len(voice)] = voice; v /= np.abs(v).max() + 1e-9
+# the voice leads (her note: the narration was quieter than the effects): SFX -7 dB overall and ducked a further ~7 dB while he speaks
+venv = np.sqrt(np.convolve(v ** 2, np.ones(int(0.25 * SR)) / int(0.25 * SR), 'same')); venv /= venv.max() + 1e-9
+sduck = db(-7) * (1 - 0.55 * np.clip(venv * 5, 0, 1)); L *= sduck; Rr *= sduck
 if MUSIC:
     m = load('out/groc/sfx/sfx_music.mp3'); fade = int(1.5 * SR); loop = m.copy()
     while len(loop) < N + SR: ramp = np.linspace(0, 1, fade)[:, None]; loop = np.concatenate([loop[:-fade], loop[-fade:] * (1 - ramp) + m[:fade] * ramp, m[fade:]])
@@ -42,7 +45,7 @@ if MUSIC:
     env = np.sqrt(np.convolve(v ** 2, np.ones(int(0.3 * SR)) / int(0.3 * SR), 'same')); env = env / (env.max() + 1e-9)
     duck = db(-14) * (1 - 0.6 * np.clip(env * 4, 0, 1)) * np.clip((T_END - t) / 1.5, 0, 1)
     L += loop[:, 0] * duck; Rr += loop[:, 1] * duck
-L += v * db(-1); Rr += v * db(-1)
+L += v * db(2); Rr += v * db(2)
 out = np.stack([L, Rr], 1); out = sosfilt(butter(2, 60, 'highpass', fs=SR, output='sos'), out.T).T
 out = np.tanh(out * 1.1) / np.tanh(1.1); out /= np.abs(out).max() / 0.95
 wavfile.write(sys.argv[1], SR, (out * 32767).astype(np.int16)); print('ok', T_END)
