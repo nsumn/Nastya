@@ -541,7 +541,7 @@ const SHOTS = [
   [WEEK + 2.8, toothS, () => tCam, updateTooth, t => fr(V3(0, 0.4, 0.05), V3(-0.3, 0.55, 1), lerp(1.1, 0.95, (t - WEEK - 2.8) / 3.2), 0.5)],
   [MONTH, room, () => rmCam, home('month'), t => fr(H_(hero), V3(0.2, 0.08, 1), lerp(1.9, 1.6, (t - MONTH) / 2.8), 0.6)],
   [MONTH + 2.8, room, () => rmCam, home('month'), t => fr(H_(hero), V3(-0.45, 0.1, 1), lerp(1.3, 1.15, (t - MONTH - 2.8) / 3.2), 0.6)],
-  [YEAR, room, () => rmCam, home('year'), t => fr(V3(2.1, 0.95, -0.8), V3(0.25, 0.25, 1), lerp(4.3, 3.9, (t - YEAR) / 2.6), 0.5)],
+  [YEAR, room, () => rmCam, home('year'), t => fr(V3(2.1, 1.15, -0.8), V3(0.25, 0.12, 1), lerp(4.6, 4.2, (t - YEAR) / 2.6), 0.62)],
   [YEAR + 2.6, room, () => rmCam, home('year'), t => fr(H_(hero), V3(-0.3, 0.05, 1), lerp(1.6, 1.4, (t - YEAR - 2.6) / 1.4), 0.6)],
   [YEAR + 4.0, room, () => rmCam, home('year'), t => fr(V3(1.3, 0.1, -0.35), V3(0.15, 0.9, 1), lerp(1.0, 0.85, (t - YEAR - 4) / 3), 0.5)],   // the cash
   [ER, erS, () => eCam, updateER, t => fr(V3(0, 1.2, 0), V3(0.15, 0.5, 1), lerp(15, 12, (t - ER) / 3.4), 0.5, 46)],
