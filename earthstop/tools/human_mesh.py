@@ -78,7 +78,7 @@ def groups(p):
         thumb = cap(q, (0.243, 0.915, 0.034), (0.236, 0.878, 0.046), 0.013, 0.012)
         d[bs] = smin(delt, up, 0.05)
         if OUTFIT == 'tee':   # wide short sleeve, hanging a bit away from the arm, open end just above the elbow
-            sl = smax(cap(q, (0.228, 1.385, 0), (0.28, 1.1, 0.0), 0.085, 0.082), 1.095 - q[:, 1], 0.012)
+            sl = smax(cap(q, (0.228, 1.385, 0), (0.272, 1.16, 0.0), 0.085, 0.08), 1.205 - q[:, 1], 0.012)   # ends just above the elbow, so the elbow bends freely
             d[bs] = np.minimum(d[bs], sl)
         d[be] = smin(fore, smin(palm, thumb, 0.01), 0.025)
         d[('hand', side)] = smin(palm, thumb, 0.01)
@@ -107,10 +107,11 @@ def build_body():
 
     D = groups(bv); bone = np.stack([D[i] for i in range(10)], 1)
     w = np.exp(-(bone - bone.min(1, keepdims=True)) / 0.018)
-    # arms and torso do not drag each other below the shoulder cap (no stretched "wings" when an arm goes up)
+    # below the shoulder cap arms and torso barely drag each other (no stretched "wings" when an arm goes up)
     dom = bone.argmin(1); arm = np.isin(dom, [2, 3, 4, 5]); low = bv[:, 1] < 1.4
-    w[arm & low, 0] = 0; w[arm & low, 1] = 0
-    for a in (2, 3, 4, 5): w[(~arm) & low, a] = 0
+    Dv = bone - bone.min(1, keepdims=True); tight = np.exp(-Dv / 0.005)   # only a thin seam blends between an arm and the torso: no gaps, no wings
+    for b in (0, 1): w[arm & low, b] = tight[arm & low, b]
+    for b in (2, 3, 4, 5): w[(~arm) & low, b] = tight[(~arm) & low, b]
     w[np.arange(len(w)), dom] = np.maximum(w[np.arange(len(w)), dom], 1e-6)
     idx = np.argsort(-w, 1)[:, :4]
     ww = np.take_along_axis(w, idx, 1); ww /= ww.sum(1, keepdims=True)
@@ -128,7 +129,7 @@ def build_body():
             if y < 1.0 and OUTFIT != 'tee': r = 'top2'
             if OUTFIT == 'tee' and y > 1.47 and DC['neck'][i] < 0.025 and r != 'skin': r = 'top2'   # neck rib
         elif g == 0: r = 'top2' if y > 0.985 and OUTFIT != 'tee' else 'bottom'
-        elif g in (2, 4): r = 'top'
+        elif g in (2, 4): r = 'skin' if OUTFIT == 'tee' and y < 1.2 else 'top'   # bare arm between the sleeve and the elbow
         elif g in (3, 5):
             side = -1 if g == 3 else 1
             r = 'skin' if OUTFIT == 'tee' or DC[('hand', side)][i] < 0.006 or y < 0.95 else ('top2' if y < 0.985 else 'sleeve')
