@@ -145,7 +145,7 @@ window.renderAt = (t) => {
   let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
   if (window.PASS === 'text') { updateDOM(t); return true; }
   shoot(i, t, RTA); compMat.uniforms.uWhip.value = 0; compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; compMat.uniforms.uT.value = t;
-  compMat.uniforms.uLook.value = 0.12; composite(0, 1.0, 1.0); updateDOM(t); return true; };   // a clean look: almost no paper grain / vignette
+  compMat.uniforms.uLook.value = 0.12; compMat.uniforms.uTilt.value = CLAY ? 0.012 : 0; composite(0, 1.0, 1.0); updateDOM(t); return true; };   // a clean look: almost no paper grain / vignette
 window.sceneReady = (async () => { await document.fonts.ready;
   for (const p of [hero, nb1, nb2]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
   for (let i = 0; i < SHOTS.length; i++) shoot(i, SHOTS[i][0] + 0.3, RTA); window.renderAt(0); return true; })();
