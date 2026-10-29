@@ -105,7 +105,7 @@ const SHOTS = [
   [T.wheels, t => fr(rigC(1.1), V3(0.55, 0.35, -1), lerp(4.0, 3.6, (t - T.wheels) / 2), 0.55)],
   [T.better, t => fr(H_(hero), V3(-0.5, 0.1, -1), 2.2, 0.62)],
   [T.steps, t => fr(V3(0, 1.0, -3.6), V3(1, 0.2, 0.25), 4.2, 0.55)],
-  [T.legs, t => fr(rigC(0.5), V3(0.75, 0.12, -1), lerp(2.6, 2.9, (t - T.legs) / 1.1), 0.5)],
+  [T.legs, t => fr(rigC(0.9), V3(1, 0.25, 0.35), lerp(3.6, 3.9, (t - T.legs) / 1.1), 0.52)],
   [T.climbs, t => fr(V3(0, 1.6, -4.0), V3(1, 0.25, 0.35), 6.5, 0.6)],
   [T.eggs, t => fr(V3(0.2, 1.1, -3.4), V3(0.9, 0.15, 0.7), 3.4, 0.5)],
   [T.susp, t => { rig.updateMatrixWorld(true); return fr(LEGS[3].hip.localToWorld(V3(0, -0.1, 0)), V3(0.7, 0.1, 1), 1.4, 0.5); }],
@@ -113,21 +113,25 @@ const SHOTS = [
   [T.stare, t => fr(H_(nb1).lerp(H_(nb2), 0.5), V3(1, 0.05, 0.15), 3.3, 0.6)],
   [T.walking, t => fr(H_(hero), V3(-1, 0.1, 0.3), 2.6, 0.6)],
   [T.seat, t => fr(H_(hero), V3(0.3, 0.2, 1), 3.0, 0.6)],
-  [T.motor, t => fr(rigC(1.0), V3(-0.4, 0.3, 1), 4.6, 0.55)],
+  [T.motor, t => fr(rigC(1.4), V3(-0.4, 0.35, 1), 5.8, 0.55)],
   [T.melt, t => { rig.updateMatrixWorld(true); return fr(KIT.icecream.localToWorld(V3(0, 0.1, 0)), V3(0.3, 0.6, 1), 1.0, 0.5); }],
   [T.freezer, t => fr(rigC(1.0), V3(0.4, 0.45, 1), 4.4, 0.55)],
   [T.pantry, t => fr(rigC(1.0), V3(-0.75, 0.35, 1), 4.2, 0.55)],
   [T.dish, t => { rig.updateMatrixWorld(true); return fr(KIT.dish.localToWorld(V3(0, 0.4, 0)), V3(0.25, 0.3, 1), 1.5, 0.5); }],
   [T.obv, t => fr(H_(hero), V3(-0.25, 0.05, 1), 1.3, 0.6)],
-  [T.congr, t => fr(rigC(1.2), V3(0.3, 0.6, 1), lerp(5.5, 7.5, (t - T.congr) / 1.2), 0.55)],
+  [T.congr, t => fr(rigC(1.2), V3(0.85, 0.5, 0.6), lerp(5.5, 7.0, (t - T.congr) / 1.2), 0.55)],
   [T.built, t => fr(rigC(1.0), V3(0.9, 0.3, 0.6), lerp(6.5, 6.0, (t - T.built) / 2.9), 0.55)],
   [T.onetrip, t => fr(rigC(1.4), V3(0.35, 0.4, 1), 5.2, 0.55)],
   [T.drive, t => fr(rigC(1.2), V3(0.8, 0.3, 0.7), 5.6, 0.55)],
-  [T.keys, t => fr(H_(hero), V3(1, 0.05, 0.3), 1.7, 0.6)],
+  [T.keys, t => fr(H_(hero), V3(1, 0.1, 0.45), 2.4, 0.6)],
   [T.keys + 0.9, t => fr(H_(hero), V3(0.15, 0.05, 1), 1.35, 0.6)],
   [T.keys + 1.7, t => fr(carKeys.position, V3(0.5, 0.7, 0.3), 0.5, 0.5)],   // inside the car: the keys on the seat
   [T.two, t => fr(H_(hero), V3(0.4, 0.25, 1), lerp(3.6, 4.2, (t - T.two) / 4.7), 0.6)]];
-function shoot(i, t, rt) { update(t); const F = SHOTS[i][1](t); applyF(stCam, F); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(stCam.fov * Math.PI / 360)); shootTo(rt, st, stCam); }
+// ambient occlusion (GTAO at half res) between the scene render and the tone-mapping composite: soft contact shading in every corner, like a modelled set
+const RTS = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+const gtao = new GTAOPass(st, stCam, W / 2, H / 2); gtao.renderToScreen = false; gtao.blendIntensity = 1.0;
+gtao.updateGtaoMaterial({ radius: 0.5, distanceExponent: 1.5, thickness: 1.5, scale: 1.0, samples: 12 }); gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
+function shoot(i, t, rt) { update(t); const F = SHOTS[i][1](t); applyF(stCam, F); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(stCam.fov * Math.PI / 360)); shootTo(RTS, st, stCam); gtao.render(renderer, rt, RTS); }
 // captions: their style — bold white with a black outline, the phrase's words revealed as they're spoken
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['cap', 'end'].map(k => [k, $(k)]));
@@ -141,7 +145,7 @@ window.renderAt = (t) => {
   let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
   if (window.PASS === 'text') { updateDOM(t); return true; }
   shoot(i, t, RTA); compMat.uniforms.uWhip.value = 0; compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; compMat.uniforms.uT.value = t;
-  composite(0, 1.0, 1.0); updateDOM(t); return true; };
+  compMat.uniforms.uLook.value = 0.12; composite(0, 1.0, 1.0); updateDOM(t); return true; };   // a clean look: almost no paper grain / vignette
 window.sceneReady = (async () => { await document.fonts.ready;
   for (const p of [hero, nb1, nb2]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(p.o, n, b));
   for (let i = 0; i < SHOTS.length; i++) shoot(i, SHOTS[i][0] + 0.3, RTA); window.renderAt(0); return true; })();

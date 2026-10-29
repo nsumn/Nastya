@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 
 // "Unnecessary engineering" format (her request, Oct 29): ONE TRIP WITH ALL THE GROCERIES. An everyday annoyance -> "Let's fix that." -> each fix makes a
 // new problem -> the rig grows into a kitchen on wheels -> the twist loops back (the house keys are in the car). Narrated (Lumean TTS, voice C "Andrew", US);
