@@ -4,3 +4,4 @@ out/
 *.wav
 *.log
 assets/
+ffmpeg2pass-*
