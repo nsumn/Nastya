@@ -18,11 +18,11 @@ def place(at, sig, g=1.0, pan=0.0):
     s = sig[:N - i0]; L[i0:i0 + len(s)] += s[:, 0] * g * np.sqrt(1 - pan) ; Rr[i0:i0 + len(s)] += s[:, 1] * g * np.sqrt(1 + pan)
 WORDS = json.loads(re.search(r'const WORDS = (\[.*?\]);', js).group(1))
 def wordT(w, after): return next((t for t, x in WORDS if t >= after - 0.01 and re.sub(r'[^a-z]', '', x.lower()) == w), 99)
-SFX = {k: load(f'out/groc/sfx/sfx_{k}.mp3') for k in ['bags', 'hooks', 'knees', 'frame', 'wheels', 'bump', 'legs', 'eggs', 'boing', 'engine', 'pop', 'door', 'keysj', 'dish', 'shutter', 'whoosh', 'brew', 'leaves']}
+SFX = {k: load(f'out/groc/sfx/sfx_{k}.mp3') for k in ['tadum', 'bags', 'hooks', 'knees', 'frame', 'wheels', 'bump', 'legs', 'eggs', 'boing', 'engine', 'pop', 'door', 'keysj', 'dish', 'shutter', 'whoosh', 'brew', 'leaves']}
 for k in SFX: SFX[k] /= np.abs(SFX[k]).max() + 1e-9
 C = CUE; knees = wordT('until', C['nowitall']); motor = wordT('motor', C['addaseat']); keys = wordT('and', C['youdriveit'] + 0.5)
 place(0.05, SFX['bags'], db(-17)); place(1.7, SFX['bags'], db(-22))
-place(C['firsthookson'] + 0.3, SFX['hooks'], db(-15)); place(C['nowitall'] + 0.1, SFX['bags'], db(-18))
+place(C['letsfixthat'] - 0.05, SFX['tadum'], db(-11)); place(C['firsthookson'] + 0.3, SFX['hooks'], db(-15)); place(C['nowitall'] + 0.1, SFX['bags'], db(-18))
 place(knees + 0.05, SFX['knees'], db(-14)); place(C['movethehooks'] + 0.15, SFX['frame'], db(-16))
 place(C['putiton'] + 0.15, SFX['wheels'], db(-17)); place(C['excepttheporch'] - 0.1, SFX['bump'], db(-13))
 place(C['giveitlegs'] + 0.15, SFX['legs'], db(-17)); place(C['nowitclimbs'] + 0.05, SFX['legs'], db(-17)); place(C['unfortunatelys'] + 0.6, SFX['eggs'], db(-12))
@@ -34,10 +34,13 @@ place(C['addtwomore'] + 0.1, SFX['legs'], db(-17)); place(C['addtwomore'] + 0.1,
 for k in ['installafreeze', 'andafridge', 'apantry', 'acounterfor', 'andatv']: place(C[k] + 0.05, SFX['pop'], db(-17))
 place(C['adishwasher'] + 0.1, SFX['dish'], db(-16)); place(C['andacoffee'] + 0.1, SFX['brew'], db(-16))
 place(C['onetrip'] + 0.1, SFX['legs'], db(-19)); place(keys + 0.05, SFX['door'], db(-13)); place(keys + 1.5, SFX['keysj'], db(-15))
-voice = load('out/groc/voice.wav')[:, 0][:N]; v = np.zeros(N); v[:len(voice)] = voice; v /= np.abs(v).max() + 1e-9
-# the voice leads but the effects stay audible (her notes: first the voice was buried, then the effects vanished): SFX -2 dB, ducked a further ~4 dB while he speaks
-venv = np.sqrt(np.convolve(v ** 2, np.ones(int(0.25 * SR)) / int(0.25 * SR), 'same')); venv /= venv.max() + 1e-9
-sduck = db(-2) * (1 - 0.35 * np.clip(venv * 4, 0, 1)); L *= sduck; Rr *= sduck
+voice = load('out/groc/voice.wav')[:, 0][:N]; v = np.zeros(N); v[:len(voice)] = voice
+# the voice is louder and clearer, the effects stay as they were (her note): compress the narration (fast RMS leveler), add presence (2–5 kHz), then +4 dB
+def level(x, win=0.03, target=0.25, max_gain=4.0):
+    e = np.sqrt(np.convolve(x ** 2, np.ones(int(win * SR)) / int(win * SR), 'same')) + 1e-6
+    return x * np.clip(target / e, 0, max_gain) ** 0.6
+v = level(v / (np.abs(v).max() + 1e-9)); v = v + 0.6 * sosfilt(butter(2, [2000, 5000], 'bandpass', fs=SR, output='sos'), v); v /= np.abs(v).max() + 1e-9
+voice_peak = np.abs(load('out/groc/voice.wav')[:, 0]).max()
 if MUSIC:
     m = load('out/groc/sfx/sfx_music.mp3'); fade = int(1.5 * SR); loop = m.copy()
     while len(loop) < N + SR: ramp = np.linspace(0, 1, fade)[:, None]; loop = np.concatenate([loop[:-fade], loop[-fade:] * (1 - ramp) + m[:fade] * ramp, m[fade:]])
@@ -45,7 +48,15 @@ if MUSIC:
     env = np.sqrt(np.convolve(v ** 2, np.ones(int(0.3 * SR)) / int(0.3 * SR), 'same')); env = env / (env.max() + 1e-9)
     duck = db(-14) * (1 - 0.6 * np.clip(env * 4, 0, 1)) * np.clip((T_END - t) / 1.5, 0, 1)
     L += loop[:, 0] * duck; Rr += loop[:, 1] * duck
-L += v * db(2); Rr += v * db(2)
-out = np.stack([L, Rr], 1); out = sosfilt(butter(2, 60, 'highpass', fs=SR, output='sos'), out.T).T
-out = np.tanh(out * 1.1) / np.tanh(1.1); out /= np.abs(out).max() / 0.95
-wavfile.write(sys.argv[1], SR, (out * 32767).astype(np.int16)); print('ok', T_END)
+# loudness: use EXACTLY the gain the first mix got (voice raw at -1 dB, normalised to -14 LUFS), so the effects sound as they did; only the voice is louder now
+def lufs(x):
+    wavfile.write('/tmp/_m.wav', SR, (np.clip(x, -1, 1) * 32767).astype(np.int16))
+    r = subprocess.run(['ffmpeg', '-v', 'info', '-i', '/tmp/_m.wav', '-af', 'ebur128', '-f', 'null', '-'], capture_output=True, text=True).stderr
+    return float(re.findall(r'I:\s+(-?[\d.]+) LUFS', r)[-1])
+def master(Lx, Rx):
+    o = np.stack([Lx, Rx], 1); o = sosfilt(butter(2, 60, 'highpass', fs=SR, output='sos'), o.T).T; return np.tanh(o * 1.1) / np.tanh(1.1)
+vraw = np.zeros(N); vr = load('out/groc/voice.wav')[:, 0][:N]; vraw[:len(vr)] = vr
+old = master(L + vraw * db(-1), Rr + vraw * db(-1)); old /= np.abs(old).max() / 0.95; G = db(-14 - lufs(old)) / (np.abs(master(L + vraw * db(-1), Rr + vraw * db(-1))).max() / 0.95)
+new = master(L + v * voice_peak * db(4), Rr + v * voice_peak * db(4)) * G
+out = np.clip(np.tanh(new), -0.97, 0.97)   # soft limiter for the louder voice peaks (tanh never exceeds 1: no int16 wrap-around)
+wavfile.write(sys.argv[1], SR, (out * 32767).astype(np.int16)); print('ok', T_END, 'old-mix gain', round(20 * np.log10(G), 1), 'dB, LUFS now', lufs(out))
