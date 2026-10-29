@@ -18,11 +18,12 @@ const wheels = new THREE.Group(); rig.add(wheels);
 const WH = [[-0.62, -0.42], [0.62, -0.42], [-0.62, 0.42], [0.62, 0.42]].map(([x, z]) => { const w = new THREE.Group(); w.position.set(x, 0.2, z); wheels.add(w);
   const t = mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16), DARK); t.rotation.z = Math.PI / 2; w.add(t); const hub = mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.12, 8), ORG); hub.rotation.z = Math.PI / 2; w.add(hub); return w; });
 const legs = new THREE.Group(); rig.add(legs);
-const LEGS = [[-0.6, -0.4], [0.6, -0.4], [-0.6, 0.4], [0.6, 0.4]].map(([x, z], i) => { const hip = new THREE.Group(); hip.position.set(x, 0, z); legs.add(hip);
+let EXTRA_LEGS = false;   // the 2 middle legs ("for the turkey")
+const LEGS = [[-0.6, -0.4], [0.6, -0.4], [-0.6, 0.4], [0.6, 0.4], [-0.64, 0], [0.64, 0]].map(([x, z], i) => { const hip = new THREE.Group(); hip.position.set(x, 0, z); legs.add(hip);
   const spring = new THREE.Group(); hip.add(spring); for (let k = 0; k < 5; k++) { const r = mesh(new THREE.TorusGeometry(0.06, 0.012, 5, 14), STEEL); r.rotation.x = Math.PI / 2; r.position.y = -0.03 - k * 0.035; spring.add(r); }
   const thigh = new THREE.Group(); thigh.position.y = -0.2; hip.add(thigh); tube([0, 0, 0], [0, -0.42, 0], 0.035, BLK, thigh); const kj = mesh(new THREE.SphereGeometry(0.055, 10, 8), ORG); kj.position.y = -0.42; thigh.add(kj);
   const shin = new THREE.Group(); shin.position.y = -0.42; thigh.add(shin); tube([0, 0, 0], [0, -0.42, 0], 0.03, BLK, shin); bx(0.14, 0.04, 0.2, DARK, 0, -0.44, 0.02, shin);
-  return { hip, thigh, shin, spring, ph: i === 0 || i === 3 ? 0 : Math.PI }; });
+  return { hip, thigh, shin, spring, ph: i === 0 || i === 3 ? 0 : i === 4 ? Math.PI / 2 : i === 5 ? -Math.PI / 2 : Math.PI, extra: i >= 4 }; });
 // seat + steering bar, the motor (+ exhaust), the kitchen
 const seat = new THREE.Group(); body.add(seat); seat.position.set(0, 0.05, -0.2); { bx(0.5, 0.1, 0.45, MINT, 0, 0.42, 0, seat); bx(0.5, 0.55, 0.08, MINT, 0, 0.72, -0.22, seat); tube([0, 0, 0], [0, 0.37, 0], 0.04, BLK, seat);
   tube([0, 0.05, 0.35], [0, 0.75, 0.42], 0.025, BLK, seat); tube([-0.2, 0.75, 0.42], [0.2, 0.75, 0.42], 0.025, DARK, seat); }
@@ -50,4 +51,14 @@ function rigGear(kind, t, ph, bob = 0.05) { wheels.visible = kind === 'wheels'; 
   if (kind === 'wheels') { body.position.y = 0.45; WH.forEach(w => w.rotation.x = ph); return; }
   const spr = kind === 'spring'; body.position.y = 0.95 + (spr ? 0.04 : 0) + (spr ? 0.006 : bob) * Math.abs(Math.sin(ph));
   legs.position.y = body.position.y;
-  LEGS.forEach(L => { const a = Math.sin(ph + L.ph); L.spring.visible = spr; L.thigh.position.y = spr ? -0.2 : -0.08; L.thigh.rotation.x = 0.35 * a; L.shin.rotation.x = -0.25 - 0.35 * Math.max(0, Math.cos(ph + L.ph)); }); }
+  LEGS.forEach(L => { L.hip.visible = !L.extra || EXTRA_LEGS; const a = Math.sin(ph + L.ph); L.spring.visible = spr; L.thigh.position.y = spr ? -0.2 : -0.08; L.thigh.rotation.x = 0.35 * a; L.shin.rotation.x = -0.25 - 0.35 * Math.max(0, Math.cos(ph + L.ph)); }); }
+// later upgrades: a roof, the milk (+ its seat belt), the turkey, a coffee machine, a TV
+const roof = new THREE.Group(); body.add(roof); { const r = bx(1.75, 0.06, 1.3, M('#5a4a46', { flatShading: true, roughness: 0.8 }), 0, 2.33, 0, roof); r.rotation.x = 0.06; bx(1.8, 0.05, 0.06, ORG, 0, 2.3, 0.66, roof); }
+const milk = new THREE.Group(); body.add(milk); { bx(0.1, 0.2, 0.1, '#f8f8f4', 0, 0.15, 0, milk); bx(0.102, 0.06, 0.102, '#3a6ad8', 0, 0.2, 0, milk); const tip = mesh(new THREE.ConeGeometry(0.075, 0.06, 4), M('#f8f8f4')); tip.rotation.y = Math.PI / 4; tip.position.y = 0.28; milk.add(tip); }
+const strap = new THREE.Group(); milk.add(strap); bx(0.16, 0.035, 0.14, ORG, 0, 0.14, 0, strap); bx(0.03, 0.03, 0.5, ORG, 0, 0.13, -0.3, strap);   // the milk's seat belt
+const turkey = new THREE.Group(); body.add(turkey); { const tm = M('#b8682a', { flatShading: true, roughness: 0.6 }); const b = mesh(new THREE.IcosahedronGeometry(0.14, 1), tm); b.scale.set(1.2, 0.75, 1); b.position.y = 0.12; turkey.add(b);
+  for (const s_ of [-1, 1]) { const l = mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.16, 6), tm); l.rotation.z = s_ * 1.0; l.position.set(s_ * 0.16, 0.14, 0.06); turkey.add(l); const bone = mesh(new THREE.SphereGeometry(0.025, 6, 5), M('#f8f0e0')); bone.position.set(s_ * 0.23, 0.19, 0.06); turkey.add(bone); }
+  const plate = mesh(new THREE.CylinderGeometry(0.22, 0.2, 0.025, 14), M('#f4f4f0')); plate.position.y = 0.012; turkey.add(plate); }
+const coffee = new THREE.Group(); body.add(coffee); coffee.position.set(-0.75, 0.63, 0.38); { bx(0.2, 0.3, 0.22, '#2a2c30', 0, 0.15, 0, coffee); bx(0.14, 0.03, 0.12, STEEL, 0, 0.06, 0.05, coffee); bx(0.03, 0.03, 0.01, '#e8302a', 0.06, 0.25, 0.112, coffee, { emissive: '#a01010' }); const mug = mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.07, 10), M('#f4f4f0')); mug.position.set(0, 0.11, 0.05); coffee.add(mug); }
+const tvT = canvasTex(256, 160, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#4a8ae8'); gr.addColorStop(1, '#8ad0f8'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = '#3aa040'; g.fillRect(0, 110, w, 50); g.fillStyle = '#f8f8f0'; g.fillRect(118, 60, 8, 50); g.fillStyle = '#e83a3a'; g.beginPath(); g.arc(60, 120, 10, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.font = 'bold 22px Inter'; g.fillText('FOOTBALL', 70, 30); });
+const tv = new THREE.Group(); body.add(tv); tv.position.set(0, 1.62, 0.5); { bx(0.62, 0.38, 0.04, '#1c1e22', 0, 0, 0, tv); const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.32), new THREE.MeshBasicMaterial({ map: tvT, color: new THREE.Color(1.3, 1.3, 1.3) })); scr.position.z = -0.021; scr.rotation.y = Math.PI; tv.add(scr); tube([0, 0.19, 0], [0, 0.72, 0], 0.015, BLK, tv); }

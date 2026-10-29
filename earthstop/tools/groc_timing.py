@@ -1,33 +1,32 @@
 #!/usr/bin/env python3
 """Grocery video ("Unnecessary engineering" format): turn the TTS word timestamps into the video timeline.
 In:  out/groc/groc_voice.mp3 + out/groc/groc_result.json (Lumean/ElevenLabs el-timestamps: words[] with start/end).
-Out: out/groc/voice.wav (narration with a lead-in, extra beats of silence after chosen sentences and a tail)
+Out: out/groc/voice.wav (narration with a short lead-in, squeezed gaps and a tail)
      parts_groc/g_times.js (CAPS = caption phrases [t0, t1, text], CUE = start time of every sentence by key, WORDS = [t, word], T_END).
-Extra silence is free (no re-generation): it gives the visual gags room to land."""
+Long gaps between words are squeezed to GAP seconds: a fast, pause-free read."""
 import json, re, subprocess, numpy as np
 from scipy.io import wavfile
 D = 'out/groc/'
 r = json.load(open(D + 'groc_result.json')); W = r['words']
-LEAD, TAIL = 1.2, 3.2
-EXTRA = {'trips?': 0.3, 'knees.': 0.4, 'happy.': 0.3, 'steps.': 0.4, 'eggs.': 0.6, 'Smooth.': 0.3, 'stare.': 0.4, 'motor.': 0.5, 'Obviously.': 0.6, 'wheels.': 0.8, 'car.': 0.5}
+LEAD, TAIL, GAP = 0.3, 1.8, 0.15   # fast pace (her note, Oct 29): every silence between words is squeezed to GAP
 # sentences: split the word list after . ? ! (keep "..." as a break too)
 sents, cur = [], []
 for w in W:
     cur.append(w)
     if re.search(r'[.?!]$', w['word'].strip()): sents.append(cur); cur = []
 if cur: sents.append(cur)
-# time map: original t -> new t (shift grows by the extra silence inserted after each sentence end)
-cuts = []   # (orig_time, added)
-for s in sents:
-    last = s[-1]['word'].strip()
-    if last in EXTRA: cuts.append((s[-1]['end'] + 0.05, EXTRA[last]))
-def remap(t): return t + LEAD + sum(a for c, a in cuts if t >= c)
-# audio: decode, splice silences
+# cuts: (start, length) of silence removed from each long gap; time map original → new
+cuts = [(W[i]['end'] + GAP / 2, W[i + 1]['start'] - W[i]['end'] - GAP) for i in range(len(W) - 1) if W[i + 1]['start'] - W[i]['end'] > GAP + 0.05]
+def remap(t): return t + LEAD - sum(min(L, max(0, t - c)) for c, L in cuts)
+# audio: decode, drop the cut ranges (5 ms fades at each splice)
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', D + 'groc_voice.mp3', '-ac', '1', '-ar', '44100', D + 'voice_raw.wav'], check=True)
-sr, a = wavfile.read(D + 'voice_raw.wav'); a = a.astype(np.float32)
+sr, a = wavfile.read(D + 'voice_raw.wav'); a = a.astype(np.float32); f = int(0.005 * sr)
 parts, prev = [np.zeros(int(LEAD * sr), np.float32)], 0
-for c, add in cuts:
-    i = int(c * sr); parts += [a[prev:i], np.zeros(int(add * sr), np.float32)]; prev = i
+for c, L in cuts:
+    i, j = int(c * sr), int((c + L) * sr); seg = a[prev:i].copy()
+    if len(seg) > 2 * f: seg[-f:] *= np.linspace(1, 0, f)
+    parts.append(seg); prev = j
+    if prev < len(a) - f: a[prev:prev + f] *= np.linspace(0, 1, f)
 parts += [a[prev:], np.zeros(int(TAIL * sr), np.float32)]
 out = np.concatenate(parts); wavfile.write(D + 'voice.wav', sr, out.astype(np.int16))
 T_END = len(out) / sr
