@@ -3,11 +3,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js';
 
-// "What happens if you drink an energy drink every day?" (≈67 s, US, reply to @VIOLET's comment): one 16 oz can a day — the crack + the jolt,
+// "What happens if you drink an energy drink every day?" (≈73 s, US, reply to @VIOLET's comment): one 16 oz can a day — the crack + the jolt,
 // heart rate up (X-ray body), 13 tsp of sugar, the crash + the second can, 40 mg still in you at 2 am, enamel, withdrawal headache, a year = 43 lb of sugar + $1,095,
 // 20,783 ER visits (2011), and the real fix: sleep. Numbers: tools/energy_math.py; sources in the chat (Shah 2019 JAHA, SAMHSA DAWN, Jain 2012, AASM).
 // =================== timeline ===================
-const CRACK = 1.8, MIN30 = 4.0, HOUR1 = 9.0, HOUR4 = 15.0, NIGHT = 21.0, WEEK = 28.0, MONTH = 34.0, YEAR = 40.0, ER = 47.0, SLEEP = 54.0, CTA = 61.0, T_END = 64.0;
+const CRACK = 1.8, MIN30 = 4.0, BRAIN = 9.0, HOUR1 = 15.0, HOUR4 = 21.0, NIGHT = 27.0, WEEK = 34.0, MONTH = 40.0, YEAR = 46.0, ER = 53.0, SLEEP = 60.0, CTA = 67.0, T_END = 70.0;
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
@@ -489,12 +489,32 @@ const heartG = new THREE.Group(); heartG.position.set(0.035, 1.3, 0.04); organs.
 const VES = [[[0.035, 1.3, 0.04], [0.0, 1.5, 0.03], [0.0, 1.62, 0.02]], [[0.035, 1.3, 0.04], [0.16, 1.4, 0.02], [0.23, 1.18, 0.0], [0.26, 0.95, 0.02]], [[0.035, 1.3, 0.04], [-0.15, 1.4, 0.02], [-0.23, 1.18, 0.0], [-0.26, 0.95, 0.02]],
   [[0.035, 1.3, 0.04], [0.05, 1.05, 0.04], [0.1, 0.86, 0.02], [0.1, 0.42, 0.03], [0.1, 0.08, 0.05]], [[0.035, 1.3, 0.04], [0.0, 1.05, 0.04], [-0.1, 0.86, 0.02], [-0.1, 0.42, 0.03], [-0.1, 0.08, 0.05]]].map(pts => new THREE.CatmullRomCurve3(pts.map(p => V3(...p))));
 const vesMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.25, 0.1), transparent: true, opacity: 0.5 }); for (const c of VES) organs.add(new THREE.Mesh(new THREE.TubeGeometry(c, 40, 0.007, 5, false), vesMat));
+// ---- the brain inside the X-ray head: receptor "doors", blue adenosine (the "I'm tired" signal) piling up around it, orange caffeine hexagons plugging the doors ----
+const brainC = headOf(ghost).add(V3(0, 0.03, -0.03)), BR = 0.105;
+const brainG = new THREE.Group(); brainG.position.copy(brainC); xr.add(brainG);
+const brainM = new THREE.MeshStandardMaterial({ color: '#f29ab8', emissive: '#5a1a30', roughness: 0.5, flatShading: true });
+{ const g = new THREE.SphereGeometry(BR, 22, 16), q = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < q.count; i++) { v.fromBufferAttribute(q, i).divideScalar(BR); const f = Math.sin(v.z * 9 + Math.sin(v.y * 7) * 2) * Math.sin(v.y * 10 + Math.sin(v.x * 6) * 1.6), d = 1 + 0.06 * Math.abs(f) - 0.12 * Math.exp(-v.x * v.x / 0.004) * Math.max(0, v.y + 0.3);
+    q.setXYZ(i, v.x * 0.92 * d * BR, v.y * 0.8 * d * BR, v.z * 1.12 * d * BR); } g.computeVertexNormals(); brainG.add(new THREE.Mesh(g, brainM)); }
+const RN = 34, RDIR = Array.from({ length: RN }, (_, i) => { const y = 1 - 2 * (i + 0.5) / RN, r = Math.sqrt(1 - y * y), a = i * 2.39996; return V3(Math.cos(a) * r, y * 0.85, Math.sin(a) * r).normalize(); });
+const rcpM = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.55, 0.65, 0.8) }), cafM = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 0.6, 0.08) });
+const RCP = RDIR.map(d => { const m = new THREE.Mesh(new THREE.TorusGeometry(0.011, 0.003, 5, 12), rcpM); m.position.copy(d).multiplyScalar(BR * 1.08); m.lookAt(d.clone().multiplyScalar(BR * 3)); brainG.add(m); return m; });
+const CAF = RDIR.map(() => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.008, 6), cafM); brainG.add(m); return m; });
+const AN = 170, adM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.0075, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 0.38, 1.25) }), AN); adM.frustumCulled = false; brainG.add(adM);
+const AD = Array.from({ length: AN }, (_, i) => { const d = V3(R(-1, 1), R(-0.8, 1), R(-1, 1)).normalize(); return { d, far: R(0.35, 0.6), rest: BR * (1.3 + 0.45 * Math.floor(i / 50) / 3 + R(0, 0.1)), ts: R(0, 1), rcp: i % RN }; });
+function updateBrain(t, mode) { const flood = mode === 'flood', k = smooth(BRAIN + 0.2, BRAIN + 5.6, t), plug = smooth(BRAIN + 2.4, BRAIN + 3.2, t);
+  brainM.color.set('#f29ab8').lerp(new THREE.Color('#5a78c8'), flood ? smooth(HOUR4 + 0.6, HOUR4 + 1.6, t) : 0); brainG.rotation.y = 0.25 * Math.sin(t * 0.5);
+  CAF.forEach((c, i) => { const d = RDIR[i], on = hash(i * 2.7) * 0.8, s = flood ? 1 - smooth(HOUR4 + 0.2, HOUR4 + 0.7, t) : smooth(BRAIN + 2.4 + on, BRAIN + 2.6 + on, t), away = flood ? smooth(HOUR4 + 0.2, HOUR4 + 0.9, t) : 0;
+    c.visible = s > 0.02 || away > 0; c.position.copy(d).multiplyScalar(BR * (1.13 + 0.8 * away)); c.quaternion.setFromUnitVectors(V3(0, 1, 0), d); c.scale.setScalar(Math.max(0.01, flood ? 1 - away : s)); });
+  AD.forEach((A, i) => { const t0 = BRAIN + 0.3 + (i / AN) * 4.8 + A.ts * 0.3, u = ease(clamp((t - t0) / 0.9, 0, 1)); let p = A.d.clone().multiplyScalar(lerp(A.far, A.rest, u));
+    if (flood) { const f = ease(clamp((t - HOUR4 - 0.5 - 0.6 * A.ts) / 0.5, 0, 1)); p = p.lerp(RDIR[A.rcp].clone().multiplyScalar(BR * (1.05 + 0.25 * hash(i))), f); }
+    _o.position.copy(p); _o.rotation.set(t + i, i, 0); _o.scale.setScalar(t > t0 || flood ? 1 : 0.0001); _o.updateMatrix(); adM.setMatrixAt(i, _o.matrix); }); adM.instanceMatrix.needsUpdate = true; }
 const CN = 300, cellM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 0.2, 0.15) }), CN), sugM = new THREE.InstancedMesh(new THREE.BoxGeometry(0.011, 0.011, 0.011), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.4, 2.2) }), CN);
 cellM.frustumCulled = sugM.frustumCulled = false; organs.add(cellM, sugM);
 const CL = Array.from({ length: CN }, (_, i) => ({ v: i % VES.length, u0: rnd(), sp: R(0.25, 0.45), off: V3(R(-1, 1), R(-1, 1), R(-1, 1)).multiplyScalar(0.007), s: rnd() }));
 const bpmAt = t => Math.round(lerp(72, 104, smooth(MIN30 + 0.6, MIN30 + 3.0, t)));
 const _o = new THREE.Object3D(), _v = new THREE.Vector3();
-function updateXray(t, mode) { const bpm = bpmAt(t), sp = bpm / 72, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18);
+function updateXray(t, mode) { updateBrain(t, mode); ghostMat.opacity = mode === 'flood' || (t > BRAIN + 1.2 && t < HOUR1) ? 0.05 : 0.14; const bpm = bpmAt(t), sp = bpm / 72, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18);
   heartG.scale.setScalar(1 + 0.2 * beat); const sugar = mode === 'sugarx' ? smooth(HOUR1 + 3.0, HOUR1 + 4.5, t) : 0;
   CL.forEach((C, i) => { const u = (C.u0 + t * C.sp * sp) % 1; VES[C.v].getPointAt(u, _v).add(C.off); _o.position.copy(_v); _o.rotation.set(t + i, t * 0.7 + i, 0); _o.scale.setScalar(1); _o.updateMatrix(); cellM.setMatrixAt(i, _o.matrix);
     _o.position.add(V3(0.009, 0.005, 0.004)); _o.scale.setScalar(C.s < sugar * 0.8 ? 1 : 0.0001); _o.updateMatrix(); sugM.setMatrixAt(i, _o.matrix); }); cellM.instanceMatrix.needsUpdate = sugM.instanceMatrix.needsUpdate = true; }
@@ -532,6 +552,8 @@ const H_ = P => headOf(P);
 const canW = () => { hero.outer.updateMatrixWorld(true); return can.getWorldPosition(V3(0, 0, 0)); };
 const heartW = () => heartG.getWorldPosition(V3(0, 0, 0));
 const home = m => t => updateHome(t, m);
+const brainW = () => brainG.getWorldPosition(V3(0, 0, 0));
+
 // [start, scene, camera, update(t), framing(t)]
 const SHOTS = [
   [0.0, room, () => rmCam, home('open'), t => framing(H_(hero), V3(0.25, 0.02, 1), lerp(2.0, 1.6, t / 1.6), 0.6)],   // under the title: face low
@@ -539,11 +561,15 @@ const SHOTS = [
   [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.55, 0.05, 1), lerp(1.45, 1.6, (t - 2.7) / 1.3), 0.55)],   // eyes snap open
   [MIN30, xr, () => xCam, t => updateXray(t, 'x'), t => { const a = lerp(Math.PI * 0.95, 0.35, ease((t - MIN30) / 2.6)); return fr(heartW(), V3(Math.sin(a), 0.15, Math.cos(a)), lerp(2.6, 1.3, ease((t - MIN30) / 2.6)), 0.5); }],   // spirals in from behind
   [MIN30 + 2.6, xr, () => xCam, t => updateXray(t, 'x'), t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.55, 0.42, (t - MIN30 - 2.6) / 2.4), 0.5)],
+  [BRAIN, xr, () => xCam, t => updateXray(t, 'x'), t => { const k = ease((t - BRAIN) / 1.8); return fr(heartW().lerp(brainW(), k), V3(0.45, 0.1, 1), lerp(0.55, 0.62, k), lerp(0.5, 0.55, k)); }],   // up from the heart into the head
+  [BRAIN + 2.4, xr, () => xCam, t => updateXray(t, 'x'), t => fr(brainW(), V3(-0.5, 0.2, 1), lerp(0.5, 0.42, (t - BRAIN - 2.4) / 1.9), 0.55)],   // caffeine plugs the doors
+  [BRAIN + 4.3, xr, () => xCam, t => updateXray(t, 'x'), t => fr(brainW(), V3(0.35, 0.25, 1), lerp(0.8, 0.95, (t - BRAIN - 4.3) / 1.7), 0.55)],   // the blue keeps piling up
   [HOUR1, room, () => rmCam, home('sugar'), t => fr(V3(3.3, 0.96, -0.6), V3(-0.55, 1.1, 0.35), lerp(1.15, 1.0, (t - HOUR1) / 2.4), 0.5)],   // 13 spoons, from above
   [HOUR1 + 2.4, room, () => rmCam, home('sugar'), t => fr(H_(hero), V3(-0.55, 0.05, 1), lerp(1.5, 1.3, (t - HOUR1 - 2.4) / 1.6), 0.6)],
   [HOUR1 + 4.0, xr, () => xCam, t => updateXray(t, 'sugarx'), t => fr(V3(0.18, 1.2, 0.02), V3(0.35, 0.1, 1), lerp(0.75, 0.6, (t - HOUR1 - 4) / 2), 0.5)],   // sugar riding the blood
-  [HOUR4, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.25, 0.12, 1), lerp(2.6, 2.2, (t - HOUR4) / 2.6), 0.6)],
-  [HOUR4 + 2.6, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(-0.45, 0.05, 1), lerp(1.3, 1.15, (t - HOUR4 - 2.6) / 1.4), 0.6)],
+  [HOUR4, xr, () => xCam, t => updateXray(t, 'flood'), t => fr(brainW(), V3(0.2, 0.15, 1), lerp(0.75, 0.6, (t - HOUR4) / 2), 0.55)],   // caffeine falls off: all the tiredness lands at once
+  [HOUR4 + 2.0, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.25, 0.12, 1), lerp(2.6, 2.3, (t - HOUR4 - 2) / 1.2), 0.6)],
+  [HOUR4 + 3.2, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(-0.45, 0.05, 1), lerp(1.3, 1.15, (t - HOUR4 - 3.2) / 0.8), 0.6)],
   [HOUR4 + 4.0, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.5, 0.1, 1), lerp(1.6, 1.9, (t - HOUR4 - 4) / 2), 0.6)],   // the second can
   [NIGHT, room, () => rmCam, home('night'), t => fr(H_(hero), V3(0.05, 1, 0.55), lerp(2.0, 1.6, (t - NIGHT) / 2.5), 0.55)],   // in bed, from above
   [NIGHT + 2.5, room, () => rmCam, home('night'), t => fr(V3(-3.93, 0.75, 0.15), V3(1, 0.1, 0.25), lerp(0.75, 0.6, (t - NIGHT - 2.5) / 1.7), 0.5)],   // 2:00
@@ -567,7 +593,8 @@ const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'hud', 'fl
 el.title.innerHTML = 'What happens if you drink<br>an <span class="hl">energy drink</span> every day?'; el.endT.innerHTML = 'What happens if you drink an <span class="hl">energy drink</span> every day?';
 el.endS.innerHTML = 'ONE CAN A DAY: 13 TSP OF SUGAR,<br>160 MG OF CAFFEINE.<br>A YEAR: A WHOLE BATHTUB OF IT<br>AND 43 LB OF SUGAR.<br>AT BEDTIME IT’S STILL IN YOU.';
 const captions = [
-  [MIN30 + 0.3, MIN30 + 2.5, 'Within 30 minutes your heart speeds up.'], [MIN30 + 2.7, HOUR1 - 0.2, '2 big cans: blood pressure up 4–5 points for hours.'],
+  [MIN30 + 0.3, MIN30 + 2.5, 'Within 30 minutes your heart speeds up.'], [MIN30 + 2.7, BRAIN - 0.2, '2 big cans: blood pressure up 4–5 points for hours.'],
+  [BRAIN + 0.3, BRAIN + 2.2, 'Caffeine doesn’t give you energy.'], [BRAIN + 2.4, BRAIN + 4.2, 'It blocks adenosine — the signal that says “I’m tired.”'], [BRAIN + 4.4, HOUR1 - 0.2, 'But the tiredness keeps piling up.'],
   [HOUR1 + 0.3, HOUR1 + 2.6, 'One can: 13 teaspoons of sugar.'], [HOUR1 + 2.8, HOUR4 - 0.2, 'That’s 1.5–2× your whole daily limit.'],
   [HOUR4 + 0.3, HOUR4 + 2.8, 'When it wears off…'], [HOUR4 + 3.2, NIGHT - 0.2, '…you reach for another.'],
   [NIGHT + 0.3, NIGHT + 2.8, 'Caffeine’s half-life is about 5 hours.'], [NIGHT + 3.0, WEEK - 0.2, 'A 4 pm can: still 40 mg in you at 2 am.'],
@@ -584,7 +611,7 @@ const EN = [[0, 0.22], [CRACK + 0.4, 0.22], [MIN30 + 1.2, 0.95], [HOUR1, 0.9], [
   [MONTH, 0.45], [MONTH + 0.8, 0.08], [YEAR, 0.35], [SLEEP + 3.0, 0.3], [SLEEP + 3.6, 1.0], [99, 1.0]];
 const energyAt = t => { for (let i = 1; i < EN.length; i++) if (t < EN[i][0]) return lerp(EN[i - 1][1], EN[i][1], smooth(EN[i - 1][0], EN[i][0], t)); return 1; };
 const spoonsAt = t => clamp(Math.floor((t - HOUR1 - 0.3) / 0.18) + 1, 0, 13);
-const POPS = [[MIN30 + 2.7, HOUR1 - 0.3, () => 'BP +4–5'], [HOUR1 + 0.3, HOUR1 + 2.3, t => spoonsAt(t) + ' TSP'], [HOUR1 + 2.8, HOUR4 - 0.3, () => '1.5–2×'],
+const POPS = [[MIN30 + 2.7, BRAIN - 0.3, () => 'BP +4–5'], [BRAIN + 2.8, BRAIN + 4.2, () => 'BLOCKED'], [HOUR1 + 0.3, HOUR1 + 2.3, t => spoonsAt(t) + ' TSP'], [HOUR1 + 2.8, HOUR4 - 0.3, () => '1.5–2×'],
   [NIGHT + 3.0, WEEK - 0.3, () => '40 mg'], [WEEK + 2.8, MONTH - 0.3, () => '2×'], [YEAR + 0.3, YEAR + 3.4, t => Math.round(45.6 * smooth(YEAR + 0.2, YEAR + 3.0, t)) + ' GAL'], [YEAR + 3.6, ER - 0.3, () => '43 LB SUGAR'],
   [ER + 0.3, ER + 3.8, t => fmt(20783 * smooth(ER + 0.3, ER + 3.2, t))], [ER + 4.0, SLEEP - 0.3, () => '2× 2007']];
 const popWords = (txt, t, a, b) => { const ws = txt.split(' '), span = Math.min(1.2, (b - a) * 0.4); return ws.map((w, i) => { const k = clamp((t - a - i * span / ws.length) / 0.12, 0, 1); return `<span style="display:inline-block;opacity:${k.toFixed(2)};transform:scale(${(0.6 + 0.4 * k + 0.1 * Math.sin(Math.PI * k)).toFixed(3)})">${w}</span>`; }).join(' '); };

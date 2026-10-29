@@ -5,6 +5,8 @@ const H_ = P => headOf(P);
 const canW = () => { hero.outer.updateMatrixWorld(true); return can.getWorldPosition(V3(0, 0, 0)); };
 const heartW = () => heartG.getWorldPosition(V3(0, 0, 0));
 const home = m => t => updateHome(t, m);
+const brainW = () => brainG.getWorldPosition(V3(0, 0, 0));
+
 // [start, scene, camera, update(t), framing(t)]
 const SHOTS = [
   [0.0, room, () => rmCam, home('open'), t => framing(H_(hero), V3(0.25, 0.02, 1), lerp(2.0, 1.6, t / 1.6), 0.6)],   // under the title: face low
@@ -12,11 +14,15 @@ const SHOTS = [
   [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.55, 0.05, 1), lerp(1.45, 1.6, (t - 2.7) / 1.3), 0.55)],   // eyes snap open
   [MIN30, xr, () => xCam, t => updateXray(t, 'x'), t => { const a = lerp(Math.PI * 0.95, 0.35, ease((t - MIN30) / 2.6)); return fr(heartW(), V3(Math.sin(a), 0.15, Math.cos(a)), lerp(2.6, 1.3, ease((t - MIN30) / 2.6)), 0.5); }],   // spirals in from behind
   [MIN30 + 2.6, xr, () => xCam, t => updateXray(t, 'x'), t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.55, 0.42, (t - MIN30 - 2.6) / 2.4), 0.5)],
+  [BRAIN, xr, () => xCam, t => updateXray(t, 'x'), t => { const k = ease((t - BRAIN) / 1.8); return fr(heartW().lerp(brainW(), k), V3(0.45, 0.1, 1), lerp(0.55, 0.62, k), lerp(0.5, 0.55, k)); }],   // up from the heart into the head
+  [BRAIN + 2.4, xr, () => xCam, t => updateXray(t, 'x'), t => fr(brainW(), V3(-0.5, 0.2, 1), lerp(0.5, 0.42, (t - BRAIN - 2.4) / 1.9), 0.55)],   // caffeine plugs the doors
+  [BRAIN + 4.3, xr, () => xCam, t => updateXray(t, 'x'), t => fr(brainW(), V3(0.35, 0.25, 1), lerp(0.8, 0.95, (t - BRAIN - 4.3) / 1.7), 0.55)],   // the blue keeps piling up
   [HOUR1, room, () => rmCam, home('sugar'), t => fr(V3(3.3, 0.96, -0.6), V3(-0.55, 1.1, 0.35), lerp(1.15, 1.0, (t - HOUR1) / 2.4), 0.5)],   // 13 spoons, from above
   [HOUR1 + 2.4, room, () => rmCam, home('sugar'), t => fr(H_(hero), V3(-0.55, 0.05, 1), lerp(1.5, 1.3, (t - HOUR1 - 2.4) / 1.6), 0.6)],
   [HOUR1 + 4.0, xr, () => xCam, t => updateXray(t, 'sugarx'), t => fr(V3(0.18, 1.2, 0.02), V3(0.35, 0.1, 1), lerp(0.75, 0.6, (t - HOUR1 - 4) / 2), 0.5)],   // sugar riding the blood
-  [HOUR4, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.25, 0.12, 1), lerp(2.6, 2.2, (t - HOUR4) / 2.6), 0.6)],
-  [HOUR4 + 2.6, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(-0.45, 0.05, 1), lerp(1.3, 1.15, (t - HOUR4 - 2.6) / 1.4), 0.6)],
+  [HOUR4, xr, () => xCam, t => updateXray(t, 'flood'), t => fr(brainW(), V3(0.2, 0.15, 1), lerp(0.75, 0.6, (t - HOUR4) / 2), 0.55)],   // caffeine falls off: all the tiredness lands at once
+  [HOUR4 + 2.0, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.25, 0.12, 1), lerp(2.6, 2.3, (t - HOUR4 - 2) / 1.2), 0.6)],
+  [HOUR4 + 3.2, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(-0.45, 0.05, 1), lerp(1.3, 1.15, (t - HOUR4 - 3.2) / 0.8), 0.6)],
   [HOUR4 + 4.0, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.5, 0.1, 1), lerp(1.6, 1.9, (t - HOUR4 - 4) / 2), 0.6)],   // the second can
   [NIGHT, room, () => rmCam, home('night'), t => fr(H_(hero), V3(0.05, 1, 0.55), lerp(2.0, 1.6, (t - NIGHT) / 2.5), 0.55)],   // in bed, from above
   [NIGHT + 2.5, room, () => rmCam, home('night'), t => fr(V3(-3.93, 0.75, 0.15), V3(1, 0.1, 0.25), lerp(0.75, 0.6, (t - NIGHT - 2.5) / 1.7), 0.5)],   // 2:00
@@ -40,7 +46,8 @@ const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'hud', 'fl
 el.title.innerHTML = 'What happens if you drink<br>an <span class="hl">energy drink</span> every day?'; el.endT.innerHTML = 'What happens if you drink an <span class="hl">energy drink</span> every day?';
 el.endS.innerHTML = 'ONE CAN A DAY: 13 TSP OF SUGAR,<br>160 MG OF CAFFEINE.<br>A YEAR: A WHOLE BATHTUB OF IT<br>AND 43 LB OF SUGAR.<br>AT BEDTIME IT’S STILL IN YOU.';
 const captions = [
-  [MIN30 + 0.3, MIN30 + 2.5, 'Within 30 minutes your heart speeds up.'], [MIN30 + 2.7, HOUR1 - 0.2, '2 big cans: blood pressure up 4–5 points for hours.'],
+  [MIN30 + 0.3, MIN30 + 2.5, 'Within 30 minutes your heart speeds up.'], [MIN30 + 2.7, BRAIN - 0.2, '2 big cans: blood pressure up 4–5 points for hours.'],
+  [BRAIN + 0.3, BRAIN + 2.2, 'Caffeine doesn’t give you energy.'], [BRAIN + 2.4, BRAIN + 4.2, 'It blocks adenosine — the signal that says “I’m tired.”'], [BRAIN + 4.4, HOUR1 - 0.2, 'But the tiredness keeps piling up.'],
   [HOUR1 + 0.3, HOUR1 + 2.6, 'One can: 13 teaspoons of sugar.'], [HOUR1 + 2.8, HOUR4 - 0.2, 'That’s 1.5–2× your whole daily limit.'],
   [HOUR4 + 0.3, HOUR4 + 2.8, 'When it wears off…'], [HOUR4 + 3.2, NIGHT - 0.2, '…you reach for another.'],
   [NIGHT + 0.3, NIGHT + 2.8, 'Caffeine’s half-life is about 5 hours.'], [NIGHT + 3.0, WEEK - 0.2, 'A 4 pm can: still 40 mg in you at 2 am.'],
@@ -57,7 +64,7 @@ const EN = [[0, 0.22], [CRACK + 0.4, 0.22], [MIN30 + 1.2, 0.95], [HOUR1, 0.9], [
   [MONTH, 0.45], [MONTH + 0.8, 0.08], [YEAR, 0.35], [SLEEP + 3.0, 0.3], [SLEEP + 3.6, 1.0], [99, 1.0]];
 const energyAt = t => { for (let i = 1; i < EN.length; i++) if (t < EN[i][0]) return lerp(EN[i - 1][1], EN[i][1], smooth(EN[i - 1][0], EN[i][0], t)); return 1; };
 const spoonsAt = t => clamp(Math.floor((t - HOUR1 - 0.3) / 0.18) + 1, 0, 13);
-const POPS = [[MIN30 + 2.7, HOUR1 - 0.3, () => 'BP +4–5'], [HOUR1 + 0.3, HOUR1 + 2.3, t => spoonsAt(t) + ' TSP'], [HOUR1 + 2.8, HOUR4 - 0.3, () => '1.5–2×'],
+const POPS = [[MIN30 + 2.7, BRAIN - 0.3, () => 'BP +4–5'], [BRAIN + 2.8, BRAIN + 4.2, () => 'BLOCKED'], [HOUR1 + 0.3, HOUR1 + 2.3, t => spoonsAt(t) + ' TSP'], [HOUR1 + 2.8, HOUR4 - 0.3, () => '1.5–2×'],
   [NIGHT + 3.0, WEEK - 0.3, () => '40 mg'], [WEEK + 2.8, MONTH - 0.3, () => '2×'], [YEAR + 0.3, YEAR + 3.4, t => Math.round(45.6 * smooth(YEAR + 0.2, YEAR + 3.0, t)) + ' GAL'], [YEAR + 3.6, ER - 0.3, () => '43 LB SUGAR'],
   [ER + 0.3, ER + 3.8, t => fmt(20783 * smooth(ER + 0.3, ER + 3.2, t))], [ER + 4.0, SLEEP - 0.3, () => '2× 2007']];
 const popWords = (txt, t, a, b) => { const ws = txt.split(' '), span = Math.min(1.2, (b - a) * 0.4); return ws.map((w, i) => { const k = clamp((t - a - i * span / ws.length) / 0.12, 0, 1); return `<span style="display:inline-block;opacity:${k.toFixed(2)};transform:scale(${(0.6 + 0.4 * k + 0.1 * Math.sin(Math.PI * k)).toFixed(3)})">${w}</span>`; }).join(' '); };

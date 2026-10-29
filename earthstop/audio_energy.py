@@ -1,13 +1,13 @@
 import numpy as np, sys
 from scipy.signal import butter, sosfilt
 from scipy.io import wavfile
-# "What happens if you drink an energy drink every day?" (67.5 s): the can cracks (click + hiss), gulps, the jolt, a heartbeat that speeds up, a rising note per
+# "What happens if you drink an energy drink every day?" (73.5 s): the can cracks (click + hiss), gulps, the jolt, a heartbeat that speeds up, the brain beat, a rising note per
 # teaspoon of sugar, the crash (power-down), the second can, 2 AM, acid drips, the headache throb, the tub filling up and spilling over, a distant siren,
 # lights off, morning birds, the stretch. No synthetic voices, no buzz, no constant beds. ONE pluck theme.
-SR = 44100; DUR = 67.5; N = int(SR * DUR); t = np.arange(N) / SR
+SR = 44100; DUR = 73.5; N = int(SR * DUR); t = np.arange(N) / SR
 MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no theme, pads or end chord)
 rng = np.random.default_rng(160); L = np.zeros(N); Rr = np.zeros(N)
-CRACK, MIN30, HOUR1, HOUR4, NIGHT, WEEK, MONTH, YEAR, ER, SLEEP, CTA, T_END = 1.8, 4.0, 9.0, 15.0, 21.0, 28.0, 34.0, 40.0, 47.0, 54.0, 61.0, 64.0
+CRACK, MIN30, BRAIN, HOUR1, HOUR4, NIGHT, WEEK, MONTH, YEAR, ER, SLEEP, CTA, T_END = 1.8, 4.0, 9.0, 15.0, 21.0, 27.0, 34.0, 40.0, 46.0, 53.0, 60.0, 67.0, 70.0
 def filt(x, kind, f, order=2): return sosfilt(butter(order, f, kind, fs=SR, output='sos'), x)
 def db(x): return 10 ** (x / 20)
 def norm(x): return x / (np.abs(x).max() + 1e-9)
@@ -61,7 +61,7 @@ def popb(at, g, pan=0.0, f0=500): x = tt(0.12); f = f0 * (1 + 2 * np.exp(-x * 30
 def scribble(a, b, g): x = tt(b - a); place(a, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 4000]) * (0.4 + 0.6 * np.abs(np.sin(2 * np.pi * 7 * x))) * np.sin(np.pi * x / (b - a)), g, 0.2)
 def clack(at, g): x = tt(0.07); place(at, filt(rng.standard_normal(len(x)), 'bandpass', [400, 1200]) * np.exp(-x * 60), g, 0.1)
 
-CUTS = [1.6, 2.7, MIN30, MIN30 + 2.6, HOUR1, HOUR1 + 2.4, HOUR1 + 4.0, HOUR4, HOUR4 + 2.6, HOUR4 + 4.0, NIGHT, NIGHT + 2.5, NIGHT + 4.2, WEEK, WEEK + 2.8, MONTH, MONTH + 2.8,
+CUTS = [1.6, 2.7, MIN30, MIN30 + 2.6, BRAIN, BRAIN + 2.4, BRAIN + 4.3, HOUR1, HOUR1 + 2.4, HOUR1 + 4.0, HOUR4, HOUR4 + 2.0, HOUR4 + 3.2, HOUR4 + 4.0, NIGHT, NIGHT + 2.5, NIGHT + 4.2, WEEK, WEEK + 2.8, MONTH, MONTH + 2.8,
         YEAR, YEAR + 2.6, YEAR + 4.0, ER, ER + 3.4, SLEEP, SLEEP + 3.2, SLEEP + 4.6, CTA]   # every shot change (parts_energy/e_main.js SHOTS)
 for k, c in enumerate(CUTS): whoosh(c, db(-31), 0.35, pan=0.3 if k % 2 else -0.3)
 def crack(at, g):   # tab click + the pssht of the gas
@@ -82,13 +82,18 @@ x = tt(0.9); f = 250 * (1 + 5 * (x / 0.9) ** 2); place(CRACK + 0.85, (np.sin(2 *
 ding(CRACK + 1.72, db(-16))
 # --- 12:30: the heart speeds up (72 -> ~100 bpm), under the X-ray
 at = MIN30 + 0.2
-while at < HOUR1 - 0.2: heart(at, db(-17)); at += 60 / (72 + 28 * np.clip((at - MIN30 - 0.6) / 2.4, 0, 1))
+while at < BRAIN + 0.6: heart(at, db(-17) * (1 - 0.6 * np.clip((at - BRAIN + 0.4) / 1.0, 0, 1))); at += 60 / (72 + 28 * np.clip((at - MIN30 - 0.6) / 2.4, 0, 1))
+# --- 12:30 in the head: rising airy whoosh up to the brain, soft low pops as the caffeine plugs the doors, a slow swell as the tiredness piles up
+whoosh(BRAIN + 0.9, db(-23), 1.6)
+for k in range(8): popb(BRAIN + 2.45 + k * 0.1 + rng.uniform(0, 0.04), db(-25), 0.4 * np.sin(k * 1.7), 420 + 25 * k)
+x = tt(3.6); place(BRAIN + 2.2, filt(sum(np.sin(2 * np.pi * hz(n) * x) for n in (52, 59, 64)), 'lowpass', 900) * (x / 3.6) ** 1.5 * np.clip((3.6 - x) / 0.4, 0, 1), db(-30))
 # --- 1 PM: one rising note per teaspoon (a melody, not a ticking counter), the sugar pouring, sparkles in the blood
 scale = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88]
 for k in range(13): place(HOUR1 + 0.3 + k * 0.18, pluck(scale[k], 0.6) , db(-24), 0.3 * np.sin(k))
 x = tt(0.7); place(HOUR1 + 3.0, filt(rng.standard_normal(len(x)), 'bandpass', [1200, 5000]) * np.sin(np.pi * x / 0.7), db(-26), 0.2)
 [chime(HOUR1 + 4.2 + k * 0.35, db(-29), (91 + (k % 3) * 2,), 0.4 * (k % 2 * 2 - 1)) for k in range(4)]
-# --- 4 PM: the crash (power-down), the reach, the second can
+# --- 4 PM: the caffeine falls off (soft pops scattering), the tiredness lands (power-down), the reach, the second can
+for k in range(6): popb(HOUR4 + 0.2 + k * 0.08, db(-27), 0.5 * np.sin(k * 2.3), 640 - 30 * k)
 x = tt(1.4); f = 700 * (0.18 / 1) ** (x / 1.4); place(HOUR4 + 0.3, np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 1.2) * 0.8, db(-20))
 crack(HOUR4 + 3.85, db(-16)); fizz(HOUR4 + 3.9, 1.2, db(-31)); gulp(HOUR4 + 4.6, db(-21)); gulp(HOUR4 + 4.95, db(-22))
 # --- 2 AM: eyes snap open (a soft low hit), the clock, a sigh-free hush

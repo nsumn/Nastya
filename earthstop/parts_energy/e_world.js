@@ -84,12 +84,32 @@ const heartG = new THREE.Group(); heartG.position.set(0.035, 1.3, 0.04); organs.
 const VES = [[[0.035, 1.3, 0.04], [0.0, 1.5, 0.03], [0.0, 1.62, 0.02]], [[0.035, 1.3, 0.04], [0.16, 1.4, 0.02], [0.23, 1.18, 0.0], [0.26, 0.95, 0.02]], [[0.035, 1.3, 0.04], [-0.15, 1.4, 0.02], [-0.23, 1.18, 0.0], [-0.26, 0.95, 0.02]],
   [[0.035, 1.3, 0.04], [0.05, 1.05, 0.04], [0.1, 0.86, 0.02], [0.1, 0.42, 0.03], [0.1, 0.08, 0.05]], [[0.035, 1.3, 0.04], [0.0, 1.05, 0.04], [-0.1, 0.86, 0.02], [-0.1, 0.42, 0.03], [-0.1, 0.08, 0.05]]].map(pts => new THREE.CatmullRomCurve3(pts.map(p => V3(...p))));
 const vesMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.25, 0.1), transparent: true, opacity: 0.5 }); for (const c of VES) organs.add(new THREE.Mesh(new THREE.TubeGeometry(c, 40, 0.007, 5, false), vesMat));
+// ---- the brain inside the X-ray head: receptor "doors", blue adenosine (the "I'm tired" signal) piling up around it, orange caffeine hexagons plugging the doors ----
+const brainC = headOf(ghost).add(V3(0, 0.03, -0.03)), BR = 0.105;
+const brainG = new THREE.Group(); brainG.position.copy(brainC); xr.add(brainG);
+const brainM = new THREE.MeshStandardMaterial({ color: '#f29ab8', emissive: '#5a1a30', roughness: 0.5, flatShading: true });
+{ const g = new THREE.SphereGeometry(BR, 22, 16), q = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < q.count; i++) { v.fromBufferAttribute(q, i).divideScalar(BR); const f = Math.sin(v.z * 9 + Math.sin(v.y * 7) * 2) * Math.sin(v.y * 10 + Math.sin(v.x * 6) * 1.6), d = 1 + 0.06 * Math.abs(f) - 0.12 * Math.exp(-v.x * v.x / 0.004) * Math.max(0, v.y + 0.3);
+    q.setXYZ(i, v.x * 0.92 * d * BR, v.y * 0.8 * d * BR, v.z * 1.12 * d * BR); } g.computeVertexNormals(); brainG.add(new THREE.Mesh(g, brainM)); }
+const RN = 34, RDIR = Array.from({ length: RN }, (_, i) => { const y = 1 - 2 * (i + 0.5) / RN, r = Math.sqrt(1 - y * y), a = i * 2.39996; return V3(Math.cos(a) * r, y * 0.85, Math.sin(a) * r).normalize(); });
+const rcpM = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.55, 0.65, 0.8) }), cafM = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 0.6, 0.08) });
+const RCP = RDIR.map(d => { const m = new THREE.Mesh(new THREE.TorusGeometry(0.011, 0.003, 5, 12), rcpM); m.position.copy(d).multiplyScalar(BR * 1.08); m.lookAt(d.clone().multiplyScalar(BR * 3)); brainG.add(m); return m; });
+const CAF = RDIR.map(() => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.008, 6), cafM); brainG.add(m); return m; });
+const AN = 170, adM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.0075, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 0.38, 1.25) }), AN); adM.frustumCulled = false; brainG.add(adM);
+const AD = Array.from({ length: AN }, (_, i) => { const d = V3(R(-1, 1), R(-0.8, 1), R(-1, 1)).normalize(); return { d, far: R(0.35, 0.6), rest: BR * (1.3 + 0.45 * Math.floor(i / 50) / 3 + R(0, 0.1)), ts: R(0, 1), rcp: i % RN }; });
+function updateBrain(t, mode) { const flood = mode === 'flood', k = smooth(BRAIN + 0.2, BRAIN + 5.6, t), plug = smooth(BRAIN + 2.4, BRAIN + 3.2, t);
+  brainM.color.set('#f29ab8').lerp(new THREE.Color('#5a78c8'), flood ? smooth(HOUR4 + 0.6, HOUR4 + 1.6, t) : 0); brainG.rotation.y = 0.25 * Math.sin(t * 0.5);
+  CAF.forEach((c, i) => { const d = RDIR[i], on = hash(i * 2.7) * 0.8, s = flood ? 1 - smooth(HOUR4 + 0.2, HOUR4 + 0.7, t) : smooth(BRAIN + 2.4 + on, BRAIN + 2.6 + on, t), away = flood ? smooth(HOUR4 + 0.2, HOUR4 + 0.9, t) : 0;
+    c.visible = s > 0.02 || away > 0; c.position.copy(d).multiplyScalar(BR * (1.13 + 0.8 * away)); c.quaternion.setFromUnitVectors(V3(0, 1, 0), d); c.scale.setScalar(Math.max(0.01, flood ? 1 - away : s)); });
+  AD.forEach((A, i) => { const t0 = BRAIN + 0.3 + (i / AN) * 4.8 + A.ts * 0.3, u = ease(clamp((t - t0) / 0.9, 0, 1)); let p = A.d.clone().multiplyScalar(lerp(A.far, A.rest, u));
+    if (flood) { const f = ease(clamp((t - HOUR4 - 0.5 - 0.6 * A.ts) / 0.5, 0, 1)); p = p.lerp(RDIR[A.rcp].clone().multiplyScalar(BR * (1.05 + 0.25 * hash(i))), f); }
+    _o.position.copy(p); _o.rotation.set(t + i, i, 0); _o.scale.setScalar(t > t0 || flood ? 1 : 0.0001); _o.updateMatrix(); adM.setMatrixAt(i, _o.matrix); }); adM.instanceMatrix.needsUpdate = true; }
 const CN = 300, cellM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 0.2, 0.15) }), CN), sugM = new THREE.InstancedMesh(new THREE.BoxGeometry(0.011, 0.011, 0.011), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.4, 2.2) }), CN);
 cellM.frustumCulled = sugM.frustumCulled = false; organs.add(cellM, sugM);
 const CL = Array.from({ length: CN }, (_, i) => ({ v: i % VES.length, u0: rnd(), sp: R(0.25, 0.45), off: V3(R(-1, 1), R(-1, 1), R(-1, 1)).multiplyScalar(0.007), s: rnd() }));
 const bpmAt = t => Math.round(lerp(72, 104, smooth(MIN30 + 0.6, MIN30 + 3.0, t)));
 const _o = new THREE.Object3D(), _v = new THREE.Vector3();
-function updateXray(t, mode) { const bpm = bpmAt(t), sp = bpm / 72, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18);
+function updateXray(t, mode) { updateBrain(t, mode); ghostMat.opacity = mode === 'flood' || (t > BRAIN + 1.2 && t < HOUR1) ? 0.05 : 0.14; const bpm = bpmAt(t), sp = bpm / 72, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18);
   heartG.scale.setScalar(1 + 0.2 * beat); const sugar = mode === 'sugarx' ? smooth(HOUR1 + 3.0, HOUR1 + 4.5, t) : 0;
   CL.forEach((C, i) => { const u = (C.u0 + t * C.sp * sp) % 1; VES[C.v].getPointAt(u, _v).add(C.off); _o.position.copy(_v); _o.rotation.set(t + i, t * 0.7 + i, 0); _o.scale.setScalar(1); _o.updateMatrix(); cellM.setMatrixAt(i, _o.matrix);
     _o.position.add(V3(0.009, 0.005, 0.004)); _o.scale.setScalar(C.s < sugar * 0.8 ? 1 : 0.0001); _o.updateMatrix(); sugM.setMatrixAt(i, _o.matrix); }); cellM.instanceMatrix.needsUpdate = sugM.instanceMatrix.needsUpdate = true; }

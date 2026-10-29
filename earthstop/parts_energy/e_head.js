@@ -3,11 +3,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js';
 
-// "What happens if you drink an energy drink every day?" (≈67 s, US, reply to @VIOLET's comment): one 16 oz can a day — the crack + the jolt,
+// "What happens if you drink an energy drink every day?" (≈73 s, US, reply to @VIOLET's comment): one 16 oz can a day — the crack + the jolt,
 // heart rate up (X-ray body), 13 tsp of sugar, the crash + the second can, 40 mg still in you at 2 am, enamel, withdrawal headache, a year = 43 lb of sugar + $1,095,
 // 20,783 ER visits (2011), and the real fix: sleep. Numbers: tools/energy_math.py; sources in the chat (Shah 2019 JAHA, SAMHSA DAWN, Jain 2012, AASM).
 // =================== timeline ===================
-const CRACK = 1.8, MIN30 = 4.0, HOUR1 = 9.0, HOUR4 = 15.0, NIGHT = 21.0, WEEK = 28.0, MONTH = 34.0, YEAR = 40.0, ER = 47.0, SLEEP = 54.0, CTA = 61.0, T_END = 64.0;
+const CRACK = 1.8, MIN30 = 4.0, BRAIN = 9.0, HOUR1 = 15.0, HOUR4 = 21.0, NIGHT = 27.0, WEEK = 34.0, MONTH = 40.0, YEAR = 46.0, ER = 53.0, SLEEP = 60.0, CTA = 67.0, T_END = 70.0;
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
