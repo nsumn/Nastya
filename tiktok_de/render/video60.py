@@ -33,11 +33,14 @@ for m in re.finditer(r"\n\s*\n", CH):
     i = m.end()
     while CH[i].isspace(): i += 1
     PARA.append(ST[i])
-E = dict(menschen=t_of("zwei Menschen"), handy=t_of("eigenes Handy"), entfremdung=t_of("Entfremdung"), zugeht=t_of("zugeht"),
-         keine_antwort=t_of("keine Antwort"), hm=t_of("Hm"), foto=t_of("schickt ihm"), liest=t_of("Er liest"), gottman=t_of("Gottman"),
-         zusammen=t_of("zusammenblieben"), neun=t_of("neun von zehn"), trennten=t_of("trennten"), dritte=t_of("jedes dritte"),
-         stille=t_of("diese Stille"), handyweg=t_of("Leg das Handy"), antworte=t_of("Antworte"), dienstag=t_of("Dienstagabend"),
-         schick=t_of("Schick das"), speichere=t_of("speichere"))
+try:   # scene anchors of the 'Wie Mitbewohner' script; other scripts don't have them
+    E = dict(menschen=t_of("zwei Menschen"), handy=t_of("eigenes Handy"), entfremdung=t_of("Entfremdung"), zugeht=t_of("zugeht"),
+             keine_antwort=t_of("keine Antwort"), hm=t_of("Hm"), foto=t_of("schickt ihm"), liest=t_of("Er liest"), gottman=t_of("Gottman"),
+             zusammen=t_of("zusammenblieben"), neun=t_of("neun von zehn"), trennten=t_of("trennten"), dritte=t_of("jedes dritte"),
+             stille=t_of("diese Stille"), handyweg=t_of("Leg das Handy"), antworte=t_of("Antworte"), dienstag=t_of("Dienstagabend"),
+             schick=t_of("Schick das"), speichere=t_of("speichere"))
+except AssertionError:
+    E = {}
 
 def words():
     out = []
@@ -251,7 +254,7 @@ def sc_together(c, t):              # P6 + P7: he puts the phone down, turns to 
         c.restore()
 
 SCENES = [(0.0, sc_sofa_intro), (PARA[2], sc_sofa_drift), (PARA[3], sc_kitchen_talk), (E["foto"] - 0.3, sc_phone),
-          (PARA[4], sc_gottman), (PARA[5], sc_alone), (PARA[6], sc_together)]
+          (PARA[4], sc_gottman), (PARA[5], sc_alone), (PARA[6], sc_together)] if E else []
 
 # ---------------------------------------------------------------- captions (centre of the screen)
 F_SUB = ImageFont.truetype(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts", "Inter-Black.otf"), 70)

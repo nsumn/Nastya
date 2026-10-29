@@ -203,16 +203,19 @@ FACES = (545, 870, 1.45)
 HIM_CU = (760, 860, 1.9)
 HER_CU = (330, 930, 2.4)          # her face lands above the centred captions
 MED = (540, 930, 1.2)
-SHOTS = [
-    (0.0, s_sofa_wide, WIDE), (t_of("aber nicht"), s_gap, GAP), (t_of("Kein großer"), s_eat, MED), (t_of("Keine Affäre"), s_his_phone, WIDE),
-    (t_of("Nur zwei"), s_sofa_wide, WIDE), (t_of("und jeder"), s_faces, FACES), (t_of("Psychologen"), s_term, WIDE),
-    (t_of("Sie entsteht"), s_days, WIDE), (t_of("sondern in hundert"), s_turn, MED), (t_of("Sie erzählt"), s_tell, MED),
-    (t_of("und er sagt") + 0.4, s_hm, HIM_CU), (t_of("Sie schickt"), s_chat, WIDE), (t_of("Der Beziehungsforscher"), s_bid, MED),
-    (t_of("In seiner"), s_hearts, WIDE), (t_of("Irgendwann"), s_stops, MED), (t_of("Nicht, weil"), s_tear, HER_CU),
-    (t_of("Und genau"), s_alone, WIDE), (t_of("Die gute"), s_good, WIDE), (t_of("Ihr müsst"), s_simple, MED),
-    (t_of("Leg das"), s_putdown, FACES), (t_of("Antworte"), s_laugh, FACES), (t_of("Nähe entsteht") , s_vacation, WIDE),
-    (t_of("sondern an einem"), s_tuesday, MED), (t_of("Schick das"), s_cta, WIDE),
-]
+try:   # anchored on the 'Wie Mitbewohner' script; when another script is loaded only the building blocks are used
+    SHOTS = [
+        (0.0, s_sofa_wide, WIDE), (t_of("aber nicht"), s_gap, GAP), (t_of("Kein großer"), s_eat, MED), (t_of("Keine Affäre"), s_his_phone, WIDE),
+        (t_of("Nur zwei"), s_sofa_wide, WIDE), (t_of("und jeder"), s_faces, FACES), (t_of("Psychologen"), s_term, WIDE),
+        (t_of("Sie entsteht"), s_days, WIDE), (t_of("sondern in hundert"), s_turn, MED), (t_of("Sie erzählt"), s_tell, MED),
+        (t_of("und er sagt") + 0.4, s_hm, HIM_CU), (t_of("Sie schickt"), s_chat, WIDE), (t_of("Der Beziehungsforscher"), s_bid, MED),
+        (t_of("In seiner"), s_hearts, WIDE), (t_of("Irgendwann"), s_stops, MED), (t_of("Nicht, weil"), s_tear, HER_CU),
+        (t_of("Und genau"), s_alone, WIDE), (t_of("Die gute"), s_good, WIDE), (t_of("Ihr müsst"), s_simple, MED),
+        (t_of("Leg das"), s_putdown, FACES), (t_of("Antworte"), s_laugh, FACES), (t_of("Nähe entsteht") , s_vacation, WIDE),
+        (t_of("sondern an einem"), s_tuesday, MED), (t_of("Schick das"), s_cta, WIDE),
+    ]
+except AssertionError:
+    SHOTS = []
 
 def frame(t):
     k = max(i for i, s in enumerate(SHOTS) if s[0] <= t)

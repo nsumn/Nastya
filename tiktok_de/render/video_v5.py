@@ -1,13 +1,14 @@
-"""'Wie Mitbewohner' with the new rigged characters (character2): same 25 shots, white captions.
+"""Renders a video with the rigged characters (character2), white captions and the static look.
+The shot list comes from the module named in the SHOTS env var (default: video_shots = 'Wie Mitbewohner').
 
-Usage: python video_v5.py <alignment.csv> <out_dir> <worker> <n_workers> [--preview t1,t2,...]
+Usage: [SHOTS=shots_tasse] python video_v5.py <alignment.csv> <out_dir> <worker> <n_workers> [--preview t1,t2,...]
 """
-import math, os, subprocess, sys
+import importlib, math, os, subprocess, sys
 ALIGN, OUT = sys.argv[1], sys.argv[2]
 ARGS = sys.argv[3:]
 sys.argv = [sys.argv[0], ALIGN, OUT]
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import video_shots as VS
+VS = importlib.import_module(os.environ.get("SHOTS", "video_shots"))
 import character2 as C2
 import numpy as np, cairocffi as cairo
 
@@ -17,6 +18,7 @@ WHITE = (255, 255, 255)
 V.ACC = WHITE; VS.ROSE_RGB = WHITE
 
 def emo_of(p):
+    if "emo" in p: return p["emo"]
     sad = p.get("sad", 0.3)
     if p.get("smile", 0) > 0.85: return "smile"   # shared laugh moments only
     if p.get("phone", 1.0) > 0.5:          # staring at the phone: neutral face, no smile
@@ -44,6 +46,15 @@ def draw_phone(c, hands, ph, p, hs):
     c.save(); c.rectangle(sx, sy, sw, sh_); c.clip()
     A.screen_lines(c, px, sy, sw, sh_ * 0.8, p.get("scroll", 0.0), 0.9 * hs); c.restore()
 
+def draw_mug(c, hands, hs):
+    """a mug held in both hands in front of the chest"""
+    (l, _), (r_, _) = hands["arm_l"], hands["arm_r"]
+    mx, my = (l[0] + r_[0]) / 2, (l[1] + r_[1]) / 2 - 22 * hs
+    w, h = 56 * hs, 66 * hs; lw = 2.6 * hs / 0.5
+    c.arc(mx + w / 2, my, 18 * hs, -1.3, 1.3); c.set_source_rgb(*C2.LINE); c.set_line_width(9 * hs); c.stroke()
+    c.rectangle(mx - w / 2, my - h / 2, w, h); C2.finish(c, (0.93, 0.90, 0.84), lw)
+    C2.ellipse(c, mx, my - h / 2, w / 2, 8 * hs); C2.finish(c, (0.55, 0.40, 0.30), lw * 0.8)
+
 def A_round(c, x, y, w, h, r):
     c.new_sub_path()
     c.arc(x + w - r, y + r, r, -math.pi / 2, 0); c.arc(x + w - r, y + h - r, r, 0, math.pi / 2)
@@ -63,8 +74,11 @@ def seated(c, kind, x, y, s, p):
     pose = dict(arm_l=(18 * ph + 10 * (1 - ph), bend), arm_r=(18 * ph + 10 * (1 - ph), bend), fore_k=1 - 0.4 * ph, thumbs=ph < 0.5, hide_legs=True, emo=emo_of(p), blink=p.get("blink", False),
                 talk=p.get("talk", 0.0), look=((0.0, 0.9) if ph > 0.5 else (p.get("look", (0, 0))[0], 0.6 * p.get("look", (0, 0))[1])),
                 head_tilt=p.get("tilt", 0.0), lean=0.15 * p.get("breath", 0.0))
+    for k in ("arm_l", "arm_r", "fore_k", "look"):      # explicit pose overrides (gestures, holding a mug)
+        if k in p and (k != "look" or ph <= 0.5): pose[k] = p[k] if k != "look" else (p[k][0], 0.6 * p[k][1])
     hands = C2.person(c, x, gy, 1000 * hs, kind, pose)
     if ph > 0.05: draw_phone(c, hands, ph, p, hs)
+    if p.get("mug"): draw_mug(c, hands, hs)
 
 def hands_on_phone(c, kind, px=540, py=1000, pw=560, ph=1040):
     """close-up: sleeves from the bottom, palms around the lower edges"""

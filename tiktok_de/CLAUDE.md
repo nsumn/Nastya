@@ -56,25 +56,32 @@
 ./setup.sh                                   # один раз в новой сессии
 python lumean/lumean.py preview projects/02_x/script_de.txt
 python lumean/lumean.py order   projects/02_x/script_de.txt projects/02_x/voice
-.venv/bin/python render/video_v5.py projects/02_x/voice/alignment.csv out --preview 3,12,30,55   # проверить кадры
-./render.sh projects/02_x render/video_v5.py out/DE_x.mp4      # 20–30 мин, запускать в фоне
+SHOTS=shots_x .venv/bin/python render/video_v5.py projects/02_x/voice/alignment.csv out --preview 3,12,30,55   # проверить кадры
+./render.sh projects/02_x shots_x out/DE_x.mp4      # 20–30 мин, запускать в фоне
 ```
 
 ## Как сделать новое видео
 1. Создать `projects/NN_name/` с файлами `script_de.txt`, `script_ru.txt`, `beschreibung.txt`.
 2. Озвучить (см. выше).
-3. Скопировать `render/video_shots.py` в `render/shots_NN.py` и переписать список `SHOTS` под новый текст:
-   каждый кадр — `(t_of("слово"), функция_сцены, камера)`. Камеры: `WIDE`, `GAP`, `FACES`, `HIM_CU`, `HER_CU`, `MED`.
-   Наборы сцен (кухня, диван, телефон крупно, сердечки-статистика и т. д.) уже есть в `video60.py` / `video_shots.py`.
-4. Скопировать `render/video_v5.py` в `render/video_NN.py` и заменить в нём `import video_shots as VS` на новый модуль.
-   Персонажей, руки, телефон и субтитры не трогать.
+3. Скопировать `render/shots_tasse.py` (самый новый образец) в `render/shots_NN.py` и переписать `T` (якоря на слова),
+   сцены и список `SHOTS` под новый текст: каждый кадр — `(t_of("слово"), функция_сцены, камера)`.
+   Готовые элементы (берите их, это наш «фирменный» набор, как в залетевших роликах):
+   - плашка-HUD слева сверху (`hud`: день/время, «Studie»), правила с жёлтым ярлыком (`rule_tag`: «Regel 1» + заголовок);
+   - кольца-счётчики (`ring`: пульс, «20 Minuten», число мыслей), облако дел (`thoughts`);
+   - телефон крупно: экран блокировки с уведомлениями (`lock_phone`), список задач (`tasks_phone`), чат (`video60.sc_phone`);
+   - пузыри реплик (`bubble`, можно зачеркнуть), большие цифры/термины (`s_three`, `s_term`), стакан с последней каплей (`s_drop`);
+   - 2.5D-дом ночью с отъездом камеры (`building`), кухня (`kitchen_both`), диван (`sofa`), раковина с чашкой (`sink`).
+   Позы: `arm_l/arm_r` (жесты), `emo` (явная эмоция), `mug=True` (держит кружку), `phone=0..1`.
+4. Рендерить через `SHOTS=shots_NN` (см. пайплайн). Персонажей, руки, телефон и субтитры не трогать.
 5. Сначала превью кадров (`--preview`), показать пользователю, потом полный рендер.
 6. Готовое видео + русский перевод + описание отдать пользователю.
 
 ## Модули `render/`
 - `character2.py`: риг персонажей (позы, эмоции `neutral|calm|smile|happy|sad|worried|angry|cry|closed`, моргание, рот).
-- `video_v5.py`: подставляет риг в сцены, сидячие позы, телефон в руках, белые субтитры, эмоции.
-- `video_shots.py`: кадры Mitbewohner (образец).
+- `video_v5.py`: рендерер. Модуль кадров выбирается переменной `SHOTS` (по умолчанию `video_shots`).
+  Подставляет риг в сцены, сидячие позы, телефон/кружку в руках, белые субтитры, эмоции.
+- `video_shots.py`: кадры Mitbewohner (образец 1) и общие блоки (диван, кухня, большой телефон).
+- `shots_tasse.py`: кадры «Warum sie wegen einer Tasse explodiert» (образец 2, с HUD, правилами, счётчиками).
 - `video60.py`: тайминг по alignment, группы субтитров, комнаты, крупный план телефона, статистика.
 - `sofa_fog.py`: финальный «look» (туман, блюр, bloom, зерно, виньетка).
 - `adult.py`, `storybook.py`, `sofa_anim.py`: базовые наборы и фон.
