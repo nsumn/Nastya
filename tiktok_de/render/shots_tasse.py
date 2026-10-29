@@ -33,14 +33,17 @@ def rrect(c, x, y, w, h, r):
     c.arc(x + r, y + h - r, r, math.pi / 2, math.pi); c.arc(x + r, y + r, r, math.pi, 1.5 * math.pi); c.close_path()
 
 # ---------------------------------------------------------------- anchors
-T = dict(tasse=t_of("in der Spüle"), denkst=t_of("Und du denkst"), aber=t_of("Aber es geht"), kopf=t_of("In ihrem Kopf"),
-         arzt=t_of("Der Arzttermin"), geschenk=t_of("Das Geschenk"), essen=t_of("Was es morgen"), rechnung=t_of("Die Rechnung"),
-         psych=t_of("Psychologen"), unsichtbar=t_of("die unsichtbare"), tropfen_s=t_of("Und die Tasse"), tropfen=t_of("Tropfen"),
-         gottman=t_of("Der Paarforscher"), puls=t_of("Wenn der Puls"), steigt=t_of("steigt"), gehirn=t_of("kann das Gehirn"),
-         sinnlos=t_of("Dann ist jedes"), drei=t_of("Deshalb drei"), erstens=t_of("Erstens"), ruhig=t_of("Sag ruhig"), bin_da=t_of("Ich bin da"),
-         lass=t_of("Lass uns"), zweitens=t_of("Zweitens"), denn=t_of("Denn genau"), drittens=t_of("Drittens"), komplett=t_of("komplett"),
-         nicht_nur=t_of("Nicht nur"), helfer=t_of("Sie braucht keinen"), partner=t_of("Sie braucht einen"), schick=t_of("Schick das"),
-         speicher=t_of("Oder speicher"), abend=t_of("an dem eine"))
+try:   # anchors of the Tasse script; other scripts only borrow the helpers below
+    T = dict(tasse=t_of("in der Spüle"), denkst=t_of("Und du denkst"), aber=t_of("Aber es geht"), kopf=t_of("In ihrem Kopf"),
+             arzt=t_of("Der Arzttermin"), geschenk=t_of("Das Geschenk"), essen=t_of("Was es morgen"), rechnung=t_of("Die Rechnung"),
+             psych=t_of("Psychologen"), unsichtbar=t_of("die unsichtbare"), tropfen_s=t_of("Und die Tasse"), tropfen=t_of("Tropfen"),
+             gottman=t_of("Der Paarforscher"), puls=t_of("Wenn der Puls"), steigt=t_of("steigt"), gehirn=t_of("kann das Gehirn"),
+             sinnlos=t_of("Dann ist jedes"), drei=t_of("Deshalb drei"), erstens=t_of("Erstens"), ruhig=t_of("Sag ruhig"), bin_da=t_of("Ich bin da"),
+             lass=t_of("Lass uns"), zweitens=t_of("Zweitens"), denn=t_of("Denn genau"), drittens=t_of("Drittens"), komplett=t_of("komplett"),
+             nicht_nur=t_of("Nicht nur"), helfer=t_of("Sie braucht keinen"), partner=t_of("Sie braucht einen"), schick=t_of("Schick das"),
+             speicher=t_of("Oder speicher"), abend=t_of("an dem eine"))
+except AssertionError:
+    T = None
 
 # ---------------------------------------------------------------- set pieces (cairo, scene coordinates)
 def mug(c, x, y, s=1.0, tilt=0.0, col=(0.93, 0.90, 0.84)):
@@ -332,7 +335,7 @@ SHOTS = [
     (T["erstens"], s_rule1, MED), (T["ruhig"], s_iamhere, HIM_CU), (T["lass"], s_timer, WIDE), (T["zweitens"], s_rule2, HIM_CU),
     (T["denn"], s_asking, HER_MCU), (T["drittens"], s_rule3, WIDE), (T["nicht_nur"], s_think, HIM_CU), (T["helfer"], s_helper, MED),
     (T["partner"], s_partner, FACES), (T["schick"], s_house, WIDE), (T["abend"], s_lastcup, WIDE),
-]
+] if T else []
 
 # ---------------------------------------------------------------- screen overlays (after the look, crisp)
 def hud(im, day, sub):
@@ -377,7 +380,7 @@ def thoughts(im, n, a=1.0, min_y=0):
     layer.putalpha(layer.split()[3].point(lambda v: int(v * a))); im.paste(layer, (0, 0), layer)
 
 RULES = [(T["erstens"], T["zweitens"], 1, "Nicht diskutieren"), (T["zweitens"], T["drittens"], 2, "Das nicht sagen"),
-         (T["drittens"], T["helfer"], 3, "Ganz übernehmen")]
+         (T["drittens"], T["helfer"], 3, "Ganz übernehmen")] if T else []
 def overlays(im, t):
     if t >= T["aber"] - 0.2:
         if T["gottman"] <= t < T["drei"]: hud(im, "Studie", "John Gottman")

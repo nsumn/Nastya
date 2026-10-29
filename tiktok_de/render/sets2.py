@@ -190,7 +190,7 @@ def balcony(c, t, her=None, him=None, hug=0.0):
     for k in range(14): rect(c, k * 80, 1300, 12, 380, (0.10, 0.10, 0.14), 2)
     rect(c, -20, 1680, 1120, 26, (0.10, 0.10, 0.14))
 
-def park(c, t, her=None, him=None):
+def park(c, t, her=None, him=None, xs=(280, 800)):
     g = cairo.LinearGradient(0, 0, 0, H); g.add_color_stop_rgb(0, 0.07, 0.08, 0.13); g.add_color_stop_rgb(1, 0.12, 0.12, 0.17)
     c.set_source(g); c.paint()
     for k in range(9):                                              # bushes / trees
@@ -203,8 +203,8 @@ def park(c, t, her=None, him=None):
         for j in range(6): c.set_source_rgba(1, 1, 1, 0.03); c.rectangle(i * 95 + (j % 2) * 45, 1320 + j * 100, 86, 90); c.fill()
     # bench back
     for k in range(3): rect(c, 100, 1000 + k * 50, 880, 34, WOOD)
-    if her is not None: sit(c, "w", 280, 1230, 800, her)
-    if him is not None: sit(c, "m", 800, 1230, 830, him)
+    if him is not None: sit(c, "m", xs[1], 1230, 830, him)
+    if her is not None: sit(c, "w", xs[0], 1230, 800, her)
     rect(c, 80, 1210, 920, 40, WOOD)                                  # seat
     for x in (140, 940): rect(c, x - 14, 1250, 28, 280, (0.12, 0.12, 0.16), 2)
 

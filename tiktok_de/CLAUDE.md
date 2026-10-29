@@ -72,7 +72,7 @@ SHOTS=shots_x .venv/bin/python render/video_v5.py projects/02_x/voice/alignment.
 ## Как сделать новое видео
 1. Создать `projects/NN_name/` с файлами `script_de.txt`, `script_ru.txt`, `beschreibung.txt`.
 2. Озвучить (см. выше).
-3. Скопировать `render/shots_tasse.py` (самый новый образец) в `render/shots_NN.py` и переписать `T` (якоря на слова),
+3. Скопировать `render/shots_schlaf.py` (самый новый образец) в `render/shots_NN.py` и переписать `T` (якоря на слова),
    сцены и список `SHOTS` под новый текст: каждый кадр — `(t_of("слово"), функция_сцены, камера)`.
    Готовые элементы (берите их, это наш «фирменный» набор, как в залетевших роликах):
    - плашка-HUD слева сверху (`hud`: день/время, «Studie»), правила с жёлтым ярлыком (`rule_tag`: «Regel 1» + заголовок);
@@ -91,6 +91,8 @@ SHOTS=shots_x .venv/bin/python render/video_v5.py projects/02_x/voice/alignment.
   Подставляет риг в сцены, сидячие позы, телефон/кружку в руках, белые субтитры, эмоции.
 - `video_shots.py`: кадры Mitbewohner (образец 1) и общие блоки (диван, кухня, большой телефон).
 - `shots_tasse.py`: кадры «Warum sie wegen einer Tasse explodiert» (образец 2, с HUD, правилами, счётчиками).
+- `shots_schlaf.py`: кадры «Warum sie neben dir so schnell einschläft» (образец 3, **главный образец монтажа**: 27 кадров, новое место почти в каждом кадре).
+- `sets2.py`: библиотека мест и поз (спальня, машина, кабинет, прачечная, балкон, парк, прихожая, лестница, ванная, кухня у стойки).
 - `video60.py`: тайминг по alignment, группы субтитров, комнаты, крупный план телефона, статистика.
 - `sofa_fog.py`: финальный «look» (туман, блюр, bloom, зерно, виньетка).
 - `adult.py`, `storybook.py`, `sofa_anim.py`: базовые наборы и фон.
