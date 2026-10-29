@@ -44,7 +44,13 @@ def zzz(c, x, y, t, s=1.0):
 
 def card(c, title, sub, icon=None):
     bg(c); glow(c, 540, 700, 420, (1.0, 0.85, 0.6), 0.12)
-    text_c(c, title, 540, 640, 84, (1, 1, 1)); text_c(c, sub, 540, 720, 40, (0.78, 0.79, 0.86))
+    size = 84
+    c.select_font_face("Inter", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+    while size > 40:
+        c.set_font_size(size)
+        if c.text_extents(title)[4] <= 900: break
+        size -= 4
+    text_c(c, title, 540, 640, size, (1, 1, 1)); text_c(c, sub, 540, 720, 40, (0.78, 0.79, 0.86))
     if icon == "moon":
         c.arc(540, 930, 90, 0, 2 * math.pi); c.set_source_rgb(0.95, 0.88, 0.70); c.fill()
         c.arc(585, 900, 82, 0, 2 * math.pi); c.set_source_rgb(*Z.WALL0); c.fill()

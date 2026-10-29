@@ -195,7 +195,8 @@ def reach(x, gy, height, kind, side, target, elbow_out=True):
     th = math.atan2(tx - sx, ty - sy)
     al = math.acos(max(-1, min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))))
     cands = [th + al, th - al]
-    a1 = max(cands, key=lambda a: side * math.sin(a) * (1 if elbow_out else -1))
+    if elbow_out == "down": a1 = max(cands, key=lambda a: math.cos(a))          # elbow hangs down (reaching forward)
+    else: a1 = max(cands, key=lambda a: side * math.sin(a) * (1 if elbow_out else -1))
     ex, ey = sx + L1 * math.sin(a1), sy + L1 * math.cos(a1)
     a2 = math.atan2(tx - ex, ty - ey)
     a1d, a2d = math.degrees(a1), math.degrees(a2)

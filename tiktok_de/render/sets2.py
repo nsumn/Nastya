@@ -71,12 +71,12 @@ def head_xy(kind, x, gy, height):
     S = C2.Spec(kind); s = height / 1000.0
     return x, gy - S.head_y * s, S.head_r * s
 
-def reach_pose(kind, x, gy, height, targets, base=None):
-    """pose dict with arms placed by IK: targets = {'arm_l': (x, y), 'arm_r': (x, y)}"""
+def reach_pose(kind, x, gy, height, targets, base=None, elbow=True):
+    """pose dict with arms placed by IK: targets = {'arm_l': (x, y), 'arm_r': (x, y)}; elbow='down' for reaching forward"""
     p = dict(base or {}); fk = {}
     for key, tgt in targets.items():
         side = -1 if key == "arm_l" else 1
-        (o, b), f = C2.reach(x, gy, height, kind, side, tgt); p[key] = (o, b); fk[key] = f
+        (o, b), f = C2.reach(x, gy, height, kind, side, tgt, elbow); p[key] = (o, b); fk[key] = f
     p["fore_k"] = fk
     return p
 
@@ -208,7 +208,7 @@ def park(c, t, her=None, him=None, xs=(280, 800)):
     rect(c, 80, 1210, 920, 40, WOOD)                                  # seat
     for x in (140, 940): rect(c, x - 14, 1250, 28, 280, (0.12, 0.12, 0.16), 2)
 
-def hallway(c, t, her=None, him=None, her_bag=False):
+def hallway(c, t, her=None, him=None, her_bag=False, kids=False, him_front=False):
     wall(c, 1520)
     rect(c, 380, 380, 330, 1140, (0.30, 0.25, 0.26))                 # front door
     rect(c, 430, 440, 230, 300, (0.18, 0.22, 0.34)); C2.ellipse(c, 670, 1000, 14, 14); C2.finish(c, (0.85, 0.72, 0.45), 3)
@@ -217,13 +217,18 @@ def hallway(c, t, her=None, him=None, her_bag=False):
         box(c, [(90 + k * 90, 575), (150 + k * 90, 575), (170 + k * 90, 920), (70 + k * 90, 920)], col)
     rect(c, 780, 1300, 240, 220, WOOD)                                 # sideboard + key bowl
     glow(c, 540, 380, 500, WARM, 0.18)
-    if him is not None: stand(c, "m", 830, 1760, 1040, him)
+    if kids:   # two small school backpacks and kids' shoes by the door
+        for k, (x, col) in enumerate(((610, (0.75, 0.45, 0.45)), (720, (0.45, 0.58, 0.78)))):
+            rbox(c, x - 55, 1420, 110, 120, 26, col); rbox(c, x - 35, 1470, 70, 40, 12, tuple(v * 0.8 for v in col))
+        for x in (520, 560): C2.ellipse(c, x, 1540, 24, 11); C2.finish(c, (0.85, 0.55, 0.40), 3)
+    if him is not None and not him_front: stand(c, "m", 830, 1760, 1040, him)
     if her is not None:
         hands = stand(c, "w", 400, 1780, 1000, her)
         if her_bag:
             (bx, by), _ = hands["arm_l"]
             c.set_source_rgb(*OUTL); c.set_line_width(8); c.move_to(bx - 40, by + 60); c.curve_to(bx - 40, by - 10, bx + 40, by - 10, bx + 40, by + 60); c.stroke()
             box(c, [(bx - 85, by + 50), (bx + 85, by + 50), (bx + 100, by + 230), (bx - 100, by + 230)], (0.42, 0.30, 0.26))
+    if him is not None and him_front: stand(c, "m", 830, 1760, 1040, him)
 
 def stairs(c, t, her=None):
     wall(c, 1700)
@@ -258,10 +263,14 @@ def bathroom(c, t, her=None):
     rect(c, 180, 1230, 720, 60, (0.85, 0.86, 0.90))                    # sink counter
     rect(c, 220, 1290, 640, 300, (0.30, 0.30, 0.38))
 
-def counter_kitchen(c, t, her=None, him=None):
+def counter_kitchen(c, t, her=None, him=None, hug=0.0):
     wall(c, 1560)
     for k in range(4): rect(c, 60 + k * 250, 380, 220, 300, (0.22, 0.24, 0.32))   # upper cabinets
     rect(c, -20, 1180, 1120, 40, (0.36, 0.33, 0.36)); rect(c, -20, 1220, 1120, 340, (0.22, 0.22, 0.30))
     glow(c, 540, 700, 600, WARM, 0.22)
+    if hug:    # she leans into him, the arms between them are hidden behind the bodies
+        if him is not None: stand(c, "m", 600, 1800, 1050, dict(him, skip_arms=("arm_l",)))
+        if her is not None: stand(c, "w", 450, 1800, 1000, dict(her, skip_arms=("arm_r",), lean=-6 * hug, head_tilt=her.get("head_tilt", 0) + 14 * hug))
+        return
     if her is not None: stand(c, "w", 330, 1800, 1000, her)
     if him is not None: stand(c, "m", 770, 1800, 1050, him)
