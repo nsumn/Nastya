@@ -73,8 +73,9 @@ def groups(p):
         delt = ell(q, np.array([0.235, 1.42, 0.0]), np.array([0.048, 0.06, 0.052]))
         up = cap(q, (0.255, SH - 0.02, 0), (0.258, EL, 0), 0.043, 0.036)
         fore = cap(q, (0.258, EL, 0), (0.258, WR + 0.01, 0.005), 0.041, 0.032)
-        palm = rbox(q, np.array([0.258, 0.88, 0.012]), (0.023, 0.056, 0.044), 0.02)
-        thumb = cap(q, (0.248, 0.93, 0.035), (0.243, 0.88, 0.06), 0.014, 0.012)
+        # a relaxed fist: palm block, the curled fingers as one rolled knuckle row, the thumb wrapped over the front
+        palm = smin(rbox(q, np.array([0.258, 0.9, 0.006]), (0.021, 0.04, 0.038), 0.017), cap(q, (0.252, 0.858, -0.024), (0.252, 0.858, 0.034), 0.021, 0.02), 0.025)
+        thumb = cap(q, (0.243, 0.915, 0.034), (0.236, 0.878, 0.046), 0.013, 0.012)
         d[bs] = smin(delt, up, 0.05)
         if OUTFIT == 'tee':   # wide short sleeve, hanging a bit away from the arm, open end just above the elbow
             sl = smax(cap(q, (0.228, 1.385, 0), (0.28, 1.1, 0.0), 0.085, 0.082), 1.095 - q[:, 1], 0.012)
@@ -105,7 +106,13 @@ def build_body():
     print('body', len(bv), 'verts', len(bf), 'faces')
 
     D = groups(bv); bone = np.stack([D[i] for i in range(10)], 1)
-    w = np.exp(-(bone - bone.min(1, keepdims=True)) / 0.018); idx = np.argsort(-w, 1)[:, :4]
+    w = np.exp(-(bone - bone.min(1, keepdims=True)) / 0.018)
+    # arms and torso do not drag each other below the shoulder cap (no stretched "wings" when an arm goes up)
+    dom = bone.argmin(1); arm = np.isin(dom, [2, 3, 4, 5]); low = bv[:, 1] < 1.4
+    w[arm & low, 0] = 0; w[arm & low, 1] = 0
+    for a in (2, 3, 4, 5): w[(~arm) & low, a] = 0
+    w[np.arange(len(w)), dom] = np.maximum(w[np.arange(len(w)), dom], 1e-6)
+    idx = np.argsort(-w, 1)[:, :4]
     ww = np.take_along_axis(w, idx, 1); ww /= ww.sum(1, keepdims=True)
 
     C = bv[bf].mean(1); DC = groups(C); bc = np.stack([DC[i] for i in range(10)], 1).argmin(1)

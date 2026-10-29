@@ -31,7 +31,7 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
   const look = { night: 'night', sleep: t < SLEEP + 3.2 ? 'night' : 'day', month: 'eve' }[mode] || 'day'; lightRoom(look); camKey.intensity = look === 'night' ? 0.5 : 1.4; fizz.begin(); smokeMat.uniforms.uTint.value.set('#e8f4e8');
   if (mode === 'open') {   // tired, the crack, the gulp, eyes snap open
     P.outer.position.set(2.75, 0.95, -1.3); P.outer.rotation.y = 0.3; can.visible = true; const drink = smooth(CRACK + 0.3, CRACK + 0.8, t) * (1 - smooth(CRACK + 1.5, CRACK + 1.9, t));
-    P.arms[1].rotation.set(lerp(-0.7, -1.25, drink), 0, lerp(-0.3, -0.5, drink)); P.elbows[1].rotation.x = lerp(-1.15, -1.95, drink); can.rotation.x = lerp(-1.3, -2.3, drink);   // can in front of the chest -> to the mouth
+    const ax = lerp(-0.9, -1.45, drink), ex = lerp(-1.0, -1.35, drink); P.arms[1].rotation.set(ax, 0, lerp(-0.35, -0.55, drink)); P.elbows[1].rotation.x = ex; can.rotation.x = lerp(0, -1.9, drink) - ax - ex;   // can in front of the chest (upright) -> tipped at the mouth
     if (t > CRACK && t < CRACK + 1.0) { P.outer.updateMatrixWorld(true); const top = can.localToWorld(V3(0, 0.17, 0)); for (let k = 0; k < 20; k++) { const u = ((t - CRACK) * 2 + k / 20) % 1; fizz.add(top.clone().add(V3(0.02 * Math.sin(k * 3), u * 0.12, 0.02 * Math.cos(k * 2))), 0.012 + u * 0.02, 0.5 * (1 - u)); } }
     P.root.rotation.x = 0.12 * (1 - smooth(CRACK + 1.6, CRACK + 1.9, t)); P.face(t < CRACK ? 'sleepy' : t < CRACK + 1.7 ? 'neutral' : 'wired', t); }
   else if (mode === 'sugar') {   // 13 teaspoons of sugar lined up next to the can, then a pile

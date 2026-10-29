@@ -8,8 +8,8 @@ const home = m => t => updateHome(t, m);
 // [start, scene, camera, update(t), framing(t)]
 const SHOTS = [
   [0.0, room, () => rmCam, home('open'), t => framing(H_(hero), V3(0.25, 0.02, 1), lerp(2.0, 1.6, t / 1.6), 0.6)],   // under the title: face low
-  [1.6, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.4, 0.0, 1), lerp(2.0, 1.75, (t - 1.6) / 1.1), 0.5)],   // the crack
-  [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.15, 0.0, 1), lerp(1.0, 1.25, (t - 2.7) / 1.3), 0.56)],   // eyes snap open
+  [1.6, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.5, 0.12, 1), lerp(2.1, 1.85, (t - 1.6) / 1.1), 0.45)],   // the crack
+  [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.55, 0.05, 1), lerp(1.45, 1.6, (t - 2.7) / 1.3), 0.55)],   // eyes snap open
   [MIN30, xr, () => xCam, t => updateXray(t, 'x'), t => { const a = lerp(Math.PI * 0.95, 0.35, ease((t - MIN30) / 2.6)); return fr(heartW(), V3(Math.sin(a), 0.15, Math.cos(a)), lerp(2.6, 1.3, ease((t - MIN30) / 2.6)), 0.5); }],   // spirals in from behind
   [MIN30 + 2.6, xr, () => xCam, t => updateXray(t, 'x'), t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.55, 0.42, (t - MIN30 - 2.6) / 2.4), 0.5)],
   [HOUR1, room, () => rmCam, home('sugar'), t => fr(V3(3.3, 0.96, -0.6), V3(-0.55, 1.1, 0.35), lerp(1.15, 1.0, (t - HOUR1) / 2.4), 0.5)],   // 13 spoons, from above
@@ -25,7 +25,7 @@ const SHOTS = [
   [WEEK + 2.8, toothS, () => tCam, updateTooth, t => fr(V3(0, 0.4, 0.05), V3(-0.3, 0.55, 1), lerp(1.1, 0.95, (t - WEEK - 2.8) / 3.2), 0.5)],
   [MONTH, room, () => rmCam, home('month'), t => fr(H_(hero), V3(0.2, 0.08, 1), lerp(1.9, 1.6, (t - MONTH) / 2.8), 0.6)],
   [MONTH + 2.8, room, () => rmCam, home('month'), t => fr(H_(hero), V3(-0.45, 0.1, 1), lerp(1.3, 1.15, (t - MONTH - 2.8) / 3.2), 0.6)],
-  [YEAR, room, () => rmCam, home('year'), t => fr(V3(2.0, 0.75, -0.8), V3(-0.35, 0.25, 1), lerp(3.4, 3.0, (t - YEAR) / 2.6), 0.5)],
+  [YEAR, room, () => rmCam, home('year'), t => fr(V3(2.1, 0.95, -0.8), V3(0.25, 0.25, 1), lerp(4.3, 3.9, (t - YEAR) / 2.6), 0.5)],
   [YEAR + 2.6, room, () => rmCam, home('year'), t => fr(H_(hero), V3(-0.3, 0.05, 1), lerp(1.6, 1.4, (t - YEAR - 2.6) / 1.4), 0.6)],
   [YEAR + 4.0, room, () => rmCam, home('year'), t => fr(V3(1.3, 0.1, -0.35), V3(0.15, 0.9, 1), lerp(1.0, 0.85, (t - YEAR - 4) / 3), 0.5)],   // the cash
   [ER, erS, () => eCam, updateER, t => fr(V3(0, 1.2, 0), V3(0.15, 0.5, 1), lerp(15, 12, (t - ER) / 3.4), 0.5, 46)],
