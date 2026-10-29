@@ -53,6 +53,9 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     if (t > HOUR4 + 3.8) { can2.visible = false; can.visible = true; P.arms[1].rotation.set(-0.6, 0, 0.1); P.elbows[1].rotation.x = -1.3; } }
   else if (mode === 'night') {   // 2 AM: in bed, eyes wide open
     P.outer.position.set(-2.9, 0.72, 1.34); P.outer.rotation.set(-Math.PI / 2, 0, 0); drawClock('2:00'); P.face(t < NIGHT + 4 ? 'surprised' : 'worried', t); }
+  else if (mode === 'month' && t >= MONTH + 5.3) {   // on edge: jittery, sweating, can't sit still
+    seatAt(P, -1.0, 0.42, -1.3, 0); P.outer.position.x += 0.012 * Math.sin(t * 47) + 0.006 * Math.sin(t * 31); P.root.rotation.z = 0.02 * Math.sin(t * 23);
+    P.arms.forEach((a, i) => a.rotation.set(-0.5, 0, i ? -0.2 : 0.2)); P.elbows.forEach((e, i) => e.rotation.x = -1.2 - 0.15 * Math.sin(t * 19 + i)); P.face('anxious', t); }
   else if (mode === 'month') {   // skipped a day: the headache rings
     seatAt(P, -1.0, 0.42, -1.3, 0); P.arms.forEach((a, i) => a.rotation.set(-2.4, 0, i ? -0.5 : 0.5)); P.elbows.forEach(e => e.rotation.x = -1.6); P.face('worried', t);
     P.outer.updateMatrixWorld(true); const hd = headOf(P); RINGS.forEach((r, k) => { const u = ((t * 1.5) + k / 3) % 1; r.visible = true; r.position.copy(hd); r.scale.setScalar(0.7 + 1.4 * u); r.material.opacity = 1 - u; r.lookAt(rmCam.position); }); }
@@ -110,7 +113,7 @@ const CL = Array.from({ length: CN }, (_, i) => ({ v: i % VES.length, u0: rnd(),
 const bpmAt = t => Math.round(lerp(72, 104, smooth(MIN30 + 0.6, MIN30 + 3.0, t)));
 const _o = new THREE.Object3D(), _v = new THREE.Vector3();
 function updateXray(t, mode) { updateBrain(t, mode); ghostMat.opacity = mode === 'flood' || (t > BRAIN + 1.2 && t < HOUR1) ? 0.05 : 0.14; const bpm = bpmAt(t), sp = bpm / 72, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18);
-  heartG.scale.setScalar(1 + 0.2 * beat); const sugar = mode === 'sugarx' ? smooth(HOUR1 + 3.0, HOUR1 + 4.5, t) : 0;
+  heartG.scale.setScalar(1 + 0.2 * beat); const sugar = mode === 'sugarx' ? smooth(HOUR1 + 3.0, HOUR1 + 4.5, t) : mode === 'sugary' ? 1 : 0;
   CL.forEach((C, i) => { const u = (C.u0 + t * C.sp * sp) % 1; VES[C.v].getPointAt(u, _v).add(C.off); _o.position.copy(_v); _o.rotation.set(t + i, t * 0.7 + i, 0); _o.scale.setScalar(1); _o.updateMatrix(); cellM.setMatrixAt(i, _o.matrix);
     _o.position.add(V3(0.009, 0.005, 0.004)); _o.scale.setScalar(C.s < sugar * 0.8 ? 1 : 0.0001); _o.updateMatrix(); sugM.setMatrixAt(i, _o.matrix); }); cellM.instanceMatrix.needsUpdate = sugM.instanceMatrix.needsUpdate = true; }
 // =================== THE TOOTH (week 1): a big molar, acid drips, the enamel dulls and pits ===================
@@ -126,17 +129,12 @@ function updateTooth(t) { const k = smooth(WEEK + 1.0, WEEK + 5.5, t); tooth.rot
   pits.forEach((p, i) => { p.visible = hash(i * 1.7) < k; p.scale.setScalar(Math.max(0.01, (k - hash(i * 1.7) * 0.8) * 1.5)); p.scale.z *= 0.4; });
   drops.forEach((d, i) => { const u = ((t - WEEK) * 0.9 + i / 10) % 1; d.position.set(-0.2 + 0.4 * hash(i), 1.2 - u * 0.75, 0.05 + 0.15 * (hash(i * 3) - 0.5)); d.visible = u < 0.95; });
   acidFog.begin(); smokeMat.uniforms.uTint.value.set('#a8e870'); for (let n = 0; n < 40; n++) { const u = ((t * 0.3 + n / 40) % 1); acidFog.add(V3(Math.cos(n * 2.4) * 0.3, 0.5 + u * 0.3, Math.sin(n * 2.4) * 0.3), 0.06 + u * 0.08, 0.2 * (1 - u) * k); } acidFog.end(); }
-// =================== THE ER (2011): a cartoon hospital front, a crowd that keeps growing toward 20,783 ===================
-const erS = new THREE.Scene(); erS.background = new THREE.Color('#8ab8e8'); const eCam = new THREE.PerspectiveCamera(42, W / H, 0.05, 200); erS.fog = new THREE.Fog(0x8ab8e8, 20, 70);
-erS.add(new THREE.HemisphereLight(0xf4f8ff, 0x7a8a6a, 1.1)); { const k = new THREE.DirectionalLight(0xfff0d8, 2.0); k.position.set(4, 8, 6); erS.add(k); }
-{ const gr = mesh(new THREE.PlaneGeometry(200, 200), M('#b8b8b0', { roughness: 1 }), false, true); gr.rotation.x = -Math.PI / 2; erS.add(gr);
-  bx(12, 6, 3, '#f2f0ea', 0, 3, -6, erS); for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) bx(0.9, 0.8, 0.05, '#9ac8e8', -5 + c * 1.4, 1.6 + r * 1.4, -4.47, erS);
-  const erT = canvasTex(256, 96, (g, w, h) => { g.fillStyle = '#e8303a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffffff'; g.font = 'bold 62px Inter, sans-serif'; g.textAlign = 'center'; g.fillText('EMERGENCY', w / 2, 70); });
-  const er = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.0), new THREE.MeshBasicMaterial({ map: erT, color: new THREE.Color(1.4, 1.4, 1.4) })); er.position.set(0, 5.2, -4.45); erS.add(er);
-  bx(2.4, 2.4, 0.1, '#5a6a7a', 0, 1.2, -4.45, erS); const amb = new THREE.Group(); bx(2.6, 1.2, 1.1, '#ffffff', 0, 0.9, 0, amb); bx(0.9, 0.9, 1.08, '#ffffff', 1.6, 0.75, 0, amb); bx(2.62, 0.15, 1.12, '#e8303a', 0, 1.0, 0, amb); amb.position.set(4.0, 0, -2.4); erS.add(amb); }
-const ERN = 1400, erBody = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.09, 0.4, 3, 8), new THREE.MeshStandardMaterial({ roughness: 0.9 }), ERN), erHead = new THREE.InstancedMesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshStandardMaterial({ roughness: 0.9 }), ERN);
-erBody.frustumCulled = erHead.frustumCulled = false; erS.add(erBody, erHead);
-const ERP = Array.from({ length: ERN }, (_, i) => { const a = i * 2.39996, r = 0.35 * Math.sqrt(i); return [Math.cos(a) * r * 1.4, 2.5 + Math.sin(a) * r * 0.9 * 0.6 + r * 0.3]; });
-{ const col = new THREE.Color(); ERP.forEach((_, i) => { erBody.setColorAt(i, col.set(pick(['#e24b3b', '#2f5d8a', '#e0b040', '#4b8b5a', '#7a4a8c', '#f08a4b', '#5aa0c8', '#d46a8a']))); erHead.setColorAt(i, col.set(pick(['#f1d2b6', '#e9c4a2', '#d7a47e', '#b98260', '#8d5a3c']))); }); }
-function updateER(t) { const n = Math.floor(ERN * smooth(ER + 0.3, ER + 5.5, t)); ERP.forEach(([x, z], i) => { const on = i < n; _o.position.set(x, on ? 0.33 : -5, z); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); erBody.setMatrixAt(i, _o.matrix); _o.position.y = on ? 0.68 : -5; _o.updateMatrix(); erHead.setMatrixAt(i, _o.matrix); });
-  erBody.instanceMatrix.needsUpdate = erHead.instanceMatrix.needsUpdate = true; }
+// =================== ONE BLOOD VESSEL up close (1:30 PM): a red tube with cells streaming through; it tightens and the flow slows ===================
+const vsl = new THREE.Group(); vsl.position.set(3, 1, 0); xr.add(vsl);
+const vWall = new THREE.MeshStandardMaterial({ color: '#e8504a', emissive: '#5a0a08', roughness: 0.5, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false });
+const vTube = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.6, 20, 1, true), vWall); vTube.rotation.z = Math.PI / 2; vsl.add(vTube);
+const VCN = 90, vCells = new THREE.InstancedMesh(new THREE.SphereGeometry(0.012, 10, 6), new THREE.MeshStandardMaterial({ color: '#ff3a3a', emissive: '#7a0a0a', roughness: 0.4 }), VCN); vCells.frustumCulled = false; vsl.add(vCells);
+const VC = Array.from({ length: VCN }, () => ({ x: R(-0.8, 0.8), a: R(0, 6.283), r: R(0, 1), s: R(0.8, 1.2) }));
+function updateVessel(t) { const k = smooth(VESSEL + 1.2, VESSEL + 3.0, t), rad = lerp(1, 0.6, k), sp = lerp(0.35, 0.14, k);
+  vTube.scale.set(rad, 1, rad); vWall.color.set('#e8504a').lerp(new THREE.Color('#a03838'), k);
+  VC.forEach((c, i) => { const x = wrapR(c.x + t * sp * c.s, -0.8, 0.8), rr = 0.035 * rad * c.r; _o.position.set(x, Math.cos(c.a + t) * rr, Math.sin(c.a + t) * rr); _o.rotation.set(0, t + i, 0); _o.scale.set(0.45, 1, 1); _o.updateMatrix(); vCells.setMatrixAt(i, _o.matrix); }); vCells.instanceMatrix.needsUpdate = true; }

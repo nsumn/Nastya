@@ -14,12 +14,15 @@ const SHOTS = [
   [2.7, room, () => rmCam, home('open'), t => framing(H_(hero), V3(-0.55, 0.05, 1), lerp(1.45, 1.6, (t - 2.7) / 1.3), 0.63)],   // eyes snap open
   [MIN30, xr, () => xCam, t => updateXray(t, 'x'), t => { const a = lerp(Math.PI * 0.95, 0.35, ease((t - MIN30) / 2.6)); return fr(heartW(), V3(Math.sin(a), 0.15, Math.cos(a)), lerp(2.6, 1.3, ease((t - MIN30) / 2.6)), 0.5); }],   // spirals in from behind
   [MIN30 + 2.6, xr, () => xCam, t => updateXray(t, 'x'), t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.55, 0.42, (t - MIN30 - 2.6) / 2.4), 0.5)],
+  [MIN30 + 5.0, xr, () => xCam, t => updateXray(t, 'x'), t => fr(heartW(), V3(-0.35, 0.1, 1), lerp(0.7, 0.6, (t - MIN30 - 5) / 2.5), 0.86)],   // the rhythm, under the monitor card
   [BRAIN, xr, () => xCam, t => updateXray(t, 'x'), t => { const k = ease((t - BRAIN) / 1.8); return fr(heartW().lerp(brainW(), k), V3(0.45, 0.1, 1), lerp(0.55, 0.62, k), lerp(0.5, 0.55, k)); }],   // up from the heart into the head
   [BRAIN + 2.4, xr, () => xCam, t => updateXray(t, 'x'), t => fr(brainW(), V3(-0.5, 0.2, 1), lerp(0.5, 0.42, (t - BRAIN - 2.4) / 1.9), 0.55)],   // caffeine plugs the doors
   [BRAIN + 4.3, xr, () => xCam, t => updateXray(t, 'x'), t => fr(brainW(), V3(0.35, 0.25, 1), lerp(0.8, 0.95, (t - BRAIN - 4.3) / 1.7), 0.55)],   // the blue keeps piling up
   [HOUR1, room, () => rmCam, home('sugar'), t => fr(V3(3.3, 0.96, -0.6), V3(-0.55, 1.1, 0.35), lerp(1.15, 1.0, (t - HOUR1) / 2.4), 0.5)],   // 13 spoons, from above
   [HOUR1 + 2.4, room, () => rmCam, home('sugar'), t => fr(H_(hero), V3(-0.55, 0.05, 1), lerp(1.5, 1.3, (t - HOUR1 - 2.4) / 1.6), 0.6)],
   [HOUR1 + 4.0, xr, () => xCam, t => updateXray(t, 'sugarx'), t => fr(V3(0.18, 1.2, 0.02), V3(0.35, 0.1, 1), lerp(0.75, 0.6, (t - HOUR1 - 4) / 2), 0.5)],   // sugar riding the blood
+  [VESSEL, xr, () => xCam, t => { updateXray(t, 'x'); updateVessel(t); }, t => fr(V3(3, 1, 0), V3(0.25, 0.3, 1), lerp(0.75, 0.6, (t - VESSEL) / 2.6), 0.5)],   // one vessel up close
+  [VESSEL + 2.6, xr, () => xCam, t => { updateXray(t, 'x'); updateVessel(t); }, t => fr(V3(3.15, 1, 0), V3(-0.6, 0.2, 1), lerp(0.42, 0.36, (t - VESSEL - 2.6) / 2.4), 0.5)],   // it tightens, the cells crawl
   [HOUR4, xr, () => xCam, t => updateXray(t, 'flood'), t => fr(brainW(), V3(0.2, 0.15, 1), lerp(0.75, 0.6, (t - HOUR4) / 2), 0.55)],   // caffeine falls off: all the tiredness lands at once
   [HOUR4 + 2.0, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(0.25, 0.12, 1), lerp(2.6, 2.3, (t - HOUR4 - 2) / 1.2), 0.6)],
   [HOUR4 + 3.2, room, () => rmCam, home('crash'), t => fr(H_(hero), V3(-0.45, 0.05, 1), lerp(1.3, 1.15, (t - HOUR4 - 3.2) / 0.8), 0.6)],
@@ -27,46 +30,48 @@ const SHOTS = [
   [NIGHT, room, () => rmCam, home('night'), t => fr(H_(hero), V3(0.05, 1, 0.55), lerp(2.0, 1.6, (t - NIGHT) / 2.5), 0.55)],   // in bed, from above
   [NIGHT + 2.5, room, () => rmCam, home('night'), t => fr(V3(-3.93, 0.75, 0.15), V3(1, 0.1, 0.25), lerp(0.75, 0.6, (t - NIGHT - 2.5) / 1.7), 0.5)],   // 2:00
   [NIGHT + 4.2, room, () => rmCam, home('night'), t => fr(H_(hero), V3(-0.1, 1, 0.4), lerp(1.0, 0.85, (t - NIGHT - 4.2) / 2.8), 0.55)],
+  [NIGHT + 6.6, room, () => rmCam, home('night'), t => fr(H_(hero), V3(0.45, 1, 0.9), lerp(2.6, 2.9, (t - NIGHT - 6.6) / 2.9), 0.55)],
   [WEEK, toothS, () => tCam, updateTooth, t => fr(V3(0, 0.32, 0), V3(0.45, 0.3, 1), lerp(2.2, 1.8, (t - WEEK) / 2.8), 0.5)],
   [WEEK + 2.8, toothS, () => tCam, updateTooth, t => fr(V3(0, 0.4, 0.05), V3(-0.3, 0.55, 1), lerp(1.1, 0.95, (t - WEEK - 2.8) / 3.2), 0.5)],
   [MONTH, room, () => rmCam, home('month'), t => fr(H_(hero), V3(0.2, 0.08, 1), lerp(1.9, 1.6, (t - MONTH) / 2.8), 0.6)],
   [MONTH + 2.8, room, () => rmCam, home('month'), t => fr(H_(hero), V3(-0.45, 0.1, 1), lerp(1.3, 1.15, (t - MONTH - 2.8) / 3.2), 0.6)],
+  [MONTH + 5.3, room, () => rmCam, home('month'), t => fr(H_(hero), V3(0.3, 0.05, 1), lerp(1.4, 1.2, (t - MONTH - 5.3) / 2.7), 0.6)],   // jittery, on edge
   [YEAR, room, () => rmCam, home('year'), t => fr(V3(2.25, 1.0, -1.25), V3(0.05, 0.45, 1), lerp(3.7, 3.4, (t - YEAR) / 2.6), 0.64)],   // the tub fills, you beside it
   [YEAR + 2.6, room, () => rmCam, home('year'), t => fr(H_(hero), V3(-0.3, 0.05, 1), lerp(1.6, 1.4, (t - YEAR - 2.6) / 1.6), 0.6)],
   [YEAR + 4.2, room, () => rmCam, home('year'), t => fr(V3(2.35, 0.4, -0.65), V3(0.25, 0.4, 1), lerp(2.9, 2.5, (t - YEAR - 4.2) / 2.8), 0.55)],   // it spills over
-  [ER, erS, () => eCam, updateER, t => fr(V3(0, 1.2, 0), V3(0.15, 0.5, 1), lerp(15, 12, (t - ER) / 3.4), 0.5, 46)],
-  [ER + 3.4, erS, () => eCam, updateER, t => fr(V3(-0.5, 0.8, 2.5), V3(-0.45, 0.2, 1), lerp(5.5, 4.8, (t - ER - 3.4) / 3.6), 0.5, 46)],
+  [YEAR + 5.6, xr, () => xCam, t => updateXray(t, 'sugary'), t => fr(V3(-0.2, 1.05, 0.02), V3(-0.35, 0.1, 1), lerp(0.7, 0.55, (t - YEAR - 5.6) / 2.4), 0.5)],   // sugar in the blood, every day
   [SLEEP, room, () => rmCam, home('sleep'), t => fr(H_(hero), V3(0.05, 1, 0.6), lerp(2.2, 1.8, (t - SLEEP) / 3.2), 0.55)],
   [SLEEP + 3.2, room, () => rmCam, home('sleep'), t => fr(H_(hero), V3(0.1, 1, 0.45), lerp(1.0, 1.15, (t - SLEEP - 3.2) / 1.4), 0.55)],   // morning
   [SLEEP + 4.6, room, () => rmCam, home('sleep'), t => fr(H_(hero), V3(0.3, 0.05, 1), lerp(2.3, 2.0, (t - SLEEP - 4.6) / 2.4), 0.6)],   // up, stretching
   [CTA, room, () => rmCam, home('sleep'), t => fr(H_(hero), V3(-0.2, 0.05, 1), lerp(1.6, 1.4, (t - CTA) / 3), 0.62)]];
 function shootShot(S, t, rt) { const [, scene, cam, upd, frm] = S; upd(t); const c = cam(); applyF(c, frm(t)); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, scene, c); }
 const $ = id => document.getElementById(id);
-const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'hud', 'flash', 'tl', 'tlBar', 'tlT', 'tlV', 'pop'].map(k => [k, $(k)]));
+const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'hud', 'flash', 'tl', 'tlBar', 'tlT', 'tlV', 'pop', 'card'].map(k => [k, $(k)]));
 el.title.innerHTML = 'What happens if you drink<br>an <span class="hl">energy drink</span> every day?'; el.endT.innerHTML = 'What happens if you drink an <span class="hl">energy drink</span> every day?';
-el.endS.innerHTML = 'ONE CAN A DAY: 13 TSP OF SUGAR,<br>160 MG OF CAFFEINE.<br>A YEAR: A WHOLE BATHTUB OF IT<br>AND 43 LB OF SUGAR.<br>AT BEDTIME IT’S STILL IN YOU.';
+el.endS.innerHTML = 'ONE CAN A DAY: 13 TSP SUGAR<br>AND 160 MG OF CAFFEINE.<br>HEART, VESSELS AND SLEEP<br>ALL TAKE THE HIT.<br>A YEAR = A WHOLE BATHTUB.';
 const captions = [
-  [MIN30 + 0.3, MIN30 + 2.5, 'Within 30 minutes your heart speeds up.'], [MIN30 + 2.7, BRAIN - 0.2, '2 big cans: blood pressure up 4–5 points for hours.'],
+  [MIN30 + 0.3, MIN30 + 2.5, 'Within 30 minutes your heart speeds up.'], [MIN30 + 2.7, MIN30 + 4.9, '2 big cans: blood pressure up 4–5 points for hours.'], [MIN30 + 5.1, BRAIN - 0.2, '…and the heart’s electrical rhythm changed for hours.'],
   [BRAIN + 0.3, BRAIN + 2.2, 'Caffeine doesn’t give you energy.'], [BRAIN + 2.4, BRAIN + 4.2, 'It blocks adenosine — the signal that says “I’m tired.”'], [BRAIN + 4.4, HOUR1 - 0.2, 'But the tiredness keeps piling up.'],
-  [HOUR1 + 0.3, HOUR1 + 2.6, 'One can: 13 teaspoons of sugar.'], [HOUR1 + 2.8, HOUR4 - 0.2, 'That’s 1.5–2× your whole daily limit.'],
+  [HOUR1 + 0.3, HOUR1 + 2.6, 'One can: 13 teaspoons of sugar.'], [HOUR1 + 2.8, VESSEL - 0.2, 'That’s 1.5–2× your whole daily limit.'],
+  [VESSEL + 0.3, VESSEL + 2.7, 'In a small study, one big can made blood vessels less flexible:'], [VESSEL + 2.9, HOUR4 - 0.2, '90 minutes later they widened about half as much.'],
   [HOUR4 + 0.3, HOUR4 + 2.8, 'When it wears off…'], [HOUR4 + 3.2, NIGHT - 0.2, '…you reach for another.'],
-  [NIGHT + 0.3, NIGHT + 2.8, 'Caffeine’s half-life is about 5 hours.'], [NIGHT + 3.0, WEEK - 0.2, 'A 4 pm can: still 40 mg in you at 2 am.'],
+  [NIGHT + 0.3, NIGHT + 2.8, 'Caffeine’s half-life is about 5 hours.'], [NIGHT + 3.0, NIGHT + 5.3, 'A 4 pm can: still 40 mg in you at 2 am.'],
+  [NIGHT + 5.5, NIGHT + 7.5, 'In a study of 53,000 students, daily drinkers slept ~30 min less a night'], [NIGHT + 7.7, WEEK - 0.2, 'and were 2× as likely to sleep under 6 hours.'],
   [WEEK + 0.3, WEEK + 2.6, 'Energy drinks are acidic.'], [WEEK + 2.8, MONTH - 0.2, 'In a lab test, they wore away enamel 2× faster than sports drinks.'],
-  [MONTH + 0.3, MONTH + 2.8, 'Skip one day — headache.'], [MONTH + 3.0, YEAR - 0.2, 'Your body is hooked on caffeine.'],
-  [YEAR + 0.3, YEAR + 3.4, 'A year of one can a day: 45 gallons.'], [YEAR + 3.6, ER - 0.2, 'Enough to fill a bathtub — with 43 lb of sugar in it.'],
-  [ER + 0.3, ER + 3.8, 'In 2011, energy drinks sent 20,783 Americans to the ER.'], [ER + 4.0, SLEEP - 0.2, 'Twice as many as in 2007.'],
+  [MONTH + 0.3, MONTH + 2.8, 'Skip one day — headache.'], [MONTH + 3.0, MONTH + 5.1, 'Your body is hooked on caffeine.'], [MONTH + 5.5, YEAR - 0.2, 'In young people, energy drinks are linked to more anxiety and stress.'],
+  [YEAR + 0.3, YEAR + 3.4, 'A year of one can a day: 45 gallons.'], [YEAR + 3.6, YEAR + 5.5, 'Enough to fill a bathtub — with 43 lb of sugar in it.'],
+  [YEAR + 5.8, SLEEP - 0.2, 'A sugary drink or two a day: 26% higher risk of type 2 diabetes.'],
   [SLEEP + 0.3, SLEEP + 3.0, 'Your body isn’t out of energy.'], [SLEEP + 3.2, CTA - 0.2, 'It’s out of sleep.'],
   [CTA + 0.2, T_END - 0.1, 'How many cans a day do you drink? 👇'],
 ];
-const TIMELINE = [[0, '12 PM'], [MIN30, '12:30 PM'], [HOUR1, '1 PM'], [HOUR4, '4 PM'], [NIGHT, '2 AM'], [WEEK, 'WEEK 1'], [MONTH, 'MONTH 1'], [YEAR, 'YEAR 1'], [ER, 'IN THE US'], [SLEEP, 'TONIGHT']];
+const TIMELINE = [[0, '12 PM'], [MIN30, '12:30 PM'], [HOUR1, '1 PM'], [VESSEL, '1:30 PM'], [HOUR4, '4 PM'], [NIGHT, '2 AM'], [WEEK, 'WEEK 1'], [MONTH, 'MONTH 1'], [YEAR, 'YEAR 1'], [SLEEP, 'TONIGHT']];
 // how you FEEL (a story meter, not a measurement): tired → jolt → crash → second can → wired at night → headache → after a real night's sleep
 const EN = [[0, 0.22], [CRACK + 0.4, 0.22], [MIN30 + 1.2, 0.95], [HOUR1, 0.9], [HOUR4, 0.55], [HOUR4 + 1.2, 0.15], [HOUR4 + 4.0, 0.15], [HOUR4 + 5.2, 0.8], [NIGHT, 0.75], [WEEK, 0.5],
-  [MONTH, 0.45], [MONTH + 0.8, 0.08], [YEAR, 0.35], [SLEEP + 3.0, 0.3], [SLEEP + 3.6, 1.0], [99, 1.0]];
+  [MONTH, 0.45], [MONTH + 0.8, 0.08], [MONTH + 5.3, 0.12], [MONTH + 6.0, 0.4], [YEAR, 0.35], [SLEEP + 3.0, 0.3], [SLEEP + 3.6, 1.0], [99, 1.0]];
 const energyAt = t => { for (let i = 1; i < EN.length; i++) if (t < EN[i][0]) return lerp(EN[i - 1][1], EN[i][1], smooth(EN[i - 1][0], EN[i][0], t)); return 1; };
 const spoonsAt = t => clamp(Math.floor((t - HOUR1 - 0.3) / 0.18) + 1, 0, 13);
-const POPS = [[MIN30 + 2.7, BRAIN - 0.3, () => 'BP +4–5'], [BRAIN + 2.8, BRAIN + 4.2, () => 'BLOCKED'], [HOUR1 + 0.3, HOUR1 + 2.3, t => spoonsAt(t) + ' TSP'], [HOUR1 + 2.8, HOUR4 - 0.3, () => '1.5–2×'],
-  [NIGHT + 3.0, WEEK - 0.3, () => '40 mg'], [WEEK + 2.8, MONTH - 0.3, () => '2×'], [YEAR + 0.3, YEAR + 3.4, t => Math.round(45.6 * smooth(YEAR + 0.2, YEAR + 3.0, t)) + ' GAL'], [YEAR + 3.6, ER - 0.3, () => '43 LB SUGAR'],
-  [ER + 0.3, ER + 3.8, t => fmt(20783 * smooth(ER + 0.3, ER + 3.2, t))], [ER + 4.0, SLEEP - 0.3, () => '2× 2007']];
+const POPS = [[MIN30 + 2.7, MIN30 + 4.8, () => 'BP +4–5'], [BRAIN + 2.8, BRAIN + 4.2, () => 'BLOCKED'], [HOUR1 + 0.3, HOUR1 + 2.3, t => spoonsAt(t) + ' TSP'], [HOUR1 + 2.8, VESSEL - 0.3, () => '1.5–2×'], [VESSEL + 2.9, HOUR4 - 0.3, () => '−45%'],
+  [NIGHT + 3.0, NIGHT + 5.3, () => '40 mg'], [NIGHT + 5.5, NIGHT + 7.5, () => '−30 MIN'], [NIGHT + 7.7, WEEK - 0.3, () => '2×'], [WEEK + 2.8, MONTH - 0.3, () => '2×'], [YEAR + 0.3, YEAR + 3.4, t => Math.round(45.6 * smooth(YEAR + 0.2, YEAR + 3.0, t)) + ' GAL'], [YEAR + 3.6, YEAR + 5.5, () => '43 LB SUGAR'], [YEAR + 5.8, SLEEP - 0.3, () => '+26%']];
 const popWords = (txt, t, a, b) => { const ws = txt.split(' '), span = Math.min(1.2, (b - a) * 0.4); return ws.map((w, i) => { const k = clamp((t - a - i * span / ws.length) / 0.12, 0, 1); return `<span style="display:inline-block;opacity:${k.toFixed(2)};transform:scale(${(0.6 + 0.4 * k + 0.1 * Math.sin(Math.PI * k)).toFixed(3)})">${w}</span>`; }).join(' '); };
 function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t); el.hud.style.opacity = 0;
   el.tl.style.opacity = smooth(0.3, 0.7, t) * (1 - smooth(T_END - 0.4, T_END, t)); const e = energyAt(t);
@@ -76,6 +81,10 @@ function updateDOM(t) { el.title.style.opacity = 1 - smooth(3.3, 3.9, t); el.hud
   el.flash.style.opacity = Math.exp(-Math.pow((t - CRACK - 1.7) / 0.1, 2)) * 0.6;   // the jolt
   const pp = POPS.find(([a, b]) => t >= a && t < b); el.pop.textContent = pp ? pp[2](t) : ''; el.pop.style.opacity = pp ? fadeWin(t, pp[0], pp[1], 0.2) : 0;
   el.pop.style.transform = pp ? `translateX(-50%) scale(${(0.7 + 0.3 * smooth(pp[0], pp[0] + 0.2, t) + 0.08 * Math.sin(Math.PI * clamp((t - pp[0]) / 0.3, 0, 1))).toFixed(3)})` : '';
+  // the heart-rhythm monitor (12:30): a scrolling ECG with the stretched QT stretch marked
+  if (t >= MIN30 + 5.0 && t < BRAIN) { const ph = t * 1.6; let d = ''; for (let x = 0; x <= 640; x += 4) { const u = ((x / 160 + ph) % 1), y = 170 - 70 * Math.exp(-Math.pow((u - 0.2) / 0.015, 2)) + 22 * Math.exp(-Math.pow((u - 0.24) / 0.012, 2)) - 14 * Math.exp(-Math.pow((u - 0.08) / 0.03, 2)) - 26 * Math.exp(-Math.pow((u - 0.55) / 0.07, 2)); d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1); }
+    el.card.style.opacity = fadeWin(t, MIN30 + 5.0, BRAIN, 0.2); el.card.innerHTML = `<div class="hd dp"><span>Your heart rhythm</span><em>QT INTERVAL — LONGER</em></div><div class="bd" style="background:#0c1420"><svg viewBox="0 0 640 240" width="640" height="240"><path d="${d}" stroke="#30e070" stroke-width="6" fill="none" stroke-linejoin="round"/></svg></div>`; }
+  else el.card.style.opacity = 0;
   const cp = captions.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? popWords(cp[2], t, cp[0], cp[1]) : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.2) : 0;
   el.end.style.opacity = smooth(T_END, T_END + 0.5, t); el.endT.style.opacity = smooth(T_END + 0.4, T_END + 0.9, t); el.endS.style.opacity = smooth(T_END + 0.8, T_END + 1.3, t); }
 window.renderAt = (t) => {
