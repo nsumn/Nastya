@@ -13,8 +13,16 @@ const fizz = makeSmoke(room, 80);
 // ---- the kitchen counter props: the sugar (13 teaspoons) and a year of it (11 bags) ----
 const SPOONS = Array.from({ length: 13 }, (_, i) => { const g = new THREE.Group(); bx(0.012, 0.004, 0.13, '#d8d8e0', 0, 0, -0.05, g, { metalness: 0.6, roughness: 0.3 }); const bowl = mesh(new THREE.SphereGeometry(0.022, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), M('#ffffff', { roughness: 0.9 })); bowl.scale.y = 0.6; bowl.position.set(0, 0.004, 0.035); g.add(bowl); room.add(g); return g; });
 const sugarPile = mesh(new THREE.ConeGeometry(0.16, 0.12, 18), M('#fbfbf6', { roughness: 1 })); room.add(sugarPile);
-const BAGS = Array.from({ length: 11 }, (_, i) => { const g = new THREE.Group(); bx(0.26, 0.36, 0.14, '#f4f0e6', 0, 0.18, 0, g); bx(0.262, 0.08, 0.142, '#2f6ad8', 0, 0.22, 0, g); room.add(g); return g; });
-const cash = Array.from({ length: 8 }, (_, i) => bx(0.15, 0.03, 0.07, '#5aa86a', 0, 0, 0, room));
+// ---- a year of it: a bathtub (365 × 16 oz = 45.6 gal; a standard US tub ≈ 40 gal) filling up with green energy drink and spilling over ----
+const tub = new THREE.Group(); room.add(tub); tub.position.set(2.25, 0, -1.05);
+{ const por = M('#f6f6f2', { roughness: 0.25 }); bx(1.6, 0.06, 0.76, por, 0, 0.1, 0, tub); bx(1.6, 0.5, 0.07, por, 0, 0.34, 0.345, tub); bx(1.6, 0.5, 0.07, por, 0, 0.34, -0.345, tub); bx(0.07, 0.5, 0.76, por, 0.765, 0.34, 0, tub); bx(0.07, 0.5, 0.76, por, -0.765, 0.34, 0, tub);
+  for (const [x, z] of [[-0.7, -0.3], [0.7, -0.3], [-0.7, 0.3], [0.7, 0.3]]) bx(0.08, 0.08, 0.08, '#c8b070', x, 0.04, z, tub, { metalness: 0.6, roughness: 0.3 });
+  bx(0.05, 0.22, 0.05, '#c8c8d0', -0.72, 0.68, 0, tub, { metalness: 0.8, roughness: 0.25 }); bx(0.16, 0.04, 0.05, '#c8c8d0', -0.66, 0.78, 0, tub, { metalness: 0.8, roughness: 0.25 }); }
+const drinkM = new THREE.MeshStandardMaterial({ color: '#86f05a', emissive: '#2a6a10', roughness: 0.15, transparent: true, opacity: 0.92 });
+const liquid = bx(1.46, 1, 0.62, drinkM, 0, 0.13, 0, tub), spill = bx(0.9, 0.5, 0.02, drinkM, 0.1, 0.34, 0.385, tub), puddle = mesh(new THREE.CircleGeometry(1, 28), drinkM, false, true);
+puddle.rotation.x = -Math.PI / 2; puddle.position.set(2.35, 0.006, -0.45); room.add(puddle);
+const BUB = Array.from({ length: 24 }, (_, i) => { const b = mesh(new THREE.SphereGeometry(0.018 + 0.012 * hash(i), 8, 6), M('#d8ffc0', { emissive: '#4a8a20', roughness: 0.2 })); tub.add(b); return b; });
+const FILL = [YEAR + 0.2, YEAR + 4.4];   // empty -> brim; then it spills
 // ---- the bed (left corner) + a wall clock that can read 2:00 ----
 const bed = new THREE.Group(); room.add(bed); bed.position.set(-2.9, 0, 1.3);
 { bx(1.1, 0.35, 2.0, '#6a4a34', 0, 0.18, 0, bed); bx(1.04, 0.16, 1.92, '#f2f0ec', 0, 0.43, 0, bed); bx(1.1, 0.8, 0.08, '#6a4a34', 0, 0.55, -1.0, bed); bx(0.55, 0.1, 0.3, '#ffffff', 0, 0.56, -0.78, bed); }
@@ -25,7 +33,7 @@ function drawClock(txt) { const g = clkCv.getContext('2d'); g.fillStyle = '#0a0c
 // ---- headache rings ----
 const RINGS = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.012, 6, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 0.3, 0.25), transparent: true, depthWrite: false })); room.add(r); return r; });
 const zzz = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#ffffff'; g.font = 'bold 54px Inter, sans-serif'; g.fillText('z', 20, 110); g.font = 'bold 40px Inter, sans-serif'; g.fillText('z', 62, 70); g.font = 'bold 28px Inter, sans-serif'; g.fillText('z', 92, 38); }), transparent: true, depthWrite: false })); zzz.scale.setScalar(0.3); room.add(zzz);
-function hideProps() { SPOONS.forEach(s => s.visible = false); sugarPile.visible = false; BAGS.forEach(b => b.visible = false); cash.forEach(c => c.visible = false); RINGS.forEach(r => r.visible = false); zzz.visible = false; can.visible = false; can2.visible = false; }
+function hideProps() { SPOONS.forEach(s => s.visible = false); sugarPile.visible = false; tub.visible = false; puddle.visible = false; RINGS.forEach(r => r.visible = false); zzz.visible = false; can.visible = false; can2.visible = false; }
 // ---- home beats ----
 function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.outer); hideProps(); const P = hero; poseReset(P, t); [dad, mom].forEach(p => p.outer.visible = false); dog.g.visible = false; keys.visible = false;
   const look = { night: 'night', sleep: t < SLEEP + 3.2 ? 'night' : 'day', month: 'eve' }[mode] || 'day'; lightRoom(look); camKey.intensity = look === 'night' ? 0.5 : 1.4; fizz.begin(); smokeMat.uniforms.uTint.value.set('#e8f4e8');
@@ -48,10 +56,13 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
   else if (mode === 'month') {   // skipped a day: the headache rings
     seatAt(P, -1.0, 0.42, -1.3, 0); P.arms.forEach((a, i) => a.rotation.set(-2.4, 0, i ? -0.5 : 0.5)); P.elbows.forEach(e => e.rotation.x = -1.6); P.face('worried', t);
     P.outer.updateMatrixWorld(true); const hd = headOf(P); RINGS.forEach((r, k) => { const u = ((t * 1.5) + k / 3) % 1; r.visible = true; r.position.copy(hd); r.scale.setScalar(0.7 + 1.4 * u); r.material.opacity = 1 - u; r.lookAt(rmCam.position); }); }
-  else if (mode === 'year') {   // a year: 11 bags of sugar stacked up, cash beside them
-    P.outer.position.set(1.6, 0.95, -0.7); P.outer.rotation.y = -0.4; P.face(t < YEAR + 2.5 ? 'surprised' : 'worried', t); const n = Math.min(11, Math.floor((t - YEAR - 0.2) / 0.2) + 1);
-    BAGS.forEach((b, i) => { b.visible = i < n; const row = i < 5 ? 0 : i < 9 ? 1 : 2, col = i < 5 ? i : i < 9 ? i - 5 : i - 9; b.position.set(2.3 + (col - (row === 0 ? 2 : row === 1 ? 1.5 : 0.5)) * 0.28, row * 0.36, -0.9); b.rotation.y = 0.05 * Math.sin(i * 3); });
-    cash.forEach((c, i) => { c.visible = t > YEAR + 3.4; c.position.set(1.05 + (i % 4) * 0.16, 0.02 + Math.floor(i / 4) * 0.032, -0.35); }); }
+  else if (mode === 'year') {   // a year: the tub fills with a year of energy drink and spills over
+    P.outer.position.set(2.25, 0.95, -1.8); P.outer.rotation.y = 0;   // behind the tub, facing us P.face(t < YEAR + 4.2 ? 'surprised' : 'worried', t);
+    tub.visible = true; const k = smooth(FILL[0], FILL[1], t), lv = 0.02 + 0.44 * k; liquid.scale.y = lv; liquid.position.y = 0.13 + lv / 2;
+    const sp = smooth(FILL[1] - 0.1, FILL[1] + 1.2, t); spill.visible = sp > 0.01; spill.scale.y = 0.47 * sp; spill.position.y = 0.6 - 0.47 * sp / 2;
+    puddle.visible = sp > 0.05; puddle.scale.setScalar(0.05 + 0.75 * smooth(FILL[1] + 0.3, FILL[1] + 2.6, t));
+    BUB.forEach((b, i) => { const u = ((t * 0.7 + hash(i * 3.3)) % 1); b.visible = k > 0.05; b.position.set(-0.65 + 1.3 * hash(i), 0.13 + lv + 0.012 - 0.03 * u, -0.26 + 0.52 * hash(i * 7.1)); b.scale.setScalar(1 - u); });
+    if (t > FILL[0] && t < FILL[1] + 1.5) { const top = V3(2.25 - 0.66, 0.73, -1.05); for (let q = 0; q < 6; q++) fizz.add(top.clone().add(V3(0.02 * Math.sin(q * 2 + t * 9), -0.05 - ((t * 3 + q / 6) % 1) * (0.55 - lv), 0)), 0.03, 0.25); } }
   else {   // sleep: lights off, the can untouched on the nightstand, sunrise, wakes up happy
     const morning = t > SLEEP + 3.2; P.outer.position.set(-2.9, 0.72, 1.34); P.outer.rotation.set(-Math.PI / 2, 0, 0); drawClock(morning ? '7:30' : '11:00');
     can2.visible = true; can2.position.set(-3.75, 0.5, 0.35); zzz.visible = !morning; zzz.position.copy(headOf(P)).add(V3(0.25, 0.35, 0)); P.face(morning ? 'happy' : 'sleep', t);

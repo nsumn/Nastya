@@ -2,7 +2,7 @@ import numpy as np, sys
 from scipy.signal import butter, sosfilt
 from scipy.io import wavfile
 # "What happens if you drink an energy drink every day?" (67.5 s): the can cracks (click + hiss), gulps, the jolt, a heartbeat that speeds up, a rising note per
-# teaspoon of sugar, the crash (power-down), the second can, 2 AM, acid drips, the headache throb, sugar bags thumping down + cha-ching, a distant siren,
+# teaspoon of sugar, the crash (power-down), the second can, 2 AM, acid drips, the headache throb, the tub filling up and spilling over, a distant siren,
 # lights off, morning birds, the stretch. No synthetic voices, no buzz, no constant beds. ONE pluck theme.
 SR = 44100; DUR = 67.5; N = int(SR * DUR); t = np.arange(N) / SR
 MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no theme, pads or end chord)
@@ -98,9 +98,11 @@ for k in range(9): drip(WEEK + 0.4 + k * 0.62 + rng.uniform(-0.08, 0.08), db(-22
 sizzle(WEEK + 1.0, 4.6, db(-31))
 # --- MONTH 1: the headache throbs with the red rings
 for k in range(9): x = tt(0.5); place(MONTH + 0.2 + k * 0.667, (np.sin(2 * np.pi * 220 * x) + 0.5 * np.sin(2 * np.pi * 330 * x)) * np.sin(np.pi * x / 0.5) ** 2 * (1 + 0.5 * np.sin(2 * np.pi * 9 * x)), db(-25))
-# --- YEAR 1: 11 bags of sugar thump down, then cha-ching
-for k in range(11): thud(YEAR + 0.2 + k * 0.2, db(-21), 130 + 6 * k, 0.22, 0.25 * np.sin(k))
-thud(YEAR + 3.6, db(-20), 330, 0.08); chime(YEAR + 3.65, db(-15), (86, 91, 98)); x = tt(1.6); place(YEAR + 3.7, filt(rng.standard_normal(len(x)), 'bandpass', [1500, 4500]) * (0.5 + 0.5 * (rng.random(len(x)) < 0.05)) * np.sin(np.pi * x / 1.6), db(-30))
+# --- YEAR 1: the tub fills (a pouring stream rising in pitch), then it spills over (splash + a small ding)
+x = tt(4.3); n = rng.standard_normal(len(x)); place(YEAR + 0.2, (0.6 * filt(n, 'bandpass', [500, 1800]) + 0.4 * filt(n, 'bandpass', [1800, 4200])) * (0.55 + 0.45 * np.sin(2 * np.pi * 6 * x + 3 * np.sin(2 * np.pi * 1.3 * x))) * np.clip(x / 0.2, 0, 1) * np.clip((4.3 - x) / 0.3, 0, 1), db(-24), 0.15)
+x = tt(4.2); f = 140 * (1 + 1.4 * x / 4.2); place(YEAR + 0.2, np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.4 * np.clip(x / 0.5, 0, 1) * np.clip((4.2 - x) / 0.3, 0, 1), db(-26))
+for k in range(6): drip(YEAR + 0.9 + k * 0.55 + rng.uniform(-0.1, 0.1), db(-27), 0.3 * np.sin(k))
+x = tt(1.4); place(YEAR + 4.45, filt(rng.standard_normal(len(x)), 'bandpass', [700, 3500]) * np.exp(-x * 2.6) * np.clip(x / 0.02, 0, 1), db(-19), 0.1); ding(YEAR + 4.5, db(-22))
 # --- 2011: a distant US wail siren, the crowd counter rising (a soft rising tone, no ticks)
 x = tt(6.4); f = 950 + 450 * np.sin(2 * np.pi * x / 3.2 - np.pi / 2); place(ER + 0.2, filt(np.sin(2 * np.pi * np.cumsum(f) / SR), 'lowpass', 2500) * win(ER + 0.2, ER + 6.6, 1.2)[int((ER + 0.2) * SR):int((ER + 0.2) * SR) + len(x)], db(-31), -0.4)
 x = tt(3.0); f = 220 * (1 + 1.5 * x / 3.0); place(ER + 0.3, np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 * np.sin(np.pi * x / 3.0), db(-27))
