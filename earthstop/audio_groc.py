@@ -35,9 +35,9 @@ for k in ['installafreeze', 'andafridge', 'apantry', 'acounterfor', 'andatv']: p
 place(C['adishwasher'] + 0.1, SFX['dish'], db(-16)); place(C['andacoffee'] + 0.1, SFX['brew'], db(-16))
 place(C['onetrip'] + 0.1, SFX['legs'], db(-19)); place(keys + 0.05, SFX['door'], db(-13)); place(keys + 1.5, SFX['keysj'], db(-15))
 voice = load('out/groc/voice.wav')[:, 0][:N]; v = np.zeros(N); v[:len(voice)] = voice; v /= np.abs(v).max() + 1e-9
-# the voice leads (her note: the narration was quieter than the effects): SFX -7 dB overall and ducked a further ~7 dB while he speaks
+# the voice leads but the effects stay audible (her notes: first the voice was buried, then the effects vanished): SFX -2 dB, ducked a further ~4 dB while he speaks
 venv = np.sqrt(np.convolve(v ** 2, np.ones(int(0.25 * SR)) / int(0.25 * SR), 'same')); venv /= venv.max() + 1e-9
-sduck = db(-7) * (1 - 0.55 * np.clip(venv * 5, 0, 1)); L *= sduck; Rr *= sduck
+sduck = db(-2) * (1 - 0.35 * np.clip(venv * 4, 0, 1)); L *= sduck; Rr *= sduck
 if MUSIC:
     m = load('out/groc/sfx/sfx_music.mp3'); fade = int(1.5 * SR); loop = m.copy()
     while len(loop) < N + SR: ramp = np.linspace(0, 1, fade)[:, None]; loop = np.concatenate([loop[:-fade], loop[-fade:] * (1 - ramp) + m[:fade] * ramp, m[fade:]])
