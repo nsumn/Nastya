@@ -24,7 +24,7 @@ IRIS, LIP = hexc("3B2620"), hexc("D48B8E")
 GOLD = hexc("E6B85C")
 
 DEFAULT = dict(arm_l=(6, 8), arm_r=(6, 8), leg_l=(2, 0), leg_r=(2, 0), lean=0.0, head_tilt=0.0, look=(0.0, 0.0),
-               emo="calm", blink=False, talk=0.0, hide_legs=False, fore_k=1.0, thumbs=True)
+               emo="calm", blink=False, talk=0.0, hide_legs=False, fore_k=1.0, thumbs=True, hands_front=False, skip_arms=())
 
 # ---------------------------------------------------------------- primitives
 def finish(c, fill, lw, line=LINE):
@@ -139,18 +139,8 @@ def person(c, x, gy, height, kind, pose=None):
 
     # ---- arms (puffy sleeves, ribbed cuffs, hands)
     for side, sh, key in ((-1, shL, "arm_l"), (1, shR, "arm_r")):
-        out, bend = p[key]
-        a1 = side * out; a2 = a1 - side * bend
-        fk = p["fore_k"]                               # < 1: forearm foreshortened (pointing towards the camera)
-        el = seg_end(sh, a1, S.upper * s); wr = seg_end(el, a2, S.fore * s * fk)
-        cuff0 = seg_end(el, a2, S.fore * s * fk * 0.78)
-        r0, r1 = S.sleeve[0] * s, S.sleeve[1] * s
-        limb(c, [sh, el, cuff0], (r0 + r1) * 1.0, S.top if side < 0 else S.top_sh, lw)
-        limb(c, [cuff0, wr], r1 * 1.3, S.top_sh, lw)
-        hand = seg_end(wr, a2, 26 * s); hands[key] = (hand, a2)
-        ellipse(c, hand[0], hand[1], 19 * s, 27 * s, -math.radians(a2)); finish(c, SKIN, lw * 0.9)
-        th = seg_end(wr, a2 - side * 35, 18 * s)
-        if p["thumbs"]: ellipse(c, th[0] - side * 10 * s, th[1], 7 * s, 13 * s, -math.radians(a2 - side * 35)); finish(c, SKIN, lw * 0.8)
+        if key in p["skip_arms"]: continue
+        hands[key] = _arm(c, S, s, lw, p, side, sh, key)
 
     # ---- back hair over the shoulders (woman): drawn on top of the sweater, but not over the neck/chest
     if S.w:
@@ -166,8 +156,62 @@ def person(c, x, gy, height, kind, pose=None):
     c.save(); c.translate(hx, hy + r); c.rotate(tilt); c.translate(-hx, -(hy + r))
     head(c, hx, hy, r, S.w, p, lw)
     c.restore()
+    if p["hands_front"]:          # hands over the face / head: draw them again on top of the head
+        for key, (hand, a2) in hands.items():
+            ellipse(c, hand[0], hand[1], 19 * s, 27 * s, -math.radians(a2)); finish(c, SKIN, lw * 0.9)
     c.restore()
     return hands
+
+def _arm(c, S, s, lw, p, side, sh, key):
+    out, bend = p[key]
+    a1 = side * out; a2 = a1 - side * bend
+    fk = p["fore_k"] if not isinstance(p["fore_k"], dict) else p["fore_k"].get(key, 1.0)   # < 1: forearm foreshortened
+    el = seg_end(sh, a1, S.upper * s); wr = seg_end(el, a2, S.fore * s * fk)
+    cuff0 = seg_end(el, a2, S.fore * s * fk * 0.78)
+    r0, r1 = S.sleeve[0] * s, S.sleeve[1] * s
+    limb(c, [sh, el, cuff0], (r0 + r1) * 1.0, S.top if side < 0 else S.top_sh, lw)
+    limb(c, [cuff0, wr], r1 * 1.3, S.top_sh, lw)
+    hand = seg_end(wr, a2, 26 * s)
+    ellipse(c, hand[0], hand[1], 19 * s, 27 * s, -math.radians(a2)); finish(c, SKIN, lw * 0.9)
+    th = seg_end(wr, a2 - side * 35, 18 * s)
+    if p["thumbs"]: ellipse(c, th[0] - side * 10 * s, th[1], 7 * s, 13 * s, -math.radians(a2 - side * 35)); finish(c, SKIN, lw * 0.8)
+    return hand, a2
+
+def shoulder(x, gy, height, kind, side):
+    S = Spec(kind); s = height / 1000.0
+    return (x + side * (S.sh_x - 12) * s, gy - (S.sh_y - 18) * s)
+
+def reach(x, gy, height, kind, side, target, elbow_out=True):
+    """2-bone IK: (out, bend, fore_k) so that the hand of arm `side` (-1 = arm_l, 1 = arm_r) lands on `target` (screen xy).
+    Ignores lean. If the target is too far the forearm is stretched a little (max 1.35)."""
+    S = Spec(kind); s = height / 1000.0
+    sx, sy = shoulder(x, gy, height, kind, side)
+    L1 = S.upper * s; hand = 26 * s
+    tx, ty = target; d = math.hypot(tx - sx, ty - sy)
+    fk = 1.0; L2 = S.fore * s + hand
+    if d > L1 + L2 * 0.995:
+        fk = min(1.35, (d - L1 - hand) / (S.fore * s) + 0.01); L2 = S.fore * s * fk + hand
+    if d < abs(L1 - L2) + 1e-3: d = abs(L1 - L2) + 1e-3
+    th = math.atan2(tx - sx, ty - sy)
+    al = math.acos(max(-1, min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))))
+    cands = [th + al, th - al]
+    a1 = max(cands, key=lambda a: side * math.sin(a) * (1 if elbow_out else -1))
+    ex, ey = sx + L1 * math.sin(a1), sy + L1 * math.cos(a1)
+    a2 = math.atan2(tx - ex, ty - ey)
+    a1d, a2d = math.degrees(a1), math.degrees(a2)
+    bend = (a1d - a2d) * side
+    while bend > 200: bend -= 360
+    while bend < -160: bend += 360
+    return (a1d * side, bend), fk
+
+def draw_arm(c, x, gy, height, kind, pose, key):
+    """one arm on its own (e.g. his arm around her shoulders, drawn after her)"""
+    p = dict(DEFAULT); p.update(pose or {})
+    S = Spec(kind); s = height / 1000.0; lw = 3.2 * s / 0.62
+    side = -1 if key == "arm_l" else 1
+    c.save(); c.translate(x, gy); c.rotate(math.radians(p["lean"])); c.translate(-x, -gy)
+    r = _arm(c, S, s, lw, p, side, shoulder(x, gy, height, kind, side), key)
+    c.restore(); return r
 
 # ---------------------------------------------------------------- head
 def hair_back_path(c, hx, hy, r):
