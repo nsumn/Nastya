@@ -1,0 +1,57 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  @font-face { font-family: InterBlack; src: url(../render/fonts/Inter-Black.otf); }
+  html,body{margin:0;background:#222}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  /* subtitles per tiktok_de/CLAUDE.md: Inter Black 70, white, dark outline, normal case, centred at SUB_Y = 1330 */
+  .cap{position:absolute;left:0;right:0;top:1290px;text-align:center;font:70px/1.15 InterBlack;color:#fff;padding:0 160px;
+       -webkit-text-stroke:12px #17141b;paint-order:stroke fill}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><div id="wrap"><div class="cap" id="cap"></div></div>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { makeFigure, pose, setFace, place } from './lib/figure.js';
+import { SETS, lights } from './lib/sets.js';
+import { SHOTS } from './lib/shots.js';
+
+const Q = new URLSearchParams(location.search);
+const shot = SHOTS[Q.get('shot') || 'sofa'];
+const W = 1080, H = 1920;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = shot.night ? 0.9 : 1.05;
+document.getElementById('wrap').prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(shot.night ? '#6f737b' : '#8d8f93');
+const set = new THREE.Group(); scene.add(set); SETS[shot.set](set);
+lights(scene, { night: shot.night });
+
+for (const f of shot.fig) {
+  const J = makeFigure(f.kind); scene.add(J.root);
+  pose(J, f.pose); setFace(J.face, f.face); place(J, f.at[0], f.at[1], f.yaw || 0, f.y || 0);
+}
+
+const cam = new THREE.PerspectiveCamera(shot.cam.fov, W / H, 0.05, 40);
+cam.position.set(...shot.cam.pos); const look = new THREE.Vector3(...shot.cam.look); cam.lookAt(look);
+const comp = new EffectComposer(renderer);
+comp.addPass(new RenderPass(scene, cam));
+const ao = new GTAOPass(scene, cam, W, H); ao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, scale: 1.2, thickness: 1.2 });
+comp.addPass(ao);
+// gentle miniature depth of field focused on the look-at point
+comp.addPass(new BokehPass(scene, cam, { focus: cam.position.distanceTo(look), aperture: 0.0025, maxblur: 0.006 }));
+comp.addPass(new OutputPass());
+await document.fonts.load('70px InterBlack');
+comp.render();
+document.getElementById('cap').textContent = Q.get('cap') ?? shot.cap ?? '';
+window.DONE = true;
+</script></body></html>
