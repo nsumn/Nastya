@@ -11,9 +11,16 @@ for w in 0 1 2 3; do SHOTS=$SHOTS $PY render/video_v5.py $ALIGN $TMP $w 4 & done
 for w in 0 1 2 3; do echo "file '$TMP/part_$w.mp4'"; done > $TMP/list.txt
 ffmpeg -v error -y -f concat -safe 0 -i $TMP/list.txt -c copy $TMP/video.mp4
 mkdir -p "$(dirname "$OUTMP4")"
-# voice + quiet pad, about -15 LUFS, peak about -1 dB
-ffmpeg -v error -y -i $TMP/video.mp4 -i $P/voice/result.mp3 -i assets/pad.flac \
-  -filter_complex "[2:a]volume=0.10[p];[1:a][p]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-12:TP=-1.0:LRA=11,alimiter=limit=0.79:level=false,aresample=44100[a]" \
-  -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -shortest "$OUTMP4"
+if [ -f "$P/bed.wav" ]; then
+  # voice + synthesised music/SFX bed (see render/audio_*.py), about -15 LUFS, peak about -1 dB
+  ffmpeg -v error -y -i $TMP/video.mp4 -i $P/voice/result.mp3 -i "$P/bed.wav" \
+    -filter_complex "[1:a]aresample=44100[v];[2:a]aresample=44100[b];[v][b]amix=inputs=2:duration=longest:normalize=0,loudnorm=I=-12:TP=-1.0:LRA=11,alimiter=limit=0.79:level=false,aresample=44100[a]" \
+    -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -shortest "$OUTMP4"
+else
+  # voice + quiet pad, about -15 LUFS, peak about -1 dB
+  ffmpeg -v error -y -i $TMP/video.mp4 -i $P/voice/result.mp3 -i assets/pad.flac \
+    -filter_complex "[2:a]volume=0.10[p];[1:a][p]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-12:TP=-1.0:LRA=11,alimiter=limit=0.79:level=false,aresample=44100[a]" \
+    -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -shortest "$OUTMP4"
+fi
 rm -rf $TMP
 echo "DONE $OUTMP4"
