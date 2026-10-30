@@ -190,7 +190,27 @@ def head_sdf(p):
     h = smax(h, -sock, 0.05); h = smin(h, nose, 0.03); h = smin(h, ear, 0.03)
     return h
 
+def head_chubby_sdf(p):
+    """the friend's head: rounder and wider, big soft cheeks that push out past the jaw, a small double chin, a button nose, a lower brow"""
+    x = p[:, 0]; pm = np.c_[np.abs(x), p[:, 1], p[:, 2]]
+    cran = ell(p, np.array([0, 0.08, -0.05]), np.array([0.385, 0.4, 0.44]))
+    face = ell(p, np.array([0, -0.12, 0.08]), np.array([0.34, 0.33, 0.32]))
+    jaw = ell(pm, np.array([0.14, -0.28, 0.06]), np.array([0.19, 0.17, 0.25]))
+    cheek = ell(pm, np.array([0.22, -0.17, 0.2]), np.array([0.16, 0.15, 0.15]))   # chubby cheeks (the drawn eyes stay at y 0, x +-0.19)
+    chin = ell(p, np.array([0, -0.4, 0.2]), np.array([0.17, 0.1, 0.12]))
+    dbl = ell(p, np.array([0, -0.5, 0.1]), np.array([0.24, 0.1, 0.17]))   # double chin
+    brow = ell(p, np.array([0, 0.11, 0.25]), np.array([0.31, 0.06, 0.12]))
+    muzz = ell(p, np.array([0, -0.25, 0.27]), np.array([0.13, 0.075, 0.1]))
+    nose = ell(p, np.array([0, -0.11, 0.39]), np.array([0.07, 0.06, 0.06]))   # button nose
+    ear = ell(pm, np.array([0.385, -0.02, -0.03]), np.array([0.04, 0.1, 0.07]))
+    sock = np.linalg.norm(pm - np.array([0.18, 0.02, 0.44]), axis=1) - 0.06
+    h = smin(cran, face, 0.14); h = smin(h, jaw, 0.12); h = smin(h, cheek, 0.1); h = smin(h, chin, 0.1); h = smin(h, dbl, 0.1); h = smin(h, brow, 0.06); h = smin(h, muzz, 0.06)
+    h = smax(h, -sock, 0.04); h = smin(h, nose, 0.04); h = smin(h, ear, 0.03)
+    return h
+
 hv, hf = mesh(head_sdf, (-0.45, -0.55, -0.55), (0.45, 0.6, 0.6), 0.01, 1100)
+cv, cf = mesh(head_chubby_sdf, (-0.5, -0.65, -0.55), (0.5, 0.6, 0.62), 0.01, 1100)
+print('chubby head', len(cv), len(cf))
 print('head', len(hv), len(hf), 'y', hv[:, 1].min(), hv[:, 1].max(), 'z', hv[:, 2].max())
 
 def hairline(p, front, back):
@@ -206,6 +226,14 @@ def hair_sdf_fn(style):
             tips = [((-0.2, 0.42, 0.24), (-0.08, 0.5, 0.4)), ((-0.08, 0.47, 0.22), (0.04, 0.53, 0.38)), ((0.05, 0.48, 0.2), (0.16, 0.52, 0.36)), ((0.17, 0.44, 0.2), (0.27, 0.45, 0.32)),
                     ((-0.12, 0.52, 0.05), (-0.02, 0.57, 0.2)), ((0.08, 0.53, 0.03), (0.17, 0.56, 0.17)), ((-0.02, 0.55, -0.12), (0.06, 0.58, 0.02))]
             fr = 0.27
+        elif style == 'curly':   # the friend: a round mop of curls (bumps all over the top), on the chubby head
+            shell = head_chubby_sdf(p) - 0.03; top = ell(p, np.array([0, 0.3, -0.03]), np.array([0.38, 0.24, 0.45]))
+            rs = np.random.default_rng(5); cs = []
+            for i in range(46):
+                a_, e_ = rs.uniform(0, 2 * np.pi), np.arccos(rs.uniform(0.05, 1.0)); dvec = np.array([np.sin(e_) * np.cos(a_), np.cos(e_) * 0.95 + 0.05, np.sin(e_) * np.sin(a_)])
+                cs.append(np.linalg.norm(p - (np.array([0, 0.12, -0.04]) + dvec * np.array([0.4, 0.44, 0.47])), axis=1) - rs.uniform(0.07, 0.1))
+            bumps = np.min(np.stack(cs), axis=0); s = smin(smin(shell, top, 0.06), bumps, 0.03)
+            return smax(s, hairline(p, 0.25, -0.2) - p[:, 1], 0.02)
         else:   # 'fringe': strands combed down over the forehead
             tips = [((sx, 0.36, 0.26), (sx + 0.05, 0.21, 0.42)) for sx in (-0.22, -0.1, 0.02, 0.14)]
             fr = 0.2
@@ -215,12 +243,13 @@ def hair_sdf_fn(style):
     return f
 
 hair = {}
-for st in ('quiff', 'fringe'):
+for st in ('quiff', 'fringe', 'curly'):
     v, f = mesh(hair_sdf_fn(st), (-0.5, -0.4, -0.6), (0.5, 0.85, 0.62), 0.008, 1400)
     hair[st] = {'pos': [round(float(a), 4) for a in v.ravel()], 'idx': [int(a) for a in f.ravel()]}
     print('hair', st, len(f))
 
 out = {'body': BODY,
-       'head': {'pos': [round(float(a), 4) for a in hv.ravel()], 'idx': [int(a) for a in hf.ravel()]}, 'hair': hair}
+       'head': {'pos': [round(float(a), 4) for a in hv.ravel()], 'idx': [int(a) for a in hf.ravel()]}, 'hair': hair,
+       'head_chubby': {'pos': [round(float(a), 4) for a in cv.ravel()], 'idx': [int(a) for a in cf.ravel()]}}
 json.dump(out, open('data/human_mesh.json', 'w'), separators=(',', ':'))
 import os; print('json', os.path.getsize('data/human_mesh.json') // 1024, 'KB')

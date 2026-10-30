@@ -1,6 +1,6 @@
 // character look test: you (the approved hero) + the friend (shorter, chubby, red tee) in front of the house, daylight
 for (const o of [nb1.outer, nb2.outer, carKeys, eggDrop, ...BAGS, ...eggs, ...splats]) o.visible = false;   // (makeBlock returns {outer, …}: hide the outer group)
-const friend = makeBlock({ head: 'human', body: 'human', fat: true, skin: '#f0c49a', hair: '#6a3a1e', top: '#d8342a', jeans: true, bottom: '#3d5f8f', shoe: '#2a2a2e', hairStyle: 'bangs', headS: 0.95, h: 0.86 }); st.add(friend.outer);
+const friend = makeBlock({ head: 'human', body: 'human', fat: true, chubbyHead: true, skin: '#f4caa0', hair: '#c8642a', browCol: '#a04a1e', top: '#d8342a', jeans: true, bottom: '#3d5f8f', shoe: '#2a2a2e', hairStyle: 'mop', freckles: true, eyeS: 0.8, browW: 1.5, blush: 0.6, headS: 0.95, h: 0.86 }); st.add(friend.outer);
 const VIEW = +(new URLSearchParams(location.search).get('v') || 0);
 window.renderAt = (t) => {
   for (const [P, x, ry] of [[hero, -0.45, 0.25], [friend, 0.45, -0.25]]) { poseReset(P, t); place(P, x, 2.5, ry); }
