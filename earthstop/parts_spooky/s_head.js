@@ -8,8 +8,13 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 // the challenge song (SPOOKY 3, 130 BPM) must be clearly heard, so every cut and caption sits on its beat grid. The song clip is 25.08 s; the rest of the
 // track is re-cut from its own phrases (tools/spooky_music.py). Numbers: tools/spooky_math.py (Census 41.0M kids 5–14, 126.8M occupied homes; NRF 2025 costumes).
 // =================== beat grid / timeline ===================
-const BP = 0.4613, B0 = 0.126, beat = k => B0 + k * BP;   // 130 BPM; downbeats of 4-bar phrases at beats 2, 18, 34, 50 …
-const P1 = beat(2), P2 = beat(18), DROP = beat(34), P4 = beat(50), BRK = beat(66), BLD = beat(82), DROP2 = beat(98), P8 = beat(114), ENDC = beat(122), HIT = beat(130), T_END = 63.0;
+// Re-timed (Oct 30) to the sound she picked: 131 BPM, 59.0 s — intro 0–32, drop 32–64, break 64–88, build 88–96, drop 96–128 (its beat numbers).
+// The story was written on the first clip's grid ("old" beat numbers below); OLD2NEW maps them onto this song's phrases.
+const BP = 0.458, B0 = 0.024;
+const OLD2NEW = [[0, 0], [2, 4], [6, 8], [10, 8], [14, 12], [18, 16], [26, 24], [30, 28], [34, 32], [130, 128]];
+const remap = k => { for (let i = 0; i < OLD2NEW.length - 1; i++) { const [a, A] = OLD2NEW[i], [b, B] = OLD2NEW[i + 1]; if (k <= b) return A + (k - a) * (B - A) / (b - a); } return k - 2; };
+const beat = k => B0 + remap(k) * BP;
+const P1 = beat(2), P2 = beat(18), DROP = beat(34), P4 = beat(50), BRK = beat(66), BLD = beat(82), DROP2 = beat(98), P8 = beat(114), ENDC = beat(122), HIT = beat(130), T_END = 61.2;
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
 let seed = 4242;
