@@ -82,14 +82,46 @@ const HW = {}; {
   for (let i = 0; i < 160; i++) { const b = mesh(new THREE.IcosahedronGeometry(0.5, 0), F_(['#7a8a4a', '#8a9a5a', '#6a7a3a'][i % 3])); const x = (hash(i * 3.1) - 0.5) * 300; if (Math.abs(x) < 12) continue; b.position.set(x, 0.2, (hash(i * 5.7) - 0.5) * 1200); b.scale.set(1 + hash(i), 0.7, 1 + hash(i * 2)); sc.add(b); }   // sagebrush
   // abandoned cars on the shoulders, doors open, at angles
   for (let i = 0; i < 14; i++) { const g = makeCar(['#e8e4dc', '#3a5a9a', '#8a8c92', '#2a2c32', '#c8b040'][i % 5]); g.position.set((i % 2 ? 1 : -1) * (8 + 1.5 * hash(i)), 0, -40 - i * 55 + 20 * hash(i * 3)); g.rotation.y = (i % 2 ? 0.3 : -0.25) + Math.PI * (i % 3 === 0 ? 1 : 0); sc.add(g); }
-  // the supercar: low orange wedge, open top (both of you visible)
-  const car2 = new THREE.Group(), pm = F_('#f07a1a', { roughness: 0.3, metalness: 0.4 }), dk = F_('#1c1e24');
-  rb(2.0, 0.5, 4.5, pm, 0, 0.5, 0, car2, 0.18); const nose = rb(1.95, 0.32, 1.4, pm, 0, 0.62, 1.7, car2, 0.15); nose.rotation.x = 0.12; rb(1.9, 0.42, 1.2, pm, 0, 0.82, -1.5, car2, 0.15);
-  rb(1.8, 0.45, 0.08, F_('#2a3440', { roughness: 0.05, metalness: 0.5, transparent: true, opacity: 0.6 }), 0, 1.05, 0.75, car2, 0.03).rotation.x = -0.6;
-  rb(1.6, 0.12, 0.4, dk, 0, 1.0, -2.05, car2, 0.04);   // spoiler
-  for (const x of [-0.42, 0.42]) { rb(0.55, 0.5, 0.12, F_('#2a2a2e'), x, 0.95, -0.55, car2, 0.05); rb(0.55, 0.1, 0.6, F_('#2a2a2e'), x, 0.72, -0.25, car2, 0.04); }   // seats
-  for (const [x, z] of [[-1, -1.4], [1, -1.4], [-1, 1.4], [1, 1.4]]) { const w = mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.3, 14), dk); w.rotation.z = Math.PI / 2; w.position.set(x * 0.95, 0.36, z); car2.add(w); }
-  const sw = mesh(new THREE.TorusGeometry(0.15, 0.025, 6, 16), dk); sw.position.set(-0.42, 1.0, 0.25); sw.rotation.x = -0.5; car2.add(sw);
+  // the supercar: a real-looking Italian V12 roadster in lime green (no badges) — side-profile shape extruded across the width, nose tapered in plan;
+  // black sills + big side intakes, Y-shaped head/tail lights, engine louvres, hexagonal exhaust, diffuser fins, open cockpit with two roll hoops
+  const car2 = new THREE.Group(), paint = new THREE.MeshStandardMaterial({ color: '#8ad41a', roughness: 0.22, metalness: 0.55, flatShading: true }), dk = F_('#16171b', { roughness: 0.5 }), carb = F_('#26272c', { roughness: 0.35, metalness: 0.3 });
+  { const P2 = [], arch = (zc, a0, a1) => { for (let k = 0; k <= 10; k++) { const a = a0 + (a1 - a0) * k / 10; P2.push([zc + 0.47 * Math.cos(a), 0.36 + 0.47 * Math.sin(a)]); } };
+    P2.push([2.42, 0.36], [2.3, 0.2]); P2.push([1.95, 0.17]); arch(1.42, 0, Math.PI); P2.push([0.85, 0.17], [-0.9, 0.17]); arch(-1.48, 0, Math.PI); P2.push([-2.1, 0.17], [-2.42, 0.3], [-2.46, 0.55], [-2.38, 0.86], [-2.15, 0.97]);
+    P2.push([-1.0, 0.98], [-0.55, 0.88], [0.45, 0.84], [1.3, 0.7], [2.1, 0.52], [2.42, 0.4]);
+    const shp = new THREE.Shape(P2.map(([z, y]) => new THREE.Vector2(z, y))), g = new THREE.ExtrudeGeometry(shp, { depth: 2.0, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 2, curveSegments: 4, steps: 3 });
+    g.translate(0, 0, -1.0); g.rotateY(-Math.PI / 2);   // shape x -> car z (forward), extrude -> car x (width)
+    const pa = g.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i); let k = 1;
+      if (z > 0.8) k *= 1 - 0.3 * Math.pow((z - 0.8) / 1.65, 1.4); if (y > 0.7) k *= 1 - 0.14 * (y - 0.7) / 0.3; if (z < -0.5 && z > -2.3 && y > 0.45) k *= 1 + 0.07 * Math.sin(Math.PI * (-0.5 - z) / 1.8); if (z < -2.0) k *= 1 - 0.06 * (-2.0 - z) / 0.5;
+      if (z > 0.5 && y > 0.5) pa.setY(i, y - 0.05 * Math.abs(x) * (z - 0.5) / 1.9 * 0 + 0.04 * (1 - Math.min(1, Math.abs(x) / 0.25)) * (z - 0.5) / 1.9);   // a raised centre crease on the hood
+      pa.setX(i, x * k); }
+    g.computeVertexNormals(); const body = mesh(g, paint); car2.add(body); }
+  // cockpit tub (dark interior) + windshield frame + glass, roll hoops, seats
+  rb(1.5, 0.06, 1.25, dk, 0, 0.86, -0.18, car2, 0.03);
+  for (const x of [-0.74, 0.74]) { const ap = rb(0.04, 0.62, 0.04, carb, x, 1.0, 0.55, car2, 0.015); ap.rotation.x = -1.05; }
+  { const ws = rb(1.44, 0.62, 0.03, new THREE.MeshStandardMaterial({ color: '#2a3a4a', roughness: 0.03, metalness: 0.7, transparent: true, opacity: 0.72 }), 0, 1.0, 0.55, car2, 0.02); ws.rotation.x = -1.05; }   // steeply raked screen
+  for (const x of [-0.42, 0.42]) { rb(0.5, 0.26, 0.4, paint, x, 1.02, -0.92, car2, 0.12); rb(0.5, 0.62, 0.12, F_('#2a2a2e'), x, 1.0, -0.62, car2, 0.06); }
+  // engine cover louvres + rear wing lip
+  for (let k = 0; k < 6; k++) rb(1.1, 0.03, 0.08, dk, 0, 1.0, -1.25 - k * 0.14, car2, 0.01);
+  rb(1.7, 0.05, 0.3, carb, 0, 0.99, -2.25, car2, 0.02);
+  // black sills and the big side intakes behind the doors
+  for (const s2 of [-1, 1]) { rb(0.06, 0.18, 2.6, carb, s2 * 1.03, 0.28, 0, car2, 0.03);
+    const tri = new THREE.Shape([new THREE.Vector2(0.15, 0.32), new THREE.Vector2(-0.95, 0.32), new THREE.Vector2(-0.95, 0.8), new THREE.Vector2(-0.2, 0.74)]); const tg = new THREE.ShapeGeometry(tri); tg.rotateY(s2 * Math.PI / 2);
+    const it = mesh(tg, dk, false, false); it.position.x = s2 * 1.0; car2.add(it);
+    const mir = rb(0.08, 0.1, 0.22, paint, s2 * 0.98, 1.02, 0.35, car2, 0.03); }
+  // Y-shaped head lights + Y-shaped tail lights (emissive strips), front intakes, hexagon exhaust, diffuser fins
+  const hlM = new THREE.MeshBasicMaterial({ color: '#f4fbff' }), tlM = new THREE.MeshBasicMaterial({ color: '#ff2a1a' });
+  for (const s2 of [-1, 1]) { const a = rb(0.44, 0.045, 0.03, hlM, s2 * 0.6, 0.55, 2.31, car2, 0.01); a.rotation.z = s2 * -0.15; const b = rb(0.22, 0.04, 0.03, hlM, s2 * 0.74, 0.5, 2.3, car2, 0.01); b.rotation.z = s2 * 0.6; const b2 = rb(0.2, 0.04, 0.03, hlM, s2 * 0.5, 0.5, 2.31, car2, 0.01); b2.rotation.z = s2 * -0.7;
+    const c = rb(0.03, 0.5, 0.03, tlM, s2 * 0.72, 0.72, -2.44, car2, 0.01); c.rotation.z = s2 * 0.25; const d = rb(0.32, 0.03, 0.03, tlM, s2 * 0.58, 0.83, -2.42, car2, 0.01); d.rotation.z = s2 * -0.35;
+    const fi = new THREE.Shape([new THREE.Vector2(0.25, 0.2), new THREE.Vector2(0.78, 0.2), new THREE.Vector2(0.72, 0.44), new THREE.Vector2(0.4, 0.36)]); const fg = new THREE.ShapeGeometry(fi); if (s2 < 0) fg.scale(-1, 1, 1); const fm = mesh(fg, dk, false, false); fm.material.side = THREE.DoubleSide; fm.position.z = 2.41; car2.add(fm);   // big black corner intakes
+    const hb = rb(0.5, 0.12, 0.05, dk, s2 * 0.6, 0.53, 2.27, car2, 0.02); hb.rotation.z = s2 * -0.15; }
+  { const ex = mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.2, 6), F_('#5a5c62', { metalness: 0.8, roughness: 0.3 })); ex.rotation.x = Math.PI / 2; ex.position.set(0, 0.42, -2.48); car2.add(ex);
+    for (let k = -2; k <= 2; k++) rb(0.03, 0.14, 0.4, carb, k * 0.28, 0.24, -2.3, car2, 0.01); }
+  // wheels: low-profile tyres, black multi-spoke rims, red calipers
+  for (const [x, z] of [[-1, -1.48], [1, -1.48], [-1, 1.42], [1, 1.42]]) { const w = new THREE.Group(); w.position.set(x * 0.9, 0.38, z); car2.add(w);
+    const ty = mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.32, 20), F_('#141416')); ty.rotation.z = Math.PI / 2; w.add(ty); const rim = mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.33, 10), F_('#2a2c30', { metalness: 0.7, roughness: 0.3 })); rim.rotation.z = Math.PI / 2; w.add(rim);
+    for (let k = 0; k < 5; k++) { const sp = rb(0.02, 0.5, 0.06, F_('#3a3c42', { metalness: 0.8 }), x * 0.17, 0, 0, w, 0.01); sp.rotation.x = k * Math.PI / 5; }
+    rb(0.05, 0.14, 0.2, F_('#d8202a'), x * 0.1, 0.12, 0.08, w, 0.02); }
+  const sw = mesh(new THREE.TorusGeometry(0.15, 0.025, 6, 16), dk); sw.position.set(-0.42, 1.0, 0.18); sw.rotation.x = -0.5; car2.add(sw);   // the car is turned 180° in the world: the driver (world x +0.42) sits at local -0.42
   sc.add(car2); HW.car = car2;
   // bikes (you: normal; the friend: tiny)
   const bike = (col) => { const g = new THREE.Group(), fm = F_(col, { roughness: 0.4 }), tb = (a, b, r = 0.025) => { const d = b.clone().sub(a), m = mesh(new THREE.CylinderGeometry(r, r, d.length(), 6), fm); m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(V3(0, 1, 0), d.normalize()); g.add(m); };
