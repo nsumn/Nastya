@@ -59,10 +59,14 @@ def groups(p):
     neck = cap(p, (0, 1.46, -0.005), (0, 1.72, 0.01), 0.05, 0.046)   # long enough for the head lifted by 0.06 (d_block.js)
     hood = smin(ell(p, np.array([0, 1.515, -0.03]), np.array([0.16, 0.055, 0.135])) , ell(p, np.array([0, 1.47, -0.115]), np.array([0.14, 0.1, 0.06])), 0.03)
     hood = smax(hood, -(np.linalg.norm(p[:, [0, 2]] - np.array([0, 0.005]), axis=1) - 0.062), 0.01)   # hole for the neck
+    if FAT:   # the chubby friend: a round belly pushing the tee forward, a broad chest, wide hips
+        abd = ell(p, np.array([0, 1.1, 0.045]), np.array([0.235, 0.22, 0.2])); chest = ell(p, np.array([0, 1.3, 0.02]), np.array([0.205, 0.175, 0.135]))
+        pel = rbox(p, np.array([0, 0.95, 0]), (0.2, 0.1, 0.13), 0.08); d[0] = pel
     tor = smin(smin(smin(abd, chest, 0.1), girdle, 0.07), traps, 0.07)   # slim, no muscles
     d['hood'] = hood; d['neck'] = neck
     if OUTFIT == 'tee':   # oversized tee: a loose box from the shoulders to below the hips, dropped shoulders
         tee = rbox(p, np.array([0, 1.12, 0.0]), (0.2, 0.29, 0.128), 0.1)   # body of the tee, top at 1.41
+        if FAT: tee = smin(rbox(p, np.array([0, 1.13, 0.03]), (0.235, 0.28, 0.17), 0.13), ell(p, np.array([0, 1.08, 0.07]), np.array([0.25, 0.22, 0.2])), 0.08)   # tee stretched over the belly
         slope = cap(pm, (0.0, 1.49, -0.01), (0.215, 1.395, -0.005), 0.07, 0.075)   # shoulders slope down from the neck (no square top)
         tor = smin(smin(tor, tee, 0.05), slope, 0.07)
         d['hood'] = smin(tor, tee, 0.05)   # (for the neckline test below)
@@ -71,21 +75,21 @@ def groups(p):
     for side, (bs, be) in ((-1, (2, 3)), (1, (4, 5))):
         q = np.c_[x * side, p[:, 1], p[:, 2]]   # this side mirrored to +x
         delt = ell(q, np.array([0.235, 1.42, 0.0]), np.array([0.048, 0.06, 0.052]))
-        up = cap(q, (0.255, SH - 0.02, 0), (0.258, EL, 0), 0.043, 0.036)
-        fore = cap(q, (0.258, EL, 0), (0.258, WR + 0.01, 0.005), 0.041, 0.032)
+        up = cap(q, (0.255, SH - 0.02, 0), (0.258, EL, 0), 0.043 * ARM, 0.036 * ARM)
+        fore = cap(q, (0.258, EL, 0), (0.258, WR + 0.01, 0.005), 0.041 * ARM, 0.032 * ARM)
         # a relaxed fist: palm block, the curled fingers as one rolled knuckle row, the thumb wrapped over the front
         palm = smin(rbox(q, np.array([0.258, 0.9, 0.006]), (0.021, 0.04, 0.038), 0.017), cap(q, (0.252, 0.858, -0.024), (0.252, 0.858, 0.034), 0.021, 0.02), 0.025)
         thumb = cap(q, (0.243, 0.915, 0.034), (0.236, 0.878, 0.046), 0.013, 0.012)
         d[bs] = smin(delt, up, 0.05)
         if OUTFIT == 'tee':   # wide short sleeve, hanging a bit away from the arm, open end just above the elbow
-            sl = smax(cap(q, (0.228, 1.385, 0), (0.272, 1.16, 0.0), 0.085, 0.08), 1.205 - q[:, 1], 0.012)   # ends just above the elbow, so the elbow bends freely
+            sl = smax(cap(q, (0.228, 1.385, 0), (0.272 + 0.02 * FAT, 1.16, 0.0), 0.085 * ARM, 0.08 * ARM), 1.205 - q[:, 1], 0.012)   # ends just above the elbow, so the elbow bends freely
             d[bs] = np.minimum(d[bs], sl)
         d[be] = smin(fore, smin(palm, thumb, 0.01), 0.025)
         d[('hand', side)] = smin(palm, thumb, 0.01)
     for side, (bh, bk) in ((-1, (6, 7)), (1, (8, 9))):
         q = np.c_[x * side, p[:, 1], p[:, 2]]
-        thigh = cap(q, (0.1, HIP + 0.02, 0), (0.1, KN, 0.005), 0.08, 0.064)
-        shin = cap(q, (0.1, KN, 0.005), (0.1, AN + 0.03, -0.01), 0.061, 0.057)
+        thigh = cap(q, (0.1, HIP + 0.02, 0), (0.1, KN, 0.005), 0.08 * LEG, 0.064 * LEG)
+        shin = cap(q, (0.1, KN, 0.005), (0.1, AN + 0.03, -0.01), 0.061 * LEG, 0.057 * LEG)
         shoe = smin(rbox(q, np.array([0.1, 0.045, 0.045]), (0.052, 0.045, 0.125), 0.035), ell(q, np.array([0.1, 0.06, -0.035]), np.array([0.05, 0.06, 0.06])), 0.03)
         d[bh] = thigh   # straight jeans, no muscle bulges
         d[bk] = smin(shin, shoe, 0.04)
@@ -100,9 +104,9 @@ def body_sdf(p):
     for a, b in ((6, 7), (8, 9)): core = smin(core, smin(d[a], d[b], 0.035), 0.05)
     return core
 
-OUTFIT = 'hoodie'
+OUTFIT = 'hoodie'; FAT = False; ARM = LEG = 1.0
 def build_body():
-    bv, bf = mesh(body_sdf, (-0.36, -0.01, -0.2), (0.36, 1.76, 0.22), 0.007, 3600)
+    bv, bf = mesh(body_sdf, (-0.4, -0.01, -0.24), (0.4, 1.76, 0.32), 0.007, 3600) if FAT else mesh(body_sdf, (-0.36, -0.01, -0.2), (0.36, 1.76, 0.22), 0.007, 3600)
     print('body', len(bv), 'verts', len(bf), 'faces')
 
     D = groups(bv); bone = np.stack([D[i] for i in range(10)], 1)
@@ -166,6 +170,8 @@ def build_body():
 
 BODY = {}
 for OUTFIT in ('hoodie', 'tee'): BODY[OUTFIT] = build_body()
+OUTFIT, FAT, ARM, LEG = 'tee', True, 1.28, 1.3; BODY['chubby'] = build_body()   # the friend ("Everyone disappeared" video): tee over a belly, thick arms + legs
+FAT, ARM, LEG = False, 1.0, 1.0
 
 # ---------------- head (head units: eyes at y=0, x=+-0.19 as drawn on the face texture, mouth y=-0.27) ----------------
 def head_sdf(p):

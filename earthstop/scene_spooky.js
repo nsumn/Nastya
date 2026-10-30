@@ -258,7 +258,7 @@ function makeBlock(o = {}) {
     const F = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, flatShading: true }), topC = new THREE.Color(o.top);
     const mats = { skin: F(o.skin), top: F(o.top), top2: F(topC.clone().multiplyScalar(0.82)), sleeve: F(o.sleeve ? o.top : o.skin), bottom: o.jeans ? denimHuman : F(o.bottom),
       cuff: F(o.jeans ? '#5a7aa8' : o.bottom), shoe: F(o.shoe), sole: F(o.sole || '#e6e2da') };
-    const outfit = o.hoodie ? 'hoodie' : 'tee', geo = humanBodyGeo(outfit), bodyM = new THREE.SkinnedMesh(geo, HUMAN_MESH.body[outfit].groups.map(([r]) => mats[r]));   // no hoodie = oversized tee bodyM.castShadow = bodyM.receiveShadow = true; bodyM.frustumCulled = false;
+    const outfit = o.hoodie ? 'hoodie' : o.fat ? 'chubby' : 'tee', geo = humanBodyGeo(outfit), bodyM = new THREE.SkinnedMesh(geo, HUMAN_MESH.body[outfit].groups.map(([r]) => mats[r]));   // no hoodie = oversized tee bodyM.castShadow = bodyM.receiveShadow = true; bodyM.frustumCulled = false;
     root.add(bodyM); outer.updateMatrixWorld(true);
     bodyM.bind(new THREE.Skeleton([root, torso, arms[0], elbows[0], arms[1], elbows[1], legs[0], knees[0], legs[1], knees[1]]), bodyM.matrixWorld); }
   const p = { outer, root, torso, head, arms, elbows, legs, knees, h: o.h, sx: [-1, 1], o };
@@ -442,7 +442,7 @@ const splats = Array.from({ length: 6 }, () => { const s = new THREE.Group(); co
 const eggDrop = mesh(new THREE.ConeGeometry(0.02, 0.06, 6), M('#f8c040')); st.add(eggDrop);
 // =================== HALLOWEEN NIGHT on the groceries street (g_world): moon + stars, warm windows, porch lamp, jack-o'-lanterns, street lamps;
 // the street is extended for miles (instanced houses + lamps) so the line of kids can run to the horizon. setEnv(day, season) drives the time-lapse. ===================
-for (const o of [nb1, nb2, carKeys, eggDrop, ...BAGS, ...eggs, ...splats]) o.visible = false;
+for (const o of [nb1.outer, nb2.outer, carKeys, eggDrop, ...BAGS, ...eggs, ...splats]) o.visible = false;   // (makeBlock returns {outer, …}: hide the outer group)
 car.traverse(o => { if (o.isGroup && Math.abs(o.rotation.x + 1.25) < 0.01) o.rotation.x = 0; });   // close the SUV hatch
 const skyMesh = st.children.find(o => o.isMesh && o.geometry.type === 'SphereGeometry' && o.material.isMeshBasicMaterial);
 const nightSky = canvasTex(16, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#060a1c'); gr.addColorStop(0.45, '#141c3e'); gr.addColorStop(0.75, '#3a2a58'); gr.addColorStop(0.92, '#6a3a4a'); gr.addColorStop(1, '#8a4a3a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });

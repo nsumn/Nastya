@@ -1,6 +1,6 @@
 // =================== HALLOWEEN NIGHT on the groceries street (g_world): moon + stars, warm windows, porch lamp, jack-o'-lanterns, street lamps;
 // the street is extended for miles (instanced houses + lamps) so the line of kids can run to the horizon. setEnv(day, season) drives the time-lapse. ===================
-for (const o of [nb1, nb2, carKeys, eggDrop, ...BAGS, ...eggs, ...splats]) o.visible = false;
+for (const o of [nb1.outer, nb2.outer, carKeys, eggDrop, ...BAGS, ...eggs, ...splats]) o.visible = false;   // (makeBlock returns {outer, …}: hide the outer group)
 car.traverse(o => { if (o.isGroup && Math.abs(o.rotation.x + 1.25) < 0.01) o.rotation.x = 0; });   // close the SUV hatch
 const skyMesh = st.children.find(o => o.isMesh && o.geometry.type === 'SphereGeometry' && o.material.isMeshBasicMaterial);
 const nightSky = canvasTex(16, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#060a1c'); gr.addColorStop(0.45, '#141c3e'); gr.addColorStop(0.75, '#3a2a58'); gr.addColorStop(0.92, '#6a3a4a'); gr.addColorStop(1, '#8a4a3a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
