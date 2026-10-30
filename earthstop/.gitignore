@@ -8,3 +8,4 @@ ffmpeg2pass-*
 # temporary build copies used by a running render
 scene_*_new.js
 index_*_new.html
+.lumean.key
