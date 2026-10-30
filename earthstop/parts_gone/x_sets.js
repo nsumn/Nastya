@@ -11,17 +11,17 @@ function mkSet({ top = '#6a9ad8', bot = '#f4dcc0', fog = 0xf0dcc8, near = 40, fa
   return { sc, cam }; }
 const gplane = (sc, w, d, mat, x, z, y = 0, ry = 0) => { const p = mesh(new THREE.PlaneGeometry(w, d), typeof mat === 'string' ? F_(mat) : mat, false, true); p.rotation.set(-Math.PI / 2, 0, ry); p.position.set(x, y, z); sc.add(p); return p; };
 const _o = new THREE.Object3D();
-// ---------- 1) SUBURB from above: 73 million homes each (a grid of houses that splits into yours / his), then a parking lot of cars ----------
+// ---------- 1) MANHATTAN from above: 73 million homes each (a grid of towers whose roofs split into yours / his), then a parking lot of cars ----------
 const BURB = mkSet({ top: '#5a8ad0', bot: '#f0d8c0', fog: 0xe8d8c8, near: 120, far: 900, shadow: 60 });
 const burbIM = {}; {
-  const sc = BURB.sc; gplane(sc, 3000, 3000, '#8aa648', 0, 0, -0.02);
-  const NX = 44, NZ = 44, N = NX * NZ, walls = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), F_('#ffffff'), N), roofs = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 1, 4), F_('#ffffff'), N);
-  roofs.geometry.rotateY(Math.PI / 4); let k = 0; const c = new THREE.Color();
-  for (let i = 0; i < NX; i++) for (let j = 0; j < NZ; j++) { const x = (i - NX / 2) * 16, z = (j - NZ / 2) * 15; if (j % 4 === 3) continue; const w = 7 + 2 * hash(i * 3 + j), h = 3 + hash(i + j * 7);
-    _o.position.set(x, h / 2, z); _o.scale.set(w, h, 6); _o.rotation.set(0, 0, 0); _o.updateMatrix(); walls.setMatrixAt(k, _o.matrix); walls.setColorAt(k, c.set(['#f0ece2', '#e8d4a8', '#a8c4d8', '#d8a87a', '#b8cca0'][(hash(i * 1.3 + j * 2.1) * 5) | 0]));
-    _o.position.set(x, h + 1.0, z); _o.scale.set(w * 1.25, 2.0, 7.8); _o.updateMatrix(); roofs.setMatrixAt(k, _o.matrix); roofs.setColorAt(k, c.set('#5a5a62')); k++; }
+  const sc = BURB.sc; gplane(sc, 3000, 3000, '#7a7c82', 0, 0, -0.02);
+  const NX = 44, NZ = 44, N = NX * NZ, walls = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), F_('#ffffff'), N), roofs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), F_('#ffffff'), N);
+  let k = 0; const c = new THREE.Color();
+  for (let i = 0; i < NX; i++) for (let j = 0; j < NZ; j++) { const x = (i - NX / 2) * 16, z = (j - NZ / 2) * 15; if (j % 4 === 3 || i % 5 === 4) continue; const w = 13 + 2 * hash(i * 3 + j), h = 14 + 110 * Math.pow(hash(i + j * 7), 2.2);
+    _o.position.set(x, h / 2, z); _o.scale.set(w, h, 12); _o.rotation.set(0, 0, 0); _o.updateMatrix(); walls.setMatrixAt(k, _o.matrix); walls.setColorAt(k, c.set(['#d8ccb4', '#b8705a', '#8a8c94', '#a8c4d8', '#e8e2d6'][(hash(i * 1.3 + j * 2.1) * 5) | 0]));
+    _o.position.set(x, h + 0.5, z); _o.scale.set(w * 1.02, 1.0, 12.3); _o.updateMatrix(); roofs.setMatrixAt(k, _o.matrix); roofs.setColorAt(k, c.set('#5a5a62')); k++; }
   walls.count = roofs.count = k; walls.castShadow = roofs.castShadow = true; walls.receiveShadow = true; sc.add(walls, roofs); burbIM.walls = walls; burbIM.roofs = roofs; burbIM.n = k;
-  for (let j = 0; j < NZ; j += 4) gplane(sc, NX * 16, 7, '#5c5e66', 0, (j + 3 - NZ / 2) * 15, 0.01);
+  for (let j = 0; j < NZ; j += 4) gplane(sc, NX * 16, 12, '#5c5e66', 0, (j + 3 - NZ / 2) * 15, 0.01); for (let i = 4; i < NX; i += 5) gplane(sc, 14, NZ * 15, '#5c5e66', (i - NX / 2) * 16, 0, 0.012);
   // parking lot (far east): rows of cars
   gplane(sc, 300, 260, '#5c5e66', 900, 0, 0.01); const cars = new THREE.InstancedMesh(new THREE.BoxGeometry(1.8, 1.3, 4.2), F_('#ffffff', { roughness: 0.4 }), 60 * 26);
   let n = 0; for (let i = 0; i < 60; i++) for (let j = 0; j < 26; j++) { _o.position.set(900 + (i - 30) * 4.6, 0.65, (j - 13) * 9.5); _o.scale.set(1, 1, 1); _o.updateMatrix(); cars.setMatrixAt(n, _o.matrix); cars.setColorAt(n, c.set(['#e8e4dc', '#2a2c32', '#8a8c92', '#3a5a9a', '#c8402a'][(hash(i * 7.1 + j) * 5) | 0])); n++; }
@@ -148,7 +148,11 @@ const MS = {}; {
   gplane(sc, 30, 30, new THREE.MeshStandardMaterial({ map: wood, roughness: 0.5 }), 0, 0);
   const wall = F_('#efe6d6'); rb(30, 9, 0.3, wall, 0, 4.5, -8, sc, 0.02); rb(0.3, 9, 30, wall, 8, 4.5, 0, sc, 0.02);
   const winW = rb(0.3, 9, 30, wall, -8, 4.5, 0, sc, 0.02); winW.visible = true;
-  for (const z of [-4.5, 0, 4.5]) { const g = mesh(new THREE.PlaneGeometry(2.6, 6.2), new THREE.MeshBasicMaterial({ color: '#dff0ff' }), false, false); g.rotation.y = Math.PI / 2; g.position.set(-7.83, 4.4, z); sc.add(g); rb(0.12, 6.4, 0.16, F_('#ffffff'), -7.82, 4.4, z, sc, 0.02); }
+  const sky2 = canvasTex(512, 512, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#7ab0e8'); gr.addColorStop(1, '#f4e0c8'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 40; i++) { const x = hash(i * 3.3) * w, bw = 20 + 40 * hash(i * 1.7), bh = 120 + 300 * hash(i * 2.9); g.fillStyle = ['#6a7a8e', '#7a8698', '#5a6a80', '#8a94a4'][i % 4]; g.fillRect(x, h - bh, bw, bh);
+      g.fillStyle = 'rgba(255,240,200,0.35)'; for (let y = h - bh + 8; y < h; y += 14) for (let xx = x + 4; xx < x + bw - 4; xx += 9) if (hash(xx * 0.3 + y) < 0.3) g.fillRect(xx, y, 4, 6); }
+    g.fillStyle = '#8a96a8'; g.fillRect(250, 120, 34, 392); g.fillRect(258, 70, 18, 50); g.fillRect(265, 30, 4, 40); });   // a tall tower with a spire in the middle
+  for (const z of [-4.5, 0, 4.5]) { const g = mesh(new THREE.PlaneGeometry(2.6, 6.2), new THREE.MeshBasicMaterial({ map: sky2 }), false, false); g.rotation.y = Math.PI / 2; g.position.set(-7.83, 4.4, z); sc.add(g); rb(0.12, 6.4, 0.16, F_('#ffffff'), -7.82, 4.4, z, sc, 0.02); }
   const crown = F_('#ffffff'); rb(30, 0.3, 0.4, crown, 0, 8.8, -7.8, sc, 0.02);
   // fireplace
   rb(3.2, 2.4, 0.6, F_('#e8e2d6'), 2, 1.2, -7.6, sc, 0.03); rb(2.0, 1.4, 0.3, F_('#2a2420'), 2, 0.8, -7.4, sc, 0.02); rb(3.6, 0.2, 0.8, F_('#f4f0e8'), 2, 2.45, -7.55, sc, 0.03);
