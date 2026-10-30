@@ -797,7 +797,7 @@ function pose(t) {
   else if (t >= COUCH) {   // mansion: the friend asleep on a tiny couch, you standing over him
     Q.outer.rotation.set(-Math.PI / 2, Math.PI / 2, 0, 'YXZ'); Q.outer.position.set(0.32, 0.72, 0.22); Q.face('sleep', t); Q.torso.scale.set(1, 1, 1 + 0.04 * Math.sin(t * 2.2));
     Q.arms.forEach((a, i) => a.rotation.set(-0.6, 0, (i ? -1 : 1) * 0.4)); Q.elbows.forEach(e => e.rotation.x = -1.2); Q.legs.forEach(l => l.rotation.x = -0.2); Q.knees.forEach(k => k.rotation.x = 0.9);
-    place(P, 0.6, 1.55, -0.35); P.arms.forEach((a, i) => a.rotation.set(-0.15, 0, (i ? -1 : 1) * 0.55)); P.elbows.forEach(e => e.rotation.x = -1.5); P.face(t < 58.5 ? 'squint' : 'smirk', t); }
+    place(P, 0.55, -0.7, 0.6); P.arms.forEach((a, i) => a.rotation.set(0.05, 0, (i ? -1 : 1) * 0.12)); P.elbows.forEach(e => e.rotation.x = -0.3); P.face(t < 58.5 ? 'squint' : 'smirk', t); }   // you stand behind the couch, out of the line to his head (the Zs rise from HIM)
 }
 // ---- shots: [start, set, camera(t)] ----
 const SETS = { nyc: NYC, st: { sc: st, cam: stCam }, burb: BURB, mkt: MKT, hwy: HWY, sub: SUB, wh: WH, man: MAN, map: { sc: mapScene, cam: mapCam } };
@@ -826,7 +826,7 @@ const SHOTS = [
   [47.5, 'nyc', t => { const z = -60 - 4.2 * (t - 47.5); return LOOK(3.6 - 1.2 * span(t, 47.5, PRES), 1.7, z - 6.5, 0.1, 1.0, z, 40); }, { mb: true, whip: 1 }],
   [PRES, 'nyc', t => { const u = esin(span(t, PRES, 53.8)); return LOOK(0.9, 1.6 + 2.6 * u, -69 - 2.5 * u, 0, 7 + 5 * u, -122, 46); }, { whip: -1 }],
   [53.8, 'nyc', t => orbit(mid(), V3(0.05, 0.32, 1), -0.2, 0.15, 3.8, 3.2, 0.6, span(t, 53.8, COUCH)), { dof: () => mid() }],
-  [COUCH, 'man', t => { const u = esin(span(t, COUCH, 58.5)); return LOOK(4.2 - 0.9 * u, 2.8 - 0.4 * u, 5.4 - 0.8 * u, 0, 0.8, 0.3, 40); }],
+  [COUCH, 'man', t => { const u = esin(span(t, COUCH, 58.5)); return LOOK(4.2 - 0.9 * u, 2.8 - 0.4 * u, 5.4 - 0.8 * u, 0.3, 0.95, 0.0, 40); }],
   [58.5, 'man', t => orbit(H_(hero), V3(0.5, 0.1, 1), 0.35, -0.1, 2.8, 2.3, 0.62, span(t, 58.5, ENDC)), { dof: () => H_(hero) }],
   [ENDC, 'man', t => LOOK(3.3 - 0.1 * (t - ENDC), 2.4, 4.6, 0, 0.8, 0.3, 40)]];
 const AO = {}; function aoFor(k) { if (!AO[k]) { const S = SETS[k]; const g = new GTAOPass(S.sc, S.cam, W / 2, H / 2); g.renderToScreen = false; g.blendIntensity = 1.0;
@@ -861,7 +861,8 @@ function hudAt(t) { const cnt = (a, b, v0, v1) => lerp(v0, v1, ease(clamp((t - a
   if (t >= GRID && t < SUBWAY) return ['HOMES WITH POWER', Math.round(100 * (1 - clamp((t - GRID - 0.8) / 4.6, 0, 1))) + '%', 'NO OPERATORS → PLANTS TRIP OFFLINE'];
   if (t >= PRES && t < COUCH && t >= 53.8) return ['VOTES', 'YOU 1 · HIM 1', ''];
   return null; }
-function labelsAt(t, i) { if (SHOTS[i][1] !== 'man' || t >= ENDC) return ''; const h = H_(friend).add(V3(0.1, 0.3, 0)); const v = h.project(SETS.man.cam), out = [];
+// Zs only in the wide couch shot (in the close-up his head is behind yours)
+function labelsAt(t, i) { if (SHOTS[i][1] !== 'man' || t >= 58.5) return ''; const h = H_(friend).add(V3(0.1, 0.3, 0)); const v = h.project(SETS.man.cam), out = [];
   for (let k = 0; k < 3; k++) { const ph = ((t * 0.7 + k / 3) % 1); out.push(`<div class="lb" style="left:${((v.x + 1) / 2 * W + 30 + 60 * ph + 20 * k).toFixed(0)}px;top:${((1 - v.y) / 2 * H - 40 - 140 * ph).toFixed(0)}px;opacity:${(1 - ph).toFixed(2)};font-size:${(36 + 26 * ph).toFixed(0)}px">Z</div>`); } return out.join(''); }
 // kinetic type: words arrive one after another (rise + de-blur + settle), key numbers land with an overshoot, the whole line leaves with a quick lift-blur
 const tokens = html => html.replace(/<span class="hl">(.*?)<\/span>/g, (m, x) => x.split(' ').map(w => '\u0001' + w + '\u0002').join(' ')).replace(/<b>(.*?)<\/b>/g, (m, x) => x.split(' ').map(w => '<b>' + w + '</b>').join(' '))
