@@ -1,7 +1,8 @@
 # Music + effects for "What if everyone disappeared… except you and your best friend?" (timeline = parts_gone/x_head.js).
 # One playful pluck melody (120 BPM, C major; minor and sparse while things fall apart; soft at the couch), bass + light drums, and cartoon effects
 # on the beats: poofs, chip crunches, the supercar, power-down, rushing water, sad trombone, sputtering engine, bike bell, drum roll. No voices, no ticking.
-import numpy as np, scipy.io.wavfile as wf
+import sys, numpy as np, scipy.io.wavfile as wf
+MUSIC = '--no-music' not in sys.argv   # --no-music: sound effects only (no song, no end chord) → out/gone/audio_raw_nomusic.wav
 from scipy.signal import butter, sosfilt
 SR = 44100
 GONE, HOMES, MARKET, CAR, GRID, SUBWAY, ROT, GAS, PRES, COUCH, ENDC, T_END = 4.0, 9.0, 15.0, 21.0, 27.0, 33.0, 39.0, 45.0, 51.0, 56.5, 60.5, 64.0
@@ -62,7 +63,7 @@ def section(t):
     if t < GAS: return 'minor'
     if t < COUCH: return 'happy'
     return 'soft'
-for b in range(int(T_END / BAR)):
+for b in range(int(T_END / BAR) if MUSIC else 0):
     t0 = b * BAR; sec = section(t0 + 0.01)
     if sec == 'stop' or t0 >= ENDC + 1.5: continue
     root, tones = (MIN if sec == 'minor' else MAJ)[b % 4]; g = {'happy': 1.0, 'minor': 0.7, 'soft': 0.45}[sec]
@@ -75,8 +76,9 @@ for b in range(int(T_END / BAR)):
         m = tones[(ix + (b // 4) % 2) % 4] + (12 if sec == 'happy' and b % 8 >= 4 and i in (3, 4) else 0)
         put(t0 + i * E8, pluck(m, 0.4 if sec != 'soft' else 0.7, 0.7 if sec == 'soft' else 1.0), 0.95 * g, pan=-0.15)
 # ending chord
-for m in (48, 60, 64, 67, 72): put(ENDC + 1.5, pluck(m, 2.2, 0.6), 0.6)
-put(ENDC + 1.5, bass(36, 2.2), 0.7)
+if MUSIC:
+    for m in (48, 60, 64, 67, 72): put(ENDC + 1.5, pluck(m, 2.2, 0.6), 0.6)
+    put(ENDC + 1.5, bass(36, 2.2), 0.7)
 # ---- effects on the picture ----
 for i in range(7): put(1.4 + i * 0.3, poof(), 0.9, pan=(i - 3) * 0.12)
 for tv in (1.6, 2.3, 3.0): put(tv, poof(), 1.1)
@@ -99,5 +101,5 @@ put(COUCH, ding(72), 0.4)
 for c, up in ((CAR, True), (GAS, False), (47.5, True), (PRES, False)): put(c - 0.25, whoosh(up), 0.9)   # whip-pan cuts (x_main.js opts.whip)
 mix = np.stack([L, R], 1)[:int(T_END * SR)]; mix = hp(mix.T, 60).T
 mix /= np.abs(mix).max() / 0.9
-wf.write('out/gone/audio_raw.wav', SR, (mix * 32767).astype(np.int16))
+wf.write('out/gone/audio_raw.wav' if MUSIC else 'out/gone/audio_raw_nomusic.wav', SR, (mix * 32767).astype(np.int16))
 print('ok')
