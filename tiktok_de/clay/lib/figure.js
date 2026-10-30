@@ -2,6 +2,7 @@
 // Units: metres of a ~1.25 m tall toy. Forward is +z, up is +y.
 // A pose is a plain object of joint rotations (radians); see POSES below and pose().
 import * as THREE from 'three';
+import { cone, ell, meshPrims } from './sdf.js';
 
 const clay = (hex, rough = 0.74) => new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 });
 export const MAT = {
@@ -86,77 +87,106 @@ function hairWoman(head, R) {
   bob.material = m; m.side = THREE.DoubleSide;
   M(new THREE.SphereGeometry(R * 1.075, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.32), m, head).rotation.x = 0.12;
   // side-parted fringe: two soft lobes + a tucked strand
-  const f1 = ball(head, 0.6 * R, m, -0.28 * R, 0.62 * R, 0.6 * R, 1.25, 0.48, 0.62); f1.rotation.z = 0.38;
-  const f2 = ball(head, 0.5 * R, m, 0.45 * R, 0.7 * R, 0.48 * R, 1.0, 0.45, 0.62); f2.rotation.z = -0.45;
+  const f1 = ball(head, 0.6 * R, m, -0.3 * R, 0.7 * R, 0.55 * R, 1.2, 0.4, 0.6); f1.rotation.z = 0.42;
+  const f2 = ball(head, 0.5 * R, m, 0.48 * R, 0.76 * R, 0.42 * R, 0.95, 0.38, 0.6); f2.rotation.z = -0.5;
   for (const s of [-1, 1]) for (const [y, z] of [[-0.55, 0.3], [-0.85, 0.15]]) { const w = ball(head, 0.24 * R, m, s * 1.05 * R, y * R, z * R, 0.75, 0.9, 1.1); w.rotation.z = -s * 0.4; } // waves
   for (const s of [-1, 1]) ball(head, 0.04, MAT.gold, s * 0.98 * R, -0.3 * R, 0.2 * R);
 }
 function hairMan(head, R) {
   const m = MAT.hairM;
-  M(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.43), m, head).rotation.x = -0.32;
-  const back = M(new THREE.SphereGeometry(R * 1.04, 40, 20, Math.PI * 0.6, Math.PI * 0.8, 0.2, Math.PI * 0.52), m, head); back.rotation.y = Math.PI;
-  const quiff = ball(head, 0.55 * R, m, 0.1 * R, 0.82 * R, 0.42 * R, 1.3, 0.42, 0.7); quiff.rotation.z = -0.15;
+  // short cut hugging the skull: crown cap tilted back (higher hairline), full back, soft side part with a low quiff
+  M(new THREE.SphereGeometry(R * 1.035, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.36), m, head).rotation.x = -0.05;
+  const back = M(new THREE.SphereGeometry(R * 1.03, 40, 20, Math.PI * 0.55, Math.PI * 0.9, 0.15, Math.PI * 0.5), m, head); back.rotation.y = Math.PI;
+  for (const s of [-1, 1]) { const side = M(new THREE.SphereGeometry(R * 1.03, 24, 16, s > 0 ? Math.PI * 1.05 : -Math.PI * 0.05, Math.PI * 0.3, Math.PI * 0.18, Math.PI * 0.28), m, head); side.rotation.y = Math.PI / 2; }
+  const quiff = ball(head, 0.42 * R, m, 0.12 * R, 0.86 * R, 0.4 * R, 1.35, 0.32, 0.7); quiff.rotation.z = -0.2;
   // stubble along the jaw
   M(new THREE.SphereGeometry(R * 1.008, 48, 20, Math.PI * 0.06, Math.PI * 0.88, Math.PI * 0.69, Math.PI * 0.27), MAT.stubble, head);
   for (const s of [-1, 1]) ball(head, 0.22 * R, MAT.skin, s * 0.98 * R, 0.0, 0.0, 0.42, 0.75, 0.6); // ears
 }
 
 // ---------------------------------------------------------------- figure
+// The rig is plain groups; the body is ONE smooth clay surface rebuilt from the joints on every pose() (see sdf.js),
+// so arms, neck, hips and legs flow into each other without seams. Face, hair and earrings stay separate meshes on the head.
 export function makeFigure(kind) {
   const isW = kind === 'w';
   const root = new THREE.Group();
-  const R = 0.205;
-  const dims = isW ? { hipW: 0.065, thigh: 0.24, shin: 0.23, torso: 0.3, shW: 0.15, upper: 0.2, fore: 0.18 }
-                   : { hipW: 0.075, thigh: 0.26, shin: 0.25, torso: 0.33, shW: 0.18, upper: 0.22, fore: 0.2 };
+  const R = 0.215;
+  const dims = isW ? { hipW: 0.062, thigh: 0.24, shin: 0.22, torso: 0.3, shW: 0.145, upper: 0.19, fore: 0.17 }
+                   : { hipW: 0.072, thigh: 0.26, shin: 0.24, torso: 0.33, shW: 0.17, upper: 0.21, fore: 0.19 };
   const J = { root };
   const pelvis = J.pelvis = G(root, 0, dims.thigh + dims.shin + 0.07, 0);
-  const top = isW ? MAT.dress : MAT.shirt;
-  // torso (spine group pivots at the pelvis)
   const spine = J.spine = G(pelvis);
-  if (isW) {
-    M(body([[0.0, -0.02], [0.125, -0.01], [0.135, 0.04], [0.125, 0.14], [0.13, 0.22], [0.125, 0.28], [0.09, 0.315], [0.0, 0.325]]), MAT.dress, spine).scale.set(1, 1, 0.78);
-    M(body([[0.0, -0.07], [0.125, -0.06], [0.125, 0.0], [0.0, 0.01]]), MAT.skirt, spine).scale.set(1, 1, 0.78);
-  } else {
-    M(body([[0.0, -0.03], [0.125, -0.02], [0.13, 0.08], [0.135, 0.2], [0.15, 0.28], [0.12, 0.34], [0.0, 0.35]]), MAT.shirt, spine).scale.set(1, 1, 0.72);
-    M(body([[0.0, -0.06], [0.12, -0.05], [0.13, 0.03], [0.0, 0.04]]), MAT.pants, spine).scale.set(1, 1, 0.75);
-  }
   const chest = J.chest = G(spine, 0, dims.torso, 0);
-  // neck + head
   J.neck = G(chest, 0, -0.01, 0);
-  M(taper(0.05, 0.055, 0.1), MAT.skin, J.neck).position.y = 0.09;
   const head = J.head = G(J.neck, 0, 0.08 + R * 0.92, 0.0);
-  ball(head, R, MAT.skin, 0, 0, 0, 1, 1.03, 0.97);
-  ball(head, R * 0.85, MAT.skin, 0, -0.28 * R, 0.08 * R, 1, 0.8, 0.95); // fuller cheeks / jaw
   J.face = buildFace(head, R, kind);
   isW ? hairWoman(head, R) : hairMan(head, R);
-  // arms
   for (const [s, k] of [[-1, 'L'], [1, 'R']]) {
     const sh = J['sh' + k] = G(chest, s * dims.shW, -0.04, 0);
-    M(taper(isW ? 0.05 : 0.055, isW ? 0.044 : 0.047, dims.upper), top, sh); // long sleeves (sweater)
     const el = J['el' + k] = G(sh, 0, -dims.upper, 0);
-    M(taper(isW ? 0.044 : 0.047, isW ? 0.04 : 0.042, dims.fore), top, el);
-    const ha = J['ha' + k] = G(el, 0, -dims.fore, 0);
-    M(taper(isW ? 0.034 : 0.04, isW ? 0.032 : 0.038, 0.03), MAT.skin, ha);
-    ball(ha, isW ? 0.042 : 0.05, MAT.skin, 0, -0.05, 0.005, 0.8, 1.15, 0.62);
-    const th = ball(ha, isW ? 0.018 : 0.022, MAT.skin, -s * 0.03, -0.035, 0.02, 1, 1.6, 1); th.rotation.z = s * 0.5;
-  }
-  // legs
-  for (const [s, k] of [[-1, 'L'], [1, 'R']]) {
+    J['ha' + k] = G(el, 0, -dims.fore, 0);
     const hip = J['hip' + k] = G(pelvis, s * dims.hipW, 0, 0);
-    const legMat = isW ? MAT.skin : MAT.pants;
-    if (isW) M(taper(0.07, 0.062, dims.thigh * 0.85), MAT.skirt, hip); // skirt over the thigh
-    M(taper(isW ? 0.05 : 0.062, isW ? 0.042 : 0.055, dims.thigh), legMat, hip);
     const kn = J['kn' + k] = G(hip, 0, -dims.thigh, 0);
-    M(taper(isW ? 0.042 : 0.055, isW ? 0.034 : 0.048, dims.shin), legMat, kn);
-    const an = J['an' + k] = G(kn, 0, -dims.shin, 0);
-    const shoe = ball(an, isW ? 0.045 : 0.055, isW ? MAT.shoeW : MAT.shoeM, 0, -0.03, 0.05, 0.85, 0.6, 1.7);
+    J['an' + k] = G(kn, 0, -dims.shin, 0);
   }
-  if (isW) { // skirt bridge between the thighs (follows the hips)
-    J.skirt = M(body([[0.0, -0.17], [0.15, -0.16], [0.14, -0.06], [0.12, 0.0], [0.0, 0.01]]), MAT.skirt, pelvis); J.skirt.scale.set(1, 1, 0.8);
-  }
+  J.bodyMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0, side: THREE.DoubleSide });
   J.kind = kind; J.R = R; J.dims = dims;
   root.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
   return J;
+}
+
+// body primitives in root space from the current joint frames
+function bodyPrims(J) {
+  const isW = J.kind === 'w', R = J.R, d = J.dims;
+  J.root.updateMatrixWorld(true);
+  const rootInv = new THREE.Matrix4().copy(J.root.matrixWorld).invert();
+  const fr = (g) => new THREE.Matrix4().multiplyMatrices(rootInv, g.matrixWorld);
+  const at = (g, x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z).applyMatrix4(fr(g));
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const C = (m) => m.color;
+  const top = C(isW ? MAT.dress : MAT.shirt), skin = C(MAT.skin), legC = C(isW ? MAT.skin : MAT.pants);
+  const Fs = fr(J.spine), Fp = fr(J.pelvis), P = [];
+  // torso: soft pear (her) / soft block (him), squashed front-to-back
+  if (isW) {
+    const low = cone(v(0, -0.05, 0), v(0, 0.15, 0), 0.13, 0.112, top, 0.05, Fs, 0.8); low.split = { y: -0.005, col: C(MAT.skirt) }; P.push(low);
+    P.push(cone(v(0, 0.15, 0), v(0, 0.25, 0), 0.112, 0.118, top, 0.05, Fs, 0.78));
+    P.push(cone(v(-0.095, 0.265, 0), v(0.095, 0.265, 0), 0.066, 0.066, top, 0.05, Fs, 0.8));
+  } else {
+    const low = cone(v(0, -0.04, 0), v(0, 0.22, 0), 0.128, 0.14, top, 0.05, Fs, 0.74); low.split = { y: 0.015, col: C(MAT.pants) }; P.push(low);
+    P.push(cone(v(-0.11, 0.29, 0), v(0.11, 0.29, 0), 0.075, 0.075, top, 0.05, Fs, 0.78));
+  }
+  // neck + head (+ fuller cheeks, ears for him)
+  const Fn = fr(J.neck), Fh = fr(J.head);
+  P.push(cone(v(0, -0.02, 0), v(0, 0.13, 0), 0.052, 0.05, skin, 0.035, Fn));
+  P.push(ell(v(0, 0, 0), R, R * 1.03, R * 0.97, skin, 0.04, Fh));
+  P.push(ell(v(0, -0.28 * R, 0.08 * R), R * 0.85, R * 0.68, R * 0.82, skin, 0.03, Fh));
+  if (!isW) for (const s of [-1, 1]) P.push(ell(v(s * 0.98 * R, 0, 0), 0.1 * R, 0.17 * R, 0.13 * R, skin, 0.015, Fh));
+  for (const [s, k] of [[-1, 'L'], [1, 'R']]) {
+    // arms: sleeves flow out of the shoulders, hands flow out of the cuffs
+    const sh = at(J['sh' + k]), el = at(J['el' + k]), ha = at(J['ha' + k]), Fa = fr(J['ha' + k]);
+    P.push(cone(sh, el, isW ? 0.05 : 0.056, isW ? 0.045 : 0.05, top, 0.045));
+    P.push(cone(el, ha, isW ? 0.045 : 0.05, isW ? 0.043 : 0.048, top, 0.03));
+    P.push(cone(v(0, 0.0, 0), v(0, -0.035, 0), isW ? 0.03 : 0.035, isW ? 0.031 : 0.036, skin, 0.012, Fa));
+    P.push(ell(v(0, -0.07, 0.004), isW ? 0.036 : 0.042, isW ? 0.05 : 0.056, isW ? 0.024 : 0.028, skin, 0.025, Fa));
+    P.push(ell(v(-s * 0.032, -0.055, 0.018), 0.014, 0.026, 0.014, skin, 0.012, Fa));
+    // legs
+    const hp = at(J['hip' + k]), kn = at(J['kn' + k]), an = at(J['an' + k]), Fan = fr(J['an' + k]);
+    if (isW) {
+      P.push(cone(hp, at(J['hip' + k], 0, -d.thigh * 0.86, 0), 0.078, 0.072, C(MAT.skirt), 0.05));
+      P.push(cone(at(J['hip' + k], 0, -d.thigh * 0.6, 0), kn, 0.046, 0.043, skin, 0.03));
+    } else P.push(cone(hp, kn, 0.064, 0.057, legC, 0.04));
+    P.push(cone(kn, an, isW ? 0.043 : 0.057, isW ? 0.033 : 0.05, legC, 0.03));
+    P.push(ell(v(0, -0.035, 0.04), isW ? 0.044 : 0.054, isW ? 0.034 : 0.04, isW ? 0.078 : 0.09, C(isW ? MAT.shoeW : MAT.shoeM), 0.02, Fan));
+  }
+  if (isW) { // skirt webbing between the thighs so it reads as one skirt, not shorts
+    for (const t of [0.35, 0.8]) P.push(cone(at(J.hipL, 0, -d.thigh * t, 0), at(J.hipR, 0, -d.thigh * t, 0), 0.062, 0.062, C(MAT.skirt), 0.05));
+  }
+  return P;
+}
+export function rebuildBody(J, h = 0.0075) {
+  if (J.body) { J.root.remove(J.body); J.body.geometry.dispose(); }
+  const g = meshPrims(bodyPrims(J), h);
+  J.body = new THREE.Mesh(g, J.bodyMat); J.body.castShadow = J.body.receiveShadow = true; J.root.add(J.body);
 }
 
 // ---------------------------------------------------------------- poses
@@ -190,6 +220,6 @@ export function pose(J, p) {
   J.pelvis.position.y = J.dims.thigh + J.dims.shin + 0.07 + (p.y || 0);
   // ankles keep the feet flat-ish
   for (const s of ['L', 'R']) { const h = (p['hip' + s] || [0])[0], k = (p['kn' + s] || [0])[0]; J['an' + s].rotation.x = -(h + k) * 0.9; }
-  if (J.skirt) { const h = ((p.hipL || [0])[0] + (p.hipR || [0])[0]) / 2; J.skirt.rotation.x = h * 0.55; J.skirt.scale.set(1, 1 - Math.min(0.5, -h * 0.25), 0.8 + Math.min(0.6, -h * 0.4)); J.skirt.position.z = -h * 0.06; }
+  rebuildBody(J);
 }
 export function place(J, x, z, yaw = 0, y = 0) { J.root.position.set(x, y, z); J.root.rotation.y = yaw; }
