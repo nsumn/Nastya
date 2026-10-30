@@ -44,6 +44,9 @@ def order(p, out):
         if st in ("failed", "cancelled", "canceled"): sys.exit(json.dumps(d, ensure_ascii=False)[:2000])
         time.sleep(10)
     res = d["result"]
+    for _ in range(12):        # subtitles/alignment can show up a few seconds after 'completed'
+        if res.get("service_files"): break
+        time.sleep(5); res = call("GET", f"/orders/{oid}")["data"]["result"]
     for path in res.get("files", []) + res.get("service_files", []):
         fn = path.rsplit("/", 1)[-1]; download(path, f"{out}/{fn}"); print("saved", fn)
     if st == "partially_completed": print("WARNING: some chunks failed — regenerate them (docs/lumean_api.md §7.11)")
