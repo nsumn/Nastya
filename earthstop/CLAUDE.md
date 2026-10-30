@@ -48,3 +48,12 @@ Anastasia runs a TikTok channel of low-poly 3D "What if…" videos for a US audi
 - Order matters: pose characters before computing a camera that follows them.
 - Duplicate const names when concatenating parts (e.g. `hzC`/`skyHorizon`) — `node --check` the result.
 - Rendering into HalfFloat render targets gives linear HDR; tone-map once in the final blit.
+
+## 7. Motion quality — vizavi_motion skill (her upload, Oct 30 2026)
+The skill lives in `/.claude/skills/vizavi-motion/` (repo root). Apply it to every video, adapted to this channel's brief (the brief wins over its defaults: vertical 1080×1920, 30 fps, captions at 1250 px):
+- Storyboard before building: per scene 3–5 short variants → pick one (see `parts_gone/STORYBOARD.md` as the template); check the riskiest effect with test frames first.
+- Camera always moves in active scenes (dolly / arc / crane, eased speed waves, foreground–background parallax); no dead static holds. Helpers: `orbit()`, `esin()`, `span()` in `parts_gone/x_main.js`.
+- Optics: sub-frame motion blur on fast shots (`opts.mb`, 4 samples over a 180° shutter — keep `renderer.autoClear = false` while accumulating), depth of field on close-ups from the GTAO depth buffer (`opts.dof`), whip-pan cuts (`opts.whip`) on a few energetic cuts only, each with a whoosh.
+- Kinetic type: captions/title arrive word by word (`kinetic()`), key numbers land with an overshoot, counters pulse when they land.
+- Music + SFX from the start, accents placed on cuts/contacts (not on every cut).
+- First full render = internal draft: review the decoded MP4 (contact sheet + dense frames at every scene boundary + audio analysis), fix, then deliver. Be honest about what was checked by eye/ear and what only by numbers.
