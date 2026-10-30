@@ -10,8 +10,8 @@ const HERO_Z = -5.5;
 const bowl = new THREE.Group(); { const b = mesh(new THREE.SphereGeometry(0.2, 14, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M('#f08a2a', { roughness: 0.6, side: THREE.DoubleSide })); bowl.add(b);
   const cc = ['#e8463a', '#f4c430', '#5a3a2a', '#3a6ad8', '#f4f4f0', '#8a3aa8']; for (let i = 0; i < 26; i++) { const a = hash(i) * 6.28, r = 0.15 * Math.sqrt(hash(i * 1.7)); const c = bx(0.07, 0.022, 0.04, cc[i % 6], Math.cos(a) * r, -0.035 + 0.03 * hash(i * 2.3), Math.sin(a) * r, bowl); c.rotation.set(hash(i * 3) * 0.6, hash(i * 4) * 3, 0); } }
 st.add(bowl);
-// ---- the last kid: a teenager (14 -> almost 18) in a vampire cape, taller than you ----
-const teen = makeBlock({ head: 'human', body: 'human', skin: '#d8a47e', hair: '#2a1d14', top: '#151518', bottom: '#1d1d22', shoe: '#1b1b1b', hairStyle: 'short', headS: 0.88, h: 1.1 }); st.add(teen.outer);
+// ---- the last kid: a teenager (14 -> almost 18) in a purple hoodie + vampire cape, taller than you ----
+const teen = makeBlock({ head: 'human', body: 'human', skin: '#6b4329', hair: '#080606', hoodie: '#4a2a6a', top: '#4a2a6a', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'bangs', headS: 0.86, h: 1.12 }); st.add(teen.outer);   // looks nothing like you: darker skin, black fringe, purple hoodie
 { const cape = bx(0.5, 0.95, 0.03, M('#8a1020', { roughness: 0.6 }), 0, 1.02, -0.17, teen.torso); const col = bx(0.52, 0.16, 0.06, M('#8a1020'), 0, 1.5, -0.12, teen.torso);
   const pail = new THREE.Group(); pail.add(mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.16, 10), M('#f07a1a'))); teen.elbows[1].add(pail); pail.position.set(0, -0.36, 0.05); }
 // ---- candy pile on the lawn (41 million bars, shown as 2,600) ----
