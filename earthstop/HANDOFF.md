@@ -121,6 +121,6 @@ Realistic pipeline (`parts_cat/`, assets via `python3 earthstop/tools/fetch_ph.p
 
 ## Spooky challenge video (Oct 30, 2026) — DELIVERED
 - "What if EVERY trick-or-treater in America came to YOUR house?" for TikTok's SPOOKY Season! challenge (song "SPOOKY 3" by djsamirr, 25.08 s clip, 130 BPM). Captions only; every cut/caption on `beat(k)`.
-- Files: `out/spooky/spooky_tail.mp4` (to post: silent 0–25.08 s while she adds the official sound via the challenge's "Use this sound", then our continuation of the same track), `spooky_full.mp4` (preview with the whole extended track), `spooky_nomusic.mp4` (if TikTok loops the sound).
+- TikTok muted an original sound that re-used the song, so the continuation is now OUR OWN phonk track (`audio_spooky.py`: 130 BPM, C# minor, kick/808/clap/hats + one cowbell riff, matched to the clip's loudness and spectrum). To post: `out/spooky/spooky_post.mp4` (silent 0–25.08 s under the official sound, then ours); preview `spooky_preview.mp4`. Older `spooky_tail.mp4` (re-cut song), `spooky_full.mp4` (preview with the whole extended track), `spooky_nomusic.mp4` (if TikTok loops the sound).
 - Rebuild: `cat parts_spooky/s_head.js parts_dad/d_block.js parts_groc/g_world.js parts_spooky/s_{night,kids,map,main}.js > scene_spooky.js`; music: put her clip's audio at `out/spooky/song.wav`, `python3 tools/spooky_music.py`.
 - Note: the delivered frames were rendered with PASS unset (text baked into the JPEGs) — a text fix means re-rendering with `PASS=scene` + `PASS=text` and `./compose.sh`.
