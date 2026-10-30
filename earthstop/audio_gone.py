@@ -45,6 +45,10 @@ def roll(d):   # snare roll that speeds up
         if i >= len(t): break
         seg = snare()[:len(t) - i] * (0.25 + 0.75 * s / d); x[i:i + len(seg)] += seg; s += 0.07 - 0.035 * s / d
     return x
+def whoosh(up=True):   # for the whip-pan cuts: a band-passed noise sweep, its peak on the cut (each one pitched a little differently)
+    t = tt(0.5); n = rng.standard_normal(len(t)); out = np.zeros(len(t)); seg = int(0.02 * SR)
+    for i in range(0, len(t), seg): k = i / len(t); fc = (600 + 3800 * k) if up else (4400 - 3800 * k); out[i:i + seg] = bp(n[i:i + seg + 300], fc * 0.7, fc * 1.4)[:len(out[i:i + seg])]
+    return out * np.sin(np.pi * t / 0.5) ** 2 * 0.5
 def cymbal(): t = tt(1.5); return hp(rng.standard_normal(len(t)), 5000) * np.exp(-t * 2.5) * 0.25
 # ---- the song: chords per 2 s bar, melody from chord tones in eighths ----
 BAR, E8 = 2.0, 0.25
@@ -92,6 +96,7 @@ put(47.6, bell(), 1.0); put(47.85, bell(), 0.8)
 put(PRES + 0.6, ding(76), 0.6); put(PRES + 1.3, ding(79), 0.6)   # two ballots drop in
 put(PRES + 1.4, roll(53.8 - PRES - 1.4), 1.0); put(53.8, cymbal(), 1.0); put(53.85, trombone(53, 0.6, -0.04), 1.0)
 put(COUCH, ding(72), 0.4)
+for c, up in ((CAR, True), (GAS, False), (47.5, True), (PRES, False)): put(c - 0.25, whoosh(up), 0.9)   # whip-pan cuts (x_main.js opts.whip)
 mix = np.stack([L, R], 1)[:int(T_END * SR)]; mix = hp(mix.T, 60).T
 mix /= np.abs(mix).max() / 0.9
 wf.write('out/gone/audio_raw.wav', SR, (mix * 32767).astype(np.int16))
