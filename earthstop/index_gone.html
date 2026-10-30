@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/500-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/700.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
+  canvas{display:block}
+  .ov{position:absolute;left:0;right:0;pointer-events:none}
+  .hl{color:#ffb048;text-shadow:0 2px 16px rgba(40,15,0,.85),0 0 4px rgba(40,15,0,.8)}
+  .lb{position:absolute;transform:translate(-50%,-100%);font-family:'Inter';font-weight:600;font-size:28px;letter-spacing:.16em;color:#ffd9a0;white-space:nowrap;text-shadow:0 1px 10px rgba(0,0,0,.9)}
+  /* TikTok safe zones: top < 320, right column x > 900 (y 950-1670), bottom > 1650, ~57px side crop */
+  #title{top:400px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#fff;font-size:76px;line-height:1.12;padding:0 90px;text-shadow:0 2px 18px rgba(0,0,0,.75),0 0 4px rgba(0,0,0,.6)}
+  #hud{top:360px;text-align:center;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.9),0 1px 12px rgba(0,0,0,.85),0 0 28px rgba(0,0,0,.5);opacity:0}
+  #stat{font-family:'Inter';font-weight:600;font-size:24px;letter-spacing:.18em;opacity:.95;height:34px}
+  #stat b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff7a1a;margin-right:12px;vertical-align:1px}
+  #val{font-family:'Source Serif 4';font-weight:400;font-size:96px;line-height:1.02;margin-top:2px}
+  #sub{font-family:'Inter';font-weight:500;font-size:22px;letter-spacing:.14em;opacity:.85;margin-top:12px}
+  #cap{top:1250px;text-align:center;font-family:'Source Serif 4';font-style:italic;color:#fff;font-size:56px;font-weight:500;line-height:1.2;padding:0 170px;transform-origin:50% 30%;
+    text-shadow:0 0 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.9),0 2px 24px rgba(0,0,0,.85),0 0 40px rgba(0,0,0,.6)}
+  #cap b{font-weight:500;color:#ffb048}
+  #end{top:0;bottom:0;background:#120e16;opacity:0}
+  #endT{top:560px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#f2f0ea;font-size:68px;line-height:1.14;opacity:0;padding:0 110px}
+  #endS{top:1010px;text-align:center;font-family:'Inter';font-weight:600;color:#e8dcc8;font-size:34px;letter-spacing:.06em;line-height:1.75;opacity:0;padding:0 150px}
+  #endS i{font-style:normal;color:#ffb048}
+  .pass-scene .txt{visibility:hidden!important}
+  .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
+  html.pass-text,html.pass-text body,html.pass-text #wrap{background:transparent!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div id="title" class="ov txt">What if <span class="hl">EVERYONE</span> disappeared… except <span class="hl">you</span> and your best friend?</div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="labels" class="ov txt" style="top:0;bottom:0"></div>
+  <div id="cap" class="ov txt"></div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">What if <span class="hl">everyone</span> disappeared… except you and your best friend?</div>
+  <div id="endS" class="ov txt">YOU'D OWN THE PLANET.<br>THE POWER GRID: DOWN IN <i>DAYS</i><br>NYC SUBWAYS: FLOODED IN <i>~2 DAYS</i><br>FRESH FOOD: ROTTEN IN <i>A WEEK</i><br>GAS: STALE IN <i>MONTHS</i></div>
+</div>
+<script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
+<script src="node_modules/topojson-client/dist/topojson-client.min.js"></script>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="scene_gone.js"></script>
+</body>
+</html>
