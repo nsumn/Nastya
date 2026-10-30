@@ -197,14 +197,14 @@ def head_chubby_sdf(p):
     face = ell(p, np.array([0, -0.12, 0.08]), np.array([0.34, 0.33, 0.32]))
     jaw = ell(pm, np.array([0.14, -0.28, 0.06]), np.array([0.19, 0.17, 0.25]))
     cheek = ell(pm, np.array([0.22, -0.17, 0.2]), np.array([0.16, 0.15, 0.15]))   # chubby cheeks (the drawn eyes stay at y 0, x +-0.19)
-    chin = ell(p, np.array([0, -0.4, 0.2]), np.array([0.17, 0.1, 0.12]))
-    dbl = ell(p, np.array([0, -0.5, 0.1]), np.array([0.24, 0.1, 0.17]))   # double chin
+    chin = ell(p, np.array([0, -0.38, 0.18]), np.array([0.14, 0.08, 0.1]))   # small chin, in line with the lips
+    dbl = ell(p, np.array([0, -0.44, 0.06]), np.array([0.2, 0.07, 0.14]))   # only a hint of a double chin, tucked under the jaw
     brow = ell(p, np.array([0, 0.11, 0.25]), np.array([0.31, 0.06, 0.12]))
     muzz = ell(p, np.array([0, -0.25, 0.27]), np.array([0.13, 0.075, 0.1]))
     nose = ell(p, np.array([0, -0.11, 0.39]), np.array([0.07, 0.06, 0.06]))   # button nose
     ear = ell(pm, np.array([0.385, -0.02, -0.03]), np.array([0.04, 0.1, 0.07]))
     sock = np.linalg.norm(pm - np.array([0.18, 0.02, 0.44]), axis=1) - 0.06
-    h = smin(cran, face, 0.14); h = smin(h, jaw, 0.12); h = smin(h, cheek, 0.1); h = smin(h, chin, 0.1); h = smin(h, dbl, 0.1); h = smin(h, brow, 0.06); h = smin(h, muzz, 0.06)
+    h = smin(cran, face, 0.14); h = smin(h, jaw, 0.14); h = smin(h, cheek, 0.14); h = smin(h, chin, 0.13); h = smin(h, dbl, 0.16); h = smin(h, brow, 0.06); h = smin(h, muzz, 0.08)   # wide blends: no lumps
     h = smax(h, -sock, 0.04); h = smin(h, nose, 0.04); h = smin(h, ear, 0.03)
     return h
 
