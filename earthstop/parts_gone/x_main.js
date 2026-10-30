@@ -12,7 +12,16 @@ function carZ(t) { return t < GAS ? 100 - CAR_V * (t - CAR) : -58; }   // down t
 function pose(t) {
   const P = hero, Q = friend; for (const X of [P, Q]) { poseReset(X, t); X.torso.scale.set(1, 1, 1); }
   MK.bag.visible = MK.donut.visible = MK.can.visible = false;
-  if (t < HOMES) {   // the street
+  DN.fryP.visible = DN.fryQ.visible = false;
+  if (t < 6.0) {   // the burger place: you two face each other at the window booth, eating fries; everyone else vanishes; you stare at each other
+    place(P, 5.6, 3.6, Math.PI, seatY(P, 0.5) - 0.95); place(Q, 5.6, 2.42, 0, seatY(Q, 0.5) - 0.95); poseSit(P); poseSit(Q);
+    for (const [X, ph] of [[P, 0], [Q, 1.9]]) { X.arms[0].rotation.set(-1.1, 0, 0); X.elbows[0].rotation.x = -0.5;
+      const k = t < GONE ? 0.3 + 0.3 * Math.sin(t * 3.0 + ph) : 0.4; X.arms[1].rotation.set(-1.0 - 1.0 * k, 0, 0.2 * k); X.elbows[1].rotation.x = -0.5 - 1.3 * k; }
+    if (t < GONE) { P.face('happy', t); Q.face('laugh', t); }
+    else { const look = t < 4.9 ? Math.sin((t - GONE) * 7) * 0.45 * (1 - (t - GONE) / 0.9) : 0; P.outer.rotation.y = Math.PI + look; Q.outer.rotation.y = -look * 1.1;
+      P.face(t < 4.9 ? 'surprised' : 'worried', t); Q.face('surprised', t); }
+    for (const [X, f] of [[P, DN.fryP], [Q, DN.fryQ]]) { X.outer.updateMatrixWorld(true); f.visible = true; f.position.copy(X.elbows[1].localToWorld(V3(0, -0.32, 0.04))); f.rotation.set(0.6, 0, 0); } }
+  else if (t < HOMES) {   // the street (you ran outside)
     place(P, 8.0, 0.0, 0.35, 0.16); place(Q, 9.0, 0.1, -0.35, 0.16);
     if (t < GONE) { P.face('happy', t); Q.face('laugh', t); Q.arms[1].rotation.set(-0.5 - 0.3 * Math.sin(t * 6), 0, 0.2); }   // chatting
     else if (t < 6.0) { P.face('surprised', t); Q.face('surprised', t); P.outer.rotation.y = 0.35 + 0.6 * Math.sin((t - GONE) * 2.2); Q.outer.rotation.y = -0.35 - 0.7 * Math.sin((t - GONE) * 2.0 + 1); }
@@ -59,16 +68,16 @@ function pose(t) {
     place(P, 0.55, -0.7, 0.6); P.arms.forEach((a, i) => a.rotation.set(0.05, 0, (i ? -1 : 1) * 0.12)); P.elbows.forEach(e => e.rotation.x = -0.3); P.face(t < 58.5 ? 'squint' : 'smirk', t); }   // you stand behind the couch, out of the line to his head (the Zs rise from HIM)
 }
 // ---- shots: [start, set, camera(t)] ----
-const SETS = { nyc: NYC, st: { sc: st, cam: stCam }, burb: BURB, mkt: MKT, hwy: HWY, sub: SUB, wh: WH, man: MAN, map: { sc: mapScene, cam: mapCam } };
+const SETS = { din: DIN, nyc: NYC, st: { sc: st, cam: stCam }, burb: BURB, mkt: MKT, hwy: HWY, sub: SUB, wh: WH, man: MAN, map: { sc: mapScene, cam: mapCam } };
 // vizavi_motion pass (Oct 30): every active shot moves (dolly / arc / crane with eased speed waves), fast shots get real motion blur (sub-frame accumulation),
 // close-ups get depth of field from the AO depth buffer, and three energetic cuts are whip-pans on a whoosh. opts: { mb, dof: () => focus point, whip: ±1 }
 const Y_ = V3(0, 1, 0), esin = x => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1));
 const orbit = (h, dir, a0, a1, d0, d1, hy, u, fov = 40) => fr(h, dir.clone().applyAxisAngle(Y_, lerp(a0, a1, esin(u))), lerp(d0, d1, esin(u)), hy, fov);
 const span = (t, a, b) => (t - a) / (b - a);
 const SHOTS = [
-  [0, 'nyc', t => lerpF(LOOK(1.2, 5.2, 15, 8.4, 1.6, -2.5), LOOK(3.6, 1.8, 8.6, 8.5, 1.6, -0.6), 1 - Math.pow(1 - clamp(t / 2, 0, 1), 2.4))],   // crane down into the crowd
-  [2.0, 'nyc', t => LOOK(8.7 + 0.5 * esin(span(t, 2, 4)), 1.15, 4.5 - 0.5 * span(t, 2, 4), 8.5, 1.7, 0.0, 44)],
-  [GONE, 'nyc', t => orbit(mid(), V3(-0.15, 0.06, 1), -0.55, 0.3, 2.7, 2.2, 0.62, span(t, GONE, 6.0)), { dof: () => mid() }],
+  [0, 'din', t => lerpF(LOOK(-4.5, 3.1, 9.2, 2.0, 0.9, -1.5), LOOK(2.3, 1.55, 4.4, 5.6, 1.05, 3.0), 1 - Math.pow(1 - clamp(t / 2, 0, 1), 2.4))],   // crane down over the busy room to your booth
+  [2.0, 'din', t => LOOK(7.5 - 0.2 * esin(span(t, 2, 4)), 2.3 - 0.2 * span(t, 2, 4), 6.4 - 0.4 * span(t, 2, 4), -1.0, 0.8, -3.5)],   // from the window corner: the room empties behind you
+  [GONE, 'din', t => orbit(mid(), V3(-1, 0.08, 0.12), -0.2, 0.15, 4.1, 3.7, 0.6, span(t, GONE, 6.0)), { dof: () => mid() }],   // side two-shot: you stare at each other
   [6.0, 'nyc', t => lerpF(LOOK(6.0, 2.4, 6.5, 8.5, 1.3, 0), LOOK(1.0, 42, 38, 0, 14, -220), esin(span(t, 6.0, 8.8))), { mb: true }],
   [HOMES, 'burb', t => { const u = span(t, HOMES, 12); return LOOK(-60 + 40 * u, 340 - 20 * u, 300 - 30 * u, 10 * u, 0, -40, 40); }],
   [12.0, 'burb', t => LOOK(840 + 40 * esin(span(t, 12, 15)), 120, 190, 900 + 20 * span(t, 12, 15), 0, 0, 40), { mb: true }],
@@ -94,13 +103,15 @@ const RTS = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, sampl
 function applyF(cam, F) { cam.position.copy(F.pos); cam.lookAt(F.look); cam.fov = F.fov; }
 function shoot(i, t, rt) { const [, k, cf] = SHOTS[i], S = SETS[k]; puffsReset();
   if (k !== 'map') { S.sc.add(hero.outer); S.sc.add(friend.outer); hero.outer.visible = friend.outer.visible = k !== 'burb'; }
-  if (k === 'nyc') updateNYC(t); if (k === 'burb') updateBurb(t); pose(t);
+  if (k === 'nyc') updateNYC(t); if (k === 'din') updateDiner(t); if (k === 'burb') updateBurb(t); pose(t);
   if (k === 'map') { lightsMat.uniforms.uOff.value = clamp((t - GRID - 0.8) / 4.6, 0, 1); lightsMat.uniforms.uT.value = t; }
   if (k === 'sub') { const wl = lerp(-3.2, 0.24, smooth(SUBWAY + 0.3, 37.6, t)); SB.water.position.set(0, wl, 0); const sp = smooth(37.2, 38.8, t); SB.sheet.visible = sp > 0.01; SB.sheet.position.set(0, 0.215, 0); SB.sheet.scale.setScalar(0.5 + 4.5 * sp); }
   if (k === 'wh') { const P = WHS.flag.geometry.attributes.position, p0 = WHS.flag.userData.p0; for (let j = 0; j < P.count; j++) { const x = p0[j * 3] + 1.5; P.setZ(j, 0.25 * Math.sin(x * 2.2 - t * 6) * x / 3); } P.needsUpdate = true; WHS.box.position.y = 0; }
   const F = cf(t); applyF(S.cam, F);
   if (k === 'map') { shootTo(rt, S.sc, S.cam); return; }
-  const far = F.pos.y > 30 || k === 'nyc' && F.pos.y > 20; if (far) { shootTo(rt, S.sc, S.cam); return; } shootTo(RTS, S.sc, S.cam); aoFor(k).render(renderer, rt, RTS); }
+  const far = F.pos.y > 30 || k === 'nyc' && F.pos.y > 20; if (far) { shootTo(rt, S.sc, S.cam); return; } shootTo(RTS, S.sc, S.cam);
+  // GTAO draws sprites into its normal/depth pre-pass as opaque quads (the vanish puffs came out as BLACK SQUARES) — hide them for the AO pass only
+  const spr = []; S.sc.traverse(o => { if (o.isSprite && o.visible) { spr.push(o); o.visible = false; } }); aoFor(k).render(renderer, rt, RTS); spr.forEach(o => { o.visible = true; }); }
 // ---- DOM ----
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'cap', 'hud', 'stat', 'val', 'sub', 'labels', 'end', 'endT', 'endS'].map(k => [k, $(k)]));
@@ -123,23 +134,15 @@ function hudAt(t) { const cnt = (a, b, v0, v1) => lerp(v0, v1, ease(clamp((t - a
 // Zs only in the wide couch shot (in the close-up his head is behind yours)
 function labelsAt(t, i) { if (SHOTS[i][1] !== 'man' || t >= 58.5) return ''; const h = H_(friend).add(V3(0.1, 0.3, 0)); const v = h.project(SETS.man.cam), out = [];
   for (let k = 0; k < 3; k++) { const ph = ((t * 0.7 + k / 3) % 1); out.push(`<div class="lb" style="left:${((v.x + 1) / 2 * W + 30 + 60 * ph + 20 * k).toFixed(0)}px;top:${((1 - v.y) / 2 * H - 40 - 140 * ph).toFixed(0)}px;opacity:${(1 - ph).toFixed(2)};font-size:${(36 + 26 * ph).toFixed(0)}px">Z</div>`); } return out.join(''); }
-// kinetic type: words arrive one after another (rise + de-blur + settle), key numbers land with an overshoot, the whole line leaves with a quick lift-blur
-const tokens = html => html.replace(/<span class="hl">(.*?)<\/span>/g, (m, x) => x.split(' ').map(w => '\u0001' + w + '\u0002').join(' ')).replace(/<b>(.*?)<\/b>/g, (m, x) => x.split(' ').map(w => '<b>' + w + '</b>').join(' '))
-  .split(' ').map(w => w.replace('\u0001', '<span class="hl">').replace('\u0002', '</span>'));   // one token per word, tags kept per word
-function kinetic(html, t0, t1, t, o = {}) { const st = o.stagger ?? 0.055, out = smooth(t1 - 0.16, t1, t);
-  return tokens(html).map((w, i) => { const k = clamp((t - t0 - i * st) / (o.dur ?? 0.3), 0, 1), e = 1 - Math.pow(1 - k, 3), big = /^<b>|class="hl"/.test(w);
-    const sc = big ? 1 + 0.35 * Math.sin(Math.PI * k) * (1 - k * 0.5) : 0.9 + 0.1 * e, y = (1 - e) * (o.rise ?? 34) - out * 26, bl = (1 - e) * 7 + out * 5, rot = (o.tilt ? (1 - e) * (i % 2 ? 8 : -8) : 0);
-    return `<span style="display:inline-block;opacity:${(e * (1 - out)).toFixed(3)};transform:translateY(${y.toFixed(1)}px) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)}deg);filter:blur(${bl.toFixed(1)}px)">${w}</span>`; }).join(' '); }
-const TITLE_HTML = el.title.innerHTML, END_HTML = el.endT.innerHTML;
 function updateDOM(t, i) {
-  // title: words drop in on the crowd shot, then blow away like the people (3.6–4.0 s)
-  el.title.style.opacity = t < GONE ? 1 : 0; if (t < GONE) el.title.innerHTML = kinetic(TITLE_HTML, 0.15, GONE, t, { stagger: 0.09, dur: 0.4, rise: -60, tilt: true });
-  const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? kinetic(cp[2], cp[0] + 0.04, cp[1], t) : ''; el.cap.style.opacity = cp ? 1 : 0; el.cap.style.transform = '';
+  // series-style text (her note, Oct 30: no word-by-word animation): the title fades, captions pop in, the end card fades
+  el.title.style.opacity = fadeWin(t, 0, GONE, 0.3);
+  const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? 1 : 0; el.cap.style.transform = cp ? `scale(${pop(t, cp[0], 0.22).toFixed(3)})` : '';
   const h = hudAt(t); el.hud.style.opacity = h ? 1 : 0; if (h) { el.stat.innerHTML = '<b></b>' + h[0]; el.val.textContent = h[1]; el.sub.textContent = h[2];
     const hs = [[HOMES, 11.6], [12.0, 14.6], [GRID, GRID + 5.4], [53.8, 53.8]].find(([a, b]) => t >= a && t < b + 0.6); const land = hs ? clamp((t - hs[1]) / 0.35, 0, 1) : 1, inn = hs ? clamp((t - hs[0]) / 0.3, 0, 1) : 1;
     el.val.style.transform = `scale(${(1 + 0.18 * Math.sin(Math.PI * land) * (land < 1 ? 1 : 0)) * (0.85 + 0.15 * (1 - Math.pow(1 - inn, 3)))})`; el.val.style.display = 'inline-block'; el.hud.style.filter = `blur(${((1 - inn) * 6).toFixed(1)}px)`; }
   el.labels.innerHTML = labelsAt(t, i);
-  el.end.style.opacity = smooth(ENDC, ENDC + 0.35, t) * 0.94; el.endT.style.opacity = 1; el.endT.innerHTML = t >= ENDC ? kinetic(END_HTML, ENDC + 0.1, 99, t, { stagger: 0.06 }) : '';
+  el.end.style.opacity = smooth(ENDC, ENDC + 0.35, t) * 0.94; el.endT.style.opacity = smooth(ENDC + 0.1, ENDC + 0.45, t);
   el.endS.style.opacity = smooth(ENDC + 0.9, ENDC + 1.3, t); el.endS.style.transform = `translateY(${(20 * (1 - smooth(ENDC + 0.9, ENDC + 1.4, t))).toFixed(1)}px)`; }
 // ---- optics: sub-frame motion blur (accumulate K renders across a 180° shutter), depth of field from the AO depth buffer, whip-pan smear ----
 const RTACC = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType }), RTDOF = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });

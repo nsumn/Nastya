@@ -10,12 +10,22 @@ const NY = {}; {
   // window grid textures (a few looks, reused)
   const winTex = (wall, glass, lit) => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = wall; g.fillRect(0, 0, w, h); for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { g.fillStyle = hash(r * 4 + c + lit) < 0.18 ? '#f8e0a0' : glass; g.fillRect(6 + c * 31, 6 + r * 31, 20, 22); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
   const LOOKS = [['#b8705a', '#3a4a5a'], ['#d8ccb4', '#4a5a6a'], ['#8a8c94', '#2a3a4a'], ['#c8a07a', '#3a4a5a'], ['#6a8ab8', '#a8c8e8'], ['#e8e2d6', '#5a6a7a']];
+  // storefronts (her note, Oct 30: the ground floor read as black squares): a coloured frame, two big shop windows with a lit interior and reflections, a door
+  const STORE = [['#c8b8a0', '#3a2a1a'], ['#8a3a2a', '#f4e8c8'], ['#2a4a5a', '#f4e8c8'], ['#e8e2d6', '#2a2a30'], ['#5a6a3a', '#f4e8c8'], ['#d8a040', '#2a2a30']].map(([frame, ink], k) => ({ frame,
+    tex: canvasTex(384, 192, (g, w, h) => { g.fillStyle = frame; g.fillRect(0, 0, w, h); g.fillStyle = ink; g.font = '800 26px Inter'; g.textAlign = 'center'; g.fillText(['DELI', 'PIZZA', 'SHOES', 'CAFE', 'BOOKS', 'BAGELS'][k], w / 2, 30);
+      for (const [x0, ww] of [[14, 140], [230, 140]]) { const gr = g.createLinearGradient(x0, 44, x0 + ww, 180); gr.addColorStop(0, '#f4e2b8'); gr.addColorStop(0.5, '#c8d8e0'); gr.addColorStop(1, '#8aa8bc'); g.fillStyle = gr; g.fillRect(x0, 44, ww, 132);
+        for (let i = 0; i < 6; i++) { g.fillStyle = ['#e8463a', '#f4c430', '#3a6ad8', '#2a9a5a', '#f08a2a', '#8a3aa8'][(i + k) % 6]; g.fillRect(x0 + 10 + i * 21, 128 + 10 * ((i + k) % 2), 16, 40 - 10 * ((i + k) % 2)); }
+        g.fillStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.moveTo(x0 + 20, 176); g.lineTo(x0 + 60, 44); g.lineTo(x0 + 85, 44); g.lineTo(x0 + 45, 176); g.fill(); g.strokeStyle = '#2e3034'; g.lineWidth = 5; g.strokeRect(x0, 44, ww, 132); }
+      g.fillStyle = '#3a4048'; g.fillRect(166, 54, 52, 138); g.fillStyle = '#a8c0d0'; g.fillRect(174, 64, 36, 70); g.fillStyle = '#d8c070'; g.fillRect(204, 124, 6, 14); }) }));
+  STORE.forEach(o => { o.tex.wrapS = THREE.RepeatWrapping; });
   const blocks = []; for (const s of [-1, 1]) for (let z = 220; z > -1000; ) { const d = 18 + 22 * hash(z * 0.37 + s), hgt = 22 + 95 * Math.pow(hash(z * 0.71 + s * 3), 1.6), lk = LOOKS[(hash(z * 1.3 + s * 7) * LOOKS.length) | 0], wd = 22;
       if (Math.abs((z + 120) % 160) < 18) { z -= 22; continue; }   // cross streets
       const tex = winTex(lk[0], lk[1], z); tex.repeat.set(d / 4, hgt / 4); const side = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }), top = F_(lk[0]);
       const b = mesh(new THREE.BoxGeometry(d, hgt, wd), [top, top, top, top, side, side]); b.geometry.rotateY(Math.PI / 2); b.position.set(s * (11.5 + wd / 2), hgt / 2, z - d / 2); b.castShadow = b.receiveShadow = true; sc.add(b);
       // ground floor: storefront band + an awning
-      rb(0.3, 3.4, d - 0.6, F_('#2a2a30'), s * 11.6, 1.7, z - d / 2, sc, 0.02); const aw = rb(1.4, 0.12, d * 0.6, F_(['#c8302a', '#2a6a4a', '#2a4a8a', '#e8a030'][(hash(z) * 4) | 0]), s * 11.0, 3.2, z - d / 2, sc, 0.03); aw.rotation.z = s * 0.25;
+      const sf = STORE[(hash(z * 2.1 + s) * STORE.length) | 0]; rb(0.3, 3.4, d - 0.6, F_(sf.frame), s * 11.6, 1.7, z - d / 2, sc, 0.02);
+      const sfm = new THREE.MeshStandardMaterial({ map: sf.tex.clone(), roughness: 0.5 }); sfm.map.repeat.set(Math.max(1, Math.round((d - 0.8) / 6)), 1); sfm.map.needsUpdate = true;
+      const sp = mesh(new THREE.PlaneGeometry(d - 0.8, 3.3), sfm, false, true); sp.rotation.y = -s * Math.PI / 2; sp.position.set(s * 11.44, 1.7, z - d / 2); sc.add(sp); const aw = rb(1.4, 0.12, d * 0.6, F_(['#c8302a', '#2a6a4a', '#2a4a8a', '#e8a030'][(hash(z) * 4) | 0]), s * 11.0, 3.2, z - d / 2, sc, 0.03); aw.rotation.z = s * 0.25;
       blocks.push(b); z -= d + 0.4; } NY.blocks = blocks;
   // Times-Square cluster: big glowing billboards on both sides (generic ads), two of them become campaign posters at the election
   const ad = (bg, fg, txt, sub) => canvasTex(512, 384, (g, w, h) => { g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.font = '800 92px Inter'; g.textAlign = 'center'; g.fillText(txt, w / 2, h / 2 + 20); g.font = '600 38px Inter'; g.fillText(sub, w / 2, h / 2 + 80); });

@@ -80,9 +80,13 @@ if MUSIC:
     for m in (48, 60, 64, 67, 72): put(ENDC + 1.5, pluck(m, 2.2, 0.6), 0.6)
     put(ENDC + 1.5, bass(36, 2.2), 0.7)
 # ---- effects on the picture ----
-for i in range(7): put(1.4 + i * 0.3, poof(), 0.9, pan=(i - 3) * 0.12)
-for tv in (1.6, 2.3, 3.0): put(tv, poof(), 1.1)
-put(GONE, wind(2.1, 300, 1600), 1.0)   # the empty street: just wind, then the music kicks back in on "Just you two"
+# the burger place: one poof per customer at the exact time they vanish (same hash + table layout as parts_gone/x_diner.js), panned by where they sit;
+# then silence while you two stare at each other (music stops 4–6 s), and it kicks back in on "Just you two"
+def jhash(n): v = np.sin(n * 127.1 + 311.7) * 43758.5453; return v - np.floor(v)
+TABLES = [(x + 0.3 * (jhash(x * z) - 0.5), z) for x in (-6.0, -3.2, -0.4, 2.4) for z in (-5.0, -1.6, 1.8, 5.2)] + [(5.6, -4.6), (5.6, -1.2)]
+SEATS = [(0, 0.68), (0, -0.68), (0.68, 0), (-0.68, 0)]
+PEOPLE_X = [x + dx for ti, (x, z) in enumerate(TABLES) for dx, dz in SEATS[:2 + int(jhash(ti * 7) * 3)]] + [-3.6 + 0.36 * (i % 2) for i in range(6)]
+for i, x in enumerate(PEOPLE_X): put(2.25 + 1.45 * jhash(i * 1.37 + 0.5), poof(), 0.55, pan=float(np.clip(-(x - 5.6) / 14, -0.6, 0.6)))
 put(6.0, cymbal(), 0.8)
 put(11.6, ding(84), 1.0); put(14.6, ding(88), 1.0)   # counters land
 for k in range(int((CAR - MARKET) * 9 / (2 * np.pi)) + 1):
