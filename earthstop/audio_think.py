@@ -6,6 +6,7 @@
 import sys, os, numpy as np, scipy.io.wavfile as wf
 from scipy.signal import butter, sosfilt
 MUSIC = '--no-music' not in sys.argv
+GRIEG = '--grieg' in sys.argv   # her pick (Oct 31): our own arrangement of Grieg's 'In the Hall of the Mountain King' (public-domain composition), synced to the story
 SR = 44100
 THINK, CORT, HEART, FORCE, MID, MORN, FOG, WALL, LIST, ENDC, T_END = 4.0, 10.0, 16.0, 22.0, 28.0, 34.0, 40.0, 48.0, 55.0, 60.0, 64.0
 N = int(T_END * SR) + SR; L = np.zeros(N); R = np.zeros(N); rng = np.random.default_rng(7)
@@ -42,7 +43,7 @@ def click(): t = tt(0.05); return bp(rng.standard_normal(len(t)), 1000, 4000) * 
 def swoosh(): t = tt(0.6); n = rng.standard_normal(len(t)); return bp(n, 400, 2400) * np.sin(np.pi * t / 0.6) ** 2 * 0.22
 def chime(m): t = tt(1.6); return (np.sin(2 * np.pi * hz(m) * t) + 0.35 * np.sin(2 * np.pi * hz(m) * 2.76 * t)) * np.exp(-t * 2.5) * 0.2
 # ---- the song: 76 BPM, a bar = 4 beats = 3.158 s; one melody line + bass, sections follow the story ----
-if MUSIC:
+if MUSIC and not GRIEG:
     BEAT = 60 / 76; BAR = 4 * BEAT
     NIGHT = [(45, [57, 60, 64, 69]), (41, [57, 60, 65, 69]), (48, [60, 64, 67, 72]), (43, [59, 62, 67, 71])]   # Am F C G
     DARK = [(45, [57, 60, 64, 69]), (41, [56, 60, 65, 68]), (40, [56, 59, 64, 68]), (45, [57, 60, 64, 69])]   # Am Fm-ish E Am
@@ -59,6 +60,47 @@ if MUSIC:
         b += 1
     for m in (48, 60, 64, 67, 72): put(ENDC + 0.4, pluck(m, 3.0, 0.6), 0.6)   # the final chord under the end card
     put(ENDC + 0.4, bass(36, 3.0), 0.8)
+# ---- GRIEG: the theme (B minor) in eighth-note units, sneaking in quietly and accelerating night after night (3 → 13 notes/s), instruments pile up,
+# the big final chords + cymbal land on the wall of worries as they get crossed out (WALL + 3.4 … WALL + 5.4); silence; one exhale; a soft chord for the to-do list ----
+def reed(m, d):   # bassoon-ish: a band-limited saw with a nasal formant
+    t = tt(d); f = hz(m); x = sum(np.sin(2 * np.pi * f * k * t) / k for k in range(1, 9)); x = bp(x, 200, 1800); return x * np.minimum(1, t / 0.015) * np.minimum(1, np.maximum(d - t, 0) / 0.03) * 0.09
+def strings(m, d):   # bowed: saw stack, a little vibrato, soft attack
+    t = tt(d); f = hz(m) * (1 + 0.004 * np.sin(2 * np.pi * 5.5 * t)); ph = 2 * np.pi * np.cumsum(f) / SR; x = sum(np.sin(k * ph) / k for k in range(1, 10)); x = lp(x, 3500)
+    return x * np.minimum(1, t / 0.025) * np.minimum(1, np.maximum(d - t, 0) / 0.03) * 0.06
+def brass(m, d):
+    t = tt(d); f = hz(m); ph = 2 * np.pi * f * t; x = sum(np.sin(k * ph) / k ** 0.7 for k in range(1, 12)); x = lp(x, 2600); return x * np.minimum(1, t / 0.03) * np.minimum(1, np.maximum(d - t, 0) / 0.04) * 0.05
+def timp(m): t = tt(0.7); f = hz(m); return (np.sin(2 * np.pi * f * t) + 0.5 * np.sin(2 * np.pi * f * 1.5 * t) + 0.3 * np.sin(2 * np.pi * f * 2 * t)) * np.exp(-t * 5) * 0.3
+def crash(): t = tt(2.2); return hp(rng.standard_normal(len(t)), 3000) * np.exp(-t * 1.6) * 0.3
+def exhale(): t = tt(1.5); n = rng.standard_normal(len(t)); return bp(n, 300, 2200) * np.sin(np.pi * np.minimum(t / 1.5, 1)) ** 1.5 * np.exp(-t * 0.6) * 0.25   # unvoiced: air only, no buzz
+if MUSIC and GRIEG:
+    THEME = [(0, 1), (2, 1), (3, 1), (5, 1), (7, 1), (3, 1), (7, 2), (6, 1), (2, 1), (6, 2), (5, 1), (1, 1), (5, 2),   # B C# D E F# D F# | E# C# E# | E C E
+             (0, 1), (2, 1), (3, 1), (5, 1), (7, 1), (3, 1), (7, 1), (12, 1), (10, 1), (7, 1), (3, 1), (7, 1), (10, 4)]   # B C# D E F# D F# B | A F# D F# A
+    B3 = 59; CLIMAX = WALL + 3.4
+    rate = lambda t: 3.0 * (13.0 / 3.0) ** min(1, t / CLIMAX) ** 1.25   # eighth notes per second, accelerating
+    t, ph, key = 0.25, 0, 0
+    while t < CLIMAX - 0.05:
+        k = t / CLIMAX
+        for n, (st, ln) in enumerate(THEME):
+            if t >= CLIMAX - 0.05: break
+            d = ln / rate(t); m = B3 - 12 + st + key   # the pizzicato line starts low
+            put(t, pluck(m, max(0.18, d * 1.2), 0.7), 0.5 + 0.9 * k, pan=-0.2)
+            if k > 0.12: put(t, reed(m + 12, d * 0.95), 0.4 + 1.1 * k, pan=0.15)
+            if k > 0.42: put(t, strings(m + 24, d * 0.97), 0.3 + 1.6 * (k - 0.42), pan=-0.1)
+            if k > 0.68: put(t, brass(m + 12, d * 0.95), 1.4 * (k - 0.68) / 0.32 + 0.2); put(t, strings(m + 36, d * 0.97), 0.8 * (k - 0.68))
+            if k > 0.55 and n in (0, 7, 13, 20): put(t, timp(B3 - 24 + key), 0.5 + 0.8 * k)
+            t += d
+        ph += 1; key = 7 if ph % 2 else 0   # every other phrase on F# (as Grieg answers the theme a fifth higher)
+    for j, (m, g) in enumerate([(59, 1.0), (59, 1.0), (54, 1.0), (59, 1.2)]):   # the final stabs: B, B, F#, B — then the crash
+        tc = CLIMAX + j * 0.42
+        for o in (-24, -12, 0, 3, 7, 12): put(tc, brass(m + o, 0.32), 3.0 * g); put(tc, strings(m + o + 12, 0.32), 2.0 * g)
+        put(tc, timp(m - 24), 1.3)
+    put(CLIMAX + 1.26, crash(), 2.6); put(CLIMAX + 1.26, timp(35), 2.0)
+    put(WALL + 5.7, exhale(), 1.0)   # the breath out
+    for m in (48, 60, 64, 67, 72): put(LIST - 0.2, pluck(m, 4.0, 0.5), 0.45); put(ENDC + 0.4, pluck(m, 3.0, 0.5), 0.5)   # calm: C major under the list and the end card
+    put(ENDC + 0.4, bass(36, 3.0), 0.7)
+SFX = 0.55 if GRIEG else 1.0   # effects sit under the orchestra
+_put = put
+def put(t, x, g=1.0, pan=0.0): _put(t, x, g * SFX, pan)
 # ---- effects on the picture ----
 for t0 in (THINK + 0.2, THINK + 1.1, THINK + 2.0, THINK + 2.9, THINK + 3.8, THINK + 4.7): put(t0, pop(650 + 180 * ((t0 * 7) % 3)), 0.9, pan=0.3 if int(t0 * 10) % 2 else -0.3)
 for t0 in (MID + 0.4, MID + 1.4, MID + 2.4, MID + 3.4): put(t0, thud(), 0.9)
@@ -75,15 +117,18 @@ for i in range(6):
         if FORCE <= th < stop: put(th, boing(), 0.7, pan=-0.2 + 0.08 * i)
 put(stop, scratch(), 0.9)
 for k in range(3):   # the wake-up alarm: a soft marimba phrase, three times
-    for j, m in enumerate((72, 76, 79, 76)): put(MORN + 0.2 + k * 0.9 + j * 0.15, marimba(m), 0.8)
+    for j, m in enumerate((71, 74, 78, 74) if GRIEG else (72, 76, 79, 76)): put(MORN + 0.2 + k * 0.9 + j * 0.15, marimba(m), 0.8)   # in B minor under Grieg
 put(FOG + 0.4, pour(5.8), 1.0); put(FOG + 3.0, tap(), 0.5)
 for i in range(0, 30, 2): put(WALL + 0.1 + i * 0.09, tap(), 0.6, pan=(i % 6 - 2.5) * 0.12)   # sticky notes slap on (every other one, so it doesn't rattle)
 for i in range(30):
     if i not in (4, 17, 26): put(WALL + 3.6 + i * 0.075, swish(), 0.55, pan=(i % 6 - 2.5) * 0.12)
-put(WALL + 5.6, chime(76), 0.9); put(WALL + 5.75, chime(79), 0.7)            # relief
+if not GRIEG: put(WALL + 5.6, chime(76), 0.9); put(WALL + 5.75, chime(79), 0.7)   # relief (Grieg: the crash + the exhale do it)
 put(LIST + 0.3, scribble(2.5), 1.0); put(LIST + 2.9, click(), 0.8); put(LIST + 3.0, chime(72), 0.6)
 mix = np.stack([L, R], 1)[:int(T_END * SR)]; mix = hp(mix.T, 70).T
+if GRIEG:   # keep the crescendo but lift the quiet start for phone speakers: gentle upward compression from a 0.4 s RMS envelope, then a soft limiter
+    env = np.sqrt(np.convolve((mix ** 2).mean(1), np.ones(int(0.4 * SR)) / int(0.4 * SR), 'same')) + 1e-6; g = np.clip((env / env.max()) ** -0.35, 1, 3.5)
+    mix = mix * g[:, None]; mix = np.tanh(mix / np.abs(mix).max() * 2.2) / np.tanh(2.2)
 mix /= np.abs(mix).max() / 0.9
 os.makedirs('out/think', exist_ok=True)
-wf.write('out/think/audio_raw.wav' if MUSIC else 'out/think/audio_raw_nomusic.wav', SR, (mix * 32767).astype(np.int16))
+wf.write('out/think/audio_raw_grieg.wav' if GRIEG else 'out/think/audio_raw.wav' if MUSIC else 'out/think/audio_raw_nomusic.wav', SR, (mix * 32767).astype(np.int16))
 print('ok')
