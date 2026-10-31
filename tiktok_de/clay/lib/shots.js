@@ -10,7 +10,7 @@ export const SHOTS = {
   sofa: {
     set: 'living', cap: 'Je mehr sie liebt,',
     fig: [
-      { kind: 'w', at: [-0.1, -0.55], yaw: 0.2, pose: POSES.sitSad, face: SAD },
+      { kind: 'w', at: [-0.15, -0.62], yaw: 0.2, pose: POSES.sitSad, face: SAD },
       { kind: 'm', at: [0.5, 0.05], yaw: -0.8, pose: mix(POSES.reach, { head: [0.25, 0, 0], neck: [0.1, 0, 0] }), face: { ...WORRY, look: [-0.4, -0.5] } },
     ],
     cam: { pos: [0.3, 1.2, 4.5], look: [0.2, 0.5, -0.3], fov: 30 },
@@ -19,18 +19,18 @@ export const SHOTS = {
     set: 'kitchen', cap: 'desto stiller wird sie',
     fig: [
       { kind: 'w', at: [0.45, -0.3], yaw: Math.PI - 0.35, pose: POSES.armsCrossed, face: SAD },
-      { kind: 'm', at: [-0.55, 0.45], yaw: 0.5, pose: POSES.sitPhone, face: BLANK, y: 0.1 },
+      { kind: 'm', at: [-0.4, -0.12], yaw: 0, pose: POSES.sitPhone, face: BLANK },
     ],
     cam: { pos: [0.0, 1.4, 4.6], look: [-0.05, 0.62, -0.1], fov: 31 },
   },
   bed: {
     set: 'bedroom', cap: 'Sie weint leise', night: true,
-    fig: [{ kind: 'w', at: [0.1, 0.45], yaw: -0.15, pose: POSES.sitFaceInHands, face: { ...SAD, closed: true, tears: true }, y: 0.12 }],
+    fig: [{ kind: 'w', at: [0.05, 0.52], yaw: -0.15, pose: POSES.sitFaceInHands, face: { ...SAD, closed: true, tears: true } }],
     cam: { pos: [0.9, 1.15, 3.6], look: [-0.05, 0.6, 0.0], fov: 30 },
   },
   close: {
     set: 'bedroom', cap: 'Lange vorher.', night: true,
-    fig: [{ kind: 'w', at: [-0.1, 0.4], yaw: 0.15, pose: mix(POSES.sitSad, { spine: [0.05, 0, 0], neck: [0, 0, 0], head: [0.05, 0.1, 0] }), face: { brow: 1, mouth: -0.8, lid: 0.3, look: [0.3, -0.3], tears: true }, y: 0.12 }],
+    fig: [{ kind: 'w', at: [-0.1, 0.52], yaw: 0.15, pose: mix(POSES.sitSad, { spine: [0.05, 0, 0], neck: [0, 0, 0], head: [0.05, 0.1, 0] }), face: { brow: 1, mouth: -0.8, lid: 0.3, look: [0.3, -0.3], tears: true } }],
     cam: { pos: [0.0, 1.0, 2.7], look: [-0.1, 0.84, 0.4], fov: 20 },
   },
   stairs: {

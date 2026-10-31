@@ -43,6 +43,8 @@ for (const f of shot.fig) {
 
 const cam = new THREE.PerspectiveCamera(shot.cam.fov, W / H, 0.05, 40);
 cam.position.set(...shot.cam.pos); const look = new THREE.Vector3(...shot.cam.look); cam.lookAt(look);
+// soft fill from the camera so faces never drop into shadow (clay "studio" look)
+const fill = new THREE.DirectionalLight('#fff4ea', shot.night ? 0.45 : 0.6); fill.position.copy(cam.position).add(new THREE.Vector3(0, 0.6, 0)); fill.target.position.copy(look); scene.add(fill, fill.target);
 const comp = new EffectComposer(renderer);
 comp.addPass(new RenderPass(scene, cam));
 const ao = new GTAOPass(scene, cam, W, H); ao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, scale: 1.2, thickness: 1.2 });

@@ -56,26 +56,44 @@ function splitCol(P, x, y, z) {
   const t = Math.min(1, Math.max(0, (ly - P.split.y) / 0.004 + 0.5));
   return P.col.clone().lerp(P.split.col, 1 - t);
 }
-// field value + index of the dominant primitive (for colour)
-function field(prims, x, y, z, out) {
-  let d = 1e9, best = 0, bestD = 1e9;
+// Field. Primitives are grouped: group 0 is the core (torso, head, skirt), every other group is a chain (an arm, a leg,
+// a hair lock). A chain melts into the core with a smooth union but stays SEPARATE from other chains, so legs never
+// fuse to each other and an arm resting on the lap doesn't weld to the thigh. `sub` primitives carve the result.
+const smin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * 0.25; };
+const smax = (a, b, k) => -smin(-a, -b, k);
+let G = new Float64Array(16), S = new Float64Array(16);
+function field(prims, x, y, z) {
+  const ng = prims.ng || 1;
+  for (let g = 0; g < ng; g++) { G[g] = 1e9; S[g] = 1e9; }
   for (let i = 0; i < prims.length; i++) {
-    const P = prims[i];
+    const P = prims[i], gi = P.gi;
+    const cur = P.sub ? S[gi] : G[gi];
     const dc = Math.sqrt((x - P.cx) ** 2 + (y - P.cy) ** 2 + (z - P.cz) ** 2) - P.rad;
-    if (dc > d + P.k) continue;
+    if (dc > cur + P.k) continue;
     const di = evalP(P, x, y, z);
-    if (di < bestD) { bestD = di; best = i; }
-    const h = Math.max(P.k - Math.abs(d - di), 0) / P.k;
-    d = Math.min(d, di) - h * h * P.k * 0.25;
+    if (P.sub) S[gi] = smin(S[gi], di, P.k); else G[gi] = smin(G[gi], di, P.k);
   }
-  if (out) out.i = best;
+  for (let g = 0; g < ng; g++) if (S[g] < 1e8) G[g] = smax(G[g], -S[g], 0.012); // carve (e.g. the face opening in the hair)
+  let d = G[0];
+  for (let g = 1; g < ng; g++) if (G[g] < 1e8) d = Math.min(d, smin(G[0], G[g], prims.attach[g]));
   return d;
+}
+function groupPrims(prims) {
+  const names = ['core']; prims.attach = [0];
+  for (const P of prims) {
+    const g = P.g || 'core'; let gi = names.indexOf(g);
+    if (gi < 0) { gi = names.length; names.push(g); prims.attach[gi] = P.attach ?? 0.035; }
+    P.gi = gi;
+  }
+  prims.ng = names.length; if (G.length < prims.ng) { G = new Float64Array(prims.ng); S = new Float64Array(prims.ng); }
 }
 
 // surface nets: returns a BufferGeometry with position / normal / color
 export function meshPrims(prims, h = 0.008) {
+  groupPrims(prims);
   let x0 = 1e9, y0 = 1e9, z0 = 1e9, x1 = -1e9, y1 = -1e9, z1 = -1e9;
   for (const P of prims) {
+    if (P.sub) continue;
     x0 = Math.min(x0, P.cx - P.rad); y0 = Math.min(y0, P.cy - P.rad); z0 = Math.min(z0, P.cz - P.rad);
     x1 = Math.max(x1, P.cx + P.rad); y1 = Math.max(y1, P.cy + P.rad); z1 = Math.max(z1, P.cz + P.rad);
   }
@@ -83,6 +101,7 @@ export function meshPrims(prims, h = 0.008) {
   const nx = Math.ceil((x1 - x0) / h) + 1, ny = Math.ceil((y1 - y0) / h) + 1, nz = Math.ceil((z1 - z0) / h) + 1;
   const F = new Float32Array(nx * ny * nz);
   const id = (i, j, k) => i + nx * (j + ny * k);
+  // NOTE: sub primitives may carry a big radius; they never extend the bounds
   // coarse pass: skip far-away blocks (field is ~distance, so a big positive value at a block centre clears it)
   const B = 4;
   for (let k = 0; k < nz; k += B) for (let j = 0; j < ny; j += B) for (let i = 0; i < nx; i += B) {
@@ -104,7 +123,7 @@ export function meshPrims(prims, h = 0.008) {
   const pos = [], nor = [], col = [], idx = [];
   const E = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
   const C = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
-  const v = new Float32Array(8); const o = { i: 0 };
+  const v = new Float32Array(8);
   for (let k = 0; k < nz - 1; k++) for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
     let mask = 0;
     for (let c = 0; c < 8; c++) { v[c] = F[id(i + C[c][0], j + C[c][1], k + C[c][2])]; if (v[c] < 0) mask |= 1 << c; }
@@ -122,7 +141,9 @@ export function meshPrims(prims, h = 0.008) {
     const gl = Math.hypot(gx, gy, gz) || 1; nor.push(gx / gl, gy / gl, gz / gl);
     // colour: soft-max blend of nearby primitives so seams (cuffs, necklines, hems) are clean, not stair-stepped
     let wr = 0, wg = 0, wb = 0, ws = 0, dmin = 1e9; const ds = [];
-    for (let q = 0; q < prims.length; q++) { const P = prims[q]; if (Math.sqrt((px - P.cx) ** 2 + (py - P.cy) ** 2 + (pz - P.cz) ** 2) - P.rad > 0.03) { ds.push(1e9); continue; } const dq = evalP(P, px, py, pz); ds.push(dq); dmin = Math.min(dmin, dq); }
+    const cut = new Float64Array(prims.ng).fill(1e9);   // carved regions don't colour (the face isn't hair-coloured)
+    for (const P of prims) if (P.sub) cut[P.gi] = Math.min(cut[P.gi], evalP(P, px, py, pz));
+    for (let q = 0; q < prims.length; q++) { const P = prims[q]; if (P.sub || Math.sqrt((px - P.cx) ** 2 + (py - P.cy) ** 2 + (pz - P.cz) ** 2) - P.rad > 0.03) { ds.push(1e9); continue; } const dq = Math.max(evalP(P, px, py, pz), -cut[P.gi]); ds.push(dq); dmin = Math.min(dmin, dq); }
     for (let q = 0; q < prims.length; q++) { if (ds[q] > dmin + 0.02) continue; const w = Math.exp(-(ds[q] - dmin) / 0.0025); const cc = splitCol(prims[q], px, py, pz); wr += cc.r * w; wg += cc.g * w; wb += cc.b * w; ws += w; }
     col.push(wr / ws, wg / ws, wb / ws);
   }

@@ -47,11 +47,12 @@ function floorLamp(g, x, z) {
 }
 export function sofa(g, x, z, w = 1.9) {
   const so = new THREE.Group(); so.position.set(x, 0, z); g.add(so);
-  M(box(w, 0.26, 0.72, 0.08), S.mid, so, 0, 0.2, 0);
-  for (const s of [-1, 1]) M(box(w / 2 - 0.07, 0.13, 0.62, 0.06), S.soft, so, s * (w / 4 - 0.02), 0.38, 0.04);
-  M(box(w, 0.5, 0.2, 0.08), S.mid, so, 0, 0.58, -0.27);
-  for (const s of [-1, 1]) M(box(0.2, 0.5, 0.72, 0.08), S.mid, so, s * (w / 2 + 0.03), 0.3, 0);
-  const p = M(box(0.34, 0.3, 0.12, 0.06), S.light, so, w / 2 - 0.35, 0.55, -0.12); p.rotation.set(-0.25, -0.3, 0.15);
+  // seat surface at y = 0.30 (sized to the ~1.2 m clay heroes)
+  M(box(w, 0.18, 0.72, 0.07), S.mid, so, 0, 0.13, 0);
+  for (const s of [-1, 1]) M(box(w / 2 - 0.07, 0.1, 0.6, 0.05), S.soft, so, s * (w / 4 - 0.02), 0.25, 0.04);
+  M(box(w, 0.44, 0.2, 0.08), S.mid, so, 0, 0.44, -0.27);
+  for (const s of [-1, 1]) M(box(0.2, 0.38, 0.72, 0.08), S.mid, so, s * (w / 2 + 0.03), 0.2, 0);
+  const p = M(box(0.3, 0.26, 0.11, 0.055), S.light, so, w / 2 - 0.32, 0.42, -0.13); p.rotation.set(-0.25, -0.3, 0.15);
   return so;
 }
 
@@ -62,45 +63,45 @@ export const SETS = {
     for (let i = 0; i < 5; i++) M(cyl(0.045, 0.06, 1.7, 16), S.white, g, -1.55 + i * 0.07, 1.3, -1.1);
     sofa(g, 0.15, -0.75);
     M(box(2.2, 0.012, 1.3, 0.006), S.wall2, g, 0.15, 0.006, 0.35);
-    M(box(0.75, 0.05, 0.42), S.light, g, 0.25, 0.3, 0.5);
-    for (const x of [-0.3, 0.3]) for (const z of [-0.16, 0.16]) M(cyl(0.018, 0.018, 0.28, 10), S.dark, g, 0.25 + x, 0.14, 0.5 + z);
-    M(cyl(0.035, 0.032, 0.08), S.white, g, 0.1, 0.365, 0.45);
+    M(box(0.75, 0.05, 0.42), S.light, g, 0.25, 0.22, 0.5);
+    for (const x of [-0.3, 0.3]) for (const z of [-0.16, 0.16]) M(cyl(0.018, 0.018, 0.2, 10), S.dark, g, 0.25 + x, 0.1, 0.5 + z);
+    M(cyl(0.035, 0.032, 0.08), S.white, g, 0.1, 0.285, 0.45);
     floorLamp(g, 1.35, -0.85); plant(g, -1.45, -0.8);
   },
   kitchen(g) {
     shell(g, { panels: false });
     // counter run along the back wall with upper cabinets and a window over the sink
-    M(box(3.6, 0.82, 0.55, 0.03), S.light, g, 0.2, 0.41, -0.92);
-    M(box(3.65, 0.04, 0.6, 0.015), S.white, g, 0.2, 0.84, -0.9);
-    for (let i = 0; i < 6; i++) { M(box(0.56, 0.7, 0.02, 0.01), S.white, g, -1.2 + i * 0.6, 0.42, -0.64); M(box(0.12, 0.02, 0.03, 0.008), S.metal, g, -1.2 + i * 0.6, 0.68, -0.62); }
-    for (const x of [-1.2, -0.6, 1.0, 1.6]) M(box(0.56, 0.6, 0.32, 0.02), S.white, g, x, 1.75, -1.03);
-    windowAt(g, 0.2, 1.55, 0.95, 0.85);
-    M(box(0.5, 0.05, 0.38, 0.02), S.metal, g, 0.2, 0.845, -0.9); // sink
-    const tap = M(cyl(0.015, 0.015, 0.25, 10), S.metal, g, 0.2, 0.98, -1.06);
-    M(box(0.03, 0.03, 0.14, 0.01), S.metal, g, 0.2, 1.1, -1.0);
-    M(cyl(0.04, 0.035, 0.09), S.white, g, 0.48, 0.905, -0.85); // the cup
+    M(box(3.6, 0.6, 0.55, 0.03), S.light, g, 0.2, 0.3, -0.92);
+    M(box(3.65, 0.04, 0.6, 0.015), S.white, g, 0.2, 0.62, -0.9);
+    for (let i = 0; i < 6; i++) { M(box(0.56, 0.5, 0.02, 0.01), S.white, g, -1.2 + i * 0.6, 0.3, -0.64); M(box(0.12, 0.02, 0.03, 0.008), S.metal, g, -1.2 + i * 0.6, 0.5, -0.62); }
+    for (const x of [-1.2, -0.6, 1.0, 1.6]) M(box(0.56, 0.55, 0.32, 0.02), S.white, g, x, 1.45, -1.03);
+    windowAt(g, 0.2, 1.25, 0.95, 0.8);
+    M(box(0.5, 0.05, 0.38, 0.02), S.metal, g, 0.2, 0.625, -0.9); // sink
+    M(cyl(0.015, 0.015, 0.22, 10), S.metal, g, 0.2, 0.74, -1.06);
+    M(box(0.03, 0.03, 0.14, 0.01), S.metal, g, 0.2, 0.85, -1.0);
+    M(cyl(0.04, 0.035, 0.09), S.white, g, 0.48, 0.685, -0.85); // the cup
     // fridge
-    M(box(0.7, 1.9, 0.62, 0.05), S.white, g, 2.35, 0.95, -0.9); M(box(0.03, 0.4, 0.04, 0.01), S.metal, g, 2.05, 1.25, -0.57);
-    // table + chairs
-    M(box(1.0, 0.05, 0.7, 0.02), S.wood, g, -0.4, 0.62, 0.35);
-    for (const x of [-0.42, 0.42]) for (const z of [-0.28, 0.28]) M(cyl(0.02, 0.02, 0.6, 10), S.dark, g, -0.4 + x, 0.3, 0.35 + z);
-    for (const x of [-0.95, 0.15]) { M(box(0.38, 0.04, 0.38, 0.015), S.mid, g, x, 0.4, 0.35); M(box(0.38, 0.4, 0.04, 0.015), S.mid, g, x + (x < 0 ? -0.18 : 0.18), 0.62, 0.35).rotation.y = Math.PI / 2; for (const a of [-0.16, 0.16]) for (const b of [-0.16, 0.16]) M(cyl(0.015, 0.015, 0.4, 8), S.dark, g, x + a, 0.2, 0.35 + b); }
-    M(cyl(0.035, 0.032, 0.08), S.white, g, -0.55, 0.685, 0.3);
-    M(box(0.07, 0.01, 0.13, 0.006), S.dark, g, -0.2, 0.65, 0.42);
+    M(box(0.7, 1.5, 0.62, 0.05), S.white, g, 2.35, 0.75, -0.9); M(box(0.03, 0.35, 0.04, 0.01), S.metal, g, 2.05, 1.0, -0.57);
+    // table (top 0.48) with one chair behind it, facing the camera (seat 0.30)
+    M(box(1.0, 0.04, 0.62, 0.02), S.wood, g, -0.4, 0.48, 0.32);
+    for (const x of [-0.42, 0.42]) for (const z of [-0.25, 0.25]) M(cyl(0.02, 0.02, 0.46, 10), S.dark, g, -0.4 + x, 0.23, 0.32 + z);
+    M(box(0.36, 0.035, 0.34, 0.015), S.mid, g, -0.4, 0.285, -0.12); M(box(0.36, 0.36, 0.035, 0.015), S.mid, g, -0.4, 0.48, -0.3);
+    for (const a of [-0.15, 0.15]) for (const b of [-0.14, 0.14]) M(cyl(0.014, 0.014, 0.28, 8), S.dark, g, -0.4 + a, 0.14, -0.12 + b);
+    M(cyl(0.035, 0.032, 0.08), S.white, g, -0.62, 0.54, 0.4);
   },
   bedroom(g) {
     shell(g, { wall: S.wall2 }); windowAt(g, 1.25, 1.5, 0.8, 1.1, true);
     const bed = new THREE.Group(); bed.position.set(-0.25, 0, -0.35); g.add(bed);
-    M(box(1.5, 0.3, 1.9, 0.05), S.dark, bed, 0, 0.15, 0);
-    M(box(1.6, 0.9, 0.08, 0.04), S.mid, bed, 0, 0.5, -0.95);
-    M(box(1.44, 0.18, 1.82, 0.08), S.white, bed, 0, 0.38, 0.02);
-    for (const s of [-1, 1]) { const p = M(box(0.55, 0.14, 0.32, 0.07), S.white, bed, s * 0.36, 0.53, -0.72); p.rotation.x = -0.25; }
-    const duvet = M(box(1.5, 0.12, 1.25, 0.06), S.light, bed, 0, 0.5, 0.33);
-    M(box(1.5, 0.13, 0.28, 0.06), S.soft, bed, 0, 0.51, 0.55); // folded throw
+    M(box(1.5, 0.16, 1.9, 0.05), S.dark, bed, 0, 0.08, 0);
+    M(box(1.6, 0.75, 0.08, 0.04), S.mid, bed, 0, 0.4, -0.95);
+    M(box(1.44, 0.14, 1.82, 0.06), S.white, bed, 0, 0.23, 0.02);
+    for (const s of [-1, 1]) { const p = M(box(0.55, 0.12, 0.3, 0.06), S.white, bed, s * 0.36, 0.36, -0.72); p.rotation.x = -0.25; }
+    const duvet = M(box(1.5, 0.05, 1.25, 0.025), S.light, bed, 0, 0.32, 0.33);
+    M(box(1.0, 0.05, 0.3, 0.025), S.soft, bed, -0.2, 0.36, -0.1); // folded throw
     for (const s of [-1, 1]) {
-      M(box(0.4, 0.42, 0.36, 0.03), S.mid, g, -0.25 + s * 1.05, 0.21, -1.0);
-      M(cyl(0.07, 0.09, 0.03), S.dark, g, -0.25 + s * 1.05, 0.435, -1.0); M(cyl(0.01, 0.01, 0.2, 8), S.dark, g, -0.25 + s * 1.05, 0.54, -1.0);
-      M(new THREE.CylinderGeometry(0.08, 0.12, 0.16, 24), S.white, g, -0.25 + s * 1.05, 0.7, -1.0);
+      M(box(0.4, 0.34, 0.36, 0.03), S.mid, g, -0.25 + s * 1.05, 0.17, -1.0);
+      M(cyl(0.07, 0.09, 0.03), S.dark, g, -0.25 + s * 1.05, 0.355, -1.0); M(cyl(0.01, 0.01, 0.2, 8), S.dark, g, -0.25 + s * 1.05, 0.46, -1.0);
+      M(new THREE.CylinderGeometry(0.08, 0.12, 0.16, 24), S.white, g, -0.25 + s * 1.05, 0.62, -1.0);
     }
     frame(g, -0.25, 1.55, 0.7, 0.42);
     M(box(1.8, 0.012, 1.0, 0.006), S.wall, g, -0.25, 0.006, 1.0);
