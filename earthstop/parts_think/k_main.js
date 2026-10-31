@@ -9,8 +9,8 @@ const SHOTS = [
   [0.0, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(0.05, 1, 0.55), lerp(2.5, 2.0, sp(t, 0, THINK)), 0.66)],   // in bed, eyes open; the title above
   [THINK, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(0.2, 1, 0.75), lerp(2.0, 1.75, sp(t, THINK, 7)), 0.6)],   // the thoughts pop up
   [7.0, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(-0.35, 1, 0.6), lerp(1.75, 2.0, sp(t, 7, CORT)), 0.6)],
-  [CORT, xr, () => xCam, updateXray, t => { const a = lerp(Math.PI * 0.85, 0.3, sp(t, CORT, CORT + 3)); return fr(brainW(), V3(Math.sin(a), 0.12, Math.cos(a)), lerp(1.2, 0.5, sp(t, CORT, CORT + 3)), 0.5); }],   // spiral in to the alarm centre
-  [CORT + 3.0, xr, () => xCam, updateXray, t => fr(brainW().lerp(adrW(), sp(t, CORT + 3, CORT + 4.6)), V3(0.45, 0.1, 1), lerp(0.62, 0.8, sp(t, CORT + 3, HEART)), 0.5)],   // follow the signal down to the adrenals
+  [CORT, xr, () => xCam, updateXray, t => { const a = lerp(Math.PI * 0.85, 0.3, sp(t, CORT, CORT + 3)); return fr(brainW(), V3(Math.sin(a), 0.12, Math.cos(a)), lerp(1.2, 0.62, sp(t, CORT, CORT + 3)), 0.5); }],   // spiral in to the alarm centre
+  [CORT + 3.0, xr, () => xCam, updateXray, t => fr(brainW().lerp(adrW(), sp(t, CORT + 3, CORT + 4.6)), V3(0.45, 0.1, 1), lerp(0.9, 1.05, sp(t, CORT + 3, HEART)), 0.45)],   // follow the signal down to the adrenals
   [HEART, xr, () => xCam, updateXray, t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.62, 0.45, sp(t, HEART, HEART + 3)), 0.5)],
   [HEART + 3.0, xr, () => xCam, updateXray, t => fr(heartW(), V3(-0.35, 0.1, 1), lerp(0.75, 0.62, sp(t, HEART + 3, FORCE)), 0.86)],   // under the heart-rate card
   [FORCE, room, () => rmCam, home('force'), t => fr(V3(-2.35, 0.6, 0.95), V3(2.0, 0.85, 0.7), lerp(3.6, 3.2, sp(t, FORCE, FORCE + 3.4)), 0.64)],   // from beside the bed: the sheep hop across the frame   // you + the sheep hopping the fence
@@ -44,7 +44,7 @@ const POPS = [[FOG + 0.3, FOG + 4.0, () => '14 H', 'SLEEP LOST · MODEL'], [WALL
 const sheepAt = t => Math.floor(1 + Math.min(t - FORCE, 3.4) * 3.75 + 1240);
 function labelsAt(t, i) { if (SHOTS[i][1] !== xr || t >= HEART) return ''; const out = [], put = (p, txt, a) => { const v = p.clone().project(xCam); if (v.z > 1) return; out.push(`<div class="lb" style="left:${((v.x + 1) / 2 * W).toFixed(0)}px;top:${((1 - v.y) / 2 * H).toFixed(0)}px;opacity:${a.toFixed(2)}">${txt}</div>`); };
   brainG.updateMatrixWorld(true); put(AMY[1].getWorldPosition(V3(0, 0, 0)).add(V3(0.04, 0.09, 0)), 'ALARM CENTER', fadeWin(t, CORT + 0.6, CORT + 3.0, 0.25));
-  put(adrW().add(V3(0.08, 0.06, 0)), 'ADRENAL GLANDS', fadeWin(t, CORT + 4.0, CORT + 6.0, 0.25)); put(V3(-0.2, 1.24, 0.03), 'CORTISOL', fadeWin(t, CORT + 4.6, HEART, 0.25)); return out.join(''); }
+  put(adrW().add(V3(0.08, 0.06, 0)), 'ADRENAL GLANDS', fadeWin(t, CORT + 4.0, CORT + 6.0, 0.25)); put(V3(-0.1, 1.2, 0.05), 'CORTISOL', fadeWin(t, CORT + 4.6, HEART, 0.25)); return out.join(''); }
 // thought bubbles in fixed screen slots around your face (left / right, clear of the right-hand icon column below y 950 and of the caption band)
 const SLOTS = [[60, 560, 'l'], [560, 610, 'r'], [70, 760, 'l'], [560, 800, 'r'], [80, 960, 'l'], [330, 1110, 'l']], DSLOTS = [[60, 560, 'l'], [520, 640, 'r'], [70, 860, 'l'], [300, 1080, 'l']];
 function thoughtsAt(t, i) { const k = SHOTS[i][1] === room ? (t < CORT ? 0 : t >= MID && t < MORN ? 1 : -1) : -1; if (k < 0) return ''; let n = 0;
@@ -65,7 +65,7 @@ function updateDOM(t, i) { el.title.style.opacity = fadeWin(t, 0, THINK, 0.35);
   el.end.style.opacity = smooth(ENDC, ENDC + 0.4, t) * 0.94; el.endT.style.opacity = smooth(ENDC + 0.2, ENDC + 0.6, t); el.endS.style.opacity = smooth(ENDC + 0.8, ENDC + 1.2, t); }
 window.renderAt = (t) => {
   let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
-  if (window.PASS === 'text') { updateDOM(t, i); return true; }
+  if (window.PASS === 'text') { const [, , cam, upd, frm] = SHOTS[i]; upd(t); const c = cam(); applyF(c, frm(t)); c.aspect = W / H; c.updateProjectionMatrix(); c.updateMatrixWorld(); updateDOM(t, i); return true; }   // pose + camera only: DOM labels project from them
   // hard cuts inside a beat; a short 0.3 s dissolve when the place changes
   const S = SHOTS[i], P = i > 0 ? SHOTS[i - 1] : null, mix = P && P[1] !== S[1] ? smooth(S[0] - 0.001, S[0] + 0.3, t) : 1;
   if (mix < 1) { shootShot(P, t, RTA); shootShot(S, t, RTB); } else shootShot(S, t, RTA);

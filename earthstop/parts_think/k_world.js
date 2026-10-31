@@ -125,7 +125,7 @@ const bpmAt = t => lerp(62, 92, smooth(HEART + 0.5, HEART + 3.0, t));
 const _o = new THREE.Object3D(), _v = new THREE.Vector3();
 function updateXray(t) { brainG.rotation.y = 0.25 * Math.sin(t * 0.5); const alarm = smooth(CORT + 0.3, CORT + 1.2, t);
   AMY.forEach(a => a.scale.set(1 + 0.4 * alarm * Math.abs(Math.sin(t * 6)), 0.8, 1.6)); amyM.color.setRGB(0.8 + 2.0 * alarm, 0.25, 0.2);
-  PULSE.forEach((p, k) => { const u = ((t * 1.2) + k / 3) % 1; p.visible = alarm > 0.1; p.position.set(0, -0.035, 0.02); p.scale.setScalar(0.4 + 2.6 * u); p.material.opacity = (1 - u) * 0.5 * alarm; });
+  PULSE.forEach((p, k) => { const u = ((t * 1.2) + k / 3) % 1; p.visible = alarm > 0.1; p.position.set(0, -0.035, 0.02); p.scale.setScalar(0.4 + 1.4 * u); p.material.opacity = (1 - u) * 0.22 * alarm * (1 - smooth(CORT + 3.0, CORT + 3.6, t)); });
   const su = clamp((t - CORT - 1.6) / 1.4, 0, 1); sigDot.visible = su > 0 && su < 1; SIG.getPointAt(su, sigDot.position); const cort = smooth(CORT + 3.0, CORT + 5.0, t) + (t >= HEART ? 1 : 0);
   ADR.forEach(a => a.scale.setScalar(1 + 0.5 * smooth(CORT + 2.9, CORT + 3.3, t) * (0.6 + 0.4 * Math.sin(t * 8))));
   const bpm = bpmAt(t), sp = bpm / 62, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18); heartG.scale.setScalar(1 + 0.22 * beat);
