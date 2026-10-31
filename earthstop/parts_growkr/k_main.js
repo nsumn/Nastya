@@ -103,7 +103,7 @@ window.renderAt = (t) => {
       fingers(P, 'l', 0.3, 0.2); fingers(P, 'r', 0.3, 0.2); face(P, t < 2.2 ? 'neutral' : t < 3.6 ? 'scared' : 'shocked', t); P.outer.visible = t < 12; });
     crowd.forEach((c, i) => { const P = c.P; poseRest(P); const run = Math.max(0, t - 3.6 - hash(i) * 0.6), d = V3(c.x, 0, c.z).normalize(); place(P, c.x + d.x * 4.5 * run, c.z + d.z * 4.5 * run, run > 0 ? Math.atan2(d.x, d.z) : Math.atan2(-c.x, -c.z));
       armsDown(P, 0.9); walkCycle(P, t * 11 + i, run > 0 ? 1.6 : 0); face(P, run > 0 ? 'shocked' : 'scared', t); P.outer.visible = t > 1.0 && t < 12; });
-    cloudDeck.visible = t >= 16.5;
+    cloudDeck.visible = t >= 18.5;
     // camera
     const tgt = V3(0, hM * 0.6, 0); let near = 0.05;
     if (sh === 0) { kCam.position.set(0.32 - 0.05 * u, 1.45 - 0.05 * u, 3.05 - 0.3 * u); kCam.up.copy(HUP); kCam.lookAt(-0.02, -1.6, -20); kCam.fov = 40; }
