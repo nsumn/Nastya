@@ -6,7 +6,7 @@ const loadG = u => new Promise((ok, bad) => gltfL.load(MH + u, ok, undefined, ba
 const texL = new THREE.TextureLoader();
 const loadT = (u) => new Promise(ok => texL.load(MH + u, t => { t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; ok(t); }));
 const MHG = {}; for (const n of ['hero', 'girl', 'man2', 'woman2']) MHG[n] = await loadG(n + '.glb').catch(() => null);
-const TEE = { mustard: await loadT('tee_mustard.png'), cream: await loadT('tee_f_cream.png') };
+const TEE = { mustard: await loadT('tee_mustard.png'), cream: await loadT('tee_f_cream.png'), white: await loadT('tee_white.png'), navy: await loadT('tee_navy.png'), pink: await loadT('tee_f_pink.png') };
 // makeHuman(name, { hairCol, tee }) → { outer, bones, rest }
 function makeHuman(name, o = {}) {
   o = { hairCol: '#2a2522', ...o };
