@@ -35,8 +35,9 @@ function rotW(P, name, axis, ang) { const b = P.bones[name]; if (!b) return; b.p
 function rotL(P, name, ax, ang) { const a = V3(...ax).applyQuaternion(P.outer.getWorldQuaternion(new THREE.Quaternion())); rotW(P, name, a, ang); }
 // arms from the A-pose down to the sides
 function armsDown(P, k = 1) { rotL(P, 'upperarm_l', [0, 0, 1], -0.62 * k); rotL(P, 'upperarm_r', [0, 0, 1], 0.62 * k); }
-// curl the four fingers (0 = open … 1 = fist): each joint turns about the knuckle line (pinky → index), so it works in any arm pose
-function fingers(P, side, curl = 0.6, sgn = 1) { P.outer.updateMatrixWorld(true);
-  const ax = P.bones['index_01_' + side].getWorldPosition(V3()).sub(P.bones['pinky_01_' + side].getWorldPosition(V3())).normalize().multiplyScalar(side === 'l' ? sgn : -sgn);
-  for (const f of ['index', 'middle', 'ring', 'pinky']) for (const [j, k] of [['01', 0.8], ['02', 1.1], ['03', 0.8]]) rotW(P, `${f}_${j}_${side}`, ax, curl * k);
-  rotW(P, 'thumb_02_' + side, ax, curl * 0.4); }
+// curl the fingers (0 = open … 1 = fist): every joint bends about its OWN local X axis (verified in the finger lab, both hands)
+const _qx = new THREE.Quaternion(), _X = new THREE.Vector3(1, 0, 0);
+function fingers(P, side, curl = 0.6, thumb = 0.3, spread = 1) {
+  ['index', 'middle', 'ring', 'pinky'].forEach((f, i) => [['01', 0.85], ['02', 1.15], ['03', 0.9]].forEach(([j, k]) => { const b = P.bones[`${f}_${j}_${side}`]; if (b) b.quaternion.multiply(_qx.setFromAxisAngle(_X, curl * k * (1 + 0.08 * i * spread))); }));
+  for (const [j, k] of [['02', 0.8], ['03', 1.0]]) { const b = P.bones[`thumb_${j}_${side}`]; if (b) b.quaternion.multiply(_qx.setFromAxisAngle(_X, thumb * k)); }
+  P.outer.updateMatrixWorld(true); }

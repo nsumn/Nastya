@@ -109,11 +109,12 @@ function rotW(P, name, axis, ang) { const b = P.bones[name]; if (!b) return; b.p
 function rotL(P, name, ax, ang) { const a = V3(...ax).applyQuaternion(P.outer.getWorldQuaternion(new THREE.Quaternion())); rotW(P, name, a, ang); }
 // arms from the A-pose down to the sides
 function armsDown(P, k = 1) { rotL(P, 'upperarm_l', [0, 0, 1], -0.62 * k); rotL(P, 'upperarm_r', [0, 0, 1], 0.62 * k); }
-// curl the four fingers (0 = open … 1 = fist): each joint turns about the knuckle line (pinky → index), so it works in any arm pose
-function fingers(P, side, curl = 0.6, sgn = 1) { P.outer.updateMatrixWorld(true);
-  const ax = P.bones['index_01_' + side].getWorldPosition(V3()).sub(P.bones['pinky_01_' + side].getWorldPosition(V3())).normalize().multiplyScalar(side === 'l' ? sgn : -sgn);
-  for (const f of ['index', 'middle', 'ring', 'pinky']) for (const [j, k] of [['01', 0.8], ['02', 1.1], ['03', 0.8]]) rotW(P, `${f}_${j}_${side}`, ax, curl * k);
-  rotW(P, 'thumb_02_' + side, ax, curl * 0.4); }
+// curl the fingers (0 = open … 1 = fist): every joint bends about its OWN local X axis (verified in the finger lab, both hands)
+const _qx = new THREE.Quaternion(), _X = new THREE.Vector3(1, 0, 0);
+function fingers(P, side, curl = 0.6, thumb = 0.3, spread = 1) {
+  ['index', 'middle', 'ring', 'pinky'].forEach((f, i) => [['01', 0.85], ['02', 1.15], ['03', 0.9]].forEach(([j, k]) => { const b = P.bones[`${f}_${j}_${side}`]; if (b) b.quaternion.multiply(_qx.setFromAxisAngle(_X, curl * k * (1 + 0.08 * i * spread))); }));
+  for (const [j, k] of [['02', 0.8], ['03', 1.0]]) { const b = P.bones[`thumb_${j}_${side}`]; if (b) b.quaternion.multiply(_qx.setFromAxisAngle(_X, thumb * k)); }
+  P.outer.updateMatrixWorld(true); }
 // =================== SEOUL (meters; camera side = +z = Banpo Hangang Park on the south bank, looking north across the Han River) ===================
 // River z -12 … -1000 (≈1 km wide), Banpo Bridge on the right running north, the north bank: Gangbyeon expressway + white apartment slabs,
 // Namsan with N Seoul Tower behind them; 63 Building far left (west), Lotte World Tower far right (stylised positions so all three read in one frame).
@@ -253,11 +254,12 @@ const boneW = (P, n) => P.bones[n].getWorldPosition(V3(0, 0, 0));
 function sitGround(P, knee = 0.35) { for (const s of ['l', 'r']) { rotL(P, 'thigh_' + s, [1, 0, 0], -1.45 + knee * 0.5); rotL(P, 'calf_' + s, [1, 0, 0], knee); rotL(P, 'foot_' + s, [1, 0, 0], -0.3); }
   rotL(P, 'thigh_l', [0, 0, 1], 0.12); rotL(P, 'thigh_r', [0, 0, 1], -0.12); rotL(P, 'spine_01', [1, 0, 0], 0.12); }
 function holdBowl(P, eat = 0) { armsDown(P, 1.0);
-  rotL(P, 'upperarm_l', [1, 0, 0], -0.5); rotL(P, 'lowerarm_l', [1, 0, 0], -1.0); rotL(P, 'lowerarm_l', [0, 1, 0], -0.95); rotL(P, 'hand_l', [0, 0, 1], -1.3); fingers(P, 'l', 0.65);
-  rotL(P, 'upperarm_r', [1, 0, 0], -0.55 - 0.25 * eat); rotL(P, 'lowerarm_r', [1, 0, 0], -1.35 - 0.3 * eat); rotL(P, 'lowerarm_r', [0, 1, 0], 0.8); fingers(P, 'r', 0.75); }
+  rotL(P, 'upperarm_l', [1, 0, 0], -0.5); rotL(P, 'lowerarm_l', [1, 0, 0], -1.0); rotL(P, 'lowerarm_l', [0, 1, 0], -0.95); rotL(P, 'hand_l', [0, 0, 1], -1.3); fingers(P, 'l', 0.55, 0.35);
+  rotL(P, 'upperarm_r', [1, 0, 0], -0.55 - 0.25 * eat); rotL(P, 'lowerarm_r', [1, 0, 0], -1.35 - 0.3 * eat); rotL(P, 'lowerarm_r', [0, 1, 0], 0.8); fingers(P, 'r', 0.5, 0.5); }
 function settle(P, hipY = 0.1) { P.outer.updateMatrixWorld(true); const py = boneW(P, 'pelvis').y; P.outer.position.y += hipY - py; P.outer.updateMatrixWorld(true); }
 const hero = makeHuman('hero', { tee: 'mustard' }); kw.add(hero.outer);
-const cup = ramenCup(); cup.scale.setScalar(1.0); kw.add(cup);
+const cup = ramenCup(); cup.children.filter(c => c.geometry && c.geometry.type === 'CylinderGeometry' && c.geometry.parameters.radiusTop < 0.01).forEach(c => c.visible = false); kw.add(cup);
+const sticks = new THREE.Group(); for (const s of [-1, 1]) { const c = mesh(new THREE.CylinderGeometry(0.0025, 0.0035, 0.21, 6), M('#d8c08a')); c.position.set(0.006 * s, 0.07, 0); c.rotation.z = 0.04 * s; sticks.add(c); } kw.add(sticks);
 picnicMat(0.05, 0.2, 0.1, '#3b78c4');
 const extras = [];
 for (const [nm, x, z, ry, o] of [['girl', -0.55, -8.2, 1.75, { tee: 'cream' }], ['man2', 1.35, -9.4, -1.6, {}], ['woman2', -1.2, -9.6, 1.5, {}]]) {
@@ -277,11 +279,14 @@ window.renderAt = (t) => {
   text(t);
   if (window.PASS === 'text') return true;
   poseRest(hero); place(hero, 0, 0, 0.35); sitGround(hero); holdBowl(hero, 0.5 + 0.5 * Math.sin(t * 4)); rotL(hero, 'head', [0, 1, 0], -0.15); rotL(hero, 'head', [1, 0, 0], 0.12); settle(hero, 0.1);
-  const hA = boneW(hero, 'middle_01_l'), hB = boneW(hero, 'hand_l'); cup.position.copy(hA.lerp(hB, 0.4)).add(V3(-0.035, 0.0, 0.0)); cup.rotation.y = hero.outer.rotation.y;
+  const palm = boneW(hero, 'hand_l').lerp(boneW(hero, 'middle_01_l'), 0.6), tip = boneW(hero, 'middle_03_l').lerp(boneW(hero, 'index_03_l'), 0.5);
+  cup.position.copy(palm.lerp(tip, 0.55)).add(V3(0, 0.01, 0)); cup.rotation.set(0, hero.outer.rotation.y, 0);
+  { const a = boneW(hero, 'thumb_03_r').lerp(boneW(hero, 'index_03_r'), 0.5), d = boneW(hero, 'index_03_r').sub(boneW(hero, 'index_01_r')).normalize();
+    sticks.position.copy(a); sticks.quaternion.setFromUnitVectors(V3(0, 1, 0), d.clone().add(V3(0, -0.6, 0)).normalize()); }
   extras.forEach(([P, x, z, ry], i) => { poseRest(P); place(P, x + Math.sin(ry) * 0.9 * t, z, ry); armsDown(P, 0.9); const ph = t * 5.5 + i * 2;
     rotL(P, 'thigh_l', [1, 0, 0], 0.35 * Math.sin(ph)); rotL(P, 'thigh_r', [1, 0, 0], -0.35 * Math.sin(ph)); rotL(P, 'calf_l', [1, 0, 0], 0.4 * Math.max(0, Math.sin(ph + 1.6))); rotL(P, 'calf_r', [1, 0, 0], 0.4 * Math.max(0, -Math.sin(ph + 1.6)));
-    rotL(P, 'upperarm_l', [1, 0, 0], -0.25 * Math.sin(ph)); rotL(P, 'upperarm_r', [1, 0, 0], 0.25 * Math.sin(ph)); fingers(P, 'l', 0.35); fingers(P, 'r', 0.35); });
-  const cp = V3(0.32, 1.45, 3.05), lk = V3(-0.02, -1.6, -20);
+    rotL(P, 'upperarm_l', [1, 0, 0], -0.25 * Math.sin(ph)); rotL(P, 'upperarm_r', [1, 0, 0], 0.25 * Math.sin(ph)); fingers(P, 'l', 0.3, 0.2); fingers(P, 'r', 0.3, 0.2); });
+  const CU = new URLSearchParams(location.search).get('cu'); const cp = CU ? V3(0.15, 1.05, 0.95) : V3(0.32, 1.45, 3.05), lk = CU ? V3(-0.05, 0.75, 0.1) : V3(-0.02, -1.6, -20);
   kCam.position.copy(cp); kCam.lookAt(lk); kCam.fov = 40;
   shootTo(RTA, kw, kCam); compMat.uniforms.uLook.value = 0.0; composite(0, 1, 1); return true; };
 window.sceneReady = (async () => { await document.fonts.ready; window.renderAt(0); return true; })();

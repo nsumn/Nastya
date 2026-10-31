@@ -114,24 +114,16 @@ function fingers(P, side, curl = 0.6, sgn = 1) { P.outer.updateMatrixWorld(true)
   const ax = P.bones['index_01_' + side].getWorldPosition(V3()).sub(P.bones['pinky_01_' + side].getWorldPosition(V3())).normalize().multiplyScalar(side === 'l' ? sgn : -sgn);
   for (const f of ['index', 'middle', 'ring', 'pinky']) for (const [j, k] of [['01', 0.8], ['02', 1.1], ['03', 0.8]]) rotW(P, `${f}_${j}_${side}`, ax, curl * k);
   rotW(P, 'thumb_02_' + side, ax, curl * 0.4); }
-function place(P, x, z, ry, dy = 0) { P.outer.position.set(x, dy, z); P.outer.rotation.set(0, ry, 0); P.outer.updateMatrixWorld(true); }
-const boneW = (P, n) => P.bones[n].getWorldPosition(V3(0, 0, 0));
-// sitting on the ground, legs forward (knees a little up); returns how much to lower the body so the hips touch the mat
-function sitGround(P, knee = 0.35) { for (const s of ['l', 'r']) { rotL(P, 'thigh_' + s, [1, 0, 0], -1.45 + knee * 0.5); rotL(P, 'calf_' + s, [1, 0, 0], knee); rotL(P, 'foot_' + s, [1, 0, 0], -0.3); }
-  rotL(P, 'thigh_l', [0, 0, 1], 0.12); rotL(P, 'thigh_r', [0, 0, 1], -0.12); rotL(P, 'spine_01', [1, 0, 0], 0.12); }
-function holdBowl(P, lift = 0) { armsDown(P, 1.0); for (const [s, k] of [['l', 1], ['r', -1]]) { rotL(P, 'upperarm_' + s, [1, 0, 0], -0.45 - lift); rotL(P, 'upperarm_' + s, [0, 0, 1], 0.12 * k);
-    rotL(P, 'lowerarm_' + s, [1, 0, 0], -1.05); rotL(P, 'lowerarm_' + s, [0, 1, 0], -0.55 * k); rotL(P, 'hand_' + s, [0, 0, 1], -0.6 * k); fingers(P, s, 0.55); } }
-function settle(P, hipY = 0.1) { P.outer.updateMatrixWorld(true); const py = boneW(P, 'pelvis').y; P.outer.position.y += hipY - py; P.outer.updateMatrixWorld(true); }
-const POSE = P => { sitGround(P); holdBowl(P); };
-// pose lab: ?v=0 front, ?v=1 side, ?v=2 top — hero only, with the sit + hold pose from k_main
-const labS = new THREE.Scene(); labS.background = new THREE.Color('#a9bfd0'); labS.environment = new THREE.PMREMGenerator(renderer).fromScene(new (await import('three/addons/environments/RoomEnvironment.js')).RoomEnvironment(), 0.04).texture; labS.environmentIntensity = 0.6;
-const ls = new THREE.DirectionalLight(0xfff1dc, 2.6); ls.position.set(2, 4, 4); labS.add(ls);
-const flo = mesh(new THREE.PlaneGeometry(20, 20), M('#cfc8bb')); flo.rotation.x = -Math.PI / 2; labS.add(flo);
-for (let i = -5; i <= 5; i++) { const l = mesh(new THREE.BoxGeometry(0.01, 0.002, 10), M('#888')); l.position.set(i * 0.2, 0.001, 0); labS.add(l); const l2 = mesh(new THREE.BoxGeometry(10, 0.002, 0.01), M('#888')); l2.position.set(0, 0.001, i * 0.2); labS.add(l2); }
+// finger lab: arms forward, palms down; ?c=curl&s=sign ; camera close on the hands from the front-top
+const labS = new THREE.Scene(); labS.background = new THREE.Color('#a9bfd0'); labS.environment = new THREE.PMREMGenerator(renderer).fromScene(new (await import('three/addons/environments/RoomEnvironment.js')).RoomEnvironment(), 0.04).texture; labS.environmentIntensity = 0.7;
+const ls = new THREE.DirectionalLight(0xfff1dc, 2.2); ls.position.set(2, 4, 4); labS.add(ls);
 const P = makeHuman('hero', { tee: 'mustard' }); labS.add(P.outer);
-const VIEW = +(new URLSearchParams(location.search).get('v') || 0);
+const q = new URLSearchParams(location.search), C = +(q.get('c') || 0.8), SG = +(q.get('s') || 1), VIEW = +(q.get('v') || 0);
 const labCam = new THREE.PerspectiveCamera(30, W / H, 0.05, 100);
-window.renderAt = (t) => { poseRest(P); place(P, 0, 0, 0); POSE(P); settle(P, 0.1);
-  if (VIEW === 1) { labCam.position.set(3.2, 0.7, 0.3); labCam.lookAt(0, 0.6, 0.3); } else if (VIEW === 2) { labCam.position.set(0, 4.0, 0.31); labCam.lookAt(0, 0, 0.3); } else { labCam.position.set(0, 0.7, 3.2); labCam.lookAt(0, 0.6, 0); }
+window.renderAt = (t) => { poseRest(P); armsDown(P, 1); for (const [s, k] of [['l', 1], ['r', -1]]) { rotL(P, 'upperarm_' + s, [1, 0, 0], -1.2); rotL(P, 'upperarm_' + s, [0, 1, 0], -0.25 * k); }
+  const AX = q.get('ax') || 'z'; const la = { x: V3(1, 0, 0), y: V3(0, 1, 0), z: V3(0, 0, 1) }[AX];
+  for (const s of ['l', 'r']) for (const f of ['index', 'middle', 'ring', 'pinky']) for (const j of ['01', '02', '03']) { const b = P.bones[`${f}_${j}_${s}`]; b.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(la, C * SG)); }
+  P.outer.updateMatrixWorld(true);
+  if (VIEW === 1) { labCam.position.set(-1.1, 1.35, 0.45); labCam.lookAt(-0.2, 1.3, 0.45); } else { labCam.position.set(0, 1.75, 1.35); labCam.lookAt(0, 1.3, 0.55); }
   shootTo(RTA, labS, labCam); compMat.uniforms.uLook.value = 0; composite(0, 1, 1); return true; };
 window.sceneReady = (async () => { window.renderAt(0); return true; })();
