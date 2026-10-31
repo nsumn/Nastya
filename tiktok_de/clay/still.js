@@ -19,9 +19,11 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.otf': 'font/ot
   for (const n of names) {
     const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
     p.on('pageerror', e => console.log(n, 'ERR', e.message));
-    await p.goto(`http://localhost:${port}/clay/index.html?shot=${n}`);
+    await p.goto(`http://localhost:${port}/clay/index.html?shot=${n}${process.env.EXPORT ? '&export=1' : ''}`);
     await p.waitForFunction(() => window.DONE, null, { timeout: 180000 });
-    await p.screenshot({ path: path.join(out, `${n}.png`) }); await p.close();
+    if (process.env.EXPORT) fs.writeFileSync(path.join(out, `${n}.glb`), Buffer.from(await p.evaluate(() => window.GLB), 'base64'));
+    else await p.screenshot({ path: path.join(out, `${n}.png`) });
+    await p.close();
     console.log('ok', n);
   }
   await b.close(); srv.close();

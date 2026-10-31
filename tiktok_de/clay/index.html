@@ -21,6 +21,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { makeFigure, pose, setFace, place } from './lib/figure.js';
 import { SETS, lights } from './lib/sets.js';
 import { SHOTS } from './lib/shots.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 const Q = new URLSearchParams(location.search);
 const shot = SHOTS[Q.get('shot') || 'sofa'];
@@ -55,5 +56,12 @@ comp.addPass(new OutputPass());
 await document.fonts.load('70px InterBlack');
 comp.render();
 document.getElementById('cap').textContent = Q.get('cap') ?? shot.cap ?? '';
+if (Q.get('export')) {   // hand the whole shot (sets, heroes, camera) to Blender as GLB, see blender/render_shot.py
+  scene.add(cam); cam.name = 'ShotCam';
+  scene.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material)) o.userData.mat = o.material.name; });
+  const glb = await new GLTFExporter().parseAsync(scene, { binary: true });
+  const b = new Uint8Array(glb); let str = ''; for (let i = 0; i < b.length; i += 0x8000) str += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  window.GLB = btoa(str);
+}
 window.DONE = true;
 </script></body></html>

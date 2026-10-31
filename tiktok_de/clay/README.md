@@ -16,3 +16,15 @@ cd clay && npm i && cd ..
 node clay/still.js out/clay                 # все пробные кадры
 node clay/still.js out/clay close,stairs    # только некоторые
 ```
+
+## Финальный рендер в Blender (Cycles)
+Та же сцена (геометрия из three.js) рендерится в Blender: мягкий свет, настоящие тени, матовый «пластилин».
+Около 3,5 мин на кадр 1080×1920 при 64 сэмплах на 4 ядрах, поэтому Blender подходит для стоп-кадров (кадр на план + движение камеры в 2D), а не для покадровой анимации.
+
+```bash
+# один раз: Blender 4.2 LTS в /opt/blender
+mkdir -p /opt/blender && curl -sSL https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz | tar -xJ -C /opt/blender
+EXPORT=1 node clay/still.js out/clay sofa,close                      # сцены -> out/clay/<shot>.glb
+/opt/blender/blender-4.2.3-linux-x64/blender -b -P clay/blender/render_shot.py -- out/clay/sofa.glb out/clay/sofa_bl.png 64
+/opt/blender/blender-4.2.3-linux-x64/blender -b -P clay/blender/render_shot.py -- out/clay/close.glb out/clay/close_bl.png 64 night
+```

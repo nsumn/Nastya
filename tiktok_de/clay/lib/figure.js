@@ -207,7 +207,7 @@ export function rebuildBody(J, h = 0.0075) {
 // keys: pelvis [x,y,z] rotation, spine, chest, neck, head, shL, elL, haL, shR, ..., hipL, knL, anL, ...; y = pelvis height offset
 const P = (o) => o;
 export const POSES = {
-  stand: P({ shL: [0, 0, -0.12], shR: [0, 0, 0.12], elL: [-0.15, 0, 0], elR: [-0.15, 0, 0] }),
+  stand: P({ shL: [0, 0, -0.2], shR: [0, 0, 0.2], elL: [-0.15, 0, 0], elR: [-0.15, 0, 0] }),
   sitSad: P({ seat: 0.3, hipL: [-1.5, 0.05, 0], hipR: [-1.5, -0.05, 0], knL: [1.45, 0, 0], knR: [1.45, 0, 0], spine: [0.22, 0, 0], neck: [0.15, 0, 0], head: [0.35, 0, 0],
                shL: [-0.55, 0, -0.05], shR: [-0.55, 0, 0.05], elL: [-0.9, 0.5, 0], elR: [-0.9, -0.5, 0] }),
   sitFaceInHands: P({ seat: 0.3, hipL: [-1.45, 0.12, 0], hipR: [-1.45, -0.12, 0], knL: [1.55, 0, 0], knR: [1.55, 0, 0], spine: [0.55, 0, 0], neck: [0.2, 0, 0], head: [0.45, 0, 0],
@@ -215,7 +215,7 @@ export const POSES = {
   sitPhone: P({ seat: 0.3, hipL: [-1.5, 0.08, 0], hipR: [-1.5, -0.08, 0], knL: [1.5, 0, 0], knR: [1.5, 0, 0], spine: [0.12, 0, 0], neck: [0.15, 0, 0], head: [0.4, 0, 0],
                shL: [-0.45, 0, -0.1], shR: [-0.45, 0, 0.1], elL: [-1.35, 0.45, 0], elR: [-1.35, -0.45, 0] }),
   armsCrossed: P({ shL: [-0.25, 0, -0.2], shR: [-0.25, 0, 0.2], elL: [-1.75, 1.15, 0], elR: [-1.65, -1.15, 0], head: [-0.05, 0, 0] }),
-  reach: P({ shR: [-0.95, -0.15, 0.05], elR: [-0.35, 0, 0], shL: [0, 0, -0.12], elL: [-0.25, 0, 0], spine: [0.08, 0, 0] }),
+  reach: P({ shR: [-0.95, -0.15, 0.05], elR: [-0.35, 0, 0], shL: [0, 0, -0.22], elL: [-0.25, 0, 0], spine: [0.08, 0, 0] }),
   hug: P({ shL: [-1.2, 0.5, 0], shR: [-1.2, -0.5, 0], elL: [-0.9, 1.0, 0], elR: [-0.9, -1.0, 0], spine: [0.05, 0, 0] }),
   lieSide: P({}),
 };
