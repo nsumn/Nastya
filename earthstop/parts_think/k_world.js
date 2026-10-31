@@ -18,9 +18,9 @@ const bedLamp = new THREE.PointLight(0xffc078, 0, 3.5, 1.4); bedLamp.position.se
 const blueL = new THREE.PointLight(0x5a78ff, 0, 6, 1.2); blueL.position.set(-1.5, 2.2, 2.4); room.add(blueL);
 // ---- thoughts: speech-bubble cards that pop up around your head (billboard sprites); after midnight they turn dark and bigger ----
 const THOUGHTS = [   // [appear t, text, dark] — drawn as speech bubbles in the DOM text layer (k_main.js), so they stay readable and never cover the caption
-  [THINK + 0.2, 'Did I lock the door?'], [THINK + 1.1, 'Why did I say “you too”<br>to the waiter?'], [THINK + 2.0, 'That thing I said<br>in 7th grade…'],
-  [THINK + 2.9, 'Did they read my text?'], [THINK + 3.8, 'Is that a new mole?'], [THINK + 4.7, 'Wait… what’s my purpose?'],
-  [MID + 0.4, 'What if I fail?', 1], [MID + 1.4, 'What if they’re all<br>mad at me?', 1], [MID + 2.4, 'What if I’m wasting<br>my life?', 1], [MID + 3.4, 'What if I never<br>sleep again?', 1]];
+  [beat(5), 'Did I lock the door?'], [beat(7), 'Why did I say “you too”<br>to the waiter?'], [beat(9), 'That thing I said<br>in 7th grade…'],
+  [beat(11), 'Did they read my text?'], [beat(13), 'Is that a new mole?'], [beat(15), 'Wait… what’s my purpose?'],
+  [beat(42), 'What if I fail?', 1], [beat(44), 'What if they’re all<br>mad at me?', 1], [beat(46), 'What if I’m wasting<br>my life?', 1], [beat(48), 'What if I never<br>sleep again?', 1]];   // each pops on a beat
 // ---- counting sheep: a little fence beside the bed, sheep hop over it toward your head; when trying too hard, they stop and turn to stare at you ----
 function makeSheep() { const g = new THREE.Group(); const wool = M('#f4f2ec', { flatShading: true, roughness: 1, emissive: '#4a4a46' }), blk = M('#2a2626', { flatShading: true });
   for (let i = 0; i < 7; i++) { const b = mesh(new THREE.IcosahedronGeometry(0.11, 0), wool); b.position.set((hash(i) - 0.5) * 0.12, 0.3 + (hash(i * 3) - 0.5) * 0.06, -0.12 + i * 0.04); g.add(b); }
@@ -37,6 +37,7 @@ const NOTES = NOTE_TXT.map((txt, i) => { const col = ['#fff27a', '#ffb0c8', '#9f
   const s = mesh(new THREE.PlaneGeometry(0.22, 0.22), new THREE.MeshBasicMaterial({ map: strike, transparent: true, depthWrite: false }), false, false); s.position.z = 0.002; n.add(s);
   const col_ = i % 6, row = Math.floor(i / 6); n.position.set(-3.92, 1.05 + row * 0.27 + 0.04 * (hash(i * 5) - 0.5), 0.45 + col_ * 0.33 + 0.05 * (hash(i * 7) - 0.5)); n.rotation.set(0, Math.PI / 2, (hash(i * 3) - 0.5) * 0.25);
   room.add(n); return { n, s, i, cross: i !== 4 && i !== 17 && i !== 26 }; });   // 27 of 30 = 90% (≈ the study's 91%): three stay
+const CROSSED = NOTES.filter(o => o.cross).map(o => o.i);   // struck out in this order, 2–3 per final hammer blow (HITS)
 // ---- coffee: a mug in your hand in the morning; week 2 you pour and miss (the cup overflows) ----
 const mug = new THREE.Group(); { const m = mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.1, 14), M('#e8603a')); m.position.y = 0.05; mug.add(m); const hdl = mesh(new THREE.TorusGeometry(0.025, 0.008, 6, 10), M('#e8603a')); hdl.position.set(0.05, 0.05, 0); mug.add(hdl);
   const cf = mesh(new THREE.CircleGeometry(0.04, 14), M('#4a2a18', { roughness: 0.3 })); cf.rotation.x = -Math.PI / 2; cf.position.y = 0.095; mug.add(cf); } room.add(mug);
@@ -64,9 +65,10 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     const dark = mode === 'mid'; lie(0.12 * Math.sin(t * 0.9) * (t > THINK ? 1 : 0.3)); blueL.intensity = dark ? 2.4 * smooth(MID, MID + 1.2, t) : 0; bedLamp.intensity = dark ? 0 : t < 1.2 ? 1.2 * (1 - smooth(0.6, 1.2, t)) : 0;
     P.face(dark ? 'anxious' : t < THINK ? 'neutral' : t < THINK + 3 ? 'worried' : 'surprised', t); }
   else if (mode === 'force') {   // 1:47: squeezing your eyes shut, counting sheep — then the sheep give up and stare
-    lie(); P.face(t < FORCE + 3.2 ? 'squint' : 'angry', t); fence.visible = true; const stop = FORCE + 3.4;
-    SHEEP.forEach((s, i) => { s.visible = true; const per = 1.6, tt = Math.min(t, stop + i * 0.05) - FORCE + i * per / SHEEP.length, u = (tt % per) / per, z = lerp(3.0, -0.2, u), hop = Math.max(0, 1 - Math.pow((z - 1.3) / 0.45, 2));
-      s.position.set(-1.75 + 0.06 * Math.sin(i * 2), 0.42 * hop, z); s.rotation.set(-0.35 * hop * Math.sign(1.3 - z), 0, 0); const run = t < stop; s.userData.legs.forEach((l, k) => l.rotation.x = run ? 0.6 * Math.sin(t * 16 + k * Math.PI) : 0);
+    const stop = beat(39); lie(); P.face(t < stop - 0.2 ? 'squint' : 'angry', t); fence.visible = true; const tq = Math.min(t, stop), v = 0.86;   // one sheep clears the fence on every beat
+    SHEEP.forEach((s, i) => { s.visible = true; let c = beat(31 + i - 6), best = 99; for (let j = -1; j <= 2; j++) { const cc = beat(31 + i + 6 * j); if (Math.abs(tq - cc) < best) { best = Math.abs(tq - cc); c = cc; } }
+      const z = 1.3 - (tq - c) * v, hop = Math.max(0, 1 - Math.pow((z - 1.3) / 0.45, 2)); s.position.set(-1.75 + 0.06 * Math.sin(i * 2), 0.42 * hop, z); s.rotation.set(-0.35 * hop * Math.sign(1.3 - z), 0, 0);
+      const run = t < stop; s.userData.legs.forEach((l, k) => l.rotation.x = run ? 0.6 * Math.sin(t * 16 + k * Math.PI) : 0); s.visible = z > -0.4 && z < 3.2;
       if (!run) { s.rotation.set(0, lerp(0, Math.PI / 2 + 0.25 * (hash(i) - 0.5), smooth(stop, stop + 0.4, t)), 0); s.position.y = 0; } }); }
   else if (mode === 'morn') {   // night 7, 7:00 AM: sitting on the bed edge, wrecked, coffee
     seatAt(P, -2.3, 0.45, 1.5, Math.PI / 2); duvet.visible = false; P.root.rotation.x = 0.25; P.face(t < MORN + 3 ? 'sleepy' : 'worried', t);
@@ -78,8 +80,8 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     spillP.visible = true; spillP.position.set(3.55, 0.953, -1.5); spillP.scale.setScalar(0.06 + 0.22 * smooth(FOG + 1.0, FOG + 6.0, t));
     const hd = headOf(P); for (let k = 0; k < 40; k++) { const u = (t * 0.15 + k / 40) % 1, a = k * 2.4; haze.add(hd.clone().add(V3(Math.cos(a) * (0.15 + 0.25 * u), 0.05 + 0.25 * u, Math.sin(a) * (0.15 + 0.25 * u))), 0.12 + 0.1 * u, 0.32 * Math.sin(Math.PI * u)); } }
   else if (mode === 'wall') {   // night 30: standing at the foot of the bed facing a wall of worries; they get crossed out one by one
-    P.outer.position.set(-3.0, 0.95, 3.0); P.outer.rotation.set(0, -Math.PI * 0.62, 0); bedLamp.intensity = 1.6; P.face(t < WALL + 3.5 ? 'worried' : t < WALL + 5.6 ? 'surprised' : 'happy', t);
-    NOTES.forEach((o, i) => { const t0 = WALL + 0.1 + i * 0.09, sc = popS(t0); o.n.visible = sc > 0; o.n.scale.setScalar(Math.max(0.001, sc)); const tc = WALL + 3.6 + i * 0.075; o.s.visible = o.cross && t > tc; o.s.scale.set(clamp((t - tc) / 0.12, 0.01, 1), 1, 1); }); }
+    P.outer.position.set(-2.3, 0.95, 3.25); P.outer.rotation.set(0, -Math.PI * 0.62, 0); camKey.intensity = 1.0; bedLamp.intensity = 1.6; P.face(t < CROSS ? 'worried' : t < HITS[7] ? 'surprised' : 'happy', t);
+    NOTES.forEach((o, i) => { const k = 65 + (i >> 1), t0 = beat(k) + (i & 1) * 0.5 * (beat(k + 1) - beat(k)), sc = popS(t0); o.n.visible = sc > 0; o.n.scale.setScalar(Math.max(0.001, sc)); const tc = HITS[Math.floor(CROSSED.indexOf(i) * HITS.length / CROSSED.length)] ?? 99; o.s.visible = o.cross && t > tc; o.s.scale.set(clamp((t - tc) / 0.12, 0.01, 1), 1, 1); }); }
   else if (mode === 'list') {   // 11:36 PM: write tomorrow's list on paper, lamp on; then lights out, asleep
     const asleep = t > LIST + 2.9; bedLamp.intensity = asleep ? 1.4 * (1 - smooth(LIST + 2.9, LIST + 3.4, t)) : 1.8;
     if (!asleep) { seatAt(P, -2.75, 0.62, 1.55, 0); duvet.visible = false; P.root.rotation.x = 0.18; P.face('reading', t); P.arms[1].rotation.set(-0.7, 0, -0.25); P.elbows[1].rotation.x = -1.0 + 0.08 * Math.sin(t * 14); P.arms[0].rotation.set(-0.6, 0, 0.25); P.elbows[0].rotation.x = -0.9;
@@ -121,13 +123,13 @@ const vesMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.25, 0
 const CN = 260, cellM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 0.2, 0.15) }), CN), corM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.005, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.7, 0.85, 0.12) }), CN);
 cellM.frustumCulled = corM.frustumCulled = false; xr.add(cellM, corM);
 const CL = Array.from({ length: CN }, (_, i) => ({ v: i % VES.length, u0: rnd(), sp: R(0.25, 0.45), off: V3(R(-1, 1), R(-1, 1), R(-1, 1)).multiplyScalar(0.007), s: rnd() }));
-const bpmAt = t => lerp(62, 92, smooth(HEART + 0.5, HEART + 3.0, t));
+const beatPulse = t => Math.exp(-(t - lastBeat(t)) * 9);   // the heart and the alarm centre pulse on the song's beats
 const _o = new THREE.Object3D(), _v = new THREE.Vector3();
 function updateXray(t) { brainG.rotation.y = 0.25 * Math.sin(t * 0.5); const alarm = smooth(CORT + 0.3, CORT + 1.2, t);
   AMY.forEach(a => a.scale.set(1 + 0.4 * alarm * Math.abs(Math.sin(t * 6)), 0.8, 1.6)); amyM.color.setRGB(0.8 + 2.0 * alarm, 0.25, 0.2);
-  PULSE.forEach((p, k) => { const u = ((t * 1.2) + k / 3) % 1; p.visible = alarm > 0.1; p.position.set(0, -0.035, 0.02); p.scale.setScalar(0.4 + 1.4 * u); p.material.opacity = (1 - u) * 0.22 * alarm * (1 - smooth(CORT + 3.0, CORT + 3.6, t)); });
-  const su = clamp((t - CORT - 1.6) / 1.4, 0, 1); sigDot.visible = su > 0 && su < 1; SIG.getPointAt(su, sigDot.position); const cort = smooth(CORT + 3.0, CORT + 5.0, t) + (t >= HEART ? 1 : 0);
-  ADR.forEach(a => a.scale.setScalar(1 + 0.5 * smooth(CORT + 2.9, CORT + 3.3, t) * (0.6 + 0.4 * Math.sin(t * 8))));
-  const bpm = bpmAt(t), sp = bpm / 62, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18); heartG.scale.setScalar(1 + 0.22 * beat);
+  PULSE.forEach((p, k) => { const u = clamp((t - lastBeat(t)) / 0.6 + k / 3, 0, 1); p.visible = alarm > 0.1; p.position.set(0, -0.035, 0.02); p.scale.setScalar(0.4 + 1.4 * u); p.material.opacity = (1 - u) * 0.22 * alarm * (1 - smooth(beat(21), beat(22), t)); });
+  const su = clamp((t - beat(21)) / (beat(23) - beat(21)), 0, 1); sigDot.visible = su > 0 && su < 1; SIG.getPointAt(su, sigDot.position); const cort = smooth(beat(23), HEART, t) + (t >= HEART ? 1 : 0);
+  ADR.forEach(a => a.scale.setScalar(1 + 0.5 * smooth(beat(23) - 0.1, beat(23) + 0.3, t) * (0.6 + 0.4 * Math.sin(t * 8))));
+  const sp = 1.3 + 0.4 * smooth(HEART, FORCE, t); heartG.scale.setScalar(1 + 0.28 * beatPulse(t));
   CL.forEach((C, i) => { const u = (C.u0 + t * C.sp * sp) % 1; VES[C.v].getPointAt(u, _v).add(C.off); _o.position.copy(_v); _o.rotation.set(t + i, t * 0.7 + i, 0); _o.scale.setScalar(1); _o.updateMatrix(); cellM.setMatrixAt(i, _o.matrix);
     _o.position.add(V3(0.009, 0.005, 0.004)); _o.scale.setScalar(C.s < Math.min(1, cort) * 0.75 ? 1 : 0.0001); _o.updateMatrix(); corM.setMatrixAt(i, _o.matrix); }); cellM.instanceMatrix.needsUpdate = corM.instanceMatrix.needsUpdate = true; }

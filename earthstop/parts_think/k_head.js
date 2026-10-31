@@ -8,7 +8,16 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // the fix: a to-do list on paper, asleep. Numbers: tools/overthink_math.py; sources in the chat (Zoccola, Brosschot 2007, Ansfield 1996, Tubbs 2022, Nota & Coles 2015,
 // Van Dongen 2003, LaFreniere & Newman 2019, Scullin 2018).
 // =================== timeline ===================
-const THINK = 4.0, CORT = 10.0, HEART = 16.0, FORCE = 22.0, MID = 28.0, MORN = 34.0, FOG = 40.0, WALL = 48.0, LIST = 55.0, ENDC = 60.0, T_END = 64.0;
+// v2 (her request, Oct 31): cut to HER TikTok sound — Grieg, "In the Hall of the Mountain King" (59.0 s clip; added in TikTok, not in the repo).
+// Beat grid from librosa (data/mk_beats.json): 83 → 103 BPM, the full orchestra enters at 21.2 s, the final hits 53.2–59.0 s. Everything lands on BEATS[k].
+const BEATS = [0.186, 0.906, 1.625, 2.345, 3.042, 3.738, 4.435, 5.132, 5.828, 6.502, 7.198, 7.872, 8.545, 9.218, 9.892, 10.565, 11.238, 11.889, 12.585, 13.259, 13.932, 14.582, 15.256, 15.929, 16.602, 17.276, 17.926, 18.576, 19.249, 19.9, 20.526, 21.2, 21.85, 22.5, 23.197, 23.824, 24.427, 24.985, 25.588, 26.215, 26.865, 27.492, 28.119, 28.746, 29.373, 29.977, 30.604, 31.208, 31.811, 32.415, 33.042, 33.669, 34.296, 34.9, 35.527, 36.107, 36.711, 37.314, 37.918, 38.545, 39.149, 39.753, 40.356, 40.96, 41.587, 42.191, 42.818, 43.421, 44.025, 44.606, 45.232, 45.836, 46.44, 47.02, 47.624, 48.228, 48.832, 49.412, 50.016, 50.596, 51.177, 51.757, 52.315, 52.895, 53.476, 54.079, 54.683, 55.263, 55.844, 56.424, 56.982, 57.794, 58.398, 58.979];
+const HITS = [53.15, 53.45, 54.36, 54.68, 55.82, 56.4, 56.68, 56.94, 57.79, 58.05, 58.96];   // the final hammer blows: notes get crossed out on these
+const beat = k => BEATS[Math.min(k, BEATS.length - 1)];
+const SONG_END = 59.02;
+const THINK = beat(5), CORT = beat(17), HEART = beat(24), FORCE = beat(31), MID = beat(41), MORN = beat(49), FOG = beat(57), WALL = beat(65), CROSS = HITS[0], LIST = 59.3, ENDC = 63.6, T_END = 67.0;
+const lastBeat = t => { let lo = 0, hi = BEATS.length - 1; if (t < BEATS[0]) return -9; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (BEATS[m] <= t) lo = m; else hi = m - 1; } return BEATS[lo]; };
+const lastHit = t => { let r = -9; for (const h of HITS) if (h <= t) r = h; return r; };
+const drive = t => t < FORCE ? 0.25 * t / FORCE : t < SONG_END ? 0.4 + 0.6 * (t - FORCE) / (CROSS - FORCE) : 0;   // how hard the picture hits the beat (grows with the music)
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================

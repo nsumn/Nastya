@@ -8,7 +8,16 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // the fix: a to-do list on paper, asleep. Numbers: tools/overthink_math.py; sources in the chat (Zoccola, Brosschot 2007, Ansfield 1996, Tubbs 2022, Nota & Coles 2015,
 // Van Dongen 2003, LaFreniere & Newman 2019, Scullin 2018).
 // =================== timeline ===================
-const THINK = 4.0, CORT = 10.0, HEART = 16.0, FORCE = 22.0, MID = 28.0, MORN = 34.0, FOG = 40.0, WALL = 48.0, LIST = 55.0, ENDC = 60.0, T_END = 64.0;
+// v2 (her request, Oct 31): cut to HER TikTok sound — Grieg, "In the Hall of the Mountain King" (59.0 s clip; added in TikTok, not in the repo).
+// Beat grid from librosa (data/mk_beats.json): 83 → 103 BPM, the full orchestra enters at 21.2 s, the final hits 53.2–59.0 s. Everything lands on BEATS[k].
+const BEATS = [0.186, 0.906, 1.625, 2.345, 3.042, 3.738, 4.435, 5.132, 5.828, 6.502, 7.198, 7.872, 8.545, 9.218, 9.892, 10.565, 11.238, 11.889, 12.585, 13.259, 13.932, 14.582, 15.256, 15.929, 16.602, 17.276, 17.926, 18.576, 19.249, 19.9, 20.526, 21.2, 21.85, 22.5, 23.197, 23.824, 24.427, 24.985, 25.588, 26.215, 26.865, 27.492, 28.119, 28.746, 29.373, 29.977, 30.604, 31.208, 31.811, 32.415, 33.042, 33.669, 34.296, 34.9, 35.527, 36.107, 36.711, 37.314, 37.918, 38.545, 39.149, 39.753, 40.356, 40.96, 41.587, 42.191, 42.818, 43.421, 44.025, 44.606, 45.232, 45.836, 46.44, 47.02, 47.624, 48.228, 48.832, 49.412, 50.016, 50.596, 51.177, 51.757, 52.315, 52.895, 53.476, 54.079, 54.683, 55.263, 55.844, 56.424, 56.982, 57.794, 58.398, 58.979];
+const HITS = [53.15, 53.45, 54.36, 54.68, 55.82, 56.4, 56.68, 56.94, 57.79, 58.05, 58.96];   // the final hammer blows: notes get crossed out on these
+const beat = k => BEATS[Math.min(k, BEATS.length - 1)];
+const SONG_END = 59.02;
+const THINK = beat(5), CORT = beat(17), HEART = beat(24), FORCE = beat(31), MID = beat(41), MORN = beat(49), FOG = beat(57), WALL = beat(65), CROSS = HITS[0], LIST = 59.3, ENDC = 63.6, T_END = 67.0;
+const lastBeat = t => { let lo = 0, hi = BEATS.length - 1; if (t < BEATS[0]) return -9; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (BEATS[m] <= t) lo = m; else hi = m - 1; } return BEATS[lo]; };
+const lastHit = t => { let r = -9; for (const h of HITS) if (h <= t) r = h; return r; };
+const drive = t => t < FORCE ? 0.25 * t / FORCE : t < SONG_END ? 0.4 + 0.6 * (t - FORCE) / (CROSS - FORCE) : 0;   // how hard the picture hits the beat (grows with the music)
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
@@ -426,9 +435,9 @@ const bedLamp = new THREE.PointLight(0xffc078, 0, 3.5, 1.4); bedLamp.position.se
 const blueL = new THREE.PointLight(0x5a78ff, 0, 6, 1.2); blueL.position.set(-1.5, 2.2, 2.4); room.add(blueL);
 // ---- thoughts: speech-bubble cards that pop up around your head (billboard sprites); after midnight they turn dark and bigger ----
 const THOUGHTS = [   // [appear t, text, dark] — drawn as speech bubbles in the DOM text layer (k_main.js), so they stay readable and never cover the caption
-  [THINK + 0.2, 'Did I lock the door?'], [THINK + 1.1, 'Why did I say “you too”<br>to the waiter?'], [THINK + 2.0, 'That thing I said<br>in 7th grade…'],
-  [THINK + 2.9, 'Did they read my text?'], [THINK + 3.8, 'Is that a new mole?'], [THINK + 4.7, 'Wait… what’s my purpose?'],
-  [MID + 0.4, 'What if I fail?', 1], [MID + 1.4, 'What if they’re all<br>mad at me?', 1], [MID + 2.4, 'What if I’m wasting<br>my life?', 1], [MID + 3.4, 'What if I never<br>sleep again?', 1]];
+  [beat(5), 'Did I lock the door?'], [beat(7), 'Why did I say “you too”<br>to the waiter?'], [beat(9), 'That thing I said<br>in 7th grade…'],
+  [beat(11), 'Did they read my text?'], [beat(13), 'Is that a new mole?'], [beat(15), 'Wait… what’s my purpose?'],
+  [beat(42), 'What if I fail?', 1], [beat(44), 'What if they’re all<br>mad at me?', 1], [beat(46), 'What if I’m wasting<br>my life?', 1], [beat(48), 'What if I never<br>sleep again?', 1]];   // each pops on a beat
 // ---- counting sheep: a little fence beside the bed, sheep hop over it toward your head; when trying too hard, they stop and turn to stare at you ----
 function makeSheep() { const g = new THREE.Group(); const wool = M('#f4f2ec', { flatShading: true, roughness: 1, emissive: '#4a4a46' }), blk = M('#2a2626', { flatShading: true });
   for (let i = 0; i < 7; i++) { const b = mesh(new THREE.IcosahedronGeometry(0.11, 0), wool); b.position.set((hash(i) - 0.5) * 0.12, 0.3 + (hash(i * 3) - 0.5) * 0.06, -0.12 + i * 0.04); g.add(b); }
@@ -445,6 +454,7 @@ const NOTES = NOTE_TXT.map((txt, i) => { const col = ['#fff27a', '#ffb0c8', '#9f
   const s = mesh(new THREE.PlaneGeometry(0.22, 0.22), new THREE.MeshBasicMaterial({ map: strike, transparent: true, depthWrite: false }), false, false); s.position.z = 0.002; n.add(s);
   const col_ = i % 6, row = Math.floor(i / 6); n.position.set(-3.92, 1.05 + row * 0.27 + 0.04 * (hash(i * 5) - 0.5), 0.45 + col_ * 0.33 + 0.05 * (hash(i * 7) - 0.5)); n.rotation.set(0, Math.PI / 2, (hash(i * 3) - 0.5) * 0.25);
   room.add(n); return { n, s, i, cross: i !== 4 && i !== 17 && i !== 26 }; });   // 27 of 30 = 90% (≈ the study's 91%): three stay
+const CROSSED = NOTES.filter(o => o.cross).map(o => o.i);   // struck out in this order, 2–3 per final hammer blow (HITS)
 // ---- coffee: a mug in your hand in the morning; week 2 you pour and miss (the cup overflows) ----
 const mug = new THREE.Group(); { const m = mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.1, 14), M('#e8603a')); m.position.y = 0.05; mug.add(m); const hdl = mesh(new THREE.TorusGeometry(0.025, 0.008, 6, 10), M('#e8603a')); hdl.position.set(0.05, 0.05, 0); mug.add(hdl);
   const cf = mesh(new THREE.CircleGeometry(0.04, 14), M('#4a2a18', { roughness: 0.3 })); cf.rotation.x = -Math.PI / 2; cf.position.y = 0.095; mug.add(cf); } room.add(mug);
@@ -472,9 +482,10 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     const dark = mode === 'mid'; lie(0.12 * Math.sin(t * 0.9) * (t > THINK ? 1 : 0.3)); blueL.intensity = dark ? 2.4 * smooth(MID, MID + 1.2, t) : 0; bedLamp.intensity = dark ? 0 : t < 1.2 ? 1.2 * (1 - smooth(0.6, 1.2, t)) : 0;
     P.face(dark ? 'anxious' : t < THINK ? 'neutral' : t < THINK + 3 ? 'worried' : 'surprised', t); }
   else if (mode === 'force') {   // 1:47: squeezing your eyes shut, counting sheep — then the sheep give up and stare
-    lie(); P.face(t < FORCE + 3.2 ? 'squint' : 'angry', t); fence.visible = true; const stop = FORCE + 3.4;
-    SHEEP.forEach((s, i) => { s.visible = true; const per = 1.6, tt = Math.min(t, stop + i * 0.05) - FORCE + i * per / SHEEP.length, u = (tt % per) / per, z = lerp(3.0, -0.2, u), hop = Math.max(0, 1 - Math.pow((z - 1.3) / 0.45, 2));
-      s.position.set(-1.75 + 0.06 * Math.sin(i * 2), 0.42 * hop, z); s.rotation.set(-0.35 * hop * Math.sign(1.3 - z), 0, 0); const run = t < stop; s.userData.legs.forEach((l, k) => l.rotation.x = run ? 0.6 * Math.sin(t * 16 + k * Math.PI) : 0);
+    const stop = beat(39); lie(); P.face(t < stop - 0.2 ? 'squint' : 'angry', t); fence.visible = true; const tq = Math.min(t, stop), v = 0.86;   // one sheep clears the fence on every beat
+    SHEEP.forEach((s, i) => { s.visible = true; let c = beat(31 + i - 6), best = 99; for (let j = -1; j <= 2; j++) { const cc = beat(31 + i + 6 * j); if (Math.abs(tq - cc) < best) { best = Math.abs(tq - cc); c = cc; } }
+      const z = 1.3 - (tq - c) * v, hop = Math.max(0, 1 - Math.pow((z - 1.3) / 0.45, 2)); s.position.set(-1.75 + 0.06 * Math.sin(i * 2), 0.42 * hop, z); s.rotation.set(-0.35 * hop * Math.sign(1.3 - z), 0, 0);
+      const run = t < stop; s.userData.legs.forEach((l, k) => l.rotation.x = run ? 0.6 * Math.sin(t * 16 + k * Math.PI) : 0); s.visible = z > -0.4 && z < 3.2;
       if (!run) { s.rotation.set(0, lerp(0, Math.PI / 2 + 0.25 * (hash(i) - 0.5), smooth(stop, stop + 0.4, t)), 0); s.position.y = 0; } }); }
   else if (mode === 'morn') {   // night 7, 7:00 AM: sitting on the bed edge, wrecked, coffee
     seatAt(P, -2.3, 0.45, 1.5, Math.PI / 2); duvet.visible = false; P.root.rotation.x = 0.25; P.face(t < MORN + 3 ? 'sleepy' : 'worried', t);
@@ -486,8 +497,8 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
     spillP.visible = true; spillP.position.set(3.55, 0.953, -1.5); spillP.scale.setScalar(0.06 + 0.22 * smooth(FOG + 1.0, FOG + 6.0, t));
     const hd = headOf(P); for (let k = 0; k < 40; k++) { const u = (t * 0.15 + k / 40) % 1, a = k * 2.4; haze.add(hd.clone().add(V3(Math.cos(a) * (0.15 + 0.25 * u), 0.05 + 0.25 * u, Math.sin(a) * (0.15 + 0.25 * u))), 0.12 + 0.1 * u, 0.32 * Math.sin(Math.PI * u)); } }
   else if (mode === 'wall') {   // night 30: standing at the foot of the bed facing a wall of worries; they get crossed out one by one
-    P.outer.position.set(-3.0, 0.95, 3.0); P.outer.rotation.set(0, -Math.PI * 0.62, 0); bedLamp.intensity = 1.6; P.face(t < WALL + 3.5 ? 'worried' : t < WALL + 5.6 ? 'surprised' : 'happy', t);
-    NOTES.forEach((o, i) => { const t0 = WALL + 0.1 + i * 0.09, sc = popS(t0); o.n.visible = sc > 0; o.n.scale.setScalar(Math.max(0.001, sc)); const tc = WALL + 3.6 + i * 0.075; o.s.visible = o.cross && t > tc; o.s.scale.set(clamp((t - tc) / 0.12, 0.01, 1), 1, 1); }); }
+    P.outer.position.set(-2.3, 0.95, 3.25); P.outer.rotation.set(0, -Math.PI * 0.62, 0); camKey.intensity = 1.0; bedLamp.intensity = 1.6; P.face(t < CROSS ? 'worried' : t < HITS[7] ? 'surprised' : 'happy', t);
+    NOTES.forEach((o, i) => { const k = 65 + (i >> 1), t0 = beat(k) + (i & 1) * 0.5 * (beat(k + 1) - beat(k)), sc = popS(t0); o.n.visible = sc > 0; o.n.scale.setScalar(Math.max(0.001, sc)); const tc = HITS[Math.floor(CROSSED.indexOf(i) * HITS.length / CROSSED.length)] ?? 99; o.s.visible = o.cross && t > tc; o.s.scale.set(clamp((t - tc) / 0.12, 0.01, 1), 1, 1); }); }
   else if (mode === 'list') {   // 11:36 PM: write tomorrow's list on paper, lamp on; then lights out, asleep
     const asleep = t > LIST + 2.9; bedLamp.intensity = asleep ? 1.4 * (1 - smooth(LIST + 2.9, LIST + 3.4, t)) : 1.8;
     if (!asleep) { seatAt(P, -2.75, 0.62, 1.55, 0); duvet.visible = false; P.root.rotation.x = 0.18; P.face('reading', t); P.arms[1].rotation.set(-0.7, 0, -0.25); P.elbows[1].rotation.x = -1.0 + 0.08 * Math.sin(t * 14); P.arms[0].rotation.set(-0.6, 0, 0.25); P.elbows[0].rotation.x = -0.9;
@@ -529,14 +540,14 @@ const vesMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.25, 0
 const CN = 260, cellM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 0.2, 0.15) }), CN), corM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.005, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.7, 0.85, 0.12) }), CN);
 cellM.frustumCulled = corM.frustumCulled = false; xr.add(cellM, corM);
 const CL = Array.from({ length: CN }, (_, i) => ({ v: i % VES.length, u0: rnd(), sp: R(0.25, 0.45), off: V3(R(-1, 1), R(-1, 1), R(-1, 1)).multiplyScalar(0.007), s: rnd() }));
-const bpmAt = t => lerp(62, 92, smooth(HEART + 0.5, HEART + 3.0, t));
+const beatPulse = t => Math.exp(-(t - lastBeat(t)) * 9);   // the heart and the alarm centre pulse on the song's beats
 const _o = new THREE.Object3D(), _v = new THREE.Vector3();
 function updateXray(t) { brainG.rotation.y = 0.25 * Math.sin(t * 0.5); const alarm = smooth(CORT + 0.3, CORT + 1.2, t);
   AMY.forEach(a => a.scale.set(1 + 0.4 * alarm * Math.abs(Math.sin(t * 6)), 0.8, 1.6)); amyM.color.setRGB(0.8 + 2.0 * alarm, 0.25, 0.2);
-  PULSE.forEach((p, k) => { const u = ((t * 1.2) + k / 3) % 1; p.visible = alarm > 0.1; p.position.set(0, -0.035, 0.02); p.scale.setScalar(0.4 + 1.4 * u); p.material.opacity = (1 - u) * 0.22 * alarm * (1 - smooth(CORT + 3.0, CORT + 3.6, t)); });
-  const su = clamp((t - CORT - 1.6) / 1.4, 0, 1); sigDot.visible = su > 0 && su < 1; SIG.getPointAt(su, sigDot.position); const cort = smooth(CORT + 3.0, CORT + 5.0, t) + (t >= HEART ? 1 : 0);
-  ADR.forEach(a => a.scale.setScalar(1 + 0.5 * smooth(CORT + 2.9, CORT + 3.3, t) * (0.6 + 0.4 * Math.sin(t * 8))));
-  const bpm = bpmAt(t), sp = bpm / 62, ph = (t * bpm / 60) % 1, beat = Math.exp(-ph * 9) + 0.5 * Math.exp(-Math.max(0, ph - 0.18) * 9) * (ph > 0.18); heartG.scale.setScalar(1 + 0.22 * beat);
+  PULSE.forEach((p, k) => { const u = clamp((t - lastBeat(t)) / 0.6 + k / 3, 0, 1); p.visible = alarm > 0.1; p.position.set(0, -0.035, 0.02); p.scale.setScalar(0.4 + 1.4 * u); p.material.opacity = (1 - u) * 0.22 * alarm * (1 - smooth(beat(21), beat(22), t)); });
+  const su = clamp((t - beat(21)) / (beat(23) - beat(21)), 0, 1); sigDot.visible = su > 0 && su < 1; SIG.getPointAt(su, sigDot.position); const cort = smooth(beat(23), HEART, t) + (t >= HEART ? 1 : 0);
+  ADR.forEach(a => a.scale.setScalar(1 + 0.5 * smooth(beat(23) - 0.1, beat(23) + 0.3, t) * (0.6 + 0.4 * Math.sin(t * 8))));
+  const sp = 1.3 + 0.4 * smooth(HEART, FORCE, t); heartG.scale.setScalar(1 + 0.28 * beatPulse(t));
   CL.forEach((C, i) => { const u = (C.u0 + t * C.sp * sp) % 1; VES[C.v].getPointAt(u, _v).add(C.off); _o.position.copy(_v); _o.rotation.set(t + i, t * 0.7 + i, 0); _o.scale.setScalar(1); _o.updateMatrix(); cellM.setMatrixAt(i, _o.matrix);
     _o.position.add(V3(0.009, 0.005, 0.004)); _o.scale.setScalar(C.s < Math.min(1, cort) * 0.75 ? 1 : 0.0001); _o.updateMatrix(); corM.setMatrixAt(i, _o.matrix); }); cellM.instanceMatrix.needsUpdate = corM.instanceMatrix.needsUpdate = true; }
 // =================== SHOTS (moving cameras: every framing dollies), HUD = NIGHT x OF 30 + the clock, captions in the series style (fade + pop, no word-by-word) ===================
@@ -546,59 +557,74 @@ const home = m => t => updateHome(t, m);
 const heartW = () => heartG.getWorldPosition(V3(0, 0, 0)), brainW = () => brainG.getWorldPosition(V3(0, 0, 0)), adrW = () => V3(0, 1.08, -0.03);
 const sp = (t, a, b) => ease(clamp((t - a) / (b - a), 0, 1));
 // [start, scene, camera, update(t), framing(t)]
-const SHOTS = [
+const B = beat, wallF = (dir, d0, d1, a, b) => t => fr(V3(-3.9, 1.5, 1.35), dir, lerp(d0, d1, sp(t, a, b)), 0.48);
+const faceW = (dir, d0, d1, a, b) => t => fr(H_(hero), dir, lerp(d0, d1, sp(t, a, b)), 0.64);
+const SHOTS = [   // every cut sits on a beat of her sound; the edit gets faster as the music speeds up (8 beats → 4 → 2 → every hit)
   [0.0, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(0.05, 1, 0.55), lerp(2.5, 2.0, sp(t, 0, THINK)), 0.66)],   // in bed, eyes open; the title above
-  [THINK, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(0.2, 1, 0.75), lerp(2.0, 1.75, sp(t, THINK, 7)), 0.6)],   // the thoughts pop up
-  [7.0, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(-0.35, 1, 0.6), lerp(1.75, 2.0, sp(t, 7, CORT)), 0.6)],
-  [CORT, xr, () => xCam, updateXray, t => { const a = lerp(Math.PI * 0.85, 0.3, sp(t, CORT, CORT + 3)); return fr(brainW(), V3(Math.sin(a), 0.12, Math.cos(a)), lerp(1.2, 0.62, sp(t, CORT, CORT + 3)), 0.5); }],   // spiral in to the alarm centre
-  [CORT + 3.0, xr, () => xCam, updateXray, t => fr(brainW().lerp(adrW(), sp(t, CORT + 3, CORT + 4.6)), V3(0.45, 0.1, 1), lerp(0.9, 1.05, sp(t, CORT + 3, HEART)), 0.45)],   // follow the signal down to the adrenals
-  [HEART, xr, () => xCam, updateXray, t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.62, 0.45, sp(t, HEART, HEART + 3)), 0.5)],
-  [HEART + 3.0, xr, () => xCam, updateXray, t => fr(heartW(), V3(-0.35, 0.1, 1), lerp(0.75, 0.62, sp(t, HEART + 3, FORCE)), 0.86)],   // under the heart-rate card
-  [FORCE, room, () => rmCam, home('force'), t => fr(V3(-2.35, 0.6, 0.95), V3(2.0, 0.85, 0.7), lerp(3.6, 3.2, sp(t, FORCE, FORCE + 3.4)), 0.64)],   // from beside the bed: the sheep hop across the frame   // you + the sheep hopping the fence
-  [FORCE + 3.4, room, () => rmCam, home('force'), t => fr(V3(-2.4, 0.6, 0.9), V3(1.6, 0.5, 0.35), lerp(2.8, 2.5, sp(t, FORCE + 3.4, MID)), 0.55)],   // they stop and stare
-  [MID, room, () => rmCam, home('mid'), t => fr(H_(hero), V3(0.1, 1, 0.6), lerp(2.4, 2.0, sp(t, MID, MID + 3)), 0.6)],
-  [MID + 3.0, room, () => rmCam, home('mid'), t => fr(H_(hero), V3(-0.3, 1, 0.5), lerp(2.0, 1.75, sp(t, MID + 3, MORN)), 0.6)],
-  [MORN, room, () => rmCam, home('morn'), t => fr(H_(hero), V3(1, 0.15, 0.45), lerp(2.0, 1.7, sp(t, MORN, MORN + 3)), 0.6)],
-  [MORN + 3.0, room, () => rmCam, home('morn'), t => fr(H_(hero), V3(0.85, 0.05, -0.35), lerp(1.35, 1.2, sp(t, MORN + 3, FOG)), 0.6)],
-  [FOG, room, () => rmCam, home('fog'), t => fr(V3(3.3, 1.45, -1.5), V3(-0.3, 0.22, 1), lerp(3.1, 2.8, sp(t, FOG, FOG + 4)), 0.74)],   // you + the overflowing cup
-  [FOG + 4.0, room, () => rmCam, home('fog'), t => fr(H_(hero), V3(0.5, 0.06, 1), lerp(1.4, 1.2, sp(t, FOG + 4, WALL)), 0.62)],
-  [WALL, room, () => rmCam, home('wall'), t => fr(V3(-3.9, 1.55, 1.3), V3(1, 0.12, 0.3), lerp(2.6, 2.25, sp(t, WALL, WALL + 3.4)), 0.47)],   // the wall fills up
-  [WALL + 3.4, room, () => rmCam, home('wall'), t => fr(V3(-3.9, 1.5, 1.4), V3(1, 0.1, 0.75), lerp(3.0, 2.8, sp(t, WALL + 3.4, WALL + 5.6)), 0.5)],   // over your shoulder: crossed out
-  [WALL + 5.6, room, () => rmCam, home('wall'), t => fr(H_(hero), V3(-0.85, 0.08, -0.5), lerp(1.3, 1.15, sp(t, WALL + 5.6, LIST)), 0.6)],
-  [LIST, room, () => rmCam, home('list'), t => fr(H_(hero), V3(0.5, 0.02, 1), lerp(1.6, 1.4, sp(t, LIST, LIST + 2.9)), 0.6)],   // writing tomorrow's list
+  [THINK, room, () => rmCam, home('bed'), t => fr(H_(hero), V3(0.2, 1, 0.75), lerp(2.0, 1.75, sp(t, THINK, B(11))), 0.6)],   // thoughts pop on the beats
+  [B(11), room, () => rmCam, home('bed'), t => fr(H_(hero), V3(-0.35, 1, 0.6), lerp(1.75, 2.0, sp(t, B(11), CORT)), 0.6)],
+  [CORT, xr, () => xCam, updateXray, t => { const a = lerp(Math.PI * 0.85, 0.3, sp(t, CORT, B(21))); return fr(brainW(), V3(Math.sin(a), 0.12, Math.cos(a)), lerp(1.2, 0.62, sp(t, CORT, B(21))), 0.5); }],   // into the alarm centre
+  [B(21), xr, () => xCam, updateXray, t => fr(brainW().lerp(adrW(), sp(t, B(21), B(23))), V3(0.45, 0.1, 1), lerp(0.9, 1.05, sp(t, B(21), HEART)), 0.45)],   // the signal runs down to the adrenals
+  [HEART, xr, () => xCam, updateXray, t => fr(heartW(), V3(0.5, 0.15, 1), lerp(0.62, 0.45, sp(t, HEART, B(28))), 0.5)],   // the heart beats WITH the music
+  [B(28), xr, () => xCam, updateXray, t => fr(heartW(), V3(-0.35, 0.1, 1), lerp(0.75, 0.62, sp(t, B(28), FORCE)), 0.86)],
+  [FORCE, room, () => rmCam, home('force'), t => fr(V3(-2.35, 0.6, 0.95), V3(2.0, 0.85, 0.7), lerp(3.6, 3.2, sp(t, FORCE, B(35))), 0.64)],   // the orchestra kicks in: a sheep on every beat
+  [B(35), room, () => rmCam, home('force'), t => fr(H_(hero), V3(0.9, 0.75, 0.9), lerp(2.0, 1.8, sp(t, B(35), B(39))), 0.55)],   // you, squeezing your eyes shut
+  [B(39), room, () => rmCam, home('force'), t => fr(V3(-2.4, 0.6, 0.9), V3(1.6, 0.5, 0.35), lerp(2.8, 2.5, sp(t, B(39), MID)), 0.55)],   // they stop and stare
+  [MID, room, () => rmCam, home('mid'), t => fr(H_(hero), V3(0.1, 1, 0.6), lerp(2.4, 2.0, sp(t, MID, B(45))), 0.6)],
+  [B(45), room, () => rmCam, home('mid'), t => fr(H_(hero), V3(-0.3, 1, 0.5), lerp(2.0, 1.75, sp(t, B(45), MORN)), 0.6)],
+  [MORN, room, () => rmCam, home('morn'), t => fr(H_(hero), V3(1, 0.15, 0.45), lerp(2.0, 1.7, sp(t, MORN, B(53))), 0.6)],
+  [B(53), room, () => rmCam, home('morn'), t => fr(H_(hero), V3(0.85, 0.05, -0.35), lerp(1.35, 1.2, sp(t, B(53), FOG)), 0.6)],
+  [FOG, room, () => rmCam, home('fog'), t => fr(V3(3.3, 1.45, -1.5), V3(-0.3, 0.22, 1), lerp(3.1, 2.8, sp(t, FOG, B(61))), 0.74)],
+  [B(61), room, () => rmCam, home('fog'), t => fr(H_(hero), V3(0.5, 0.06, 1), lerp(1.4, 1.2, sp(t, B(61), WALL)), 0.62)],
+  [WALL, room, () => rmCam, home('wall'), wallF(V3(1, 0.12, 0.3), 2.6, 2.3, WALL, B(69))],   // the notes slap on, two per beat
+  [B(69), room, () => rmCam, home('wall'), faceW(V3(-0.75, 0.1, -0.6), 1.35, 1.27, B(69), B(73))],
+  [B(73), room, () => rmCam, home('wall'), wallF(V3(1, 0.1, -0.2), 2.3, 2.0, B(73), B(77))],
+  [B(77), room, () => rmCam, home('wall'), faceW(V3(-0.55, 0.12, -0.83), 1.3, 1.23, B(77), B(79))],
+  [B(79), room, () => rmCam, home('wall'), wallF(V3(1, 0.12, 0.5), 2.0, 1.8, B(79), B(81))],
+  [B(81), room, () => rmCam, home('wall'), faceW(V3(-0.85, 0.05, -0.45), 1.23, 1.13, B(81), CROSS)],   // closer and closer…
+  [HITS[0], room, () => rmCam, home('wall'), wallF(V3(1, 0.12, 0.3), 2.5, 2.4, HITS[0], HITS[2])],   // the hammer blows: crossed out, cut on every pair of hits
+  [HITS[2], room, () => rmCam, home('wall'), faceW(V3(-0.75, 0.1, -0.6), 1.3, 1.25, HITS[2], HITS[4])],
+  [HITS[4], room, () => rmCam, home('wall'), wallF(V3(1, 0.1, 0.75), 2.9, 2.8, HITS[4], HITS[7])],
+  [HITS[7], room, () => rmCam, home('wall'), faceW(V3(-0.55, 0.12, -0.83), 1.35, 1.3, HITS[7], HITS[8])],
+  [HITS[8], room, () => rmCam, home('wall'), wallF(V3(1, 0.15, 0.3), 2.7, 2.6, HITS[8], HITS[10])],
+  [HITS[10], room, () => rmCam, home('wall'), faceW(V3(-0.7, 0.1, -0.7), 1.25, 1.35, HITS[10], LIST)],   // the music ends; you breathe out
+  [LIST, room, () => rmCam, home('list'), t => fr(H_(hero), V3(0.5, 0.02, 1), lerp(1.6, 1.4, sp(t, LIST, LIST + 2.9)), 0.6)],   // writing tomorrow's list (silence)
   [LIST + 2.9, room, () => rmCam, home('list'), t => fr(H_(hero), V3(0.1, 1, 0.6), lerp(1.8, 2.3, sp(t, LIST + 2.9, T_END)), 0.6)]];   // asleep (under the end card too)
-function shootShot(S, t, rt) { const [, scene, cam, upd, frm] = S; upd(t); const c = cam(); applyF(c, frm(t)); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, scene, c); }
+// a punch-in on every beat (and on every final hammer blow) + a shake that grows with the music
+function shootShot(S, t, rt) { const [, scene, cam, upd, frm] = S; upd(t); const c = cam(); const F = frm(t), dv = drive(t), k = Math.exp(-(t - Math.max(lastBeat(t), lastHit(t) + 0.0)) * 7), hk = t >= CROSS && t < SONG_END ? Math.exp(-(t - lastHit(t)) * 6) : 0;
+  F.fov *= 1 - 0.05 * dv * k - 0.07 * hk; F.pos.add(V3(Math.sin(t * 37), Math.sin(t * 29 + 1), Math.sin(t * 23 + 2)).multiplyScalar(0.012 * dv * dv + 0.02 * hk)); applyF(c, F); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, scene, c); }
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'tl', 'tlN', 'tlC', 'pop', 'card', 'labels', 'th'].map(k => [k, $(k)]));
 const CAPS = [
-  [THINK + 0.2, 7.0, 'Your body is tired.'], [7.0, CORT - 0.15, 'Your brain: “Let’s talk about everything.”'],
-  [CORT + 0.3, CORT + 3.0, 'Replaying a stress fires up your brain’s alarm…'], [CORT + 3.2, HEART - 0.15, '…and keeps your stress hormone, cortisol, high at bedtime.'],
-  [HEART + 0.3, HEART + 3.0, 'Worry follows you into sleep:'], [HEART + 3.2, FORCE - 0.15, 'your heart beats faster all night.'],
-  [FORCE + 0.3, FORCE + 3.3, 'You try HARD to fall asleep.'], [FORCE + 3.5, MID - 0.15, 'Trying hard can make it slower.'],
-  [MID + 0.3, MID + 3.0, 'Scientists think that after midnight…'], [MID + 3.2, MORN - 0.15, '…the brain leans negative.'],
-  [MORN + 0.3, MORN + 3.0, 'Tired brains overthink more.'], [MORN + 3.2, FOG - 0.15, 'It’s a loop.'],
-  [FOG + 0.3, FOG + 4.0, '2 weeks of 6-hour nights: as foggy as an all-nighter.'], [FOG + 4.2, WALL - 0.15, 'And you don’t even notice.'],
-  [WALL + 0.3, WALL + 3.4, 'Night 30. A wall of worries.'], [WALL + 3.6, LIST - 0.15, 'In one study, <b>91%</b> of worries never came true.'],
+  [THINK + 0.2, B(11), 'Your body is tired.'], [B(11), CORT - 0.15, 'Your brain: “Let’s talk about everything.”'],
+  [CORT + 0.3, B(21), 'Replaying a stress fires up your brain’s alarm…'], [B(21), HEART - 0.15, '…and keeps your stress hormone, cortisol, high at bedtime.'],
+  [HEART + 0.3, B(28), 'Worry follows you into sleep:'], [B(28), FORCE - 0.15, 'your heart beats faster all night.'],
+  [FORCE + 0.3, B(39), 'You try HARD to fall asleep.'], [B(39), MID - 0.15, 'Trying hard can make it slower.'],
+  [MID + 0.3, B(45), 'Scientists think that after midnight…'], [B(45), MORN - 0.15, '…the brain leans negative.'],
+  [MORN + 0.3, B(53), 'Tired brains overthink more.'], [B(53), FOG - 0.15, 'It’s a loop.'],
+  [FOG + 0.3, B(61), '2 weeks of 6-hour nights: as foggy as an all-nighter.'], [B(61), WALL - 0.15, 'And you don’t even notice.'],
+  [WALL + 0.3, B(77), 'Night 30. A wall of worries.'], [B(77), CROSS - 0.1, 'Every night, more.'],
+  [CROSS + 0.05, HITS[10], 'In one study, <b>91%</b> of worries never came true.'], [HITS[10], LIST - 0.05, 'Breathe.'],
   [LIST + 0.3, LIST + 2.8, 'Try this: write tomorrow’s to-do list.'], [LIST + 3.0, ENDC - 0.15, 'People fell asleep <b>~9 min</b> faster.']];
 // big numbers (MODEL = our own assumption: ~1 extra hour awake a night, tools/overthink_math.py)
-const POPS = [[FOG + 0.3, FOG + 4.0, () => '14 H', 'SLEEP LOST · MODEL'], [WALL + 3.6, LIST - 0.2, () => '91%', 'NEVER HAPPENED'], [LIST + 3.0, ENDC - 0.2, () => '−9 MIN', 'TO FALL ASLEEP']];
-const sheepAt = t => Math.floor(1 + Math.min(t - FORCE, 3.4) * 3.75 + 1240);
+const POPS = [[FOG + 0.3, B(61), () => '14 H', 'SLEEP LOST · MODEL'], [HITS[8], HITS[10] + 0.2, () => '91%', 'NEVER HAPPENED'], [LIST + 3.0, ENDC - 0.2, () => '−9 MIN', 'TO FALL ASLEEP']];
+const sheepAt = t => 1243 + BEATS.filter(b => b >= FORCE && b <= Math.min(t, beat(39))).length;   // +1 per sheep = per beat
 function labelsAt(t, i) { if (SHOTS[i][1] !== xr || t >= HEART) return ''; const out = [], put = (p, txt, a) => { const v = p.clone().project(xCam); if (v.z > 1) return; out.push(`<div class="lb" style="left:${((v.x + 1) / 2 * W).toFixed(0)}px;top:${((1 - v.y) / 2 * H).toFixed(0)}px;opacity:${a.toFixed(2)}">${txt}</div>`); };
-  brainG.updateMatrixWorld(true); put(AMY[1].getWorldPosition(V3(0, 0, 0)).add(V3(0.04, 0.09, 0)), 'ALARM CENTER', fadeWin(t, CORT + 0.6, CORT + 3.0, 0.25));
-  put(adrW().add(V3(0.08, 0.06, 0)), 'ADRENAL GLANDS', fadeWin(t, CORT + 4.0, CORT + 6.0, 0.25)); put(V3(-0.1, 1.2, 0.05), 'CORTISOL', fadeWin(t, CORT + 4.6, HEART, 0.25)); return out.join(''); }
+  brainG.updateMatrixWorld(true); put(AMY[1].getWorldPosition(V3(0, 0, 0)).add(V3(0.04, 0.09, 0)), 'ALARM CENTER', fadeWin(t, CORT + 0.5, beat(21), 0.25));
+  put(adrW().add(V3(0.08, 0.06, 0)), 'ADRENAL GLANDS', fadeWin(t, beat(22), HEART + 0.3, 0.25)); put(V3(-0.1, 1.2, 0.05), 'CORTISOL', fadeWin(t, beat(23), HEART, 0.25)); return out.join(''); }
 // thought bubbles in fixed screen slots around your face (left / right, clear of the right-hand icon column below y 950 and of the caption band)
 const SLOTS = [[60, 560, 'l'], [560, 610, 'r'], [70, 760, 'l'], [560, 800, 'r'], [80, 960, 'l'], [330, 1110, 'l']], DSLOTS = [[60, 560, 'l'], [520, 640, 'r'], [70, 860, 'l'], [300, 1080, 'l']];
 function thoughtsAt(t, i) { const k = SHOTS[i][1] === room ? (t < CORT ? 0 : t >= MID && t < MORN ? 1 : -1) : -1; if (k < 0) return ''; let n = 0;
   return THOUGHTS.filter(o => !!o[2] === !!k).map(([t0, txt, dark]) => { const [x, y, side] = (dark ? DSLOTS : SLOTS)[n++]; const u = clamp((t - t0) / 0.28, 0, 1); if (u <= 0) return '';
     const sc = 1 + 0.3 * Math.sin(Math.PI * u) * (1 - u) - (1 - u) * (1 - u) * 0.95, bob = 6 * Math.sin(t * 1.4 + n);
     return `<div class="tb${dark ? ' dk' : ''} ${side}" style="left:${x}px;top:${(y + bob).toFixed(0)}px;transform:scale(${sc.toFixed(3)})">${txt}</div>`; }).join(''); }
-function ecg(t) { const bpm = bpmAt(t), ph = t * bpm / 60 * 0.5; let d = ''; for (let x = 0; x <= 640; x += 4) { const u = ((x / 160 + ph) % 1), y = 170 - 80 * Math.exp(-Math.pow((u - 0.2) / 0.015, 2)) + 24 * Math.exp(-Math.pow((u - 0.24) / 0.012, 2)) - 14 * Math.exp(-Math.pow((u - 0.08) / 0.03, 2)) - 22 * Math.exp(-Math.pow((u - 0.5) / 0.06, 2)); d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1); } return d; }
+function ecg(t) { const ph = t * 0.85; let d = ''; for (let x = 0; x <= 640; x += 4) { const u = ((x / 160 + ph) % 1), y = 170 - 80 * Math.exp(-Math.pow((u - 0.2) / 0.015, 2)) + 24 * Math.exp(-Math.pow((u - 0.24) / 0.012, 2)) - 14 * Math.exp(-Math.pow((u - 0.08) / 0.03, 2)) - 22 * Math.exp(-Math.pow((u - 0.5) / 0.06, 2)); d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1); } return d; }
 function updateDOM(t, i) { el.title.style.opacity = fadeWin(t, 0, THINK, 0.35);
   const c = clockAt(t); el.tl.style.opacity = smooth(0.4, 0.8, t) * (1 - smooth(ENDC - 0.3, ENDC, t)) * (SHOTS[i][1] === xr ? 0 : 1); el.tlN.textContent = `NIGHT ${c.night} OF 30`; el.tlC.innerHTML = `${c.txt}<small>${c.ap}</small>`;
   const pp = POPS.find(([a, b]) => t >= a && t < b); el.pop.innerHTML = pp ? `${pp[2](t)}<div class="ps">${pp[3]}</div>` : ''; el.pop.style.opacity = pp ? fadeWin(t, pp[0], pp[1], 0.2) : 0;
   el.pop.style.transform = pp ? `translateX(-50%) scale(${(0.7 + 0.3 * smooth(pp[0], pp[0] + 0.2, t) + 0.08 * Math.sin(Math.PI * clamp((t - pp[0]) / 0.3, 0, 1))).toFixed(3)})` : '';
-  if (t >= FORCE + 0.3 && t < MID) { el.pop.innerHTML = `<span style="font-size:80px">${fmt(sheepAt(t))}</span><div class="ps">SHEEP COUNTED</div>`; el.pop.style.opacity = fadeWin(t, FORCE + 0.3, MID, 0.2); el.pop.style.transform = 'translateX(-50%) translateY(-60px)'; }
-  if (t >= HEART + 3.0 && t < FORCE) { el.card.style.opacity = fadeWin(t, HEART + 3.0, FORCE, 0.2); el.card.innerHTML = `<div class="hd dp"><span>Your heart at night</span><em>WORRY DAY → FASTER ALL NIGHT</em></div><div class="bd" style="background:#0c1420"><svg viewBox="0 0 640 240" width="640" height="240"><path d="${ecg(t)}" stroke="#30e070" stroke-width="6" fill="none" stroke-linejoin="round"/></svg></div>`; }
+  if (t >= FORCE + 0.1 && t < MID) { el.pop.innerHTML = `<span style="font-size:80px">${fmt(sheepAt(t))}</span><div class="ps">SHEEP COUNTED</div>`; el.pop.style.opacity = fadeWin(t, FORCE + 0.1, MID, 0.2); el.pop.style.transform = `translateX(-50%) translateY(-60px) scale(${(1 + 0.12 * Math.exp(-(t - lastBeat(t)) * 8) * (t < beat(39) ? 1 : 0)).toFixed(3)})`; }
+  if (t >= B(28) && t < FORCE) { el.card.style.opacity = fadeWin(t, B(28), FORCE, 0.2); el.card.innerHTML = `<div class="hd dp"><span>Your heart at night</span><em>WORRY DAY → FASTER ALL NIGHT</em></div><div class="bd" style="background:#0c1420"><svg viewBox="0 0 640 240" width="640" height="240"><path d="${ecg(t)}" stroke="#30e070" stroke-width="6" fill="none" stroke-linejoin="round"/></svg></div>`; }
   else el.card.style.opacity = 0;
   el.labels.innerHTML = labelsAt(t, i); el.th.innerHTML = thoughtsAt(t, i);
   const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.18) : 0;
