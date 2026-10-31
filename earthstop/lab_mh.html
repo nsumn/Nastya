@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three'; import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const q = new URLSearchParams(location.search), who = (q.get('who') || 'hero').split(','), V = +(q.get('v') || 0);
+const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: true }); r.setSize(1080, 1920, false); r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace; r.shadowMap.enabled = true;
+const s = new THREE.Scene(); s.background = new THREE.Color('#a9bfd0'); s.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture; s.environmentIntensity = 0.7;
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.4); sun.position.set(2, 4, 4); s.add(sun);
+const L = new GLTFLoader(); const info = [];
+for (let i = 0; i < who.length; i++) { const g = await new Promise(ok => L.load('assets/growkr/mh/' + who[i] + '.glb', ok, undefined, e => { info.push('ERR ' + e.message); ok(null); })); if (!g) continue;
+  const o = g.scene; o.traverse(n => { if (!n.isMesh) return; const m = n.material; const cut = /eyebrow|eyelash|short|bob|long|ponytail|braid|hair/i.test(m.name);
+    m.transparent = false; m.depthWrite = true; if (cut) { m.alphaTest = 0.45; m.side = THREE.DoubleSide; } else m.alphaTest = 0; if (m.clearcoat) m.clearcoat = 0; n.castShadow = n.receiveShadow = true; }); o.position.x = (i - (who.length - 1) / 2) * 0.75; s.add(o); const b = new THREE.Box3().setFromObject(o); info.push(who[i] + ' h=' + (b.max.y - b.min.y).toFixed(3));
+  o.traverse(n => { if (n.isMesh) info.push('  ' + n.name + ' ' + (n.isSkinnedMesh ? 'skinned' : '') + ' mat=' + n.material.name + ' map=' + !!n.material.map + ' tr=' + n.material.transparent + ' a=' + n.material.alphaTest); }); }
+const cam = new THREE.PerspectiveCamera(30, 1080 / 1920, 0.05, 100);
+if (V === 1) { cam.position.set(0, 1.62, 0.75); cam.lookAt(0, 1.6, 0); } else { cam.position.set(0, 0.95, 4.6); cam.lookAt(0, 0.9, 0); }
+r.render(s, cam); window.__info = info.join('\n'); console.log(window.__info); window.sceneReady = Promise.resolve(true); window.renderAt = () => r.render(s, cam);
+</script></body></html>
