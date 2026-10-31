@@ -487,6 +487,7 @@ function text(t) {
   const a = altAt(t); $('sub').textContent = `바람 ${fmtV(vAt(t))}` + (a > 0 ? ` · 고도 ${a < 1000 ? Math.round(a) + 'm' : (a / 1000).toFixed(1) + 'km'}` : '');
   $('hud').style.opacity = 1 - smooth(29.8, 30.2, t); $('title').style.opacity = 1 - smooth(1.6, 2.0, t);
   const c = CAPS.find(c => t >= c[0] && t < c[1]); $('cap').innerHTML = c ? c[2] : ''; $('cap').style.opacity = c ? smooth(c[0], c[0] + 0.1, t) * (1 - smooth(c[1] - 0.1, c[1], t)) : 0;
+  if (c) { const k = clamp((t - c[0]) / 0.25, 0, 1); $('cap').style.transform = `scale(${k >= 1 ? 1 : 0.82 + 0.18 * easeOutBack(k)})`; }
   $('flash').style.opacity = Math.max(smooth(15.75, 15.95, t) * (1 - smooth(16.0, 16.4, t)), 0.7 * Math.max(0, 1 - Math.abs(t - 12.05) / 0.12));
   $('end').style.opacity = smooth(END0, END0 + 0.4, t); $('endT').style.opacity = smooth(END0 + 0.2, END0 + 0.7, t); $('endS').style.opacity = smooth(END0 + 0.6, END0 + 1.1, t);
 }
@@ -519,7 +520,7 @@ function classAt(t) {
     const sp = Math.pow(2, Math.min(W_, 7)) * 0.11 + 0.6, s = a * sp * (0.8 + 0.4 * p.k);
     const lift = Math.min(1, a / 0.5); loopPos(p.p0.x + Math.sin(a * 2 + p.k * 6) * 0.4, s, tmp); p.m.position.lerpVectors(p.p0, tmp, lift); p.m.rotation.set(a * (3 + p.k * 4), a * (2 + p.k * 3), a * 5 * p.k); }
   for (const e of extraSheets) { const on = W_ > 3.4; e.m.visible = on; if (!on) continue; const sp = Math.pow(2, Math.min(W_, 7)) * 0.11 + 0.6; loopPos(e.x, (t - 6) * sp * (0.7 + 0.5 * e.k) + e.off, tmp); e.m.position.copy(tmp); e.m.rotation.set(t * (4 + e.k * 5), t * 3 * e.k, t * 2); }
-  streakM.opacity = 0.35 * smooth(3.2, 5.5, W_);
+  streakM.opacity = 0.18 * smooth(3.2, 5.5, W_);
   for (const st of streaks) { const sp = Math.pow(2, Math.min(W_, 8)) * 0.2 + 1; loopPos(st.x, t * sp + st.off, tmp); st.m.position.copy(tmp); st.m.rotation.set(Math.PI / 2, 0, 0); }
   puffs.forEach((s, i) => { const a = ((t - 2.0) * 1.6 + i / puffs.length) % 1, on = t > 2.0 && t < 16; s.visible = on; if (!on) return; const k = Math.min(1, W_ / 4);
     s.position.set(ME.x + (hash(i) - 0.5) * 0.3 * (1 + a * 3), 0.42 + a * (0.3 + k * 1.2), ME.z + 0.62 + a * (0.5 + k * 3.2)); const sc = 0.15 + a * (0.3 + k * 0.7); s.scale.set(sc, sc, 1); s.material.opacity = (1 - a) * (0.18 + 0.12 * Math.min(1, W_ / 3)) * (1 - 0.6 * smooth(4, 7, W_)); });
@@ -532,25 +533,23 @@ const LOOK = (cam, p, l, fov = 42) => { cam.position.copy(p); cam.up.set(0, 1, 0
 function heroFlight(t, scene) {   // pose the flying student at the origin of `scene`'s local frame; returns butt position
   const P = hero; if (P.outer.parent !== scene) scene.add(P.outer); poseRest(P); place(P, 0, 0, 0.3); rocket(P, t);
   face(P, t < 20 ? 'shocked' : t < 24 ? 'laugh' : t < 28 ? 'wow' : 'proud', t); P.outer.updateMatrixWorld(true); }
-window.renderAt = (t) => {
-  text(t);
-  if (window.PASS === 'text') return true;
-  if (t >= END0 + 0.4) { renderer.setRenderTarget(null); renderer.setClearColor('#101114', 1); renderer.clear(); return true; }
+function frameAt(t) {
   compMat.uniforms.uLook.value = 0.0;
   if (t < LIFT) {
     if (hero.outer.parent !== cls) cls.add(hero.outer);
     classAt(t);
     const H_ = boneW(hero, 'head'), sh = Math.min(7, Math.floor(t / 2)), u = (t % 2) / 2;
-    if (sh === 0) LOOK(cCam, V3(3.6 - 0.8 * u, 2.3 - 0.2 * u, -3.4 + 0.6 * u), V3(ME.x, 0.9, ME.z + 0.5), 46);                       // wide from the front corner, push in
-    else if (sh === 1) LOOK(cCam, V3(ME.x - 0.75, 1.05, ME.z - 0.95 - 0.1 * u), V3(ME.x + 0.15, 1.05, ME.z + 1.2), 44);                // close: him + the classmate behind
-    else if (sh === 2) LOOK(cCam, V3(3.9, 1.5, ME.z + 0.6 + 0.6 * u), V3(-1, 1.1, ME.z + 1.6), 50);                                   // side: papers lift off
-    else if (sh === 3) LOOK(cCam, V3(-0.6 + 0.3 * u, 2.0, -3.6), V3(0, 1.0, 1.4), 54);                                               // front wide
-    else if (sh === 4) LOOK(cCam, V3(0.5, 1.4, 3.75), V3(ME.x, 1.1, ME.z), 60);                                                    // from the back wall: everything flies at us
-    else if (sh === 5) LOOK(cCam, V3(4.1, 2.4, 3.6 - 1.0 * u), V3(-2.5, 1.0, -0.5), 58);                                             // wide from the back corner
-    else if (sh === 6) LOOK(cCam, V3(2.6, 1.3, -1.0 + 0.6 * u), V3(-4.5, 1.6, -0.2), 52);                                            // windows burst
-    else LOOK(cCam, V3(ME.x + 0.9, 0.55, ME.z - 0.6), V3(ME.x, 1.7 + 1.2 * u, ME.z + 0.3), 64);                                      // low: he rises
+    const e = x => x * x * (3 - 2 * x), U = e(u);
+    if (sh === 0) { if (u < 0.35) LOOK(cCam, V3(0.15, 2.55, -2.9), V3(0, 2.62, -4), 30 + 10 * U); else LOOK(cCam, V3(0.5 - 0.3 * U, 2.1 - 0.5 * U, -3.2 + 1.6 * U), V3(ME.x, 1.0, ME.z + 0.4), 46); }   // clock → dolly back down the aisle
+    else if (sh === 1) { const a = -0.5 + 0.5 * U; LOOK(cCam, V3(ME.x + Math.sin(a) * (1.25 - 0.3 * U), 1.08, ME.z - Math.cos(a) * (1.25 - 0.3 * U)), V3(ME.x + 0.1, 1.05, ME.z + 0.9), 44); }      // arc + push on his face, the girl behind
+    else if (sh === 2) LOOK(cCam, V3(-2.6 + 4.4 * U, 1.35, ME.z + 2.35), V3(-1.8 + 4.0 * U, 1.0, ME.z + 0.4), 50);                           // truck along the row behind him
+    else if (sh === 3) { const a = 1.1 - 0.6 * U; LOOK(cCam, V3(ME.x + Math.sin(a) * 3.2, 1.4 + 0.3 * U, ME.z + 0.8 + Math.cos(a) * 3.2), V3(ME.x, 1.1, ME.z + 1.2), 52); }               // side arc, cards fly past
+    else if (sh === 4) LOOK(cCam, V3(0.5 - 0.3 * U, 1.45, 3.75 - 1.2 * U), V3(ME.x, 1.1, ME.z), 60);                                     // back wall, push in against the wind
+    else if (sh === 5) LOOK(cCam, V3(3.6, 0.6 + 2.0 * U, 2.8 - 0.4 * U), V3(-1.5, 0.9 + 0.4 * U, 1.5), 60);                                // crane up: students pinned at the back
+    else if (sh === 6) LOOK(cCam, V3(2.6 - 0.8 * U, 1.3, -1.0 + 0.8 * U), V3(-4.5, 1.6, -0.2 + 0.5 * U), 52);                                 // to the windows (whip at 12 s)
+    else LOOK(cCam, V3(ME.x + 0.9, 0.55 + 0.9 * U, ME.z - 0.6), V3(ME.x, 1.7 + 1.0 * U, ME.z + 0.3), 64);                                    // low, dolly up with him
     cCam.position.add(V3(0.01 * Math.sin(t * 37), 0.01 * Math.cos(t * 41), 0).multiplyScalar(smooth(8, 14, t) * 3));                 // wind shake
-    shootTo(RTA, cls, cCam); composite(0, 1, 1); return true;
+    shootTo(RTA, cls, cCam); return true;
   }
   const a = altAt(t), base = V3(-6, 16, 161);   // the roof hole (school at z = 160)
   roofHole.visible = true;
@@ -564,7 +563,7 @@ window.renderAt = (t) => {
     else if (t < 18) { const d = 7; LOOK(kCam, pos.clone().add(V3(d * 0.6, -d * 0.9, d * 0.6)), pos.clone().add(V3(0, 0.9, 0)), 55); }
     else { const d = 6 + Math.min(a * 0.002, 4); LOOK(kCam, pos.clone().add(V3(d * 0.45, d * 0.7, d * 0.75)), pos.clone().add(V3(0, -0.4, 0)), 50); }
     kCam.near = 0.05; kCam.far = 90000; const camD = kCam.position.distanceTo(V3(0, 0, 0)); kw.fog.near = Math.max(900, camD * 0.5); kw.fog.far = Math.max(16000, camD * 6);
-    shootTo(RTA, kw, kCam); composite(0, 1, 1); return true;
+    shootTo(RTA, kw, kCam); return true;
   }
   // ----- stratosphere → space (Earth in km in `sp`; the student drawn on top in metres) -----
   heroFlight(t, heroS); hero.outer.position.set(0, 0, 0); hero.outer.updateMatrixWorld(true);
@@ -578,7 +577,24 @@ window.renderAt = (t) => {
   hCam.aspect = W / H; hCam.updateProjectionMatrix();
   renderer.setRenderTarget(RTA); renderer.setClearColor(0x000000, 1); renderer.clear(); renderer.render(sp, spCam);
   const ac = renderer.autoClear; renderer.autoClear = false; renderer.clearDepth(); renderer.render(heroS, hCam); renderer.autoClear = ac;
-  composite(0, 1, 1); return true;
+  return true;
 };
 function walkersOff() {}
+// ---- motion blur: average 4 sub-frames over a 180° shutter on the fast shots (vizavi-motion) ----
+const accRT = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
+const accMat = new THREE.ShaderMaterial({ uniforms: { tex: { value: RTA.texture }, w: { value: 0.25 } }, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false,
+  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }', fragmentShader: 'uniform sampler2D tex; uniform float w; varying vec2 vUv; void main(){ gl_FragColor=vec4(texture2D(tex,vUv).rgb*w,1.0); }' });
+const accScene = new THREE.Scene(); accScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), accMat));
+const MB = t => (t >= 6 && t < 16) || (t >= 16 && t < 30);   // fast shots: flying paper, wind, flight
+window.renderAt = (t) => {
+  text(t);
+  if (window.PASS === 'text') return true;
+  if (t >= END0 + 0.4) { renderer.setRenderTarget(null); renderer.setClearColor('#101114', 1); renderer.clear(); return true; }
+  // whip-pan on the window burst (12 s): horizontal smear around the cut
+  compMat.uniforms.uWhip.value = 0.06 * Math.max(0, 1 - Math.abs(t - 11.95) / 0.12);
+  if (!MB(t)) { frameAt(t); composite(0, 1, 1); return true; }
+  const n = 4, shutter = 0.5 / 30; renderer.setRenderTarget(accRT); renderer.setClearColor(0x000000, 1); renderer.clear();
+  for (let k = 0; k < n; k++) { frameAt(t + (k / (n - 1) - 0.5) * shutter); accMat.uniforms.w.value = 1 / n; const ac = renderer.autoClear; renderer.autoClear = false; renderer.setRenderTarget(accRT); renderer.render(accScene, compCam); renderer.autoClear = ac; }
+  compMat.uniforms.tA.value = accRT.texture; composite(0, 1, 1); compMat.uniforms.tA.value = RTA.texture; return true;
+};
 window.sceneReady = (async () => { await document.fonts.ready; window.renderAt(0); return true; })();
