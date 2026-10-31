@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three'; import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: true }); r.setSize(1080, 1920, false); r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace; r.shadowMap.enabled = true;
+const s = new THREE.Scene(); s.background = new THREE.Color('#9fb8cc'); s.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(2, 4, 3); s.add(sun);
+const L = new GLTFLoader(); const load = u => new Promise(ok => L.load(u, ok, undefined, e => { console.log('ERR', u, e.message); ok(null); }));
+const items = [['assets/growkr/chars/Michelle.glb', 1], ['assets/growkr/chars/Soldier.glb', 1], ['assets/growkr/chars/ubc/Superhero_Male_FullBody.gltf', 1], ['assets/growkr/chars/ubc/Superhero_Female_FullBody.gltf', 1]];
+const info = [];
+for (let i = 0; i < items.length; i++) { const g = await load(items[i][0]); if (!g) continue; const o = g.scene; const b = new THREE.Box3().setFromObject(o); const h = b.max.y - b.min.y; o.scale.setScalar(1.75 / h); o.position.set((i % 2) * 1.0 - 0.5, (i < 2 ? 1.95 : 0) - b.min.y * 1.75 / h, 0); s.add(o); info.push(items[i][0].split('/').pop() + ' h=' + h.toFixed(2) + ' anims=' + g.animations.map(a => a.name).join(',')); }
+const hair = await load('assets/growkr/chars/ubc_hair/Hair_SimpleParted.gltf'); if (hair) info.push('hair ok');
+const cam = new THREE.PerspectiveCamera(30, 1080 / 1920, 0.1, 100); cam.position.set(0, 1.9, 8.5); cam.lookAt(0, 1.9, 0);
+r.render(s, cam); window.__info = info.join('\n'); window.sceneReady = Promise.resolve(true); window.renderAt = () => r.render(s, cam);
+</script></body></html>
