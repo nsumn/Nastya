@@ -6,6 +6,9 @@ Each character: phenotype (Asian), skin, eyes, eyebrows, eyelashes, hair, clothe
 import bpy, os, sys, json, addon_utils
 addon_utils.enable('bl_ext.user_default.mpfb', default_set=True)
 from bl_ext.user_default.mpfb.services.humanservice import HumanService
+from bl_ext.user_default.mpfb.services.faceservice import FaceService, ARKIT_FACEUNITS
+import bmesh, numpy as np
+ARKIT = set(ARKIT_FACEUNITS)
 
 OUT = sys.argv[sys.argv.index('--') + 1] if '--' in sys.argv else sys.argv[1]
 WANT = sys.argv[sys.argv.index('--') + 2:] if '--' in sys.argv else sys.argv[2:]
@@ -51,18 +54,42 @@ def build(name):
     st = HumanService.get_default_deserialization_settings()
     st.update(subdiv_levels=0, override_skin_model='PRESET', mask_helpers=True)
     base = HumanService.deserialize_from_dict(info, st)
-    # remove helper geometry (the mask modifier only hides it) so the export is clean
+    # facial expressions: the 52 ARKit face units (faceunits01 pack, CC0) as shape keys → glTF morph targets (driven per frame in three.js)
+    FaceService.load_targets(base, load_microsoft_visemes=False, load_arkit_faceunits=True)
+    FaceService.interpolate_targets(base)
     for o in list(bpy.data.objects):
-        if o.type == 'MESH':
-            bpy.context.view_layer.objects.active = o
-            if o.data.shape_keys: bpy.ops.object.shape_key_remove(all=True, apply_mix=True)
-            for m in list(o.modifiers):
-                if m.type == 'MASK':
-                    bpy.ops.object.modifier_move_to_index(modifier=m.name, index=0); bpy.ops.object.modifier_apply(modifier=m.name)
-                elif m.type == 'SUBSURF':
-                    o.modifiers.remove(m)
+        if o.type != 'MESH': continue
+        bpy.context.view_layer.objects.active = o
+        keys = o.data.shape_keys
+        if keys:   # bake every modelling key (phenotype etc.) into the basis AND into the kept expression keys; keep only ARKit units
+            kb = keys.key_blocks; basis = kb[0]; n = len(o.data.vertices)
+            co = lambda k: np.array([v.co[:] for v in k.data])
+            B = co(basis); delta = np.zeros_like(B); keep = []
+            for k in kb[1:]:
+                bare = k.name.split('-')[-1] if '-' in k.name else k.name
+                if bare in ARKIT: keep.append((k, bare))
+                else: delta += k.value * (co(k) - B)
+            for k, bare in keep:
+                C = co(k) + delta
+                for i, v in enumerate(k.data): v.co = C[i]
+                k.name = bare; k.value = 0.0
+            for i, v in enumerate(basis.data): v.co = B[i] + delta[i]
+            for i, v in enumerate(o.data.vertices): v.co = B[i] + delta[i]
+            for k in list(kb[1:]):
+                if k.name not in ARKIT: o.shape_key_remove(k)
+        # remove helper / hidden geometry the MASK modifiers only hide (works with shape keys, unlike applying the modifier)
+        for m in list(o.modifiers):
+            if m.type == 'MASK' and m.vertex_group in o.vertex_groups:
+                gi = o.vertex_groups[m.vertex_group].index
+                inside = [any(g.group == gi and g.weight > 0.5 for g in v.groups) for v in o.data.vertices]
+                drop = [i for i, f in enumerate(inside) if (f if m.invert_vertex_group else not f)]
+                bm = bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table()
+                bmesh.ops.delete(bm, geom=[bm.verts[i] for i in drop], context='VERTS'); bm.to_mesh(o.data); bm.free(); o.data.update()
+                o.modifiers.remove(m)
+            elif m.type == 'SUBSURF':
+                o.modifiers.remove(m)
     bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, name + '.glb'), export_format='GLB', export_skins=True, export_animations=False,
-                              export_apply=False, export_yup=True, export_image_format='JPEG', export_jpeg_quality=88)
+                              export_apply=False, export_morph=True, export_morph_normal=False, export_yup=True, export_image_format='JPEG', export_jpeg_quality=88)
     print('exported', name, [o.name for o in bpy.data.objects])
 
 os.makedirs(OUT, exist_ok=True)
