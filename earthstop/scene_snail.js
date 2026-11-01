@@ -485,7 +485,7 @@ function frameAt(t) {
     CARS.forEach(c => { c.g.position.set(snailPos(15.6).x + c.x0 + c.v * (t - 15.6), 0, c.lane); c.g.visible = t > 13 && t < 21; });
     ktx.position.x = snailPos(17.0).x + 40 + 83 * (t - 17.0); ktx.visible = t > 14 && t < 21;
     glow.visible = t > 14.5; glow.position.copy(p).add(V3(0, 0.02, 0)); glow.scale.setScalar(Math.max(0.05, kCam.position.distanceTo(p) * 0.06)); glow.material.opacity = smooth(14.5, 15.5, t);
-    const bk = (t - 19.0) / 0.8; boomS.visible = bk > 0 && bk < 1; boomS.position.copy(p).add(V3(0, 0.05, 0)); boomS.rotation.y = Math.PI / 2; boomS.scale.setScalar(0.5 + bk * 40); boomS.material.opacity = 0.8 * (1 - bk);
+    const bk = (t - 19.0) / 0.8; boomS.visible = bk > 0 && bk < 1; boomS.position.copy(p).add(V3(0, 0.05, 0)); boomS.rotation.y = Math.PI / 2; boomS.scale.setScalar(0.3 + bk * 8); boomS.material.opacity = 0.6 * (1 - bk);
     cloudDeck.visible = false;
     // cameras
     const sh = t < 2 ? 0 : t < 5 ? 1 : t < 8 ? 2 : t < 11 ? 3 : t < 15 ? 4 : t < 19 ? 5 : 6, u = sh === 0 ? t / 2 : sh <= 3 ? ((t - 2) % 3) / 3 : sh === 4 ? (t - 11) / 4 : sh === 5 ? (t - 15) / 4 : (t - 19) / 4, U = u * u * (3 - 2 * u);
