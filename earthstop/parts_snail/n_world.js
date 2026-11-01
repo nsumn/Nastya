@@ -1,4 +1,11 @@
-// =================== SNAIL (procedural, metres): helico-spiral shell with growth bands, soft body, 4 tentacles (eyes on the long pair), slime trail ===================
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+// real shell: photogrammetry scan 'haus1' (OpenGameArt 'snail 3d model', CC0) — OBJ converted from its ASCII FBX 6.1 by tools/fbx6_to_obj.py
+const SHELL = await new Promise(ok => new OBJLoader().load('assets/growkr/snail/shell.obj', ok, undefined, () => ok(null)));
+const shellMats = await (async () => { const L = new THREE.TextureLoader(), ld = u => new Promise(ok => L.load('assets/growkr/snail/' + u, ok, undefined, () => ok(null)));
+  const [c, n, orm] = await Promise.all([ld('haus1_3k_smooth_UV_None_BaseColor.jpg'), ld('haus1_3k_smooth_UV_None_Normal.jpg'), ld('haus1_3k_smooth_UV_None_OcclusionRoughnessMetallic.jpg')]);
+  if (c) c.colorSpace = THREE.SRGBColorSpace; return new THREE.MeshPhysicalMaterial({ map: c, normalMap: n, aoMap: orm, roughnessMap: orm, roughness: 0.55, clearcoat: 0.6, clearcoatRoughness: 0.25 }); })();
+const SHELL_ROT = (new URLSearchParams(location.search).get('sr') || '0,3.14,1.57').split(',').map(Number);
+// =================== SNAIL (procedural body, metres): helico-spiral shell with growth bands, soft body, 4 tentacles (eyes on the long pair), slime trail ===================
 function makeSnail() {
   const g = new THREE.Group();
   // shell: a tube swept along a log-spiral that rises a little, radius growing with the angle
@@ -10,17 +17,21 @@ function makeSnail() {
   const shellTex = canvasTex(512, 64, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#d9b68a'); gr.addColorStop(1, '#7a4e2a'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
     for (let x = 0; x < w; x += 3) { c.fillStyle = `rgba(60,35,15,${0.15 + 0.25 * hash(x)})`; c.fillRect(x, 0, 1, h); } c.fillStyle = 'rgba(70,40,18,.55)'; c.fillRect(0, 22, w, 8); c.fillRect(0, 40, w, 4); });
   const shell = mesh(tg, new THREE.MeshPhysicalMaterial({ map: shellTex, roughness: 0.35, clearcoat: 0.8, clearcoatRoughness: 0.2 }));
-  shell.rotation.set(0, Math.PI / 2, 0); shell.rotateX(3.14); shell.position.set(0, 0.0185, 0.001); shell.userData.base = shell.quaternion.clone(); g.add(shell);
+  shell.rotation.set(0, Math.PI / 2, 0); shell.rotateX(3.14); shell.position.set(0, 0.0185, 0.001); shell.userData.base = shell.quaternion.clone();
+  if (SHELL) { shell.visible = false; const sc = SHELL.clone(); sc.traverse(o => { if (o.isMesh) { o.material = shellMats; o.castShadow = o.receiveShadow = true; o.geometry.setAttribute('uv2', o.geometry.attributes.uv); } });
+    const b = new THREE.Box3().setFromObject(sc), sz = b.getSize(V3()), ctr = b.getCenter(V3()); const k = 0.024 / Math.max(sz.x, sz.y, sz.z); sc.position.copy(ctr).multiplyScalar(-k); sc.scale.setScalar(k);
+    const holder = new THREE.Group(); holder.add(sc); holder.rotation.set(...SHELL_ROT); holder.position.set(0, 0.0165, -0.002); g.add(holder); g.userData.holder = holder; }
+  g.add(shell);
   // body: a lathe 'foot' stretched along +Z (head forward), bumpy skin
   const prof = []; for (let i = 0; i <= 24; i++) { const u = i / 24; prof.push(new THREE.Vector2(0.0001 + 0.0062 * Math.sin(Math.PI * Math.pow(u, 0.75)) * (u < 0.9 ? 1 : 1 - (u - 0.9) * 6), u)); }
   const bg = new THREE.LatheGeometry(prof, 24); bg.scale(1, 0.042, 1); bg.rotateX(Math.PI / 2); bg.translate(0, 0.004, -0.02); { const Q = bg.attributes.position; for (let i = 0; i < Q.count; i++) if (Q.getY(i) < 0.001) Q.setY(i, 0.001); } bg.computeVertexNormals();
-  const skin = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#8f7f6a'; c.fillRect(0, 0, w, h); speckle(c, w, h, 2500, ['#7a6b58', '#9a8a74'], 3); });
-  const bodyM = new THREE.MeshPhysicalMaterial({ map: skin, roughness: 0.3, clearcoat: 1.0, clearcoatRoughness: 0.15 });
+  const skin = canvasTex(256, 256, (c, w, h) => { const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#5e5246'); gr.addColorStop(1, '#9a8b78'); c.fillStyle = gr; c.fillRect(0, 0, w, h); speckle(c, w, h, 5000, ['#4f453b', '#6b5e50', '#8a7b68'], 2); for (let i = 0; i < 260; i++) { c.fillStyle = 'rgba(40,32,26,.35)'; c.beginPath(); c.ellipse(hash(i) * w, hash(i * 2) * h, 3 + hash(i * 3) * 5, 2 + hash(i * 4) * 3, 0, 0, 7); c.fill(); } });
+  const bodyM = new THREE.MeshPhysicalMaterial({ map: skin, bumpMap: skin, bumpScale: 0.4, roughness: 0.35, clearcoat: 1.0, clearcoatRoughness: 0.08, sheen: 0.6, sheenColor: new THREE.Color('#d8cfc2') });
   const body = mesh(bg, bodyM); g.add(body);
   const neck = mesh(new THREE.CapsuleGeometry(0.0034, 0.008, 6, 12), bodyM); neck.rotation.x = Math.PI / 2 - 0.5; neck.position.set(0, 0.006, 0.019); g.add(neck);
   const tent = []; for (const [x, len, up] of [[-0.0022, 0.013, 0.9], [0.0022, 0.013, 0.9], [-0.003, 0.004, 0.35], [0.003, 0.004, 0.35]]) {
-    const t = new THREE.Group(); t.position.set(x, 0.0085, 0.023); g.add(t); const s = mesh(new THREE.CylinderGeometry(0.0006, 0.0009, len, 8), bodyM); s.position.y = len / 2; t.add(s);
-    if (len > 0.01) { const e = mesh(new THREE.SphereGeometry(0.0011, 10, 8), M('#2a2420', { roughness: 0.2 })); e.position.y = len; t.add(e); }
+    const t = new THREE.Group(); t.position.set(x, 0.0085, 0.023); g.add(t); const s = mesh(new THREE.CylinderGeometry(0.00075, 0.0013, len, 12), bodyM); s.position.y = len / 2; t.add(s);
+    if (len > 0.01) { const e = mesh(new THREE.SphereGeometry(0.0012, 14, 10), new THREE.MeshPhysicalMaterial({ color: '#2e2620', roughness: 0.15, clearcoat: 1 })); e.position.y = len; t.add(e); }
     t.rotation.x = up; t.rotation.z = x * 60; tent.push(t); }
   g.userData = { shell, body, tent };
   return g;
