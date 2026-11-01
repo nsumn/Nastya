@@ -1,49 +1,57 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="node_modules/@fontsource/cormorant-garamond/500.css">
-<link rel="stylesheet" href="node_modules/@fontsource/cormorant-garamond/500-italic.css">
-<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/400.css">
-<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/noto-serif-kr/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/noto-serif-kr/500.css">
+<link rel="stylesheet" href="node_modules/pretendard/dist/web/static/pretendard.css">
 <style>
   html,body{margin:0;padding:0;background:#000;overflow:hidden}
   #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
   canvas{display:block}
   .ov{position:absolute;left:0;right:0;pointer-events:none}
-  .hl{color:#f6b23e}
-  #title{top:500px;text-align:center;font-family:'Cormorant Garamond';font-weight:500;color:#fff;
-    font-size:80px;line-height:1.1;padding:0 70px;text-shadow:0 2px 18px rgba(0,0,0,.5),0 0 3px rgba(0,0,0,.3)}
-  #hud{left:70px;top:900px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.6)}
-  #slow{font-family:'JetBrains Mono';font-size:26px;letter-spacing:.14em;opacity:.9;height:36px}
-  #slow b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff3b30;margin-right:12px;vertical-align:1px}
-  #lab{font-family:'JetBrains Mono';font-weight:600;font-size:30px;letter-spacing:.1em}
-  #val{font-family:'Cormorant Garamond';font-weight:500;font-size:104px;line-height:1;margin-top:4px}
-  #sub{font-family:'JetBrains Mono';font-size:25px;letter-spacing:.08em;opacity:.85;margin-top:12px;max-width:860px}
-  #cap{top:1250px;text-align:center;font-family:'Cormorant Garamond';font-style:italic;font-weight:500;
-    color:#fff;font-size:60px;line-height:1.15;padding:0 140px;text-shadow:0 2px 14px rgba(0,0,0,.65)}
-  #shade{top:0;bottom:0;background:radial-gradient(ellipse 70% 30% at 25% 52%,rgba(0,0,0,.34),transparent 70%),linear-gradient(to bottom,rgba(0,0,0,.18),transparent 18%,transparent 62%,rgba(0,0,0,.3))}
-  #flash{top:0;bottom:0;background:#fff8ee;opacity:0}
-  .lbl{position:absolute;font-family:'JetBrains Mono';font-size:22px;letter-spacing:.12em;color:#fff;opacity:0;white-space:nowrap;text-shadow:0 1px 6px rgba(0,0,0,.8)}
-  #end{top:0;bottom:0;background:#141414;opacity:0}
-  #endT{top:700px;text-align:center;font-family:'Cormorant Garamond';font-weight:500;color:#f2f0ea;font-size:86px;line-height:1.1;opacity:0;padding:0 80px}
-  #endS{top:1010px;text-align:center;font-family:'JetBrains Mono';color:#9a978f;font-size:25px;letter-spacing:.08em;line-height:1.8;opacity:0;padding:0 80px}
+  /* ifcam-like typography: thin serif Korean title/captions, small sans labels, soft dark halo behind the HUD. TikTok safe zones kept (top > 320, captions at 1250). */
+  #title{top:560px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:400;color:#fff;font-size:68px;line-height:1.38;padding:0 110px;letter-spacing:-.01em;
+    text-shadow:0 1px 3px rgba(0,0,0,.35),0 2px 26px rgba(20,30,45,.55)}
+  #title .hl{color:#ffe3a3}
+  /* our own HUD: a frosted-glass card (Korean app UI feel) instead of a dark halo */
+  #halo{display:none}
+  #hud{left:84px;top:372px;right:auto;color:#fff;padding:22px 34px 24px;border-radius:30px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.38);
+    backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);box-shadow:0 10px 40px rgba(20,30,50,.18);text-shadow:0 1px 6px rgba(0,0,0,.25)}
+  #lab{font-family:'Pretendard',sans-serif;font-weight:500;font-size:24px;letter-spacing:.06em;opacity:.85}
+  #val{font-family:'Pretendard',sans-serif;font-weight:700;font-size:88px;line-height:1.08;margin-top:2px;letter-spacing:-.01em}
+  #sub{font-family:'Pretendard',sans-serif;font-weight:500;font-size:24px;letter-spacing:.04em;opacity:.85;margin-top:8px}
+  #cap{top:1250px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:600;color:#fff;font-size:50px;line-height:1.42;padding:0 170px;
+    text-shadow:0 0 3px rgba(0,0,0,.55),0 1px 12px rgba(0,0,0,.55),0 2px 30px rgba(0,0,0,.35)}
+  /* channel mark (뚝딱): small, top-right, clear of the HUD card and the TikTok icon column */
+  #mark{top:392px;right:96px;left:auto;text-align:right;font-family:'Pretendard',sans-serif;font-weight:800;font-size:40px;letter-spacing:.02em;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+  #mark small{display:block;font-weight:500;font-size:20px;letter-spacing:.06em;opacity:.85;margin-top:2px}
+  #cap .hl{color:#ffd76a}
+  #endT .hl{color:#ffd76a}
+  #endS b{color:#f2f0ea;font-weight:700}
+  #val{display:inline-block}
+  #end{top:0;bottom:0;background:#101114;opacity:0}
+  #endT{top:560px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:400;color:#f2f0ea;font-size:62px;line-height:1.4;opacity:0;padding:0 120px}
+  #endS{top:1000px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:500;color:#c9c6be;font-size:34px;line-height:1.75;opacity:0;padding:0 150px}
+  .pass-scene .txt{visibility:hidden!important}
+  .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
+  html.pass-text,html.pass-text body{background:transparent!important}
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c" width="1080" height="1920"></canvas>
-  <div id="shade" class="ov"></div>
-  <div id="labels"></div>
-  <div id="flash" class="ov"></div>
-  <div id="title" class="ov">What if a <span class="hl">marble-sized<br>black hole</span> appeared<br>in Central Park?</div>
-  <div id="hud" class="ov"><div id="slow"></div><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
-  <div id="cap" class="ov"></div>
-  <div id="end" class="ov"></div>
-  <div id="endT" class="ov">What if a <span class="hl">marble-sized<br>black hole</span> appeared<br>in Central Park?</div>
-  <div id="endS" class="ov">A BLACK HOLE WITH EARTH'S MASS WOULD BE 0.7 INCHES WIDE.<br>TO BECOME ONE, EARTH WOULD HAVE TO BE<br>CRUSHED DOWN TO THE SIZE OF A MARBLE.</div>
+  <div id="halo" class="ov txt"></div>
+  <div id="hud" class="ov txt"><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="title" class="ov txt">만약 <span class="hl">강남역 사거리</span>에<br>10원 동전 크기의<br><span class="hl">블랙홀</span>이 생긴다면?</div>
+  <div id="cap" class="ov txt"></div>
+  <div id="mark" class="ov txt">뚝딱<small>@ttukttak3d</small></div>
+  <div id="flash" class="ov gfx" style="top:0;bottom:0;background:#fff;opacity:0"></div>
+  <div id="end" class="ov gfx"></div>
+  <div id="endT" class="ov txt">만약 <span class="hl">강남역 사거리</span>에<br>10원 동전 크기의<br><span class="hl">블랙홀</span>이 생긴다면?</div>
+  <div id="endS" class="ov txt">지구 질량 = 지름 <b>1.8cm.</b><br>0.16초 만에 <b>서울 전체.</b><br>약 15분이면 <b>지구 전체.</b><br><br>길에서 10원짜리 블랙홀을 보면… <b>줍지 마세요.</b><br>다음엔 뭐가 생길까? 댓글로 👇<br><br><b>@ttukttak3d</b></div>
 </div>
-<script src="node_modules/topojson-client/dist/topojson-client.min.js"></script>
+<script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
 <script type="module" src="scene_bh.js"></script>
 </body>
