@@ -109,7 +109,7 @@ def flat(draw, z=6.0): return [L25.layer(z, draw, pad=0.12, animated=True)]
 # ---------------------------------------------------------------- shots
 if T:
     SC = [
-        (0.0, Q.airplane(lambda t: dict(emo="worried", look=(0.5, 0.0), head_tilt=-4, blink=P.blink(t, 2.4)), None, close=True, shake=lambda t: 1.0),
+        (0.0, Q.airplane(lambda t: dict(emo="worried", look=(0.5, 0.0), head_tilt=-4, blink=P.blink(t, 2.4, 1.0)), None, close=True, shake=lambda t: 1.0),
          (0.0, 0.05, 0.0), (0.05, 0.0, 0.9), 3.0, {}),
         ("Messbar", flat(s_ecg), (0, 0, 0), (0, 0, 0.5), None, {}),
         ("In der Psychologie", flat(s_term), (0, 0, 0), (0, 0, 0.5), None, dict(whip=True)),
