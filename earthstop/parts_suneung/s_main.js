@@ -119,7 +119,7 @@ function frameAt(t) {
     else if (sh === 2) LOOK(cCam, V3(-2.6 + 4.4 * U, 1.35, ME.z + 2.35), V3(-1.8 + 4.0 * U, 1.0, ME.z + 0.4), 50);                           // truck along the row behind him
     else if (sh === 3) { const a = 1.1 - 0.6 * U; LOOK(cCam, V3(ME.x + Math.sin(a) * 3.2, 1.4 + 0.3 * U, ME.z + 0.8 + Math.cos(a) * 3.2), V3(ME.x, 1.1, ME.z + 1.2), 52); }               // side arc, cards fly past
     else if (sh === 4) LOOK(cCam, V3(0.5 - 0.3 * U, 1.45, 3.75 - 1.2 * U), V3(ME.x, 1.1, ME.z), 60);                                     // back wall, push in against the wind
-    else if (sh === 5) LOOK(cCam, V3(3.6, 0.6 + 2.0 * U, 2.8 - 0.4 * U), V3(-1.5, 0.9 + 0.4 * U, 1.5), 60);                                // crane up: students pinned at the back
+    else if (sh === 5) LOOK(cCam, V3(3.9, 1.3 + 1.4 * U, -0.6 + 0.3 * U), V3(-1.0, 1.0 + 0.3 * U, 2.6), 60);                                // crane up: students pinned at the back
     else if (sh === 6) LOOK(cCam, V3(2.6 - 0.8 * U, 1.3, -1.0 + 0.8 * U), V3(-4.5, 1.6, -0.2 + 0.5 * U), 52);                                 // to the windows (whip at 12 s)
     else LOOK(cCam, V3(ME.x + 0.9, 0.55 + 0.9 * U, ME.z - 0.6), V3(ME.x, 1.7 + 1.0 * U, ME.z + 0.3), 64);                                    // low, dolly up with him
     cCam.position.add(V3(0.01 * Math.sin(t * 37), 0.01 * Math.cos(t * 41), 0).multiplyScalar(smooth(8, 14, t) * 3));                 // wind shake
