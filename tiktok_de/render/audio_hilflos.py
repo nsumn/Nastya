@@ -10,7 +10,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = os.path.join(HERE, "..", "projects", "10_hilflos", "voice")
 OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
-os.environ["SHOTS"] = "shots_hilflos"
+os.environ["SHOTS"] = "shots25_hilflos"   # the 2.5D version (cut times + sound events)
 sys.argv = ["x", PROJ + "/alignment.csv", OUT]
 sys.path.insert(0, HERE)
 import video_v5 as V5
