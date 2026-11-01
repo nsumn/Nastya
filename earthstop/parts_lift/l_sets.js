@@ -102,7 +102,7 @@ const SK = {}; {
   SK.frost = null; }
 function updateSky(t, cam, alt) { skyGround.uniforms.uCam.value.copy(cam.position); skyDome.uniforms.uAlt.value = alt;
   const blink = Math.sin(t * 6) > 0.6 ? 1 : 0.15; SK.navR.material.color.setRGB(4 * blink, 0.3, 0.3); SK.navG.material.color.setRGB(0.3, 4 * blink, 0.5);
-  const u = (t - JET) / 6; SK.plane.position.set(-420 + 840 * u, 10668 - 6, -260 + 30 * u); SK.plane.rotation.set(0, 0.12, 0); }
+  const u = (t - JET - 0.5) / 5; SK.plane.position.set(-300 + 600 * u, alt - 14, -230 + 30 * u); SK.plane.rotation.set(0, 0.12, 0); }
 
 // ---------- 3) SPACE (km): the night Earth with city lights, a blue atmosphere rim and a thin dawn on the limb; stars; the ISS ----------
 const SPACE = { sc: new THREE.Scene(), cam: new THREE.PerspectiveCamera(70, W / H, 0.0005, 200000) };
