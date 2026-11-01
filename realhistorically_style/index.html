@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ink: #33241e;
+        --cap: #ffffff;
+        --font-display: "Nunito", sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+      #root { position: relative; width: 100%; height: 100%; font-family: var(--font-display); }
+      .scene { position: absolute; inset: 0; overflow: hidden; }
+      .art { position: absolute; inset: 0; width: 1080px; height: 1920px; transform-origin: 50% 55%; }
+      .cap {
+        position: absolute; left: 90px; right: 90px; top: 1360px;
+        text-align: center; color: var(--cap); font-weight: 900; font-size: 64px; line-height: 1.05;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        -webkit-text-stroke: 14px #24180f; paint-order: stroke fill;
+        text-shadow: 0 6px 0 rgba(0,0,0,.35);
+      }
+      .cap b { color: #ffd54a; }
+      .hud { position: absolute; right: 40px; top: 190px; width: 420px; height: 300px; }
+      .big {
+        position: absolute; left: 0; right: 0; text-align: center; font-weight: 900;
+        -webkit-text-stroke: 18px #24180f; paint-order: stroke fill; text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- shared drawing pieces -->
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff3a8" /><stop offset=".5" stop-color="#ffc83a" /><stop offset="1" stop-color="#e08a12" />
+        </linearGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f4f7fb" /><stop offset=".55" stop-color="#b9c3cf" /><stop offset="1" stop-color="#7d8896" />
+        </linearGradient>
+        <radialGradient id="headShade" cx=".38" cy=".32" r=".75">
+          <stop offset="0" stop-color="#ffffff" /><stop offset=".7" stop-color="#f3f1ee" /><stop offset="1" stop-color="#d9d4ce" />
+        </radialGradient>
+        <radialGradient id="vig" cx=".5" cy=".5" r=".75">
+          <stop offset=".6" stop-color="#000" stop-opacity="0" /><stop offset="1" stop-color="#1a0f08" stop-opacity=".55" />
+        </radialGradient>
+        <path id="arc" d="M 60 170 A 150 150 0 0 1 360 170" />
+        <!-- round head, sad -->
+        <g id="headSad">
+          <circle r="120" fill="url(#headShade)" stroke="#33241e" stroke-width="10" />
+          <ellipse cx="-38" cy="5" rx="9" ry="13" fill="#33241e" /><ellipse cx="38" cy="5" rx="9" ry="13" fill="#33241e" />
+          <path d="M-62 -30 L-20 -18 M62 -30 L20 -18" stroke="#33241e" stroke-width="8" stroke-linecap="round" />
+          <path d="M-20 55 Q0 40 20 55" fill="none" stroke="#33241e" stroke-width="8" stroke-linecap="round" />
+        </g>
+        <!-- round head, determined -->
+        <g id="headGrit">
+          <circle r="120" fill="url(#headShade)" stroke="#33241e" stroke-width="10" />
+          <path d="M-58 -2 L-22 8 M58 -2 L22 8" stroke="#33241e" stroke-width="14" stroke-linecap="round" />
+          <path d="M-66 -34 L-18 -10 M66 -34 L18 -10" stroke="#33241e" stroke-width="9" stroke-linecap="round" />
+          <rect x="-34" y="38" width="68" height="28" rx="10" fill="#fff" stroke="#33241e" stroke-width="7" />
+          <path d="M-34 52 H34 M-12 38 V66 M12 38 V66" stroke="#33241e" stroke-width="4" />
+        </g>
+        <!-- round head, blissful -->
+        <g id="headJoy">
+          <circle r="120" fill="url(#headShade)" stroke="#33241e" stroke-width="10" />
+          <path d="M-56 4 Q-38 -16 -20 4 M20 4 Q38 -16 56 4" fill="none" stroke="#33241e" stroke-width="9" stroke-linecap="round" />
+          <path d="M-36 34 Q0 76 36 34 Z" fill="#7a2f2a" stroke="#33241e" stroke-width="7" stroke-linejoin="round" />
+          <ellipse cx="-70" cy="30" rx="18" ry="10" fill="#f6a7a0" opacity=".7" /><ellipse cx="70" cy="30" rx="18" ry="10" fill="#f6a7a0" opacity=".7" />
+        </g>
+      </defs>
+    </svg>
+
+    <div id="root" data-composition-id="main" data-start="0" data-duration="12" data-width="1080" data-height="1920">
+
+      <!-- ============ SCENE 1 : PEASANT ============ -->
+      <div id="s1" class="scene clip" data-start="0" data-duration="3" data-track-index="0">
+        <svg class="art" id="s1art" viewBox="0 0 1080 1920">
+          <defs>
+            <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc2ea" /><stop offset="1" stop-color="#e7f4f2" /></linearGradient>
+          </defs>
+          <rect width="1080" height="1920" fill="url(#sky1)" />
+          <g fill="#fff" stroke="#33241e" stroke-width="8">
+            <path d="M120 360 q20 -60 80 -40 q30 -50 90 -10 q60 -10 50 50 z" />
+            <path d="M720 290 q30 -70 100 -40 q40 -40 90 10 q50 10 30 60 z" />
+          </g>
+          <!-- far hill + castle -->
+          <path d="M-20 900 Q300 700 640 820 T1100 760 V1100 H-20 Z" fill="#8fbf5a" stroke="#33241e" stroke-width="10" />
+          <g transform="translate(560 520)" stroke="#33241e" stroke-width="9" stroke-linejoin="round">
+            <rect x="40" y="120" width="300" height="200" fill="#b7b0a4" />
+            <rect x="0" y="40" width="90" height="280" fill="#a39c90" />
+            <rect x="290" y="40" width="90" height="280" fill="#a39c90" />
+            <path d="M0 40 v-30 h22 v18 h22 v-18 h24 v18 h22 v-18 v30 z M290 40 v-30 h22 v18 h22 v-18 h24 v18 h22 v-18 v30 z" fill="#a39c90" />
+            <path d="M160 320 v-90 q30 -40 60 0 v90 z" fill="#4a3226" />
+            <path d="M45 10 V-80 M335 10 V-80" fill="none" />
+            <path d="M45 -80 l60 18 l-60 18 z M335 -80 l60 18 l-60 18 z" fill="#d6463a" />
+            <rect x="30" y="110" width="28" height="44" rx="12" fill="#4a3226" /><rect x="320" y="110" width="28" height="44" rx="12" fill="#4a3226" />
+          </g>
+          <path d="M-20 1000 Q400 900 1100 980 V1920 H-20 Z" fill="#6f9a3f" stroke="#33241e" stroke-width="10" />
+          <!-- muddy field -->
+          <path d="M-20 1120 Q540 1040 1100 1110 V1920 H-20 Z" fill="#8b6a46" stroke="#33241e" stroke-width="10" />
+          <g fill="none" stroke="#6b4e31" stroke-width="12" stroke-linecap="round">
+            <path d="M40 1240 Q540 1170 1040 1230" /><path d="M20 1380 Q540 1300 1060 1370" /><path d="M0 1550 Q540 1460 1080 1540" /><path d="M0 1740 Q540 1640 1080 1730" />
+          </g>
+          <!-- peasant -->
+          <g transform="translate(470 1000) scale(1.3)" stroke="#33241e" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M-150 520 L-120 160 Q0 100 120 160 L150 520 Z" fill="#a07a52" />
+            <path d="M-120 160 L-150 520 M-60 470 l20 50 M60 480 l-15 40" fill="none" />
+            <path d="M-40 300 l30 18 l-8 34 M70 260 l-24 28" fill="none" stroke="#6b4e31" stroke-width="7" />
+            <!-- pitchfork -->
+            <path d="M210 -260 V560" stroke="#7a5532" stroke-width="18" />
+            <path d="M170 -260 V-370 M210 -260 V-390 M250 -260 V-370 M160 -250 H260" stroke="#8a8f98" stroke-width="12" fill="none" />
+            <path d="M110 200 Q190 220 210 250" fill="none" stroke-width="34" stroke="#a07a52" />
+            <circle cx="210" cy="250" r="26" fill="#fff" />
+            <use href="#headSad" y="-20" />
+            <!-- straw hat -->
+            <path d="M-190 -80 Q0 -150 190 -80 Q0 -60 -190 -80 Z" fill="#e5c26b" />
+            <path d="M-95 -105 Q0 -230 95 -105 Z" fill="#e5c26b" />
+            <path d="M-92 -112 Q0 -132 92 -112" fill="none" stroke="#b5452f" stroke-width="14" />
+            <path d="M-170 -70 l-20 30 M150 -78 l14 32" fill="none" stroke-width="6" />
+            <!-- fly -->
+            <g transform="translate(-180 -190)"><circle r="8" fill="#33241e" /><ellipse cx="-10" cy="-10" rx="10" ry="6" fill="#fff" stroke-width="4" /><ellipse cx="10" cy="-10" rx="10" ry="6" fill="#fff" stroke-width="4" /></g>
+          </g>
+          <rect width="1080" height="1920" fill="url(#vig)" />
+        </svg>
+        <div class="big" id="s1title" style="top:640px;font-size:150px;color:#e8322b;letter-spacing:2px">Knight?</div>
+        <div class="big" id="s1sub" style="top:550px;font-size:74px;color:#fff;-webkit-text-stroke:14px #24180f">How to become a</div>
+        <svg class="hud" viewBox="0 0 420 300">
+          <text font-family="Nunito" font-weight="900" font-size="36" fill="#3d5cf0" stroke="#fff" stroke-width="8" paint-order="stroke" letter-spacing="10"><textPath href="#arc" startOffset="50%" text-anchor="middle">YEARS PASSED</textPath></text>
+          <text x="210" y="190" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="78" fill="#3d5cf0" stroke="#fff" stroke-width="10" paint-order="stroke">0</text>
+          <text x="210" y="262" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="44" fill="#9a8f84" stroke="#24180f" stroke-width="9" paint-order="stroke">RANK: PEASANT</text>
+        </svg>
+        <div class="cap" id="s1cap">Born in the mud</div>
+      </div>
+
+      <!-- ============ SCENE 2 : PAGE ============ -->
+      <div id="s2" class="scene clip" data-start="3" data-duration="3" data-track-index="0">
+        <svg class="art" id="s2art" viewBox="0 0 1080 1920">
+          <defs>
+            <pattern id="bricks" width="180" height="100" patternUnits="userSpaceOnUse">
+              <rect width="180" height="100" fill="#8d8379" />
+              <path d="M0 0 H180 M0 50 H180 M90 0 V50 M0 50 V100 M180 50 V100" stroke="#5f554c" stroke-width="7" />
+              <path d="M10 10 h60 M100 60 h50" stroke="#a49a8f" stroke-width="6" stroke-linecap="round" />
+            </pattern>
+          </defs>
+          <rect width="1080" height="1920" fill="url(#bricks)" />
+          <!-- banner -->
+          <g stroke="#33241e" stroke-width="10" stroke-linejoin="round">
+            <path d="M340 140 H740 V720 L540 620 L340 720 Z" fill="#b8322c" />
+            <path d="M440 380 l40 -90 l60 60 l60 -60 l40 90 z" fill="url(#gold)" />
+            <path d="M440 400 H640" stroke-width="14" />
+            <path d="M320 140 H760" stroke="#6b4e31" stroke-width="22" />
+          </g>
+          <!-- torches -->
+          <g stroke="#33241e" stroke-width="9">
+            <path d="M120 560 l30 160 h30 l30 -160 z" fill="#6b4e31" />
+            <path d="M165 560 q-60 -70 0 -170 q60 100 0 170" fill="#ffb02e" /><path d="M165 550 q-24 -40 0 -90 q24 50 0 90" fill="#fff3a8" stroke="none" />
+            <path d="M870 560 l30 160 h30 l30 -160 z" fill="#6b4e31" />
+            <path d="M915 560 q-60 -70 0 -170 q60 100 0 170" fill="#ffb02e" /><path d="M915 550 q-24 -40 0 -90 q24 50 0 90" fill="#fff3a8" stroke="none" />
+          </g>
+          <circle cx="165" cy="480" r="160" fill="#ffb02e" opacity=".18" /><circle cx="915" cy="480" r="160" fill="#ffb02e" opacity=".18" />
+          <!-- floor -->
+          <path d="M-20 1220 H1100 V1920 H-20 Z" fill="#6e5a48" stroke="#33241e" stroke-width="10" />
+          <g stroke="#544435" stroke-width="8"><path d="M-20 1380 H1100 M-20 1580 H1100 M200 1220 L120 1920 M540 1220 V1920 M880 1220 L960 1920" /></g>
+          <!-- little page carrying an absurd armor stack -->
+          <g transform="translate(540 1180) scale(1.12)" stroke="#33241e" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+            <ellipse cx="0" cy="250" rx="190" ry="26" fill="#000" opacity=".25" stroke="none" />
+            <path d="M-60 140 v100 h40 v-100 M20 140 v100 h40 v-100" fill="#4a5bb8" />
+            <path d="M-110 150 L-90 -40 Q0 -70 90 -40 L110 150 Z" fill="#3e66c8" />
+            <path d="M-90 -40 L0 60 L90 -40" fill="none" stroke="#f0c24a" stroke-width="12" />
+            <!-- arms up -->
+            <path d="M-90 -20 Q-170 -160 -150 -330 M90 -20 Q170 -160 150 -330" fill="none" stroke="#3e66c8" stroke-width="40" />
+            <path d="M-90 -20 Q-170 -160 -150 -330 M90 -20 Q170 -160 150 -330" fill="none" stroke="#33241e" stroke-width="6" opacity=".0" />
+            <use href="#headSad" transform="translate(0 -170) scale(.85)" />
+            <path d="M80 -250 q14 26 0 36 q-14 -10 0 -36" fill="#9fd8ff" stroke-width="5" />
+            <!-- stack -->
+            <g transform="rotate(-6 0 -360)">
+              <rect x="-210" y="-400" width="420" height="70" rx="20" fill="url(#steel)" />
+              <path d="M-150 -400 q150 -150 300 0 z" fill="url(#steel)" />
+              <rect x="-170" y="-520" width="340" height="40" rx="14" fill="#8a5a32" />
+              <path d="M-90 -520 v-150 q90 -80 180 0 v150 z" fill="url(#steel)" />
+              <path d="M-60 -610 h120 M-60 -580 h120" stroke-width="12" />
+              <path d="M90 -680 l50 -120 l20 10 l-40 120 z" fill="#d6463a" />
+              <path d="M-140 -700 L-240 -1000" stroke="#8a8f98" stroke-width="22" />
+              <path d="M-170 -690 h60" stroke="#6b4e31" stroke-width="22" />
+              <circle cx="190" cy="-450" r="70" fill="#c9a86a" /><circle cx="190" cy="-450" r="30" fill="url(#steel)" />
+            </g>
+            <path d="M-260 -620 q-20 20 0 40 M260 -640 q20 20 0 40 M-280 -560 q-20 20 0 40" fill="none" stroke-width="7" />
+          </g>
+          <rect width="1080" height="1920" fill="url(#vig)" />
+        </svg>
+        <svg class="hud" viewBox="0 0 420 300">
+          <text font-family="Nunito" font-weight="900" font-size="36" fill="#3d5cf0" stroke="#fff" stroke-width="8" paint-order="stroke" letter-spacing="10"><textPath href="#arc" startOffset="50%" text-anchor="middle">YEARS PASSED</textPath></text>
+          <text id="s2num" x="210" y="190" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="78" fill="#3d5cf0" stroke="#fff" stroke-width="10" paint-order="stroke">7</text>
+          <text x="210" y="262" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="44" fill="#7fc3ff" stroke="#24180f" stroke-width="9" paint-order="stroke">RANK: PAGE</text>
+        </svg>
+        <div class="cap" id="s2cap">At 7 you carry <b>everything</b></div>
+      </div>
+
+      <!-- ============ SCENE 3 : SQUIRE ============ -->
+      <div id="s3" class="scene clip" data-start="6" data-duration="3" data-track-index="0">
+        <svg class="art" id="s3art" viewBox="0 0 1080 1920">
+          <defs>
+            <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6b46b" /><stop offset="1" stop-color="#fde7c2" /></linearGradient>
+          </defs>
+          <rect width="1080" height="1920" fill="url(#sky3)" />
+          <circle cx="820" cy="560" r="130" fill="#fff4cf" stroke="#33241e" stroke-width="9" />
+          <!-- palisade -->
+          <g stroke="#33241e" stroke-width="9" stroke-linejoin="round" fill="#9b6f45">
+            <path d="M-20 1100 V780 l40 -60 l40 60 V1100 Z" /><path d="M80 1100 V760 l40 -60 l40 60 V1100 Z" /><path d="M180 1100 V790 l40 -60 l40 60 V1100 Z" />
+            <path d="M280 1100 V770 l40 -60 l40 60 V1100 Z" /><path d="M380 1100 V800 l40 -60 l40 60 V1100 Z" />
+            <path d="M620 1100 V790 l40 -60 l40 60 V1100 Z" /><path d="M720 1100 V770 l40 -60 l40 60 V1100 Z" /><path d="M820 1100 V800 l40 -60 l40 60 V1100 Z" /><path d="M920 1100 V780 l40 -60 l40 60 V1100 Z" /><path d="M1020 1100 V790 l40 -60 l40 60 V1100 Z" />
+          </g>
+          <path d="M-20 1060 H1100 V1920 H-20 Z" fill="#c9a26b" stroke="#33241e" stroke-width="10" />
+          <g fill="#b48c58"><ellipse cx="200" cy="1500" rx="90" ry="20" /><ellipse cx="860" cy="1700" rx="120" ry="24" /><ellipse cx="700" cy="1250" rx="70" ry="14" /></g>
+          <!-- training dummy -->
+          <g transform="translate(800 1080)" stroke="#33241e" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M0 -60 V420" stroke="#7a5532" stroke-width="30" />
+            <path d="M-170 40 H170" stroke="#7a5532" stroke-width="26" />
+            <path d="M-110 -60 Q-120 200 -70 260 H70 Q120 200 110 -60 Z" fill="#e2c06a" />
+            <path d="M-80 0 l30 20 M60 60 l-30 24 M-60 160 l40 -10 M40 200 l30 20" fill="none" stroke="#b08a3a" stroke-width="7" />
+            <circle cx="0" cy="-160" r="95" fill="#e8cf8e" />
+            <path d="M-40 -180 l24 24 M-16 -180 l-24 24 M16 -180 l24 24 M40 -180 l-24 24" stroke-width="8" />
+            <path d="M-30 -110 q30 -14 60 0" fill="none" stroke-width="8" />
+          </g>
+          <!-- squire swinging -->
+          <g transform="translate(330 1180) scale(1.15)" stroke="#33241e" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+            <ellipse cx="0" cy="360" rx="200" ry="28" fill="#000" opacity=".2" stroke="none" />
+            <path d="M-70 200 l-50 150 h50 l40 -140 M40 200 l60 150 h50 l-60 -160" fill="#5b4636" />
+            <path d="M-140 220 L-120 -40 Q0 -80 120 -40 L150 220 Z" fill="#d9c7a3" />
+            <path d="M-110 20 H130 M-115 80 H138 M-118 140 H145" stroke="#a58f68" stroke-width="7" />
+            <path d="M120 -10 Q240 -40 300 -120" fill="none" stroke="#d9c7a3" stroke-width="42" />
+            <circle cx="300" cy="-120" r="30" fill="#fff" />
+            <!-- wooden sword -->
+            <path d="M300 -120 L560 -330" stroke="#a5743f" stroke-width="30" />
+            <path d="M270 -160 L330 -80" stroke="#6b4e31" stroke-width="26" />
+            <use href="#headGrit" transform="translate(0 -170) scale(.95)" />
+            <!-- headband -->
+            <path d="M-112 -230 Q0 -270 112 -230" fill="none" stroke="#d6463a" stroke-width="22" />
+            <path d="M-112 -230 l-60 30 M-112 -230 l-50 -20" stroke="#d6463a" stroke-width="16" />
+          </g>
+          <!-- speed lines + impact -->
+          <g fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity=".9">
+            <path d="M520 700 Q700 620 780 760" /><path d="M560 640 Q740 560 830 700" /><path d="M600 780 Q720 720 760 820" />
+          </g>
+          <g transform="translate(700 860)" stroke="#33241e" stroke-width="8" stroke-linejoin="round">
+            <path d="M0 -80 L20 -24 L80 -40 L36 6 L84 50 L22 40 L0 100 L-20 40 L-84 50 L-36 6 L-80 -40 L-20 -24 Z" fill="#fff3a8" />
+          </g>
+          <rect width="1080" height="1920" fill="url(#vig)" />
+        </svg>
+        <div class="big" id="s3pop" style="top:560px;left:120px;right:auto;font-size:84px;color:#7dff6b;-webkit-text-stroke:14px #24180f;transform:rotate(-8deg)">+1 STR</div>
+        <svg class="hud" viewBox="0 0 420 300">
+          <text font-family="Nunito" font-weight="900" font-size="36" fill="#3d5cf0" stroke="#fff" stroke-width="8" paint-order="stroke" letter-spacing="10"><textPath href="#arc" startOffset="50%" text-anchor="middle">YEARS PASSED</textPath></text>
+          <text x="210" y="190" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="78" fill="#3d5cf0" stroke="#fff" stroke-width="10" paint-order="stroke">14</text>
+          <text x="210" y="262" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="44" fill="#4fd06a" stroke="#24180f" stroke-width="9" paint-order="stroke">RANK: SQUIRE</text>
+        </svg>
+        <div class="cap" id="s3cap">Then hit a sack of straw for 7 years</div>
+      </div>
+
+      <!-- ============ SCENE 4 : KNIGHT ============ -->
+      <div id="s4" class="scene clip" data-start="9" data-duration="3" data-track-index="0">
+        <svg class="art" id="s4art" viewBox="0 0 1080 1920">
+          <rect width="1080" height="1920" fill="#5a2a2a" />
+          <!-- god rays -->
+          <g fill="#ffd56b" opacity=".22">
+            <path d="M540 700 L-200 -100 L100 -200 Z" /><path d="M540 700 L300 -200 L560 -200 Z" /><path d="M540 700 L760 -200 L1050 -200 Z" /><path d="M540 700 L1300 -100 L1300 300 Z" /><path d="M540 700 L-300 300 L-300 700 Z" />
+          </g>
+          <!-- pillars -->
+          <g stroke="#33241e" stroke-width="10">
+            <rect x="40" y="200" width="150" height="1100" fill="#c9b9a0" /><rect x="890" y="200" width="150" height="1100" fill="#c9b9a0" />
+            <path d="M80 200 V1300 M150 200 V1300 M930 200 V1300 M1000 200 V1300" stroke="#a8977d" stroke-width="8" />
+          </g>
+          <!-- carpet -->
+          <path d="M-20 1920 L380 1050 H700 L1100 1920 Z" fill="#c4302b" stroke="#33241e" stroke-width="10" />
+          <path d="M40 1920 L405 1050 M1040 1920 L675 1050" stroke="#f0c24a" stroke-width="14" />
+          <path d="M-20 1060 H380 L-20 1920 Z M1100 1060 H700 L1100 1920 Z" fill="#7a5a43" stroke="#33241e" stroke-width="10" />
+          <!-- king -->
+          <g transform="translate(720 1010)" stroke="#33241e" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M-170 560 L-130 60 Q0 0 130 60 L170 560 Z" fill="#9c2b3a" />
+            <path d="M-130 60 L-170 560 H-90 L-60 70 Z" fill="#f3efe6" />
+            <g fill="#33241e" stroke="none"><circle cx="-128" cy="200" r="8" /><circle cx="-118" cy="320" r="8" /><circle cx="-110" cy="440" r="8" /></g>
+            <!-- arm with sword -->
+            <path d="M-80 120 Q-200 140 -270 90" fill="none" stroke="#9c2b3a" stroke-width="44" />
+            <circle cx="-280" cy="90" r="30" fill="#fff" />
+            <path d="M-280 90 L-590 260" stroke="url(#steel)" stroke-width="28" />
+            <path d="M-280 90 L-590 260" fill="none" stroke-width="5" />
+            <path d="M-300 50 L-250 140" stroke="url(#gold)" stroke-width="22" />
+            <use href="#headJoy" transform="translate(0 -120) scale(.9)" />
+            <!-- beard -->
+            <path d="M-90 -60 Q-110 80 0 120 Q110 80 90 -60 Q60 -10 0 -20 Q-60 -10 -90 -60 Z" fill="#e9e3d8" />
+            <path d="M-30 -40 Q0 -10 30 -40" fill="none" stroke-width="7" />
+            <!-- crown -->
+            <path d="M-95 -210 L-110 -320 L-50 -260 L0 -340 L50 -260 L110 -320 L95 -210 Z" fill="url(#gold)" />
+            <circle cx="0" cy="-260" r="14" fill="#3fa1ff" stroke-width="6" />
+          </g>
+          <!-- kneeling knight -->
+          <g transform="translate(320 1130) scale(1.1)" stroke="#33241e" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+            <ellipse cx="20" cy="330" rx="230" ry="30" fill="#000" opacity=".25" stroke="none" />
+            <path d="M-60 180 L-140 310 H-20 L40 200 M60 200 L180 230 L200 320 H90" fill="url(#steel)" />
+            <path d="M-130 200 L-110 -60 Q0 -100 110 -60 L130 200 Z" fill="url(#steel)" />
+            <path d="M-110 -60 L-130 200 H-60 Z" fill="#2f4fb0" />
+            <path d="M-20 -60 L-30 200 H60 L50 -60 Z" fill="#2f4fb0" />
+            <path d="M-20 30 l50 30 M30 30 l-50 30" stroke="#f0c24a" stroke-width="10" />
+            <path d="M-140 -40 Q-200 60 -150 160" fill="none" stroke="#b9c3cf" stroke-width="40" />
+            <use href="#headJoy" transform="translate(0 -170) scale(.95)" />
+            <!-- held helmet -->
+            <path d="M-210 150 q0 -90 70 -100 q70 10 70 100 z" fill="url(#steel)" />
+            <path d="M-190 110 h100" stroke-width="10" />
+          </g>
+          <!-- sparkles -->
+          <g fill="#fff8d0" stroke="#33241e" stroke-width="6">
+            <path d="M220 820 l12 30 l30 12 l-30 12 l-12 30 l-12 -30 l-30 -12 l30 -12 z" />
+            <path d="M600 1120 l9 22 l22 9 l-22 9 l-9 22 l-9 -22 l-22 -9 l22 -9 z" />
+            <path d="M120 1100 l9 22 l22 9 l-22 9 l-9 22 l-9 -22 l-22 -9 l22 -9 z" />
+          </g>
+          <rect width="1080" height="1920" fill="url(#vig)" />
+        </svg>
+        <div class="big" id="s4ach" style="top:470px;font-size:96px;line-height:.95;color:#ffd54a">Knighthood<br/><span style="font-size:62px;color:#fff">unlocked!</span></div>
+        <svg class="hud" viewBox="0 0 420 300">
+          <text font-family="Nunito" font-weight="900" font-size="36" fill="#3d5cf0" stroke="#fff" stroke-width="8" paint-order="stroke" letter-spacing="10"><textPath href="#arc" startOffset="50%" text-anchor="middle">YEARS PASSED</textPath></text>
+          <text x="210" y="190" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="78" fill="#3d5cf0" stroke="#fff" stroke-width="10" paint-order="stroke">21</text>
+          <text x="210" y="262" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="44" fill="url(#gold)" stroke="#24180f" stroke-width="9" paint-order="stroke">RANK: KNIGHT</text>
+        </svg>
+        <div class="cap" id="s4cap">And now you owe the king <b>forever</b></div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      // slow push-in on every scene, caption pop-in
+      [["#s1art", 0], ["#s2art", 3], ["#s3art", 6], ["#s4art", 9]].forEach(([el, t]) => {
+        tl.fromTo(el, { scale: 1.0 }, { scale: 1.06, duration: 3, ease: "none" }, t);
+      });
+      [["#s1cap", 0.15], ["#s2cap", 3.1], ["#s3cap", 6.1], ["#s4cap", 9.1]].forEach(([el, t]) => {
+        tl.fromTo(el, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.18, ease: "back.out(3)" }, t);
+      });
+      tl.fromTo("#s1sub", { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.2, ease: "power3.out" }, 0);
+      tl.fromTo("#s1title", { scale: 2.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.22, ease: "back.out(2)" }, 0.25);
+      tl.fromTo("#s3pop", { y: 40, opacity: 0 }, { y: -30, opacity: 1, duration: 0.5, ease: "power2.out" }, 6.4);
+      tl.fromTo("#s4ach", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.25, ease: "back.out(2.5)" }, 9.3);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
