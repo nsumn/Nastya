@@ -1,0 +1,31 @@
+# clap short — cue sheet (clap k at 2 + 1.2(k-1); shock wave 23.6; end 27.5)
+music music0 0.0 0.3 27.5
+0.0 applause 0.7
+4.4 gasp 0.5
+2.00 clap1 0.39
+3.20 clap1 0.43
+4.40 clap1 0.47
+5.60 clap2 0.51
+6.80 clap2 0.55
+8.00 clap2 0.59
+9.20 clap2 0.63
+10.40 clap2 0.67
+11.60 clap3 0.71
+12.80 clap3 0.75
+14.00 clap3 0.79
+15.20 clap3 0.83
+16.40 clap3 0.87
+17.60 clap4 0.91
+18.80 clap4 0.95
+20.00 clap4 0.99
+21.20 clap4 1.00
+22.40 clap4 1.00
+11.6 petals 0.8
+14.05 ring 0.5
+16.4 glass 1.0 -0.4
+18.8 desks 0.8
+20.0 desks 0.8 0.3
+21.2 desks 0.9 -0.3
+23.45 whoosh 0.8
+23.6 boom 1.0
+27.5 chime 0.8
