@@ -23,7 +23,9 @@
   #sub{font-family:'Pretendard',sans-serif;font-weight:500;font-size:24px;letter-spacing:.04em;opacity:.85;margin-top:8px}
   #cap{top:1250px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:600;color:#fff;font-size:50px;line-height:1.42;padding:0 170px;
     text-shadow:0 0 3px rgba(0,0,0,.55),0 1px 12px rgba(0,0,0,.55),0 2px 30px rgba(0,0,0,.35)}
-  #mark{top:640px;right:170px;left:auto;font-family:'Pretendard',sans-serif;font-weight:600;font-size:22px;letter-spacing:.32em;color:rgba(255,255,255,.85);text-shadow:0 1px 6px rgba(0,0,0,.4)}
+  /* channel mark (뚝딱): small, top-right, clear of the HUD card and the TikTok icon column */
+  #mark{top:392px;right:96px;left:auto;text-align:right;font-family:'Pretendard',sans-serif;font-weight:800;font-size:40px;letter-spacing:.02em;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+  #mark small{display:block;font-weight:500;font-size:20px;letter-spacing:.06em;opacity:.85;margin-top:2px}
   #cap .hl{color:#ffd76a}
   #endT .hl{color:#ffd76a}
   #endS b{color:#f2f0ea;font-weight:700}
@@ -43,10 +45,11 @@
   <div id="hud" class="ov txt"><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
   <div id="title" class="ov txt">만약 수능 시험장에서<br><span class="hl">방귀 위력</span>이<br>2초마다 2배가 된다면?</div>
   <div id="cap" class="ov txt"></div>
+  <div id="mark" class="ov txt">뚝딱<small>@ttukttak.3d</small></div>
   <div id="flash" class="ov gfx" style="top:0;bottom:0;background:#fff;opacity:0"></div>
   <div id="end" class="ov gfx"></div>
   <div id="endT" class="ov txt">만약 수능 시험장에서<br><span class="hl">방귀 위력</span>이<br>2초마다 2배가 된다면?</div>
-  <div id="endS" class="ov txt">24초 만에 <b>지구 탈출 속도.</b><br>14번 2배 = <b>16,384배.</b><br><br>수험생 여러분, 시험 전엔 고구마 금지 🍠<br>다음엔 뭐가 2배가 될까? 댓글로 👇</div>
+  <div id="endS" class="ov txt">24초 만에 <b>지구 탈출 속도.</b><br>14번 2배 = <b>16,384배.</b><br><br>수험생 여러분, 시험 전엔 고구마 금지 🍠<br>다음엔 뭐가 2배가 될까? 댓글로 👇<br><br><b>@ttukttak.3d</b></div>
 </div>
 <script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
