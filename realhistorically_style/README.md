@@ -10,3 +10,8 @@ HUD справа сверху (дугой «YEARS PASSED» + счётчик + ц
 
 Анализ аккаунта: `yt-dlp --impersonate chrome --flat-playlist -J https://www.tiktok.com/@realhistorically`
 (метод из `earthstop/HANDOFF.md`), затем `ffmpeg -vf "fps=1/4,scale=270:-1,tile=6x4"` для контакт-листов.
+
+## v2 — «живописный» рендер
+`index.html` собирается из `gen.py` (`python3 gen.py index.html`). Приёмы, взятые у оригинала:
+крупный план (персонаж на полкадра, обрезан краем), жёсткая тень + мягкая растушёвка на каждой форме,
+«дрожащий» контур (feDisplacementMap), размытый фон (глубина резкости), бумажная текстура, зерно, виньетка.
