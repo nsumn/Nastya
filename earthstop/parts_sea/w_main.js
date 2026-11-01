@@ -36,7 +36,7 @@ const SHOTS = [   // [start, set, camera(t), opts, beach mode]
   [COAST, 'beach', t => LOOK(-60 + 30 * esin(span(t, COAST, COAST + 3)), 9, -14, 0, 0.8, 4), { mb: true }],   // along the coast: rows of people
   [COAST + 3.0, 'beach', t => orbit(headOf(hero), V3(0.15, 0.08, -1), -0.25, 0.2, 2.3, 2.0, 0.6, span(t, COAST + 3, COUNT)), { dof: () => headOf(hero) }],   // you in the front row
   [COUNT, 'beach', t => LOOK(0, 1.3, -5.5, 0, 1.2, 6), {}],   // 3… 2… 1… (from the water, low)
-  [JUMP, 'beach', t => lerpF(LOOK(2.5, 1.2, -6, 0, 1.0, 1), LOOK(4, 3.5, -9, 0, 0.5, 0), esin(span(t, JUMP, SPLASH))), { mb: true, whip: 1 }],   // JUMP (slow motion)
+  [JUMP, 'beach', t => lerpF(LOOK(13, 2.2, -1.5, 0, 1.6, 0.5), LOOK(11, 3.0, -4.5, 0, 1.0, -1), esin(span(t, JUMP, SPLASH))), { mb: true, whip: 1 }],   // from the side: the whole front row in the air   // JUMP (slow motion)
   [SPLASH, 'beach', t => LOOK(-30, 18 - 4 * span(t, SPLASH, SPLASH + 2.8), -40, 0, 0, -2), { mb: true }],   // the splash along the whole coast
   [SPLASH + 2.8, 'under', t => LOOK(0, -2.2, 6 - 1.5 * span(t, SPLASH + 2.8, MACRO), 0, -1.2, -10), {}],   // under water: a forest of legs
   [MACRO, 'macro', t => lerpF(LOOK(0, 4, 26, 0, 2.5, 0), LOOK(2, 0.5, 9, 0, 0.1, 3), esin(span(t, MACRO + 1.5, SPACE - 0.5))), {}],   // the hair vs the rise

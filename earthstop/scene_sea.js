@@ -465,6 +465,23 @@ function mkSet({ top = '#6a9ad8', bot = '#f4dcc0', fog = 0xf0dcc8, near = 40, fa
   return { sc, cam }; }
 const gplane = (sc, w, d, mat, x, z, y = 0, ry = 0) => { const p = mesh(new THREE.PlaneGeometry(w, d), typeof mat === 'string' ? F_(mat) : mat, false, true); p.rotation.set(-Math.PI / 2, 0, ry); p.position.set(x, y, z); sc.add(p); return p; };
 const _o = new THREE.Object3D(), _c = new THREE.Color();
+// bake a group (people.js person, makeCar…) into ONE geometry with vertex colours, so thousands can be instanced cheaply
+const BAKE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, flatShading: true });
+function bake(group) { group.updateMatrixWorld(true); const gs = [];
+  group.traverse(o => { if (!o.isMesh || !o.visible) return; let g = o.geometry.clone().applyMatrix4(o.matrixWorld); if (g.index) g = g.toNonIndexed();
+    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'color'].includes(k)) g.deleteAttribute(k);
+    if (!g.attributes.color) { const c = (Array.isArray(o.material) ? o.material[0] : o.material).color || new THREE.Color(1, 1, 1), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) a.set([c.r, c.g, c.b], i * 3); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+    gs.push(g); }); return mergeGeometries(gs); }
+// the crowd: 12 beachgoers (people.js, built from simple shapes like on our streets) × 4 poses
+const POSES = ['stand', 'jump', 'hug', 'walk'], NV = 12;
+const PEOPLE_GEO = (() => { const r0 = seed; seed = 777; const out = [];
+  for (let v = 0; v < NV; v++) { const o = { shorts: v % 3 !== 0, longSleeve: false, dress: v % 5 === 4 }; const s0 = seed; const row = [];
+    for (const ps of POSES) { seed = s0; const p = makePerson(rnd, o); poseIdle(p, 0, 0);
+      if (ps === 'jump') { p.arms.forEach((a, i) => a.rotation.set(-2.9, 0, i ? -0.35 : 0.35)); p.elbows.forEach(e => e.rotation.x = -0.15); p.legs.forEach((l, i) => l.rotation.x = i ? 0.35 : -0.15); p.knees.forEach(k => k.rotation.x = 0.7); }
+      if (ps === 'hug') { p.arms.forEach((a, i) => a.rotation.set(-0.9, 0, i ? 0.9 : -0.9)); p.elbows.forEach(e => e.rotation.x = -2.0); }
+      if (ps === 'walk') poseWalk(p, 1.2, 1);
+      row.push(bake(p.outer)); }
+    out.push(row); } seed = r0; return out; })();
 const SKIN = ['#f2c8a0', '#e0a878', '#c08458', '#8a5a3a', '#5a3a28', '#f4d4b4'], SUITS = ['#e8463a', '#2a6ad8', '#f4c430', '#2a9a5a', '#e86aa0', '#f08a2a', '#1a1a22', '#8a3aa8', '#30b8c8', '#f4f4f0'];
 
 // ---------- 1) THE BEACH: shoreline along x (ocean at z < 0), the whole crowd standing ~9 rows deep (5.2 people per foot), the jump, the splash, the cold ----------
@@ -478,14 +495,33 @@ const BC = {}; {
   const ROWS = 9, SPX = 0.6, XR = 260, body = new THREE.CapsuleGeometry(0.19, 0.75, 2, 6), head = new THREE.IcosahedronGeometry(0.13, 0);
   const n = ROWS * Math.floor(2 * XR / SPX); BC.n = n;
   BC.bodies = new THREE.InstancedMesh(body, F_('#ffffff', { roughness: 0.7 }), n); BC.heads = new THREE.InstancedMesh(head, F_('#ffffff'), n); BC.bodies.castShadow = true; sc.add(BC.bodies, BC.heads);
+  const NEAR_X = 42; BC.near = []; for (let v = 0; v < NV; v++) BC.near.push(POSES.map((ps, j) => { const m = new THREE.InstancedMesh(PEOPLE_GEO[v][j], BAKE_MAT, Math.ceil(ROWS * 2 * NEAR_X / SPX / NV) + 4); m.castShadow = true; m.count = 0; m.frustumCulled = false; sc.add(m); return m; }));
   BC.P = []; let i = 0; for (let r = 0; r < ROWS; r++) for (let x = -XR; x < XR - 0.01; x += SPX) { if (i >= n) break; const p = { x: x + (hash(i) - 0.5) * 0.25 + (r % 2) * SPX / 2, z: 0.9 + r * 0.62 + (hash(i * 3) - 0.5) * 0.2, h: 0.85 + 0.25 * hash(i * 7), ph: hash(i * 11) * 6.28, d: hash(i * 13) };
-    BC.bodies.setColorAt(i, _c.set(SUITS[(hash(i * 5.3) * SUITS.length) | 0])); BC.heads.setColorAt(i, _c.set(SKIN[(hash(i * 2.9) * SKIN.length) | 0])); BC.P.push(p); i++; }
+    p.near = Math.abs(p.x) < NEAR_X; p.v = i % NV; BC.bodies.setColorAt(i, _c.set(SUITS[(hash(i * 5.3) * SUITS.length) | 0])); BC.heads.setColorAt(i, _c.set(SKIN[(hash(i * 2.9) * SKIN.length) | 0])); BC.P.push(p); i++; }
   // splash droplets
   BC.drops = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.12, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.7, 1.8) }), 2400); BC.drops.frustumCulled = false; sc.add(BC.drops);
   // a lifeguard tower + flags for scale/place, a towel for you
   const tw = new THREE.Group(); bx(0.12, 2.2, 0.12, '#f4f4f0', -1.2, 1.1, -1.2, tw); bx(0.12, 2.2, 0.12, '#f4f4f0', 1.2, 1.1, -1.2, tw); bx(0.12, 2.2, 0.12, '#f4f4f0', -1.2, 1.1, 1.2, tw); bx(0.12, 2.2, 0.12, '#f4f4f0', 1.2, 1.1, 1.2, tw);
   bx(2.8, 1.4, 2.8, '#e8463a', 0, 2.9, 0, tw); bx(3.2, 0.15, 3.2, '#f4f4f0', 0, 3.7, 0, tw); tw.position.set(-14, 0, 9); sc.add(tw);
-  BC.towel = bx(0.9, 0.05, 0.35, '#f4c430', 0, 0, 0, sc); }
+  BC.towel = bx(0.9, 0.05, 0.35, '#f4c430', 0, 0, 0, sc);
+  // umbrellas, towels, coolers behind the crowd; dunes with grass; the boardwalk, hotels, a pier with a Ferris wheel; gulls; wave crests
+  const UC = ['#e8463a', '#f4c430', '#2a6ad8', '#2a9a5a', '#f08a2a', '#e86aa0', '#30b8c8'];
+  for (let k = 0; k < 90; k++) { const x = (hash(k * 1.7) - 0.5) * 240, z = 7.5 + hash(k * 2.3) * 9, u = new THREE.Group(); bx(0.05, 2.2, 0.05, '#f4f4f0', 0, 1.1, 0, u);
+    const can = mesh(new THREE.ConeGeometry(1.25, 0.55, 8), F_(UC[k % UC.length])); can.position.y = 2.25; u.add(can); u.position.set(x, 0, z); u.rotation.z = (hash(k) - 0.5) * 0.2; sc.add(u);
+    bx(0.8, 0.02, 1.6, UC[(k + 3) % UC.length], x + 0.9, 0.01, z + 0.6, sc).rotation.y = hash(k * 5) - 0.5; if (k % 3 === 0) bx(0.5, 0.35, 0.32, k % 2 ? '#2a6ad8' : '#e8463a', x - 0.8, 0.18, z + 0.4, sc); }
+  for (let k = 0; k < 70; k++) { const d = mesh(new THREE.IcosahedronGeometry(4 + 3 * hash(k), 0), F_('#e4cc98')); d.scale.set(1.6, 0.35, 1); d.position.set(-250 + k * 7.3, 0, 21 + 4 * hash(k * 3)); sc.add(d);
+    for (let q = 0; q < 6; q++) { const g = mesh(new THREE.ConeGeometry(0.15, 0.9, 4), F_('#8aa04a')); g.position.set(-250 + k * 7.3 + (hash(k * 9 + q) - 0.5) * 6, 1.0 + 0.3 * hash(q), 20 + 4 * hash(k + q * 3)); sc.add(g); } }
+  gplane(sc, 700, 5, '#a8784a', 0, 30, 0.6); for (let x = -340; x < 340; x += 3) bx(0.1, 1.0, 0.1, '#f4f4f0', x, 1.1, 27.6, sc); bx(700, 0.08, 0.08, '#f4f4f0', 0, 1.6, 27.6, sc);
+  const winT = (wall, lit) => canvasTex(128, 128, (g, w, h) => { g.fillStyle = wall; g.fillRect(0, 0, w, h); for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { g.fillStyle = hash(r * 4 + c + lit) < 0.2 ? '#f8e0a0' : '#5a7a9a'; g.fillRect(8 + c * 30, 8 + r * 30, 20, 20); } });
+  const LK = [winT('#f2ede4', 1), winT('#e8c8a0', 2), winT('#c8d8e4', 3), winT('#f4d8c8', 4)];
+  for (let k = 0; k < 46; k++) { const wd = 14 + 10 * hash(k), ht = 12 + 40 * hash(k * 3) ** 1.5, tx = LK[k % 4].clone(); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(wd / 5, ht / 5); tx.needsUpdate = true;
+    const b = mesh(new THREE.BoxGeometry(wd, ht, 14), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.8 })); b.position.set(-300 + k * 14 + 3 * hash(k * 7), ht / 2, 46 + 10 * hash(k * 5)); sc.add(b); }
+  const pier = new THREE.Group(); bx(6, 0.4, 120, '#8a6a4a', 0, 2.2, -60, pier); for (let z = 0; z > -120; z -= 6) for (const x of [-2.6, 2.6]) bx(0.35, 4, 0.35, '#5a4a3a', x, 0.4, z, pier);
+  const wheel = new THREE.Group(); wheel.add(mesh(new THREE.TorusGeometry(9, 0.25, 6, 40), F_('#f4f4f0'))); for (let k = 0; k < 12; k++) { const sp2 = bx(0.12, 18, 0.12, '#f4f4f0', 0, 0, 0, wheel); sp2.rotation.z = k * Math.PI / 12;
+    const cab = mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), F_(UC[k % UC.length])); cab.position.set(Math.cos(k * Math.PI / 6) * 9, Math.sin(k * Math.PI / 6) * 9, 0); wheel.add(cab); }
+  wheel.position.set(0, 12, -80); wheel.rotation.y = Math.PI / 2; pier.add(wheel); BC.wheel = wheel; pier.position.set(70, 0, 0); sc.add(pier);
+  BC.gulls = Array.from({ length: 10 }, (_, k) => { const g = new THREE.Group(); for (const s2 of [-1, 1]) { const w2 = bx(0.6, 0.03, 0.18, '#f4f4f0', s2 * 0.3, 0, 0, g); w2.rotation.z = s2 * 0.3; g.userData[s2] = w2; } bx(0.18, 0.12, 0.35, '#f4f4f0', 0, 0, 0, g); sc.add(g); return g; });
+  BC.crests = Array.from({ length: 4 }, () => { const c = mesh(new THREE.BoxGeometry(900, 0.12, 0.8), new THREE.MeshBasicMaterial({ color: '#f4f8fa', transparent: true, opacity: 0.8 }), false, false); sc.add(c); return c; }); }
 const SHORE_LAND = 1.6;
 const JT = t => t < JUMP ? -1 : Math.min(t - JUMP, 5.2) * 0.38 + Math.max(0, t - JUMP - 5.2);   // slow motion (0.38×) from the jump through the splash   // how far into the water everyone lands (m)
 function updateBeach(t, mode) {
@@ -493,10 +529,13 @@ function updateBeach(t, mode) {
   for (let k = 0; k < a.length; k += 3) { const x = w0[k], z = w0[k + 2]; let y = w0[k + 1] + 0.12 * Math.sin(x * 0.35 + t * 1.3) + 0.1 * Math.sin(z * 0.5 - t * 1.7);
     if (mode === 'jump' && t > JUMP + 0.9) { const r = Math.abs(z + SHORE_LAND), k2 = t - JUMP - 0.9; y += 0.6 * Math.exp(-r * 0.25) * Math.sin(r * 1.4 - k2 * 6) * Math.exp(-k2 * 0.6); }
     a[k + 1] = y; } pos.needsUpdate = true; BC.water.geometry.computeVertexNormals();
-  BC.foam.position.z = -0.3 + 0.35 * Math.sin(t * 1.1);
+  BC.foam.position.z = -0.3 + 0.35 * Math.sin(t * 1.1); BC.wheel.rotation.x = t * 0.08;
+  BC.crests.forEach((c, k) => { const u = ((t * 0.12 + k / 4) % 1); c.position.set(0, -0.05, -40 + 38 * u); c.material.opacity = 0.8 * Math.sin(Math.PI * u); });
+  BC.gulls.forEach((g, k) => { const a = t * 0.3 + k * 0.63; g.position.set(-20 + 30 * Math.cos(a) + k * 4, 9 + 2 * Math.sin(k + t * 0.7), -6 + 8 * Math.sin(a)); g.rotation.y = -a; const f = 0.5 * Math.sin(t * 8 + k); g.userData[-1].rotation.z = -0.3 - f; g.userData[1].rotation.z = 0.3 + f; });
   // slow motion during the jump: 0.35× between JUMP and JUMP + 2.6 s of film time
   const jt = JT(t);
-  let nd = 0;
+  let nd = 0; BC.near.forEach(row => row.forEach(m => { m.count = 0; }));
+  const pi = mode === 'cold' ? 2 : mode === 'back' ? 3 : (mode === 'jump' && jt > 0 && jt < 0.85) ? 1 : 0;   // which pose the near crowd uses
   P.forEach((p, i) => { let x = p.x, y = 0, z = p.z, s = 1, lean = 0; const h = p.h;
     if (mode === 'crowd') { y = 0.02 * Math.sin(t * 3 + p.ph); }
     else if (mode === 'jump') { const t0 = (p.d - 0.5) * 0.06; const u = clamp((jt - t0) / 0.75, 0, 1);   // almost everyone at the same second
@@ -505,9 +544,11 @@ function updateBeach(t, mode) {
       if (u >= 1) { y = -0.75 + 0.05 * Math.sin(t * 2 + p.ph); z = -SHORE_LAND - (8 - p.z) * 0.18; } }
     else if (mode === 'cold') { z = -SHORE_LAND - (8 - p.z) * 0.18; y = -0.75 + 0.02 * Math.sin(t * 40 + p.ph); x += 0.015 * Math.sin(t * 37 + p.ph); }
     else if (mode === 'back') { const u = clamp((t - BACK - p.d * 0.8) / 2.0, 0, 1); z = lerp(-SHORE_LAND - (8 - p.z) * 0.18, p.z + 2.5, u); y = lerp(-0.75, 0, Math.min(1, u * 2.5)) + 0.04 * Math.abs(Math.sin(t * 6 + p.ph)); }
+    if (p.near) { _o.position.set(x, y + 0.95, z); _o.rotation.set(lean, Math.PI + 0.25 * (p.d - 0.5), 0); _o.scale.setScalar(h); _o.updateMatrix(); const m = BC.near[p.v][pi]; m.setMatrixAt(m.count++, _o.matrix);
+      _o.scale.setScalar(0.0001); _o.updateMatrix(); BC.bodies.setMatrixAt(i, _o.matrix); BC.heads.setMatrixAt(i, _o.matrix); return; }
     _o.position.set(x, y + 0.56 * h, z); _o.rotation.set(lean, 0, 0); _o.scale.set(1, h, 1); _o.updateMatrix(); BC.bodies.setMatrixAt(i, _o.matrix);
     _o.position.set(x, y + 1.18 * h + 0.06, z + lean * 0.4); _o.scale.setScalar(1); _o.updateMatrix(); BC.heads.setMatrixAt(i, _o.matrix); });
-  BC.bodies.instanceMatrix.needsUpdate = BC.heads.instanceMatrix.needsUpdate = true;
+  BC.bodies.instanceMatrix.needsUpdate = BC.heads.instanceMatrix.needsUpdate = true; BC.near.forEach(row => row.forEach(m => { m.instanceMatrix.needsUpdate = true; }));
   // the splash: droplets thrown up where people land
   for (let k = 0; k < 2400; k++) { const p = P[(k * 37) % P.length], ts = 0.75 + (p.d - 0.5) * 0.06, u = mode === 'jump' ? (jt - ts) / 1.1 : -1;
     if (u > 0 && u < 1 && Math.abs(p.x) < 160) { const a2 = hash(k) * 6.28, v = 2.5 + 5.5 * hash(k * 3); _o.position.set(p.x + Math.cos(a2) * 0.8 * u, -0.2 + v * u - 4.0 * u * u, -SHORE_LAND - (8 - p.z) * 0.18 + Math.sin(a2) * 0.8 * u); _o.scale.setScalar(1.0 + 1.4 * hash(k * 7)); nd++; }
@@ -561,6 +602,12 @@ const FM = {}; {
     g.font = '700 64px Inter'; g.fillText('ALLEN, SD', w / 2, 92); g.font = '600 40px Inter'; g.fillText('PACIFIC OCEAN  1,018 MI', w / 2, 162); g.fillText('ATLANTIC  1,500+ MI', w / 2, 218); });
   const sp = mesh(new THREE.PlaneGeometry(3.2, 1.6), new THREE.MeshStandardMaterial({ map: sign, roughness: 0.6 }), false, false); sp.position.set(5.2, 3.2, 2); sp.rotation.y = -0.35; sc.add(sp); for (const x of [-1.2, 1.2]) bx(0.12, 2.6, 0.12, '#8a8a92', 5.2 + x * 0.94, 1.3, 2 + x * 0.34, sc);
   FM.car = makeCar('#2a6ad8'); FM.car.position.set(1.8, 0, 6); sc.add(FM.car);
+  const silo = new THREE.Group(); silo.add(mesh(new THREE.CylinderGeometry(2.6, 2.6, 14, 14), F_('#c8ccd4', { metalness: 0.4 }))); silo.children[0].position.y = 7; const dome = mesh(new THREE.SphereGeometry(2.6, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), F_('#a8acb4', { metalness: 0.4 })); dome.position.y = 14; silo.add(dome); silo.position.set(-22, 0, -48); sc.add(silo);
+  const trac = new THREE.Group(); bx(1.6, 1.0, 2.6, '#2a8a3a', 0, 1.1, 0, trac); bx(1.4, 1.2, 1.2, '#2a8a3a', 0, 2.2, -0.5, trac); bx(1.3, 1.0, 1.1, '#2a3440', 0, 2.25, -0.5, trac);
+  for (const [x, z, r] of [[-0.9, -0.8, 0.9], [0.9, -0.8, 0.9], [-0.85, 1.0, 0.5], [0.85, 1.0, 0.5]]) { const w = mesh(new THREE.CylinderGeometry(r, r, 0.4, 14), F_('#1c1e24')); w.rotation.z = Math.PI / 2; w.position.set(x, r, z); trac.add(w); } trac.position.set(-8, 0, -6); trac.rotation.y = 0.7; sc.add(trac);
+  for (let k = 0; k < 18; k++) { const b = mesh(new THREE.CylinderGeometry(0.75, 0.75, 1.2, 12), F_('#d8b860')); b.rotation.z = Math.PI / 2; b.position.set(-40 + (k % 6) * 4 + hash(k) * 2, 0.75, -20 - Math.floor(k / 6) * 6); sc.add(b); }
+  for (let z = 20; z > -600; z -= 30) { bx(0.22, 8, 0.22, '#6a4a32', 5.5, 4, z, sc); bx(1.6, 0.12, 0.12, '#6a4a32', 5.5, 7.5, z, sc); const wire = mesh(new THREE.CylinderGeometry(0.02, 0.02, 30, 4), F_('#2a2a30')); wire.rotation.x = Math.PI / 2; wire.position.set(5.5, 7.4, z - 15); sc.add(wire); }
+  for (let z = 15; z > -200; z -= 3) bx(0.12, 1.1, 0.12, '#8a6a4a', -5.5, 0.55, z, sc); bx(0.06, 0.06, 215, '#8a6a4a', -5.5, 0.9, -92, sc); bx(0.06, 0.06, 215, '#8a6a4a', -5.5, 0.5, -92, sc);
   for (let i = 0; i < 40; i++) { const tr = mesh(new THREE.IcosahedronGeometry(1.2 + hash(i) * 1.2, 0), F_('#5a7a3a')); tr.position.set((hash(i * 3) - 0.5) * 600, 1.2, -100 - hash(i * 7) * 500); sc.add(tr); } }
 function updateFarm(t) { const go = smooth(ALLEN + 3.6, ALLEN + 6, t); FM.car.position.z = 6 - 40 * go * go; }
 
@@ -571,25 +618,31 @@ const HW = {}; {
   for (const x of [-9, -5.5, 5.5, 9]) for (let z = -1490; z < 1490; z += 9) gplane(sc, 0.15, 3.0, '#e8e6e0', x, z, 0.03);
   const LANES = [-10.8, -7.2, -3.6, 3.6, 7.2, 10.8], N = LANES.length * 260; HW.lanes = LANES;
   const bodyG = new THREE.BoxGeometry(1.8, 0.75, 4.2); bodyG.translate(0, 0.65, 0); const cabG = new THREE.BoxGeometry(1.6, 0.55, 2.1); cabG.translate(0, 1.3, -0.2);
-  HW.body = new THREE.InstancedMesh(bodyG, F_('#ffffff', { roughness: 0.4, metalness: 0.2 }), N); HW.cab = new THREE.InstancedMesh(cabG, F_('#2a3440', { roughness: 0.15 }), N); HW.body.castShadow = true; sc.add(HW.body, HW.cab);
-  HW.C = []; let i = 0; for (const x of LANES) for (let k = 0; k < 260; k++) { HW.C.push({ x, z: -k * 6.4 + 60 + hash(i) * 1.2, dir: x < 0 ? 1 : -1, ph: hash(i * 3) }); HW.body.setColorAt(i, _c.set(['#e8463a', '#f4f4f0', '#2a6ad8', '#1a1a22', '#c8c8d0', '#f4c430', '#2a9a5a', '#8a3a2a'][(hash(i * 5) * 8) | 0])); i++; } }
-function updateHwy(t) { HW.C.forEach((c, i) => { const crawl = 0.6 * Math.max(0, Math.sin(t * 0.8 + c.ph * 6)); _o.position.set(c.x, 0, c.z - c.dir * crawl); _o.rotation.set(0, c.dir > 0 ? Math.PI : 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); HW.body.setMatrixAt(i, _o.matrix); HW.cab.setMatrixAt(i, _o.matrix); });
-  HW.body.instanceMatrix.needsUpdate = HW.cab.instanceMatrix.needsUpdate = true; }
+  const CC = ['#e8463a', '#f4f4f0', '#2a6ad8', '#1a1a22', '#c8c8d0', '#f4c430', '#2a9a5a', '#8a3a2a']; HW.cars = CC.map(c => { const m = new THREE.InstancedMesh(bake(makeCar(c)), BAKE_MAT, N); m.castShadow = true; m.count = 0; m.frustumCulled = false; sc.add(m); return m; });
+  const gan = new THREE.Group(); for (const x of [-14, 14]) bx(0.5, 8, 0.5, '#8a8a92', x, 4, 0, gan); bx(29, 0.6, 0.6, '#8a8a92', 0, 7.8, 0, gan);
+  const sg = canvasTex(1024, 256, (g, w, h) => { g.fillStyle = '#1e6a3a'; g.fillRect(0, 0, w, h); g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(8, 8, w - 16, h - 16); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '800 92px Inter'; g.fillText('I-90 WEST', w / 2, 110); g.font = '600 58px Inter'; g.fillText('SEATTLE · PACIFIC OCEAN  1,190', w / 2, 200); });
+  const sm = mesh(new THREE.PlaneGeometry(13, 3.25), new THREE.MeshStandardMaterial({ map: sg, roughness: 0.6 }), false, false); sm.position.set(-6.5, 9.6, 0.32); gan.add(sm); gan.position.z = -30; sc.add(gan);
+  HW.C = []; let i = 0; for (const x of LANES) for (let k = 0; k < 260; k++) { HW.C.push({ x, z: -k * 6.4 + 60 + hash(i) * 1.2, dir: x < 0 ? 1 : -1, ph: hash(i * 3), c: (hash(i * 5) * 8) | 0 }); i++; } }
+function updateHwy(t) { HW.cars.forEach(m => { m.count = 0; }); HW.C.forEach((c, i) => { const crawl = 0.6 * Math.max(0, Math.sin(t * 0.8 + c.ph * 6)); _o.position.set(c.x, 0, c.z - c.dir * crawl); _o.rotation.set(0, c.dir > 0 ? Math.PI : 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); const m = HW.cars[c.c]; m.setMatrixAt(m.count++, _o.matrix); });
+  HW.cars.forEach(m => { m.instanceMatrix.needsUpdate = true; }); }
 
 // ---------- 5) UNDERWATER: blue haze, the bright surface above, a forest of legs, bubbles, fish fleeing ----------
-const UNDER = mkSet({ top: '#5ab0d8', bot: '#0a3050', fog: 0x0e4a6a, near: 4, far: 60, hemi: [0x9ad8ff, 0x0a2a40, 1.4], sun: [0xc8f0ff, 1.6, V3(2, 30, 4)], shadow: 15 });
+const UNDER = mkSet({ top: '#1e6a94', bot: '#0a3050', fog: 0x0e4a6a, near: 4, far: 60, hemi: [0x9ad8ff, 0x0a2a40, 1.4], sun: [0xc8f0ff, 1.6, V3(2, 30, 4)], shadow: 15 });
 const UW = {}; {
-  const sc = UNDER.sc; const surf = mesh(new THREE.PlaneGeometry(400, 400, 60, 60), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 1.6, 1.8), side: THREE.DoubleSide, transparent: true, opacity: 0.85 }), false, false); surf.rotation.x = Math.PI / 2; surf.position.y = 0; sc.add(surf); UW.surf = surf;
+  const sc = UNDER.sc; const surf = mesh(new THREE.PlaneGeometry(4000, 4000, 60, 60), new THREE.MeshBasicMaterial({ map: canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#3a8ab8'; g.fillRect(0, 0, w, h); for (let i = 0; i < 60; i++) { g.strokeStyle = 'rgba(200,240,255,0.5)'; g.lineWidth = 3; g.beginPath(); const x = hash(i) * w, y = hash(i * 3) * h; g.ellipse(x, y, 20 + 30 * hash(i * 5), 8 + 10 * hash(i * 7), hash(i * 9) * 3, 0, 6.3); g.stroke(); } }, [60, 60]), side: THREE.DoubleSide }), false, false); surf.rotation.x = Math.PI / 2; surf.position.y = 0; sc.add(surf); UW.surf = surf;
   gplane(sc, 400, 400, '#c8b888', 0, 0, -4.5);
-  const N = 1400; UW.legs = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.08, 0.75, 2, 6), F_('#e0a878'), N * 2); UW.trunk = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.17, 0.3, 2, 6), F_('#ffffff'), N); sc.add(UW.legs, UW.trunk);
+  const N = 1400; UW.ppl = PEOPLE_GEO.map(row => { const m = new THREE.InstancedMesh(row[0], BAKE_MAT, Math.ceil(N / NV) + 2); m.frustumCulled = false; sc.add(m); return m; });
+  UW.school = new THREE.InstancedMesh(new THREE.ConeGeometry(0.06, 0.22, 4), F_('#c8d8e8', { metalness: 0.5, roughness: 0.3 }), 300); UW.school.frustumCulled = false; sc.add(UW.school);
+  UW.rays = Array.from({ length: 10 }, (_, k) => { const r = mesh(new THREE.PlaneGeometry(1.4, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 0.8, 1.0), transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }), false, false); r.position.set(-10 + k * 2.4, -4, -8 - (k % 3) * 4); r.rotation.z = 0.25; sc.add(r); return r; });
   UW.P = Array.from({ length: N }, (_, i) => ({ x: (hash(i) - 0.5) * 70, z: -4 - hash(i * 3) * 70, ph: hash(i * 7) * 6.28, c: SUITS[(hash(i * 5.3) * SUITS.length) | 0], s: SKIN[(hash(i * 2.9) * SKIN.length) | 0] }));
-  UW.P.forEach((p, i) => { UW.trunk.setColorAt(i, _c.set(p.c)); UW.legs.setColorAt(2 * i, _c.set(p.s)); UW.legs.setColorAt(2 * i + 1, _c.set(p.s)); });
+
   UW.bub = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.9, 2.0), transparent: true, opacity: 0.8 }), 700); UW.bub.frustumCulled = false; sc.add(UW.bub);
   UW.fish = Array.from({ length: 14 }, (_, i) => { const f = new THREE.Group(); const b = mesh(new THREE.SphereGeometry(0.18, 8, 6), F_(['#f4c430', '#f08a2a', '#c8d8e8'][i % 3])); b.scale.set(0.5, 0.8, 1.6); f.add(b); const tl = mesh(new THREE.ConeGeometry(0.15, 0.25, 4), F_(['#f4c430', '#f08a2a', '#c8d8e8'][i % 3])); tl.rotation.x = Math.PI / 2; tl.position.z = 0.35; f.add(tl); sc.add(f); return f; }); }
-function updateUnder(t) { UW.P.forEach((p, i) => { const k = t * 3 + p.ph, sink = smooth(SPLASH + 2.8, SPLASH + 3.6, t);
-    _o.position.set(p.x, -0.35 - 0.6 * (1 - sink), p.z); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); UW.trunk.setMatrixAt(i, _o.matrix);
-    for (const s of [-1, 1]) { _o.position.set(p.x + s * 0.09, -1.0 - 0.6 * (1 - sink), p.z); _o.rotation.set(0.35 * Math.sin(k + (s > 0 ? Math.PI : 0)), 0, 0); _o.updateMatrix(); UW.legs.setMatrixAt(2 * i + (s > 0 ? 1 : 0), _o.matrix); } });
-  UW.trunk.instanceMatrix.needsUpdate = UW.legs.instanceMatrix.needsUpdate = true;
+function updateUnder(t) { UW.ppl.forEach(m => { m.count = 0; }); UW.P.forEach((p, i) => { const sink = smooth(SPLASH + 2.8, SPLASH + 3.6, t), m = UW.ppl[i % NV];
+    _o.position.set(p.x, -0.05 - 0.7 * (1 - sink) + 0.04 * Math.sin(t * 2 + p.ph), p.z); _o.rotation.set(0.08 * Math.sin(t * 1.5 + p.ph), p.ph, 0); _o.scale.setScalar(1); _o.updateMatrix(); m.setMatrixAt(m.count++, _o.matrix); });
+  UW.ppl.forEach(m => { m.instanceMatrix.needsUpdate = true; });
+  for (let k = 0; k < 300; k++) { const a = t * 0.9 + k * 0.021, r = 1.2 + 0.6 * hash(k); _o.position.set(4 + Math.cos(a) * r + (hash(k * 3) - 0.5) * 0.8, -2.6 + (hash(k * 5) - 0.5) * 1.2, -7 + Math.sin(a) * r); _o.rotation.set(Math.PI / 2, 0, -a); _o.scale.setScalar(1); _o.updateMatrix(); UW.school.setMatrixAt(k, _o.matrix); } UW.school.instanceMatrix.needsUpdate = true;
+  UW.rays.forEach((r, k) => { r.material.opacity = 0.08 + 0.06 * Math.sin(t * 1.3 + k); });
   for (let k = 0; k < 700; k++) { const u = ((t * 0.5 + hash(k)) % 1); _o.position.set((hash(k * 3) - 0.5) * 20, -4 + 4 * u, -3 - hash(k * 7) * 18); _o.rotation.set(0, 0, 0); _o.scale.setScalar(0.5 + hash(k * 9)); _o.updateMatrix(); UW.bub.setMatrixAt(k, _o.matrix); } UW.bub.instanceMatrix.needsUpdate = true;
   UW.fish.forEach((f, i) => { const u = t - SPLASH - 2.6; f.position.set(-3 + (i % 5) * 1.4 + Math.max(0, u) * (i % 2 ? 4 : -4), -2.4 - (i % 3) * 0.5, -6 - (i % 4) * 1.2 - Math.max(0, u) * 3); f.rotation.y = i % 2 ? -Math.PI / 2 : Math.PI / 2; }); }
 
@@ -655,7 +708,7 @@ const SHOTS = [   // [start, set, camera(t), opts, beach mode]
   [COAST, 'beach', t => LOOK(-60 + 30 * esin(span(t, COAST, COAST + 3)), 9, -14, 0, 0.8, 4), { mb: true }],   // along the coast: rows of people
   [COAST + 3.0, 'beach', t => orbit(headOf(hero), V3(0.15, 0.08, -1), -0.25, 0.2, 2.3, 2.0, 0.6, span(t, COAST + 3, COUNT)), { dof: () => headOf(hero) }],   // you in the front row
   [COUNT, 'beach', t => LOOK(0, 1.3, -5.5, 0, 1.2, 6), {}],   // 3… 2… 1… (from the water, low)
-  [JUMP, 'beach', t => lerpF(LOOK(2.5, 1.2, -6, 0, 1.0, 1), LOOK(4, 3.5, -9, 0, 0.5, 0), esin(span(t, JUMP, SPLASH))), { mb: true, whip: 1 }],   // JUMP (slow motion)
+  [JUMP, 'beach', t => lerpF(LOOK(13, 2.2, -1.5, 0, 1.6, 0.5), LOOK(11, 3.0, -4.5, 0, 1.0, -1), esin(span(t, JUMP, SPLASH))), { mb: true, whip: 1 }],   // from the side: the whole front row in the air   // JUMP (slow motion)
   [SPLASH, 'beach', t => LOOK(-30, 18 - 4 * span(t, SPLASH, SPLASH + 2.8), -40, 0, 0, -2), { mb: true }],   // the splash along the whole coast
   [SPLASH + 2.8, 'under', t => LOOK(0, -2.2, 6 - 1.5 * span(t, SPLASH + 2.8, MACRO), 0, -1.2, -10), {}],   // under water: a forest of legs
   [MACRO, 'macro', t => lerpF(LOOK(0, 4, 26, 0, 2.5, 0), LOOK(2, 0.5, 9, 0, 0.1, 3), esin(span(t, MACRO + 1.5, SPACE - 0.5))), {}],   // the hair vs the rise
