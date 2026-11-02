@@ -46,26 +46,31 @@ CITY.cam.far = 30000;
 const towerDay = new THREE.ShaderMaterial({ uniforms: { uSun: { value: SUN_DIR }, uHaze: { value: HAZE }, uCam: { value: new THREE.Vector3() } },
   vertexShader: `varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec2 vSeed;
     void main(){ mat4 im = instanceMatrix; vec4 w = modelMatrix * im * vec4(position, 1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix * im) * normal); vC = vec3(1.0);
-      \n#ifdef USE_INSTANCING_COLOR\n vC = instanceColor; \n#endif\n vSeed = im[3].xz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+      \n#ifdef USE_INSTANCING_COLOR\n vC = instanceColor; \n#endif\n vSeed = floor(im[3].xz); gl_Position = projectionMatrix * viewMatrix * w; }`,
   fragmentShader: `uniform vec3 uSun, uHaze, uCam; varying vec3 vW; varying vec3 vN; varying vec3 vC; varying vec2 vSeed; ${GLSL_HASH}
     void main(){ vec3 n = normalize(vN), v = normalize(uCam - vW); float dif = max(dot(n, uSun), 0.0), side = 1.0 - step(0.5, abs(n.y));
-      vec3 col = vC * (0.42 + 0.9 * dif * vec3(1.0, 0.86, 0.68)) + vec3(0.04, 0.05, 0.08);
-      if (side > 0.5) { float u = abs(n.x) > 0.5 ? vW.z : vW.x; vec2 g = vec2(u / 3.0, vW.y / 3.6); vec2 c = floor(g), f = fract(g);
-        float win = step(0.14, f.x) * step(f.x, 0.86) * step(0.2, f.y) * step(f.y, 0.8);
-        float fres = pow(1.0 - max(dot(n, v), 0.0), 2.0); vec3 sky = mix(vec3(0.42, 0.55, 0.72), vec3(1.0, 0.82, 0.6), 0.4 + 0.4 * fres);
-        vec3 glass = mix(vec3(0.12, 0.16, 0.22), sky, 0.35 + 0.55 * fres) * (0.85 + 0.3 * h21(c + vSeed));
-        float glint = pow(max(dot(reflect(-uSun, n), v), 0.0), 40.0) * 3.0; col = mix(col, glass + glint * vec3(1.0, 0.85, 0.6), win * 0.9); }
-      else col *= 1.05;
-      float d = length(vW - uCam); col = mix(col, uHaze, clamp(1.0 - exp(-d * 0.00011), 0.0, 0.85)); gl_FragColor = vec4(col, 1.0);
-      #include <colorspace_fragment>
-    }` });
+      float ty = h21(vSeed * 0.731); int T = ty < 0.32 ? 0 : ty < 0.66 ? 1 : 2;   // 0 brick, 1 limestone, 2 glass curtain wall
+      vec3 wall = T == 0 ? vec3(0.46, 0.2, 0.13) : T == 1 ? vec3(0.66, 0.57, 0.44) : vec3(0.22, 0.29, 0.36); wall *= 0.85 + 0.3 * vC;
+      vec3 lit = vec3(0.3, 0.33, 0.4) + 1.1 * dif * vec3(1.0, 0.84, 0.64); vec3 col = wall * lit + vec3(0.03, 0.035, 0.05);
+      if (side > 0.5) { float u = abs(n.x) > 0.5 ? vW.z : vW.x; float fw = T == 0 ? 2.4 : T == 1 ? 3.0 : 2.0, fh = T == 0 ? 3.2 : 3.6;
+        vec2 g = vec2(u / fw, vW.y / fh); vec2 c = floor(g), f = fract(g); float mx = T == 2 ? 0.06 : T == 0 ? 0.25 : 0.18, my = T == 2 ? 0.08 : 0.24;
+        float win = step(mx, f.x) * step(f.x, 1.0 - mx) * step(my, f.y) * step(f.y, 1.0 - my * 0.8);
+        float fres = pow(1.0 - max(dot(n, v), 0.0), 2.0); vec3 sky = mix(vec3(0.4, 0.55, 0.75), vec3(1.0, 0.8, 0.58), 0.35 + 0.45 * fres);
+        vec3 glass = mix(vec3(0.04, 0.05, 0.08), sky * 0.7, (T == 2 ? 0.35 : 0.1) + 0.2 * fres) * (0.82 + 0.3 * h21(c + vSeed)); if (T == 2) glass *= vec3(0.85, 1.0, 1.02);
+        float glint = pow(max(dot(reflect(-uSun, n), v), 0.0), 60.0) * (T == 2 ? 4.0 : 1.5);
+        float dd = length(vW - uCam); col = mix(col, mix(glass + glint * vec3(1.0, 0.85, 0.6), mix(col, glass, 0.5), smoothstep(500.0, 1800.0, dd)), mix(win, 1.0, smoothstep(500.0, 1800.0, dd)));
+        float band = T == 1 ? step(0.92, fract(vW.y / (fh * 4.0))) : T == 0 ? step(0.96, fract(vW.y / (fh * 6.0))) : 0.0; col = mix(col, wall * lit * 0.62, band * (1.0 - win * 0.0));
+        float base = 1.0 - step(6.0, vW.y); col = mix(col, mix(vec3(0.12, 0.1, 0.09), vec3(0.9, 0.55, 0.25) * 0.6, step(0.5, fract(u / 7.0))) , base * 0.85);
+        col *= 0.3 + 0.7 * smoothstep(0.0, 70.0, vW.y); }
+      else col = vec3(0.2, 0.19, 0.18) * lit * (0.8 + 0.4 * h21(vSeed)); col = pow(max(col, 0.0), vec3(2.0)) * 1.8;
+      float d = length(vW - uCam); col = mix(col, uHaze, clamp(1.0 - exp(-d * 0.00011), 0.0, 0.85)); gl_FragColor = vec4(col, 1.0); }` });
 const groundDay = new THREE.ShaderMaterial({ uniforms: { uHaze: { value: HAZE }, uCam: { value: new THREE.Vector3() }, uT: { value: 0 } },
   vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
   fragmentShader: `uniform vec3 uHaze, uCam; uniform float uT; varying vec3 vW; ${GLSL_HASH}
     void main(){ vec2 p = vW.xz; float water = (abs(p.x) > 1750.0 && abs(p.x) < 2350.0) || p.y > 7600.0 ? 1.0 : 0.0;
       float park = step(abs(p.x - 100.0), 400.0) * step(-4600.0, p.y) * step(p.y, -1500.0);
       float av = 1.0 - smoothstep(4.0, 7.0, abs(mod(p.x + 70.0, 140.0) - 70.0)), st = 1.0 - smoothstep(3.0, 5.0, abs(mod(p.y + 35.0, 70.0) - 35.0));
-      vec3 col = mix(vec3(0.62, 0.6, 0.56), vec3(0.32, 0.32, 0.34), max(av, st));
+      vec3 col = mix(vec3(0.2, 0.19, 0.18), vec3(0.07, 0.07, 0.08), max(av, st));
       float cab = step(0.82, h21(floor(vec2(p.x / 4.0, (p.y - uT * 9.0) / 9.0)))) * av; col = mix(col, vec3(0.95, 0.75, 0.15), cab);
       col = mix(col, mix(vec3(0.28, 0.48, 0.22), vec3(0.36, 0.56, 0.26), vn(p * 0.02)), park);
       col = mix(col, vec3(0.2, 0.36, 0.5) + 0.12 * vn(p * 0.05 + uT * 0.2), water);
@@ -76,10 +81,34 @@ const CT = {}; { const sc = CITY.sc; const gnd = new THREE.Mesh(new THREE.PlaneG
   const T = []; for (let bx2 = -11; bx2 <= 11; bx2++) for (let bz = -60; bz <= 108; bz++) { const cx = bx2 * 140, cz = bz * 70; if (Math.abs(cx - 100) < 420 && cz > -4620 && cz < -1480) continue;
     const mid = Math.exp(-((cz / 1800) ** 2)), down = Math.exp(-(((cz - 6200) / 900) ** 2)), k = (bx2 + 20) * 1000 + bz, n = 2 + ((hash(k) * 3) | 0);
     for (let q = 0; q < n; q++) { const w = Math.min(22 + 30 * hash(k * 3 + q), 112 / n - 6), d = Math.min(18 + 22 * hash(k * 5 + q), 52), x = cx + (q - (n - 1) / 2) * (112 / n), z = cz + (hash(k * 7 + q) - 0.5) * 18;
-      T.push([x, z, w, d, 18 + (40 + 300 * mid + 260 * down) * Math.pow(hash(k * 11 + q), 2.2) + 30 * hash(k * 13 + q)]); } }
+      T.push([x, z, w, d, 18 + (40 + 300 * mid + 260 * down) * Math.pow(hash(k * 11 + q), 2.2) + 30 * hash(k * 13 + q) + (hash(k * 17 + q) > 0.985 ? 180 + 160 * hash(k * 19) : 0)]); } }
   for (let k = 0; k < 2000; k++) { const s2 = k % 2 ? 1 : -1; T.push([s2 * (2600 + 9000 * hash(k)), -8000 + 18000 * hash(k * 3), 20 + 25 * hash(k * 5), 20 + 25 * hash(k * 7), 12 + 50 * hash(k * 9) ** 2]); }
-  const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), towerDay, T.length); T.forEach(([x, z, w, d, h], i) => { _o.position.set(x, 0, z); _o.rotation.set(0, 0, 0); _o.scale.set(w, h, d); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); im.setColorAt(i, _c.setHSL(0.06 + 0.06 * hash(i), 0.18 + 0.2 * hash(i * 5), 0.5 + 0.25 * hash(i * 3))); });
-  im.castShadow = true; sc.add(im); CT.towers = T;
+  // setbacks: tall towers step back in 2–3 tiers; a stone cornice tops each tier; roofs get water tanks, AC units, antennas, art-deco crowns and red lights
+  const tiers = [], corn = [], tanks = [], acs = [], ants = [], crowns = [], reds = [];
+  T.forEach(([x, z, w, d, h], i) => { const r = hash(i * 1.37); let y = 0, ww = w, dd = d; const nT = h > 140 ? 3 : h > 70 ? 2 : 1, parts = nT === 3 ? [0.55, 0.3, 0.15] : nT === 2 ? [0.7, 0.3] : [1];
+    parts.forEach((f, j) => { const hh = h * f; tiers.push([x, y, z, ww, hh, dd, i]); corn.push([x, y + hh, z, ww + 1.2, 1.0, dd + 1.2]); y += hh; ww *= 0.72; dd *= 0.72; });
+    const topY = y, tw = ww / 0.72, td = dd / 0.72;
+    if (h < 130 && r < 0.45) tanks.push([x + (hash(i * 3) - 0.5) * tw * 0.4, topY + 1, z + (hash(i * 5) - 0.5) * td * 0.4]);
+    if (r > 0.3) for (let q = 0; q < 2 + ((hash(i * 7) * 3) | 0); q++) acs.push([x + (hash(i * 9 + q) - 0.5) * tw * 0.6, topY + 0.6, z + (hash(i * 11 + q) - 0.5) * td * 0.6]);
+    if (h > 160 && r < 0.5) ants.push([x, topY, z, 12 + 40 * hash(i * 13)]); if (h > 160 && r >= 0.5) crowns.push([x, topY, z, tw, td, 8 + 20 * hash(i * 17)]);
+    if (h > 200) reds.push([x, topY + (r < 0.5 ? 12 + 40 * hash(i * 13) : 8 + 20 * hash(i * 17)) + 1, z]); });
+  const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), towerDay, tiers.length);
+  tiers.forEach(([x, y, z, w, h, d, i], k) => { _o.position.set(x, y, z); _o.rotation.set(0, 0, 0); _o.scale.set(w, h, d); _o.updateMatrix(); im.setMatrixAt(k, _o.matrix); im.setColorAt(k, _c.setScalar(0.85 + 0.3 * hash(i * 3))); });
+  im.castShadow = true; im.receiveShadow = true; sc.add(im); CT.towers = T;
+  const inst = (geo, mat, list, f) => { const m = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length)); list.forEach((e, k) => { f(e); _o.updateMatrix(); m.setMatrixAt(k, _o.matrix); }); m.castShadow = true; sc.add(m); return m; };
+  inst(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), F_('#7d756a'), corn, ([x, y, z, w, h, d]) => { _o.position.set(x, y, z); _o.rotation.set(0, 0, 0); _o.scale.set(w, h, d); });
+  const tankG = mergeGeometries([new THREE.CylinderGeometry(2.4, 2.4, 4.5, 14).translate(0, 6.6, 0), new THREE.ConeGeometry(2.6, 1.8, 14).translate(0, 9.7, 0), new THREE.BoxGeometry(0.25, 4.4, 0.25).translate(-1.6, 2.2, -1.6), new THREE.BoxGeometry(0.25, 4.4, 0.25).translate(1.6, 2.2, -1.6), new THREE.BoxGeometry(0.25, 4.4, 0.25).translate(-1.6, 2.2, 1.6), new THREE.BoxGeometry(0.25, 4.4, 0.25).translate(1.6, 2.2, 1.6)]);
+  inst(tankG, F_('#8a5e3c'), tanks, ([x, y, z]) => { _o.position.set(x, y, z); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); });
+  inst(new THREE.BoxGeometry(3, 1.4, 2.2), F_('#c4c8ce'), acs, ([x, y, z]) => { _o.position.set(x, y, z); _o.rotation.set(0, hash(x) * 3, 0); _o.scale.setScalar(1); });
+  inst(new THREE.CylinderGeometry(0.4, 0.9, 1, 6).translate(0, 0.5, 0), F_('#d8dade', { metalness: 0.6, roughness: 0.3 }), ants, ([x, y, z, h]) => { _o.position.set(x, y, z); _o.rotation.set(0, 0, 0); _o.scale.set(1, h, 1); });
+  inst(new THREE.ConeGeometry(0.7, 1, 4).translate(0, 0.5, 0), F_('#c8b48a', { metalness: 0.5, roughness: 0.3 }), crowns, ([x, y, z, w, d, h]) => { _o.position.set(x, y, z); _o.rotation.set(0, Math.PI / 4, 0); _o.scale.set(w, h, d); });
+  inst(new THREE.SphereGeometry(0.9, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 0.4, 0.3) }), reds, ([x, y, z]) => { _o.position.set(x, y, z); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); });
+  // Central Park: thousands of trees; the avenues: cars + yellow cabs
+  const trees = []; for (let k = 0; k < 4200; k++) trees.push([100 + (hash(k * 1.3) - 0.5) * 780, -4600 + 3100 * hash(k * 2.7), 5 + 5 * hash(k * 3.1)]);
+  inst(new THREE.IcosahedronGeometry(1, 0).translate(0, 1.4, 0), F_('#4a7a34'), trees, ([x, z, s2]) => { _o.position.set(x, 0, z); _o.rotation.set(0, hash(x) * 3, 0); _o.scale.set(s2, s2 * 0.9, s2); });
+  const cars = [], cabs = []; for (let k = 0; k < 6000; k++) { const ax = (Math.floor(hash(k * 1.7) * 22) - 11) * 140 + (hash(k * 3) < 0.5 ? -3 : 3), z = -6000 + 13000 * hash(k * 5.3); (hash(k * 7) < 0.35 ? cabs : cars).push([ax, z]); }
+  inst(new THREE.BoxGeometry(1.9, 1.4, 4.4).translate(0, 0.7, 0), F_('#f2c42a', { roughness: 0.4 }), cabs, ([x, z]) => { _o.position.set(x, 0, z); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); });
+  inst(new THREE.BoxGeometry(1.9, 1.4, 4.4).translate(0, 0.7, 0), F_('#3a3e48', { roughness: 0.4 }), cars, ([x, z]) => { _o.position.set(x, 0, z); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); });
   // the hero's rooftop: a water tower + AC units on a 160 m tower near the park's south end
   CT.roofY = 160; const rt = new THREE.Group(); bx(46, 160, 40, '#c8a888', 0, 80, 0, rt); bx(46.4, 1.0, 40.4, '#8a7a6a', 0, 160.5, 0, rt);
   const wt = new THREE.Group(); for (const [x, z] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) bx(0.3, 5, 0.3, '#5a4a3a', x, 2.5, z, wt); const tank = mesh(new THREE.CylinderGeometry(2.8, 2.8, 5, 18), F_('#9a6a44')); tank.position.y = 7.5; wt.add(tank); const cone = mesh(new THREE.ConeGeometry(3.0, 2, 18), F_('#5a4030')); cone.position.y = 11; wt.add(cone); wt.position.set(-12, 161, -8); rt.add(wt);
