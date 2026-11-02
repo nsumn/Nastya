@@ -4,8 +4,8 @@ lab.add(new THREE.HemisphereLight(0xfff2e0, 0x8a7060, 1.2)); { const k = new THR
 bx(8, 6, 0.1, '#e9d8c0', 0, 3, -1.2, lab); bx(8, 0.1, 6, '#b88a5a', 0, -0.05, 1.5, lab);
 const CAST = {
   us: makeBlock({ head: 'human', body: 'human', skin: '#e9b98f', hair: '#4a3020', top: '#4b4f57', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'short', headS: 0.88 }),
-  kr: makeBlock({ head: 'human', body: 'human', skin: '#f1c9a5', hair: '#151215', browCol: '#1a1416', top: '#e8b23a', jeans: true, bottom: '#2f3d5c', shoe: '#f4f4f4', hairStyle: 'fringe', headS: 0.88 }),
-  kr2: makeBlock({ head: 'human', body: 'human', skin: '#f1c9a5', hair: '#151215', browCol: '#1a1416', top: '#f2efe6', jeans: true, bottom: '#2f3d5c', shoe: '#f4f4f4', hairStyle: 'short', headS: 0.88 }) };
+  kr: makeBlock({ head: 'human', body: 'human', skin: '#f1c9a5', hair: '#151215', browCol: '#1a1416', top: '#e8b23a', jeans: true, bottom: '#2f3d5c', shoe: '#f4f4f4', hairStyle: 'twoblock', headMesh: 'head_kr', kr: true, browW: 1.25, headS: 0.88 }),
+  kr2: makeBlock({ head: 'human', body: 'human', skin: '#f1c9a5', hair: '#151215', browCol: '#1a1416', top: '#f2efe6', jeans: true, bottom: '#2f3d5c', shoe: '#f4f4f4', hairStyle: 'twoblock', headMesh: 'head_kr', kr: true, browW: 1.25, headS: 0.88 }) };
 Object.values(CAST).forEach(p => { lab.add(p.outer); p.outer.visible = false; });
 const SHOTS = [['kr', 'happy', 0], ['kr', 'laugh', 0], ['kr', 'surprised', 0], ['kr', 'worried', 0], ['kr', 'angry', 0], ['kr', 'smirk', 0], ['kr', 'crying', 0], ['kr', 'neutral', 1], ['kr', 'neutral', 2], ['kr2', 'happy', 0], ['us', 'happy', 0]];
 const lbl = document.getElementById('lbl');
