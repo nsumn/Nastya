@@ -64,13 +64,23 @@ def groups(p):
         pel = rbox(p, np.array([0, 0.95, 0]), (0.2, 0.1, 0.13), 0.08); d[0] = pel
     tor = smin(smin(smin(abd, chest, 0.1), girdle, 0.07), traps, 0.07)   # slim, no muscles
     d['hood'] = hood; d['neck'] = neck
-    if OUTFIT == 'tee':   # oversized tee: a loose box from the shoulders to below the hips, dropped shoulders
+    if OUTFIT.startswith('tee'):   # oversized tee: a loose box from the shoulders to below the hips, dropped shoulders
         tee = rbox(p, np.array([0, 1.12, 0.0]), (0.2, 0.29, 0.128), 0.1)   # body of the tee, top at 1.41
         if FAT: tee = smin(rbox(p, np.array([0, 1.13, 0.03]), (0.235, 0.28, 0.17), 0.13), ell(p, np.array([0, 1.08, 0.07]), np.array([0.25, 0.22, 0.2])), 0.08)   # tee stretched over the belly
         slope = cap(pm, (0.0, 1.49, -0.01), (0.215, 1.395, -0.005), 0.07, 0.075)   # shoulders slope down from the neck (no square top)
         tor = smin(smin(tor, tee, 0.05), slope, 0.07)
         d['hood'] = smin(tor, tee, 0.05)   # (for the neckline test below)
+        if OUTFIT == 'tee_kr':   # Korean hero: a crew-neck rib ring and a hem that hangs OVER the jeans (hard edge, no glued fillet)
+            q0 = p - np.array([0, 1.5, 0.0]); cy_, sy_ = np.cos(0.32), np.sin(0.32)
+            qy = q0[:, 1] * cy_ - q0[:, 2] * sy_; qz = q0[:, 1] * sy_ + q0[:, 2] * cy_   # tilted: lower in front
+            rr = np.sqrt(q0[:, 0] ** 2 + (qz * 1.1) ** 2)
+            d['collar'] = np.sqrt((rr - 0.074) ** 2 + (qy + 0.004) ** 2) - 0.015
+            hole = np.maximum(rr - 0.074, -qy - 0.004)                         # neck opening: everything inside the ring and above its plane
+            hem = rbox(p, np.array([0, 0.855, 0.0]), (0.208, 0.02, 0.136), 0.022)
+            tor = np.minimum(smin(tor, tee, 0.05), hem); tor = smin(tor, slope, 0.07); tor = smax(tor, -hole, 0.008)
+            d['hem'] = hem
         d[1] = smin(tor, neck, 0.02)
+        if OUTFIT == 'tee_kr': d[1] = np.minimum(d[1], d['collar'])
     else: d[1] = smin(smin(tor, hood, 0.02), neck, 0.03)
     for side, (bs, be) in ((-1, (2, 3)), (1, (4, 5))):
         q = np.c_[x * side, p[:, 1], p[:, 2]]   # this side mirrored to +x
@@ -81,7 +91,7 @@ def groups(p):
         palm = smin(rbox(q, np.array([0.258, 0.9, 0.006]), (0.021, 0.04, 0.038), 0.017), cap(q, (0.252, 0.858, -0.024), (0.252, 0.858, 0.034), 0.021, 0.02), 0.025)
         thumb = cap(q, (0.243, 0.915, 0.034), (0.236, 0.878, 0.046), 0.013, 0.012)
         d[bs] = smin(delt, up, 0.05)
-        if OUTFIT == 'tee':   # wide short sleeve, hanging a bit away from the arm, open end just above the elbow
+        if OUTFIT.startswith('tee'):   # wide short sleeve, hanging a bit away from the arm, open end just above the elbow
             sl = smax(cap(q, (0.228, 1.385, 0), (0.272 + 0.02 * FAT, 1.16, 0.0), 0.085 * ARM, 0.08 * ARM), 1.205 - q[:, 1], 0.012)   # ends just above the elbow, so the elbow bends freely
             d[bs] = np.minimum(d[bs], sl)
         d[be] = smin(fore, smin(palm, thumb, 0.01), 0.025)
@@ -99,6 +109,12 @@ def groups(p):
 def body_sdf(p):
     d = groups(p); y = p[:, 1]
     kS = np.where(y > 1.34, 0.06, 0.003)   # shoulders blend into the chest; lower arm/hand stays free of the body
+    if OUTFIT == 'tee_kr':   # the tee is a separate layer: hard union with the pelvis and the legs, so its hem reads as hanging over the jeans
+        low = d[0]
+        for a, b in ((6, 7), (8, 9)): low = smin(low, smin(d[a], d[b], 0.035), 0.05)
+        core = np.minimum(d[1], low)
+        for a, b in ((2, 3), (4, 5)): core = smin(core, smin(d[a], d[b], 0.035), kS)
+        return core
     core = smin(d[0], d[1], 0.07)
     for a, b in ((2, 3), (4, 5)): core = smin(core, smin(d[a], d[b], 0.035), kS)
     for a, b in ((6, 7), (8, 9)): core = smin(core, smin(d[a], d[b], 0.035), 0.05)
@@ -129,14 +145,16 @@ def build_body():
         if g == 1:
             r = 'top'
             if y > 1.5 and DC['neck'][i] < DC['hood'][i] - 0.004: r = 'skin'
-            if OUTFIT != 'tee' and cz[i] > 0.05 and abs(cx[i]) < 0.11 and 1.05 < y < 1.19: r = 'top2'   # kangaroo pocket
-            if y < 1.0 and OUTFIT != 'tee': r = 'top2'
+            if not OUTFIT.startswith('tee') and cz[i] > 0.05 and abs(cx[i]) < 0.11 and 1.05 < y < 1.19: r = 'top2'   # kangaroo pocket
+            if y < 1.0 and not OUTFIT.startswith('tee'): r = 'top2'
             if OUTFIT == 'tee' and y > 1.47 and DC['neck'][i] < 0.025 and r != 'skin': r = 'top2'   # neck rib
-        elif g == 0: r = 'top2' if y > 0.985 and OUTFIT != 'tee' else 'bottom'
-        elif g in (2, 4): r = 'skin' if OUTFIT == 'tee' and y < 1.2 else 'top'   # bare arm between the sleeve and the elbow
+            if OUTFIT == 'tee_kr':
+                r = 'skin' if y > 1.5 and DC['neck'][i] < DC['hood'][i] - 0.012 else 'top'   # (the rib itself is a separate ring in d_block.js, collar: y)
+        elif g == 0: r = 'top2' if y > 0.985 and not OUTFIT.startswith('tee') else 'bottom'
+        elif g in (2, 4): r = 'skin' if OUTFIT.startswith('tee') and y < 1.2 else 'top'   # bare arm between the sleeve and the elbow
         elif g in (3, 5):
             side = -1 if g == 3 else 1
-            r = 'skin' if OUTFIT == 'tee' or DC[('hand', side)][i] < 0.006 or y < 0.95 else ('top2' if y < 0.985 else 'sleeve')
+            r = 'skin' if OUTFIT.startswith('tee') or DC[('hand', side)][i] < 0.006 or y < 0.95 else ('top2' if y < 0.985 else 'sleeve')
         elif g in (6, 8): r = 'bottom'
         else:
             side = -1 if g == 7 else 1
@@ -168,6 +186,10 @@ def build_body():
     return {'pos': [float(a) for a in pos], 'uv': uv, 'skinIndex': si, 'skinWeight': sw, 'groups': grp}
 
 
+import os, sys
+if os.environ.get('ONLY') == 'tee_kr':   # add just the Korean hero's tee to the existing data/human_mesh.json
+    OUTFIT = 'tee_kr'; dd = json.load(open('data/human_mesh.json')); dd['body']['tee_kr'] = build_body()
+    json.dump(dd, open('data/human_mesh.json', 'w'), separators=(',', ':')); sys.exit(0)
 BODY = {}
 for OUTFIT in ('hoodie', 'tee'): BODY[OUTFIT] = build_body()
 OUTFIT, FAT, ARM, LEG = 'tee', True, 1.28, 1.3; BODY['chubby'] = build_body()   # the friend ("Everyone disappeared" video): tee over a belly, thick arms + legs
