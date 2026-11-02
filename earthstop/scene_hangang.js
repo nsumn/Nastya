@@ -560,7 +560,7 @@ const FISH = [];
 function fishAt(t) { for (const f of FISH) { const u = f.userData, k = Math.max(0, Math.sin(t * u.sp + u.ph)); f.rotation.x = Math.PI / 2 + 0.45 * Math.sin(t * u.sp * 0.7 + u.ph); f.rotation.z = 0.25 * Math.sin(t * u.sp + u.ph); f.position.y = u.y0 + 0.1 * k; } }
 // =================== EFFECTS: vanish ring, wind (grass + debris), ferry mud splash, the foam eruption ===================
 // ---- the vanish: a bright ring racing out from the bridge, the water inside it gone ----
-const vanishRing = mesh(new THREE.RingGeometry(0.97, 1.0, 128), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 3.6, 4.2), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), false, false);
+const vanishRing = mesh(new THREE.RingGeometry(0.94, 1.0, 160), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 3.6, 4.2), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), false, false);
 vanishRing.rotation.x = -Math.PI / 2; vanishRing.position.set(BR_X, WATER_Y + 0.05, -412); hw.add(vanishRing); vanishRing.visible = false;
 // ---- grass blades around the picnic, bending toward the river with the wind (uWind 0..1) ----
 const grassU = { uWind: { value: 0 }, uT: { value: 0 } };
@@ -586,7 +586,7 @@ function debrisAt(s, t) { for (const m of DEB) { const u = m.userData, a = s - 0
   m.position.set(u.x + u.sx * a, y, z); m.rotation.set(u.spin.x * a, u.spin.y * a, u.spin.z * a); m.visible = a < 2.6; } }
 // ---- mud splash when the ferry lands ----
 const splash = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), M('#4a3e30', { roughness: 0.4, flatShading: true }), 400); splash.frustumCulled = false; hw.add(splash);
-const SPL = []; { seed = 2401; for (let i = 0; i < 400; i++) { const a = R(0, 6.28); SPL.push({ a, v: R(3, 12), up: R(3, 11), sc: R(0.15, 0.6), ox: R(-20, 20), oz: R(-4, 4) }); } }
+const SPL = []; { seed = 2401; for (let i = 0; i < 400; i++) { const a = R(0, 6.28); SPL.push({ a, v: R(4, 16), up: R(4, 14), sc: R(0.3, 1.2), ox: R(-22, 22), oz: R(-4, 4) }); } }
 function splashAt(dt, x, z, y0) { const mm = new THREE.Matrix4(), q = new THREE.Quaternion();
   for (let i = 0; i < SPL.length; i++) { const p = SPL[i]; if (dt <= 0 || dt > 3) { mm.makeScale(0, 0, 0); splash.setMatrixAt(i, mm); continue; }
     const r = p.v * dt, y = Math.max(y0, y0 + p.up * dt - 4.9 * dt * dt), sc = p.sc * (y > y0 + 0.01 ? 1 : Math.max(0, 1 - (dt - 1.2) * 0.6));
@@ -596,13 +596,13 @@ function splashAt(dt, x, z, y0) { const mm = new THREE.Matrix4(), q = new THREE.
 const foamM = new THREE.MeshStandardMaterial({ color: '#eef1f6', roughness: 0.75, emissive: '#4a5060', emissiveIntensity: 0.5, flatShading: true });
 const FOAM_N = 11000, foam = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), foamM, FOAM_N); foam.frustumCulled = false; hw.add(foam);
 const FOAMP = []; { seed = 2501; for (let i = 0; i < FOAM_N; i++) { const near = i < 6000; const z = near ? R(-140, -14) : R(-800, -14), close = near && z > -45; FOAMP.push({ x: near ? R(-120, 60) : R(-1500, 900), z, d: R(0, 0.5), v: close ? R(0.5, 3) : R(2, near ? 9 : 22), sc: close ? R(0.08, 0.3) : R(0.15, near ? 0.7 : 3.5), ph: R(0, 6) }); } }
-const foamSheet = mesh(new THREE.PlaneGeometry(3000, 800), new THREE.MeshStandardMaterial({ color: '#e8ecf2', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#3a3f4a',
+const foamSheet = mesh(new THREE.PlaneGeometry(3000, 800), new THREE.MeshStandardMaterial({ color: '#e8ecf2', roughness: 1, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8, emissive: '#3a3f4a',
   map: canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#c8ccd4'; g.fillRect(0, 0, w, h); for (let i = 0; i < 3000; i++) { g.fillStyle = pick(['#ffffff', '#eef1f5', '#b8bec8', '#dfe3ea']); g.beginPath(); g.arc(rnd() * w, rnd() * h, R(2, 9), 0, 7); g.fill(); } }, [120, 32]) }), false, false);
-foamSheet.rotation.x = -Math.PI / 2; foamSheet.position.set(0, WATER_Y + 0.06, (RIV_N + RIV_S) / 2); hw.add(foamSheet);
+foamSheet.rotation.x = -Math.PI / 2; foamSheet.position.set(0, WATER_Y + 0.25, (RIV_N + RIV_S) / 2); hw.add(foamSheet);
 // dt = real seconds since the water came back
 function foamAt(dt) { const mm = new THREE.Matrix4(), q = new THREE.Quaternion();
   for (let i = 0; i < FOAM_N; i++) { const p = FOAMP[i], a = dt - p.d; if (a <= 0 || dt > 30) { mm.makeScale(0, 0, 0); foam.setMatrixAt(i, mm); continue; }
-    const y = WATER_Y + Math.max(0, p.v * a - 4.9 * a * a) + 0.2 * Math.sin(a * 2 + p.ph), grow = Math.min(1, a / 0.35) * (1 - 0.5 * smooth(6, 14, a)), sc = p.sc * grow * (1 + 0.25 * Math.sin(a * 5 + p.ph));
+    const y = WATER_Y + Math.max(0, p.v * a - 4.9 * a * a) + 0.2 * Math.sin(a * 2 + p.ph), grow = Math.min(1, a / 0.35) * (1 - 0.5 * smooth(6, 14, a)), sc = p.sc * grow * (1 + 0.06 * Math.sin(a * 1.5 + p.ph));
     q.setFromEuler(new THREE.Euler(p.ph, a + p.ph, 0)); mm.compose(V3(p.x, y, p.z), q, V3(sc * (1 + 0.4 * Math.sin(p.ph * 3)), sc * 0.55, sc * (1 + 0.4 * Math.cos(p.ph * 5)))); foam.setMatrixAt(i, mm); }
   foam.instanceMatrix.needsUpdate = true; foamSheet.material.opacity = 0.92 * smooth(0.1, 1.2, dt) * (1 - 0.45 * smooth(8, 16, dt)); }
 // ---- the phone screen shows what the phone camera sees (render target) ----
@@ -633,7 +633,7 @@ function heroAt(s, t) {
     P.outer.position.set(HERO_MAT.x - 0.1, 0.17, HERO_MAT.z + 0.15); P.outer.rotation.y = facing; sitPose(P, t, 0); holdPhone(P);
     const w = smooth(0.12, 0.3, s) * (1 - smooth(0.8, 1.0, s));
     P.outer.rotation.x = -0.12 * w + 0.015 * w * Math.sin(t * 9); P.head.rotation.x = 0.1 * w;
-    if (s >= 0.3) { const k = smooth(0.3, 0.45, s); P.arms[1].rotation.set(lerp(-0.55, -0.75, k), 0, 0.08); P.elbows[1].rotation.x = lerp(-1.35, -0.3, k); }
+    if (s >= 0.42) { const k = smooth(0.42, 0.57, s); P.arms[1].rotation.set(lerp(-0.55, -0.75, k), 0, 0.08); P.elbows[1].rotation.x = lerp(-1.35, -0.3, k); }
     P.arms[0].rotation.set(-0.45 * w, 0, 0); P.elbows[0].rotation.x = -0.15 - 1.55 * w;
     return; }
   if (s < 1.6) {   // gets up
@@ -662,9 +662,9 @@ const handPos = () => { hero.outer.updateMatrixWorld(true); const v = V3(0, -0.2
 let RIP = null;
 function phoneAt(s, t) {
   const ph = heroPhone, hd = headW(hero);
-  if (s < 0.3 || s >= 4.75) { ph.position.copy(handPos()); if (s < 0.3) { ph.lookAt(BRIDGE_AIM); ph.rotateY(Math.PI); } else { ph.lookAt(hd); } return; }
-  if (!RIP) { heroAt(0.3, T_VAN + 0.3 * SLOW); RIP = handPos(); heroAt(s, t); }
-  if (s < 2.4) { const k = (s - 0.3) / 2.1, a = RIP, b = PHONE_L; ph.position.set(lerp(a.x, b.x, k), lerp(a.y, b.y, k) + 2.6 * Math.sin(Math.min(k * 1.25, 1) * Math.PI * 0.62) * (1 - k * k * 0.2), lerp(a.z, b.z, k));
+  if (s < 0.42 || s >= 4.75) { ph.position.copy(handPos()); if (s < 0.42) { ph.lookAt(BRIDGE_AIM); ph.rotateY(Math.PI); } else { ph.lookAt(hd); } return; }
+  if (!RIP) { heroAt(0.42, T_VAN + 0.42 * SLOW); RIP = handPos(); heroAt(s, t); }
+  if (s < 2.4) { const k = (s - 0.42) / 1.98, a = RIP, b = PHONE_L; ph.position.set(lerp(a.x, b.x, k), lerp(a.y, b.y, k) + 2.6 * Math.sin(Math.min(k * 1.25, 1) * Math.PI * 0.62) * (1 - k * k * 0.2), lerp(a.z, b.z, k));
     if (k > 0.55) ph.position.y = Math.max(PHONE_L.y, lerp(a.y, b.y, k) + 2.6 * (1 - (k - 0.55) / 0.45) ** 1.6 * 0.9);
     ph.rotation.set(s * 7.0, s * 4.2, s * 2.6); return; }
   const b = Math.max(0, Math.sin(Math.min(1, (s - 2.4) / 0.25) * Math.PI)) * 0.25 * Math.max(0, 1 - (s - 2.4) / 0.25);
@@ -677,9 +677,9 @@ function worldAt(t) {
   const s = storyS(t), dry = t >= T_VAN && t < T_RET, back = t >= T_RET, dtR = t - T_RET;
   carsAt(t); fishAt(t); grassU.uT.value = t;
   // water + the vanish ring
-  const r = t < T_VAN ? -1 : t < T_VAN + 0.7 ? 2600 * Math.pow((t - T_VAN) / 0.7, 2.2) : 99999;
-  river.material.uniforms.uHR.value = back ? -1 : r; riverFar.visible = !(t >= T_VAN + 0.45 && !back); river.visible = !(dry && t > T_VAN + 0.7);
-  vanishRing.visible = t >= T_VAN && t < T_VAN + 0.75; vanishRing.scale.setScalar(Math.max(1, r)); vanishRing.material.opacity = 0.9 * (1 - span(t, T_VAN + 0.3, T_VAN + 0.75));
+  const r = t < T_VAN ? -1 : t < T_VAN + 2.4 ? 2600 * Math.pow((t - T_VAN) / 2.4, 2.4) : 99999;
+  river.material.uniforms.uHR.value = back ? -1 : r; riverFar.visible = !(t >= T_VAN + 1.8 && !back); river.visible = !(dry && t > T_VAN + 2.4);
+  vanishRing.visible = t >= T_VAN && t < T_VAN + 2.4; vanishRing.scale.setScalar(Math.max(1, r)); vanishRing.material.opacity = 1.0 * (1 - span(t, T_VAN + 1.8, T_VAN + 2.4));
   bedStuff.visible = t >= T_VAN && t < T_RET + 0.5;
   // fountain: jets fall to the bed once the water is gone, pumps lose water from s=2.5 (sputter)
   const pw = !dry ? 1 : 1 - 0.85 * smooth(2.4, 3.6, s) + (s > 2.4 ? 0.12 * Math.max(0, Math.sin(t * 13) * Math.sin(t * 5.3)) : 0);
@@ -706,7 +706,7 @@ function worldAt(t) {
 // ---- cameras per shot ----
 const LOOKC = (p, l, fov) => { hCam.position.copy(p); hCam.up.set(0, 1, 0); hCam.lookAt(l); hCam.fov = fov; };
 function camAt(t, s) {
-  dof(hCam, 1, 0); const hd = headW(hero);
+  dof(hCam, 1, 0); hCam.near = 0.05; const hd = headW(hero);
   if (t < 3) {   // S1: from inside the phone screen, pulling back past his head to over-the-shoulder
     const ph = heroPhone.position, n = V3(0, 0, 1).applyQuaternion(heroPhone.quaternion), u = ease(span(t, 0.2, 3.0));
     const f = V3(Math.sin(Math.PI + 0.42), 0, Math.cos(Math.PI + 0.42)), right = V3(-f.z, 0, f.x);
@@ -716,26 +716,24 @@ function camAt(t, s) {
   if (t < 6) {   // S2: orbit from behind-right to front-right, food in the foreground
     const a = lerp(2.2, 0.75, ease(span(t, 3, 6))) , f0 = Math.PI + 0.42, ang = f0 + a, rad = lerp(1.6, 1.9, span(t, 3, 6));
     const p = hd.clone().add(V3(Math.sin(ang) * rad, lerp(0.15, -0.1, span(t, 3, 6)), Math.cos(ang) * rad)); LOOKC(p, hd.clone().add(V3(0, -0.12, 0)), 36); dof(hCam, rad, 8); aimSun(hd.x, hd.z); return; }
-  if (t < 7.2) {   // S3: low wide on the lip, the ring races out from the bridge
-    const u = span(t, 6, 7.2), sh = 0.06 * Math.exp(-(t - 6) * 3) * Math.sin(t * 60);
-    LOOKC(V3(lerp(10, 7, u), 1.5 + sh, lerp(-7.4, -8.4, u)), V3(-150, 4 + sh * 10, -380), lerp(40, 37, u)); aimSun(0, -6); return; }
+  if (t < 8.6) {   // S3: high over the park edge — the river, the bridge, the ferry; a ring of nothing races out from the bridge and the water is gone
+    const u = ease(span(t, 5.6, 8.6)), sh = 0.08 * Math.exp(-Math.max(0, t - 6) * 2) * Math.sin(t * 50) * (t > 6 ? 1 : 0);
+    LOOKC(V3(lerp(40, 30, u), lerp(34, 38, u) + sh, lerp(30, 20, u)), V3(-175, -10 + sh * 6, -270), 40); hCam.near = 0.5; aimSun(-60, -120); return; }
   if (t < 11) {   // S4: close on him from the river side as the wind hits; the phone flies past the lens
-    const f = V3(Math.sin(Math.PI + 0.42), 0, Math.cos(Math.PI + 0.42)), right = V3(-f.z, 0, f.x), u = span(t, 7.2, 11), sh = 0.012 * smooth(7.3, 8, t) * (1 - smooth(10, 11, t));
-    const p = hd.clone().addScaledVector(f, lerp(1.9, 1.45, ease(u))).addScaledVector(right, lerp(-0.6, -0.35, u)).add(V3(sh * Math.sin(t * 41), -0.18 + sh * Math.cos(t * 37), 0));
+    const f = V3(Math.sin(Math.PI + 0.42), 0, Math.cos(Math.PI + 0.42)), right = V3(-f.z, 0, f.x), u = span(t, 8.6, 11), sh = 0.012 * (1 - smooth(10, 11, t));
+    const p = hd.clone().addScaledVector(f, lerp(1.9, 1.5, ease(u))).addScaledVector(right, lerp(-0.6, -0.4, u)).add(V3(sh * Math.sin(t * 41), -0.18 + sh * Math.cos(t * 37), 0));
     LOOKC(p, hd.clone().add(V3(0, -0.15, 0)), 34); dof(hCam, p.distanceTo(hd), 9); aimSun(hd.x, hd.z); return; }
   if (t < 14) {   // S5: the ferry drops onto the bed
     const u = span(t, 11, 14), fc = ferry.position; LOOKC(V3(lerp(-196, -205, u), lerp(7, 3, u), lerp(-238, -246, u)), V3(fc.x, fc.y + 1, fc.z), 40); aimSun(fc.x, fc.z); return; }
   if (t < 19) {   // S6: drone glide down the empty canyon toward the sunset and the 63 Building
     const u = ease(span(t, 14, 19)), p = V3(lerp(40, -760, u), lerp(30, 14, u) + 6 * Math.sin(u * Math.PI), lerp(-60, -430, u) + 40 * Math.sin(u * Math.PI));
-    LOOKC(p, V3(p.x - 260, -14, p.z - 70 + 60 * (1 - u)), 42); aimSun(p.x - 100, p.z - 50); return; }
+    LOOKC(p, V3(p.x - 260, -14, p.z - 70 + 60 * (1 - u)), 42); hCam.near = 0.5; aimSun(p.x - 100, p.z - 50); return; }
   if (t < 24) {   // S7: macro over the bed: fish, a bike, cans; the phone lands in front of the lens
     const u = ease(span(t, 19, 24)), x = lerp(1.8, -2.4, u), z = lerp(-27.8, -25.9, u), p = V3(x, bedHeight(x, z) + lerp(0.5, 0.3, u), z);
     LOOKC(p, V3(PHONE_L.x, PHONE_L.y + 0.12, PHONE_L.z), 34); dof(hCam, p.distanceTo(PHONE_L), 12); aimSun(p.x, p.z); return; }
-  if (t < 29) {   // S8: low at the foot of the slope, he slides down toward us
-    const x = -3.4, z = -21.2, p = V3(x, bedHeight(x, z) + 0.55, z); LOOKC(p, hd.clone().add(V3(0, -0.4, 0)), lerp(36, 30, span(t, 24, 29))); dof(hCam, p.distanceTo(hd), 6); aimSun(hd.x, hd.z); return; }
-  if (t < 35) {   // S9: follow behind him across the mud; the fountain sputters in the distance
-    const dir = V3(PATH[3].x - PATH[2].x, 0, PATH[3].z - PATH[2].z).normalize(), side = V3(-dir.z, 0, dir.x), u = span(t, 29, 35);
-    const p = hd.clone().addScaledVector(dir, -lerp(2.6, 3.2, u)).addScaledVector(side, lerp(1.1, 1.6, u)).add(V3(0, 0.25, 0)); LOOKC(p, hd.clone().addScaledVector(dir, 1.2).add(V3(0, -0.35, 0)), 38); dof(hCam, p.distanceTo(hd), 4); aimSun(hd.x, hd.z); return; }
+  if (t < 35) {   // S8: one continuous side-tracking shot — he runs to the lip and slides down the stone slope, then runs on the mud (the fountain bridge behind him)
+    const hp = hero.outer.position, u = span(t, 24, 35), p = V3(hp.x + lerp(7.5, 6.0, u), Math.max(hp.y, -6.4) + lerp(0.9, 0.6, u), hp.z + lerp(2.5, 0.5, u));
+    LOOKC(p, V3(hp.x, hp.y + 0.1, hp.z - 0.6), 38); dof(hCam, p.distanceTo(hp), 4); aimSun(hp.x, hp.z); return; }
   if (t < 40.2) {   // S10a: front, low, push in as he reaches the phone and picks it up
     const dir = V3(PATH[3].x - PATH[2].x, 0, PATH[3].z - PATH[2].z).normalize(), u = ease(span(t, 35, 40.2)), tgt = V3(PATH[3].x, groundY(PATH[3].x, PATH[3].z) + 1.0, PATH[3].z);
     const p = tgt.clone().addScaledVector(dir, lerp(4.6, 2.7, u)).add(V3(0.7, lerp(-0.1, 0.15, u), 0)); LOOKC(p, tgt.clone().add(V3(0, -0.05, 0)), 36); dof(hCam, p.distanceTo(tgt), 7); aimSun(tgt.x, tgt.z); return; }
@@ -746,14 +744,14 @@ function camAt(t, s) {
     const u = span(t, 42, 46.5), sh = 0.15 * Math.exp(-(t - 42) * 1.2) * Math.sin(t * 50);
     LOOKC(V3(lerp(12, 9, u), 2.2 + sh, lerp(-6.2, -7.2, u)), V3(-120, 6 + lerp(0, 8, u) + sh * 4, -380), 40); aimSun(0, -6); return; }
   if (t < 52) {   // S11b: crane up and back over the fizzing river toward the sunset
-    const u = ease(span(t, 46.5, 52)); LOOKC(V3(lerp(30, 140, u), lerp(14, 130, u), lerp(10, 170, u)), V3(-320, 0, -420), 42); aimSun(0, -60); return; }
+    const u = ease(span(t, 46.5, 52)); hCam.near = 0.5; LOOKC(V3(lerp(30, 140, u), lerp(14, 130, u), lerp(10, 170, u)), V3(-320, 0, -420), 42); aimSun(0, -60); return; }
   // S12: he surfaces with the phone held up
   const u = span(t, 52, END0), p = hd.clone().add(V3(lerp(1.7, 1.3, u), lerp(-0.25, -0.15, u), lerp(1.6, 1.25, u))); p.y = Math.max(p.y, WATER_Y + 0.25);
   LOOKC(p, hd.clone().add(V3(0, 0.05, 0)), 36); dof(hCam, p.distanceTo(hd), 8); aimSun(hd.x, hd.z);
 }
 // ---- overlay text ----
 const TITLE = ['만약', '<span class="hl">한강</span>이', '<br>', '5초', '동안', '사라진다면?'];
-const CAPS = [[3.2, 5.8, '반포한강공원, 저녁 7시'], [7.4, 9.15, '물이 있던 자리는 <span class="hl">진공</span>'], [9.25, 11.0, '<span class="hl">20만 톤</span>의 공기가 쏟아진다'],
+const CAPS = [[3.2, 5.8, '반포한강공원, 저녁 7시'], [6.7, 8.5, '물이 있던 자리는 <span class="hl">진공</span>'], [8.7, 11.0, '<span class="hl">20만 톤</span>의 공기가 쏟아진다'],
   [11.2, 13.9, '유람선이 <span class="hl">바닥</span>으로 떨어진다'], [14.3, 18.7, '폭 <span class="hl">800m</span> · 깊이 <span class="hl">6m</span> · 길이 <span class="hl">41km</span>'],
   [19.3, 23.0, '강바닥엔 <span class="hl">잃어버린 것들</span>'], [24.3, 28.6, '너는 <span class="hl">휴대폰</span>을 주우러 간다'], [29.4, 34.2, '분수 펌프는 이제 <span class="hl">공기</span>만 빨아들인다'],
   [42.6, 46.8, '<span class="m">MODEL</span>물이 돌아오자, 갇힌 공기가 <span class="hl">터져 나온다</span>'], [47.0, 51.6, '한강 전체가 <span class="hl">탄산처럼</span> 끓는다'], [52.6, 57.6, '휴대폰은 <span class="hl">방수</span>였다']];
@@ -792,7 +790,7 @@ const accRT = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
 const accMat = new THREE.ShaderMaterial({ uniforms: { tex: { value: RTA.texture }, w: { value: 0.25 } }, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false,
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }', fragmentShader: 'uniform sampler2D tex; uniform float w; varying vec2 vUv; void main(){ gl_FragColor=vec4(texture2D(tex,vUv).rgb*w,1.0); }' });
 const accScene = new THREE.Scene(); accScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), accMat));
-const MB = t => (t >= 6 && t < 7.2) || (t >= 11 && t < 19) || (t >= 42 && t < 46.5) || (t >= 40.2 && t < 42);
+const MB = t => (t >= 6 && t < 8.4) || (t >= 11 && t < 19) || (t >= 42 && t < 46.5) || (t >= 40.2 && t < 42);
 window.renderAt = (t) => {
   if (window.PASS !== 'text') { const s0 = worldAt(t); camAt(t, s0); }
   text(t);

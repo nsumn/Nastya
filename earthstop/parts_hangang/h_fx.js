@@ -1,6 +1,6 @@
 // =================== EFFECTS: vanish ring, wind (grass + debris), ferry mud splash, the foam eruption ===================
 // ---- the vanish: a bright ring racing out from the bridge, the water inside it gone ----
-const vanishRing = mesh(new THREE.RingGeometry(0.97, 1.0, 128), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 3.6, 4.2), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), false, false);
+const vanishRing = mesh(new THREE.RingGeometry(0.94, 1.0, 160), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 3.6, 4.2), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), false, false);
 vanishRing.rotation.x = -Math.PI / 2; vanishRing.position.set(BR_X, WATER_Y + 0.05, -412); hw.add(vanishRing); vanishRing.visible = false;
 // ---- grass blades around the picnic, bending toward the river with the wind (uWind 0..1) ----
 const grassU = { uWind: { value: 0 }, uT: { value: 0 } };
@@ -26,7 +26,7 @@ function debrisAt(s, t) { for (const m of DEB) { const u = m.userData, a = s - 0
   m.position.set(u.x + u.sx * a, y, z); m.rotation.set(u.spin.x * a, u.spin.y * a, u.spin.z * a); m.visible = a < 2.6; } }
 // ---- mud splash when the ferry lands ----
 const splash = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), M('#4a3e30', { roughness: 0.4, flatShading: true }), 400); splash.frustumCulled = false; hw.add(splash);
-const SPL = []; { seed = 2401; for (let i = 0; i < 400; i++) { const a = R(0, 6.28); SPL.push({ a, v: R(3, 12), up: R(3, 11), sc: R(0.15, 0.6), ox: R(-20, 20), oz: R(-4, 4) }); } }
+const SPL = []; { seed = 2401; for (let i = 0; i < 400; i++) { const a = R(0, 6.28); SPL.push({ a, v: R(4, 16), up: R(4, 14), sc: R(0.3, 1.2), ox: R(-22, 22), oz: R(-4, 4) }); } }
 function splashAt(dt, x, z, y0) { const mm = new THREE.Matrix4(), q = new THREE.Quaternion();
   for (let i = 0; i < SPL.length; i++) { const p = SPL[i]; if (dt <= 0 || dt > 3) { mm.makeScale(0, 0, 0); splash.setMatrixAt(i, mm); continue; }
     const r = p.v * dt, y = Math.max(y0, y0 + p.up * dt - 4.9 * dt * dt), sc = p.sc * (y > y0 + 0.01 ? 1 : Math.max(0, 1 - (dt - 1.2) * 0.6));
@@ -36,13 +36,13 @@ function splashAt(dt, x, z, y0) { const mm = new THREE.Matrix4(), q = new THREE.
 const foamM = new THREE.MeshStandardMaterial({ color: '#eef1f6', roughness: 0.75, emissive: '#4a5060', emissiveIntensity: 0.5, flatShading: true });
 const FOAM_N = 11000, foam = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), foamM, FOAM_N); foam.frustumCulled = false; hw.add(foam);
 const FOAMP = []; { seed = 2501; for (let i = 0; i < FOAM_N; i++) { const near = i < 6000; const z = near ? R(-140, -14) : R(-800, -14), close = near && z > -45; FOAMP.push({ x: near ? R(-120, 60) : R(-1500, 900), z, d: R(0, 0.5), v: close ? R(0.5, 3) : R(2, near ? 9 : 22), sc: close ? R(0.08, 0.3) : R(0.15, near ? 0.7 : 3.5), ph: R(0, 6) }); } }
-const foamSheet = mesh(new THREE.PlaneGeometry(3000, 800), new THREE.MeshStandardMaterial({ color: '#e8ecf2', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#3a3f4a',
+const foamSheet = mesh(new THREE.PlaneGeometry(3000, 800), new THREE.MeshStandardMaterial({ color: '#e8ecf2', roughness: 1, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8, emissive: '#3a3f4a',
   map: canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#c8ccd4'; g.fillRect(0, 0, w, h); for (let i = 0; i < 3000; i++) { g.fillStyle = pick(['#ffffff', '#eef1f5', '#b8bec8', '#dfe3ea']); g.beginPath(); g.arc(rnd() * w, rnd() * h, R(2, 9), 0, 7); g.fill(); } }, [120, 32]) }), false, false);
-foamSheet.rotation.x = -Math.PI / 2; foamSheet.position.set(0, WATER_Y + 0.06, (RIV_N + RIV_S) / 2); hw.add(foamSheet);
+foamSheet.rotation.x = -Math.PI / 2; foamSheet.position.set(0, WATER_Y + 0.25, (RIV_N + RIV_S) / 2); hw.add(foamSheet);
 // dt = real seconds since the water came back
 function foamAt(dt) { const mm = new THREE.Matrix4(), q = new THREE.Quaternion();
   for (let i = 0; i < FOAM_N; i++) { const p = FOAMP[i], a = dt - p.d; if (a <= 0 || dt > 30) { mm.makeScale(0, 0, 0); foam.setMatrixAt(i, mm); continue; }
-    const y = WATER_Y + Math.max(0, p.v * a - 4.9 * a * a) + 0.2 * Math.sin(a * 2 + p.ph), grow = Math.min(1, a / 0.35) * (1 - 0.5 * smooth(6, 14, a)), sc = p.sc * grow * (1 + 0.25 * Math.sin(a * 5 + p.ph));
+    const y = WATER_Y + Math.max(0, p.v * a - 4.9 * a * a) + 0.2 * Math.sin(a * 2 + p.ph), grow = Math.min(1, a / 0.35) * (1 - 0.5 * smooth(6, 14, a)), sc = p.sc * grow * (1 + 0.06 * Math.sin(a * 1.5 + p.ph));
     q.setFromEuler(new THREE.Euler(p.ph, a + p.ph, 0)); mm.compose(V3(p.x, y, p.z), q, V3(sc * (1 + 0.4 * Math.sin(p.ph * 3)), sc * 0.55, sc * (1 + 0.4 * Math.cos(p.ph * 5)))); foam.setMatrixAt(i, mm); }
   foam.instanceMatrix.needsUpdate = true; foamSheet.material.opacity = 0.92 * smooth(0.1, 1.2, dt) * (1 - 0.45 * smooth(8, 16, dt)); }
 // ---- the phone screen shows what the phone camera sees (render target) ----
