@@ -10,29 +10,31 @@
   #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
   canvas{display:block}
   .ov{position:absolute;left:0;right:0;pointer-events:none}
-  /* ifcam-like typography: thin serif Korean title/captions, small sans labels, soft dark halo behind the HUD. TikTok safe zones kept (top > 320, captions at 1250). */
-  #title{top:640px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:400;color:#fff;font-size:68px;line-height:1.38;padding:0 110px;letter-spacing:-.01em;
-    text-shadow:0 1px 3px rgba(0,0,0,.35),0 2px 26px rgba(20,30,45,.55)}
-  #title .hl{color:#ffe3a3}
-  /* our own HUD: a frosted-glass card (Korean app UI feel) instead of a dark halo */
-  #halo{display:none}
-  #hud{left:84px;top:372px;right:auto;color:#fff;padding:22px 34px 24px;border-radius:30px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.38);
-    backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);box-shadow:0 10px 40px rgba(20,30,50,.18);text-shadow:0 1px 6px rgba(0,0,0,.25)}
-  #lab{font-family:'Pretendard',sans-serif;font-weight:500;font-size:24px;letter-spacing:.06em;opacity:.85}
-  #val{font-family:'Pretendard',sans-serif;font-weight:700;font-size:88px;line-height:1.08;margin-top:2px;letter-spacing:-.01em}
-  #sub{font-family:'Pretendard',sans-serif;font-weight:500;font-size:24px;letter-spacing:.04em;opacity:.85;margin-top:8px}
+  /* title (serif, word by word), countdown HUD (Man_ia_c-style timer, our own layout), captions at the series height 1250 px */
+  #title{top:420px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:500;color:#fff;font-size:70px;line-height:1.36;padding:0 100px;letter-spacing:-.01em;
+    text-shadow:0 1px 3px rgba(0,0,0,.45),0 2px 26px rgba(10,15,30,.65)}
+  #title .hl{color:#ffcf7a}
+  #title span.w{display:inline-block}
+  #hud{left:92px;top:860px;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.6),0 1px 14px rgba(0,0,0,.55)}
+  #lab{font-family:'Pretendard',sans-serif;font-weight:600;font-size:25px;letter-spacing:.12em;opacity:.92}
+  #lab b{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff4a3d;margin-right:12px;vertical-align:2px}
+  #val{font-family:'Pretendard',sans-serif;font-weight:300;font-size:92px;line-height:1.05;margin-top:4px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+  #sub{font-family:'Pretendard',sans-serif;font-weight:500;font-size:22px;letter-spacing:.1em;opacity:.8;margin-top:8px}
+  #big{top:700px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:200;font-size:210px;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.01em;opacity:0;
+    text-shadow:0 0 6px rgba(0,0,0,.5),0 2px 40px rgba(0,0,0,.55)}
   #cap{top:1250px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:600;color:#fff;font-size:50px;line-height:1.42;padding:0 170px;
-    text-shadow:0 0 3px rgba(0,0,0,.55),0 1px 12px rgba(0,0,0,.55),0 2px 30px rgba(0,0,0,.35)}
-  /* channel mark (뚝딱): small, top-right, clear of the HUD card and the TikTok icon column */
-  #mark{top:392px;right:96px;left:auto;text-align:right;font-family:'Pretendard',sans-serif;font-weight:800;font-size:40px;letter-spacing:.02em;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+    text-shadow:0 0 3px rgba(0,0,0,.6),0 1px 12px rgba(0,0,0,.6),0 2px 30px rgba(0,0,0,.4)}
+  #cap span.w{display:inline-block}
+  #cap .hl{color:#ffcf7a}
+  #cap .m{font-size:26px;letter-spacing:.14em;font-weight:700;color:#9fd0ff;display:block;margin-bottom:6px}
+  #mark{top:392px;right:96px;left:auto;text-align:right;font-family:'Pretendard',sans-serif;font-weight:800;font-size:40px;letter-spacing:.02em;color:rgba(255,255,255,.8);text-shadow:0 1px 8px rgba(0,0,0,.4)}
   #mark small{display:block;font-weight:500;font-size:20px;letter-spacing:.06em;opacity:.85;margin-top:2px}
-  #cap .hl{color:#ffd76a}
-  #endT .hl{color:#ffd76a}
+  #flash{top:0;bottom:0;background:#eef3ff;opacity:0}
+  #end{top:0;bottom:0;background:#0e0f13;opacity:0}
+  #endT{top:600px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:500;color:#f2f0ea;font-size:64px;line-height:1.4;opacity:0;padding:0 110px}
+  #endT .hl{color:#ffcf7a}
+  #endS{top:900px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:500;color:#c9c6be;font-size:36px;line-height:1.75;opacity:0;padding:0 140px}
   #endS b{color:#f2f0ea;font-weight:700}
-  #val{display:inline-block}
-  #end{top:0;bottom:0;background:#101114;opacity:0}
-  #endT{top:640px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:400;color:#f2f0ea;font-size:62px;line-height:1.4;opacity:0;padding:0 120px}
-  #endS{top:1000px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:500;color:#c9c6be;font-size:34px;line-height:1.75;opacity:0;padding:0 150px}
   .pass-scene .txt{visibility:hidden!important}
   .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
   html.pass-text,html.pass-text body{background:transparent!important}
@@ -41,14 +43,15 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="1080" height="1920"></canvas>
-  <div id="halo" class="ov txt"></div>
-  <div id="hud" class="ov txt" style="display:none"><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="flash" class="ov gfx"></div>
+  <div id="hud" class="ov txt"><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="big" class="ov txt"></div>
   <div id="title" class="ov txt"></div>
   <div id="cap" class="ov txt"></div>
   <div id="mark" class="ov txt">뚝딱<small>@ttukttak3d</small></div>
   <div id="end" class="ov gfx"></div>
-  <div id="endT" class="ov txt">만약 내 키가<br><span class="hl">1.5초마다 2배</span>가 된다면?</div>
-  <div id="endS" class="ov txt">25초 만에 <b>우주정거장</b> 높이.<br>18번 2배 = <b>26만 배.</b><br><br>다음엔 뭐가 2배가 될까? 댓글로 👇<br><br><b>@ttukttak3d</b></div>
+  <div id="endT" class="ov txt">만약 <span class="hl">한강</span>이<br>5초 동안 사라진다면?</div>
+  <div id="endS" class="ov txt">강은 <b>진공</b>이 되고,<br><b>20만 톤</b>의 공기가 쏟아진다.<br>물이 돌아오면 그 공기가 갇혀<br>한강 전체가 <b>탄산처럼</b> 터진다.<br><br>다음엔 뭐가 사라질까? 댓글로 👇<br><br><b>@ttukttak3d</b></div>
 </div>
 <script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>

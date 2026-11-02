@@ -45,16 +45,17 @@ const park = mesh(new THREE.PlaneGeometry(3000, 500), new THREE.MeshStandardMate
 const pave = mesh(new THREE.PlaneGeometry(3000, 6), new THREE.MeshStandardMaterial({ map: rep(paveTex, 600, 1), roughness: 0.9 }), false, true); pave.rotation.x = -Math.PI / 2; pave.position.set(0, 0.02, -6); hw.add(pave);
 // riverbed as one displaced surface: revetment slopes on both banks (stones), mud in between with ridges and channels
 const bedGeo = new THREE.PlaneGeometry(3000, 840, 300, 120); bedGeo.rotateX(-Math.PI / 2);
+function bedMud(z) { return clamp((-18 - z) / 12, 0, 1) * clamp((z - (RIV_N + 12)) / 12, 0, 1); }   // 0 on the stone slopes, 1 on the mud
+function bedHeight(x, z) { const s = clamp((-9 - z) / 9, 0, 1), nn = clamp((z - (RIV_N + 3)) / -9, 0, 1);
+  let y = lerp(-0.2, BED_Y, smooth(0, 1, s)); y = lerp(y, -0.2, smooth(0, 1, nn));
+  return y + bedMud(z) * (0.5 * Math.sin(x * 0.013 + z * 0.02) + 0.35 * Math.sin(x * 0.05 - z * 0.031) + 0.9 * Math.sin(z * 0.0075) - 0.6 + 0.12 * Math.sin(x * 0.3 + z * 0.4)); }
 { const P = bedGeo.attributes.position, col = [];
-  for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 412, s = clamp((-9 - z) / 9, 0, 1), nn = clamp((z - (RIV_N + 3)) / -9, 0, 1);   // s: 0 at the south lip → 1 at the bed
-    let y = lerp(-0.2, BED_Y, smooth(0, 1, s)); y = lerp(y, -0.2, smooth(0, 1, nn));
-    const inBed = s >= 1 && nn <= 0; if (inBed) y += 0.5 * Math.sin(x * 0.013 + z * 0.02) + 0.35 * Math.sin(x * 0.05 - z * 0.031) + 0.9 * Math.sin(z * 0.0075) + 0.12 * Math.sin(x * 0.3 + z * 0.4);
-    P.setY(i, y); P.setZ(i, z); const c = inBed ? 1 : 0; col.push(c, c, c); }
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 412; P.setY(i, bedHeight(x, z)); P.setZ(i, z); const c = bedMud(z); col.push(c, c, c); }
   bedGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); bedGeo.computeVertexNormals(); }
-const bedMat = new THREE.MeshStandardMaterial({ map: rep(mudTex, 160, 45), roughness: 0.55, metalness: 0.05 });
+const bedMat = new THREE.MeshStandardMaterial({ map: rep(mudTex, 700, 196), roughness: 0.5, metalness: 0.05, envMapIntensity: 0.9, color: '#8a8278' });   // wet mud: shiny
 bedMat.onBeforeCompile = (sh) => { sh.uniforms.tStone = { value: rep(stoneTex, 300, 80) };
   sh.fragmentShader = 'uniform sampler2D tStone;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
-    vec4 st = texture2D(tStone, vMapUv * vec2(1.9, 1.8)); diffuseColor.rgb = mix(st.rgb * vec3(0.95,0.93,0.9), diffuseColor.rgb, vColor.r); diffuseColor.rgb /= max(vColor.r * 0.0 + 1.0, 1.0);`).replace('#include <color_fragment>', ''); };
+    vec4 st = texture2D(tStone, vMapUv * vec2(0.43, 0.41)); vec3 macro = texture2D(map, vMapUv * 0.061).rgb; diffuseColor.rgb *= 0.55 + 0.9 * macro; diffuseColor.rgb = mix(st.rgb * vec3(0.95,0.93,0.9), diffuseColor.rgb, vColor.r); diffuseColor.rgb /= max(vColor.r * 0.0 + 1.0, 1.0);`).replace('#include <color_fragment>', ''); };
 bedMat.vertexColors = true;
 const bed = mesh(bedGeo, bedMat, false, true); hw.add(bed);
 // the water: planar-reflecting surface (three.js Water) — hidden while the river is gone
@@ -63,10 +64,12 @@ const waterNormals = canvasTex(256, 256, (g, w, h) => { const im = g.createImage
   const i = (y * w + x) * 4; im.data[i] = 128 + nx * 60; im.data[i + 1] = 128 + ny * 60; im.data[i + 2] = 240; im.data[i + 3] = 255; } g.putImageData(im, 0, 0); });
 waterNormals.colorSpace = THREE.NoColorSpace; waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
 const river = new Water(new THREE.PlaneGeometry(3000, 800), { textureWidth: 1024, textureHeight: 1024, waterNormals, sunDirection: SUN_DIR.clone(), sunColor: 0xff9a5c, waterColor: 0x10203a, distortionScale: 0.7, fog: true, alpha: 1 });
+river.material.uniforms.uHR = { value: -1 }; river.material.uniforms.uHC = { value: new THREE.Vector2(BR_X, -412) };
+river.material.fragmentShader = river.material.fragmentShader.replace('void main() {', 'uniform float uHR; uniform vec2 uHC;\nvoid main() { if (uHR > 0.0 && distance(worldPosition.xz, uHC) < uHR) discard;');
 river.rotation.x = -Math.PI / 2; river.position.set(0, WATER_Y, (RIV_N + RIV_S) / 2 + 0.0); river.material.uniforms.size.value = 1.4; hw.add(river);
 // far water (beyond the detailed 3 km) so the river runs to the horizon
 const riverFar = mesh(new THREE.PlaneGeometry(30000, 800), new THREE.MeshStandardMaterial({ color: '#1a2a44', roughness: 0.15, metalness: 0.6 }), false, false); riverFar.rotation.x = -Math.PI / 2; riverFar.position.set(0, WATER_Y - 0.05, (RIV_N + RIV_S) / 2); hw.add(riverFar);
-const bedFar = mesh(new THREE.PlaneGeometry(30000, 800), new THREE.MeshStandardMaterial({ map: rep(mudTex, 1500, 40), roughness: 0.7 }), false, false); bedFar.rotation.x = -Math.PI / 2; bedFar.position.set(0, BED_Y - 0.4, (RIV_N + RIV_S) / 2); hw.add(bedFar);
+const bedFar = mesh(new THREE.PlaneGeometry(30000, 800), new THREE.MeshStandardMaterial({ map: rep(mudTex, 1500, 40), roughness: 0.7 }), false, false); bedFar.rotation.x = -Math.PI / 2; bedFar.position.set(0, BED_Y - 2.6, (RIV_N + RIV_S) / 2); hw.add(bedFar);
 const farGround = mesh(new THREE.PlaneGeometry(40000, 20000), M('#2c3426', { roughness: 1 }), false, false); farGround.rotation.x = -Math.PI / 2; farGround.position.set(0, -0.3, 10500); hw.add(farGround);
 // ---- city lights: window textures with random lit windows (warm/cool), apartment slabs on the north bank ----
 function windowsTex(cols, rows, lit, seedN) { seed = seedN; return canvasTex(cols * 8, rows * 8, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
@@ -191,7 +194,7 @@ function phoneMesh() { const g = new THREE.Group(); bx(0.075, 0.155, 0.009, M('#
 // people around (blocky humans, sitting on mats), seeded
 const CROWD = [];
 { seed = 3311; const tops = ['#e8e4dc', '#2f3a4a', '#c45a4a', '#f2c84a', '#5a7a9a', '#3a6a4a', '#d8a0b0', '#7a5a9a'], skins = ['#f1c9a5', '#e9b98f', '#eec29c', '#d9a37a'];
-  for (let i = 0; i < 26; i++) { const x = R(-70, 90), z = R(1.5, 15); if (Math.abs(x - 2) < 6 && z < 9) continue; if (Math.abs(x - BR_X) < 16) continue;
+  for (let i = 0; i < 26; i++) { const x = R(-70, 90), z = R(1.5, 15); if (Math.abs(x) < 7 && z < 9) continue; if (Math.abs(x - BR_X) < 16) continue;
     picnicMat(x, z, R(-0.3, 0.3), pick(MAT_COLS), R(1.6, 2.2)); const nP = 1 + (rnd() < 0.7 ? 1 : 0) + (rnd() < 0.2 ? 1 : 0);
     for (let k = 0; k < nP; k++) { const P = makeBlock({ head: 'human', body: 'human', skin: pick(skins), hair: pick(['#151215', '#2a1e18', '#3a2a20']), browCol: '#1a1416', top: pick(tops), outfit: 'tee_kr', collar: 1.556, jeans: rnd() < 0.6, bottom: pick(['#2f3d5c', '#3a3a40', '#c8c0b0']), shoe: '#f4f4f4', hairStyle: pick(['twoblock', 'short', 'fringe']), headMesh: 'head_kr', kr: true, headS: 0.88, h: R(0.92, 1.0) });
       P.outer.position.set(x + (k - 0.5) * 0.8, 0.17, z + R(-0.3, 0.3)); P.outer.rotation.y = R(-0.5, 0.5) + Math.PI + (rnd() < 0.5 ? 0 : 0.6); hw.add(P.outer); CROWD.push(P); }
@@ -207,8 +210,33 @@ seed = 66; for (let i = 0; i < 8; i++) bike(R(-40, 60), -4.5 + R(-0.4, 0.4), R(-
 // ---- the hero (Korean faceted human, dark-green tee) on his own mat, front-row by the river ----
 const hero = makeBlock({ head: 'human', body: 'human', skin: '#f1c9a5', hair: '#151215', browCol: '#1a1416', top: '#2f5a40', outfit: 'tee_kr', collar: 1.556, jeans: true, bottom: '#2f3d5c', shoe: '#f4f4f4', hairStyle: 'twoblock', headMesh: 'head_kr', kr: true, browW: 1.25, headS: 0.88 });
 hw.add(hero.outer);
-const HERO_MAT = V3(2, 0, 3.2); picnicMat(HERO_MAT.x, HERO_MAT.z, 0.1, '#3b78c4', 2.0);
+const HERO_MAT = V3(0, 0, -0.4); picnicMat(HERO_MAT.x, HERO_MAT.z, 0.1, '#3b78c4', 2.0);
 const heroFood = new THREE.Group(); heroFood.position.copy(HERO_MAT); hw.add(heroFood);
 { const cb = chickenBox(); cb.position.set(0.35, 0.02, -0.2); heroFood.add(cb); const b1 = beerCan(); b1.position.set(-0.45, 0.02, -0.3); heroFood.add(b1); const b2 = beerCan('#3a6fb8'); b2.position.set(-0.3, 0.02, -0.5); heroFood.add(b2);
   const r = ramenCup(); r.position.set(0.6, 0.02, 0.25); heroFood.add(r); }
 const heroPhone = phoneMesh(); hw.add(heroPhone);
+
+// ---- what lies on the bed (only visible when the river is gone): puddles mirroring the sky, rocks, lost bikes, shopping carts, tyres, a scooter, fish ----
+const bedStuff = new THREE.Group(); hw.add(bedStuff); bedStuff.visible = false;
+const puddleM = new THREE.MeshStandardMaterial({ color: '#3a4256', roughness: 0.03, metalness: 0.95, envMapIntensity: 1.8, transparent: true, depthWrite: false, alphaMap: canvasTex(64, 64, (g, w, h) => { const gr = g.createRadialGradient(32, 32, 4, 32, 32, 31); gr.addColorStop(0, '#fff'); gr.addColorStop(0.7, '#ccc'); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }) });
+{ seed = 1201; for (let i = 0; i < 260; i++) { const near = i < 140, x = near ? R(-80, 80) : R(-1400, 1400), z = near ? R(-110, -22) : R(-790, -30), r = R(1.5, near ? 6 : 18);
+    const p = mesh(new THREE.CircleGeometry(1, 20), puddleM, false, false); p.rotation.x = -Math.PI / 2; p.scale.set(r, r * R(0.4, 0.8), 1); p.rotation.z = R(0, 3); p.position.set(x, bedHeight(x, z) + 0.04, z); bedStuff.add(p); }
+  const rockG = new THREE.DodecahedronGeometry(1, 0), rockM = M('#7a746a', { roughness: 0.45, flatShading: true });
+  const rocks = new THREE.InstancedMesh(rockG, rockM, 900), mm = new THREE.Matrix4(), q = new THREE.Quaternion();
+  for (let i = 0; i < 900; i++) { const x = i < 600 ? R(-90, 90) : R(-1400, 1400), z = i < 600 ? R(-120, -16) : R(-800, -16), sc = R(0.15, 0.9);
+    q.setFromEuler(new THREE.Euler(R(0, 3), R(0, 3), R(0, 3))); mm.compose(V3(x, bedHeight(x, z) + sc * 0.3, z), q, V3(sc * R(0.8, 1.4), sc * 0.6, sc)); rocks.setMatrixAt(i, mm); }
+  rocks.frustumCulled = false; bedStuff.add(rocks);
+  const rust = M('#7a4a2a', { roughness: 0.8 }), chrome = M('#9aa0a6', { roughness: 0.35, metalness: 0.8 }), tyreM = M('#1c1c1c', { roughness: 0.9 });
+  function lay(o, x, z, ry, tilt = 0) { o.position.set(x, bedHeight(x, z) + 0.05, z); o.rotation.set(tilt, ry, 0); bedStuff.add(o); return o; }
+  for (let i = 0; i < 18; i++) { const b = bike(0, 0, 0); hw.remove(b); const x = R(-70, 70), z = R(-100, -24); lay(b, x, z, R(0, 6)); b.rotation.z = Math.PI / 2 - 0.15; b.position.y += 0.05; b.traverse(o => { if (o.material && o.material.color) o.material = o.material.clone(), o.material.color.multiplyScalar(0.55); }); }
+  for (let i = 0; i < 7; i++) { const c = new THREE.Group(); bx(0.9, 0.6, 0.55, chrome, 0, 0.6, 0, c).material = new THREE.MeshStandardMaterial({ color: '#8a9096', roughness: 0.4, metalness: 0.8, wireframe: true }); bx(0.9, 0.04, 0.55, chrome, 0, 0.3, 0, c); for (const [a, b] of [[-0.4, -0.25], [0.4, -0.25], [-0.4, 0.25], [0.4, 0.25]]) { const w = mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 10), tyreM); w.rotation.x = Math.PI / 2; w.position.set(a, 0.06, b); c.add(w); }
+    lay(c, R(-60, 60), R(-90, -30), R(0, 6), 1.3); }
+  for (let i = 0; i < 25; i++) { const t = mesh(new THREE.TorusGeometry(0.32, 0.12, 8, 18), tyreM); t.rotation.x = Math.PI / 2; lay(t, R(-90, 90), R(-110, -22), 0, Math.PI / 2 + R(-0.3, 0.3)); }
+  for (let i = 0; i < 40; i++) { const can = beerCan(pick(['#d9b84a', '#3a6fb8', '#c43a2a', '#2f8a4a'])); lay(can, R(-40, 40), R(-60, -20), R(0, 6), Math.PI / 2); } }
+// fish: silver bodies flopping (each its own phase); shown on the bed after the water goes
+const FISH = [];
+{ seed = 1301; const bodyG = new THREE.SphereGeometry(1, 12, 8), tailG = new THREE.ConeGeometry(0.5, 0.9, 4); tailG.rotateZ(Math.PI / 2);
+  for (let i = 0; i < 60; i++) { const g = new THREE.Group(), sc = R(0.1, 0.19), m = new THREE.MeshStandardMaterial({ color: pick(['#c8d0d6', '#a8b2b8', '#d8d2b8', '#9eaaa0']), roughness: 0.35, metalness: 0.2, emissive: '#30343a', emissiveIntensity: 0.5, flatShading: true });
+    const b = mesh(bodyG, m); b.scale.set(1, 0.36, 0.16); g.add(b); const eye = mesh(new THREE.SphereGeometry(0.07, 6, 4), M('#111')); eye.position.set(0.68, 0.08, 0.13); g.add(eye); const fin = mesh(tailG, m); fin.scale.set(0.35, 0.4, 0.12); fin.position.set(0.05, 0.36, 0); fin.rotation.z = -Math.PI / 2 + 0.6; g.add(fin); const tl = mesh(tailG, m); tl.position.x = -1.2; tl.scale.set(0.8, 0.9, 0.3); g.add(tl); g.scale.setScalar(sc);
+    const x = i < 40 ? R(-50, 50) : R(-300, 300), z = i < 40 ? R(-90, -22) : R(-500, -22); g.position.set(x, bedHeight(x, z) + 0.08 * sc / 0.3, z); g.rotation.y = R(0, 6); g.userData = { ph: R(0, 6), sp: R(6, 11), y0: g.position.y }; bedStuff.add(g); FISH.push(g); } }
+function fishAt(t) { for (const f of FISH) { const u = f.userData, k = Math.max(0, Math.sin(t * u.sp + u.ph)); f.rotation.x = Math.PI / 2 + 0.45 * Math.sin(t * u.sp * 0.7 + u.ph); f.rotation.z = 0.25 * Math.sin(t * u.sp + u.ph); f.position.y = u.y0 + 0.1 * k; } }
