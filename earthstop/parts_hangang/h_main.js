@@ -133,9 +133,10 @@ function camAt(t, s) {
     LOOKC(V3(lerp(12, 9, u), 2.2 + sh, lerp(-6.2, -7.2, u)), V3(-120, 6 + lerp(0, 8, u) + sh * 4, -380), 40); aimSun(0, -6); return; }
   if (t < 52) {   // S11b: crane up and back over the fizzing river toward the sunset
     const u = ease(span(t, 46.5, 52)); hCam.near = 0.5; LOOKC(V3(lerp(30, 140, u), lerp(14, 130, u), lerp(10, 170, u)), V3(-320, 0, -420), 42); aimSun(0, -60); return; }
-  // S12: he surfaces with the phone held up
-  const u = span(t, 52, END0), p = hd.clone().add(V3(lerp(1.7, 1.3, u), lerp(-0.25, -0.15, u), lerp(1.6, 1.25, u))); p.y = Math.max(p.y, WATER_Y + 0.25);
-  LOOKC(p, hd.clone().add(V3(0, 0.05, 0)), 36); dof(hCam, p.distanceTo(hd), 8); aimSun(hd.x, hd.z);
+  // S12: he surfaces with the phone held up — camera fixed above the water, he rises into the frame
+  const u = ease(span(t, 52, END0)), c = V3(PATH[3].x, WATER_Y + 1.1, PATH[3].z), dirc = V3(Math.sin(0.5), 0, Math.cos(0.5));
+  const p = c.clone().addScaledVector(dirc, lerp(2.4, 1.9, u)).add(V3(0.5, lerp(0.15, 0.05, u), 0));
+  LOOKC(p, c.clone().add(V3(0, -0.45, 0)), 36); dof(hCam, p.distanceTo(c), 8); aimSun(c.x, c.z);
 }
 // ---- overlay text ----
 const TITLE = ['만약', '<span class="hl">한강</span>이', '<br>', '5초', '동안', '사라진다면?'];
