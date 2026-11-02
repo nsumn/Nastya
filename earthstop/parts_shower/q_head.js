@@ -7,7 +7,8 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // sweat into sulfur stink (York/Unilever 2020, S. hominis), day 3 greasy hair, day 7 the subway notices but your nose doesn't, day 14 shoes, day 30 terra firma-forme
 // dermatosis (dirt-like patches, alcohol removes them), the doctor who quit for 5 years (James Hamblin, "Clean"), then the shower. Sources in the chat.
 // =================== timeline ===================
-const DAY1 = 4.0, MICRO = 10.0, DAY3 = 17.0, DAY7 = 23.0, DAY14 = 30.0, DAY30 = 38.0, DOC = 46.0, SHOWER = 54.0, ENDC = 60.0, T_END = 64.0;
+// her note (Nov 2): the first 3 s must hook — a cold open flashes forward to day 30 (face + flies, the subway recoiling), then rewinds to day 0
+const HOOK = 3.0, T0 = HOOK, DAY1 = 7.0, MICRO = 13.0, DAY3 = 20.0, DAY7 = 26.0, DAY14 = 33.0, DAY30 = 41.0, DOC = 49.0, SHOWER = 57.0, ENDC = 63.0, T_END = 67.0;
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================

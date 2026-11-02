@@ -7,7 +7,8 @@ import { makePerson, poseWalk, poseIdle, poseFlail, poseSit } from './people.js'
 // sweat into sulfur stink (York/Unilever 2020, S. hominis), day 3 greasy hair, day 7 the subway notices but your nose doesn't, day 14 shoes, day 30 terra firma-forme
 // dermatosis (dirt-like patches, alcohol removes them), the doctor who quit for 5 years (James Hamblin, "Clean"), then the shower. Sources in the chat.
 // =================== timeline ===================
-const DAY1 = 4.0, MICRO = 10.0, DAY3 = 17.0, DAY7 = 23.0, DAY14 = 30.0, DAY30 = 38.0, DOC = 46.0, SHOWER = 54.0, ENDC = 60.0, T_END = 64.0;
+// her note (Nov 2): the first 3 s must hook — a cold open flashes forward to day 30 (face + flies, the subway recoiling), then rewinds to day 0
+const HOOK = 3.0, T0 = HOOK, DAY1 = 7.0, MICRO = 13.0, DAY3 = 20.0, DAY7 = 26.0, DAY14 = 33.0, DAY30 = 41.0, DOC = 49.0, SHOWER = 57.0, ENDC = 63.0, T_END = 67.0;
 const B1 = 4.0, B2 = 12.0, B3 = 20.0, B4 = 28.0, B5 = 36.0, B6 = 44.0, TW = 52.0, REP = 58.0;   // used by the shared family sets
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
@@ -467,8 +468,9 @@ const BT = {}; { const tile = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '
   BT.foam = Array.from({ length: 18 }, (_, i) => { const b = mesh(new THREE.SphereGeometry(0.03 + 0.03 * hash(i), 8, 6), F_('#ffffff', { roughness: 0.3, flatShading: false })); bath.add(b); return b; }); }
 const steam = makeSmoke(bath, 120);
 function updateBath(t, mode) { if (hero.outer.parent !== bath) bath.add(hero.outer); const P = hero; poseReset(P, t); BT.water.visible = BT.drain.visible = false; BT.foam.forEach(b => b.visible = false); steam.begin();
-  const curOpen = mode === 'shower' ? 1 : mode === 'title' ? 1 - smooth(1.6, 2.6, t) : 0; { const p = BT.curtain.geometry.attributes.position, a = p.array, c0 = BT.cur0; for (let i = 0; i < a.length; i += 3) { const u = (c0[i] + 0.65) / 1.3; a[i] = -0.65 + 1.3 * u * (1 - 0.8 * curOpen); a[i + 2] = 0.06 * Math.sin(u * 30) * (1 - 0.6 * curOpen); } p.needsUpdate = true; BT.curtain.geometry.computeVertexNormals(); }
-  if (mode === 'title') { P.outer.position.set(0.1, 0.95, 0.2); P.outer.rotation.y = -0.6 + 0.3 * smooth(1.6, 2.6, t); P.face(t < 1.6 ? 'squint' : t < 2.8 ? 'smirk' : 'happy', t); if (t > 1.4 && t < 2.8) { P.arms[1].rotation.set(-1.4, 0, -0.6); P.elbows[1].rotation.x = -0.3; } }
+  const curOpen = mode === 'shower' ? 1 : mode === 'title' ? 1 - smooth(T0 + 1.6, T0 + 2.6, t) : 0; { const p = BT.curtain.geometry.attributes.position, a = p.array, c0 = BT.cur0; for (let i = 0; i < a.length; i += 3) { const u = (c0[i] + 0.65) / 1.3; a[i] = -0.65 + 1.3 * u * (1 - 0.8 * curOpen); a[i + 2] = 0.06 * Math.sin(u * 30) * (1 - 0.6 * curOpen); } p.needsUpdate = true; BT.curtain.geometry.computeVertexNormals(); }
+  if (mode === 'title') { P.outer.position.set(0.1, 0.95, 0.2); P.outer.rotation.y = -0.6 + 0.3 * smooth(T0 + 1.6, T0 + 2.6, t); P.face(t < T0 + 1.6 ? 'squint' : t < T0 + 2.8 ? 'smirk' : 'happy', t); if (t > T0 + 1.4 && t < T0 + 2.8) { P.arms[1].rotation.set(-1.4, 0, -0.6); P.elbows[1].rotation.x = -0.3; } }
+  else if (mode === 'hook') { P.outer.position.set(0.55, 0.95, 0.2); P.outer.rotation.y = Math.PI / 2 - 0.3; P.face('anxious', t); }
   else if (mode === 'mirror') { P.outer.position.set(0.55, 0.95, 0.2); P.outer.rotation.y = Math.PI / 2; P.face(t < DAY30 + 3 ? 'worried' : 'surprised', t); P.arms[0].rotation.set(-1.9, 0, -0.5); P.elbows[0].rotation.x = -1.5; }
   else { P.outer.position.set(-1.3, 1.05, -1.3); P.outer.rotation.y = 0.3; P.face('love', t); P.arms.forEach((a, i) => a.rotation.set(-2.6, 0, i ? -0.4 : 0.4)); P.elbows.forEach(e => e.rotation.x = -1.6);
     BT.water.visible = true; for (let k = 0; k < 160; k++) { const u = ((t * 2.2 + hash(k)) % 1), a = hash(k * 3) * 6.28, r = 0.05 + 0.25 * hash(k * 7) + 0.15 * u; _o.position.set(-1.3 + Math.cos(a) * r, 1.95 - 1.9 * u, -1.65 + Math.sin(a) * r * 0.8 + 0.35 * u); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); BT.water.setMatrixAt(k, _o.matrix); } BT.water.instanceMatrix.needsUpdate = true;
@@ -499,7 +501,7 @@ const SB = {}; { bx(3.0, 0.05, 14, '#5a5c64', 0, 0, 0, sub); bx(3.0, 0.05, 14, '
   for (let z = -5; z <= 5; z += 2.5) { const pl = mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.3, 8), F_('#d8dce0', { metalness: 0.8, roughness: 0.2 })); pl.position.set(0, 1.15, z); sub.add(pl); }
   SB.streaks = Array.from({ length: 8 }, (_, k) => { const s = bx(0.01, 0.06, 0.8, new THREE.MeshBasicMaterial({ color: new THREE.Color(2.5, 2.0, 1.2) }), (k % 2 ? 1 : -1) * 1.49, 1.2 + 0.25 * hash(k), 0, sub); return s; });
   const r0 = seed; seed = 4040; SB.ppl = Array.from({ length: 9 }, (_, k) => { const p = makePerson(rnd); sub.add(p.outer); return { p, side: k % 2 ? 1 : -1, z0: -4.5 + k * 1.15, sit: k % 3 !== 0 }; }); seed = r0; }
-function updateSub(t) { if (hero.outer.parent !== sub) sub.add(hero.outer); const P = hero; poseReset(P, t); const away = smooth(DAY7 + 1.0, DAY7 + 3.5, t);
+function updateSub(t) { if (hero.outer.parent !== sub) sub.add(hero.outer); const P = hero; poseReset(P, t); const away = t < HOOK ? smooth(1.3, 1.9, t) : smooth(DAY7 + 1.0, DAY7 + 3.5, t);
   SB.streaks.forEach((s, k) => { s.position.z = 7 - ((t * 9 + k * 1.8) % 14); });
   P.outer.position.set(0.25, 0.95, 0.2); P.outer.rotation.y = -0.4; P.arms[0].rotation.set(-2.5, 0, 0.1); P.elbows[0].rotation.x = -0.3;
   if (t > DAY7 + 3.8) { P.arms[1].rotation.set(-1.0, 0, -1.2); P.elbows[1].rotation.x = -1.2; P.root.rotation.z = -0.15; P.face('happy', t); } else P.face('neutral', t);   // sniffs his armpit: smells fine to him
@@ -538,10 +540,11 @@ const H_ = P => headOf(P);
 const sp = (t, a, b) => ease(clamp((t - a) / (b - a), 0, 1));
 const home = m => t => { updateHome(t, m); fx(t, room, m); }, bathU = m => t => { updateBath(t, m); fx(t, bath, m); };
 // the smell / flies / grease / patches by day
-function fx(t, scene, m) { const day = t < DAY3 ? 0 : t < DAY7 ? 3 : t < DAY14 ? 7 : t < DAY30 ? 14 : 30, shower = t >= SHOWER;
+function fx(t, scene, m) { const day = t < HOOK ? 30 : t < DAY3 ? 0 : t < DAY7 ? 3 : t < DAY14 ? 7 : t < DAY30 ? 14 : 30, shower = t >= SHOWER;
   greasy(shower ? 0 : day >= 3 ? Math.min(1, 0.5 + day / 30) : 0); PATCHES.forEach(p => p.visible = day >= 30 && !shower);
   hero.outer.updateMatrixWorld(true); const hd = H_(hero);
   if (m === 'day14') { stinkAt(scene, shoes.position.clone().add(V3(0, 0.1, 0)), t, 6, 0.3, 1); fliesAt(scene, shoes.position.clone().add(V3(0, 0.25, 0)), t, 5, 0.18); }
+  else if (m === 'hook') { stinkAt(scene, hd.clone().add(V3(0, -0.55, 0)), t, 10, 0.3, 1); fliesAt(scene, hd.clone().add(V3(0.05, 0.05, 0.1)), t, 6, 0.22); }
   else if (!shower && day >= 3 && m !== 'mirror' && m !== 'doc') { stinkAt(scene, hd.clone().add(V3(0, -0.75, 0)), t, Math.min(10, 2 + day), 0.22, Math.min(1, 0.4 + day / 14)); fliesAt(scene, hd, t, day >= 14 ? 4 : 0); }
   else { stinkAt(scene, hd, t, 0); fliesAt(scene, hd, t, 0); } }
 const subU = t => { updateSub(t); fx(t, sub, 'sub'); };
@@ -551,7 +554,10 @@ const hand = (F, t, k = 1) => { F.pos.add(V3(Math.sin(t * 1.7) * 0.012, Math.sin
 const FOCUS = { head: () => H_(hero), shoes: () => shoes.position.clone().add(V3(0, 0.08, 0)), micro: () => V3(0, 0.3, -3.5), cal: () => cal.position.clone() };
 // [start, scene, camera, update(t), framing(t), { dof: focus key, amt, mb, whip }]
 const SHOTS = [
-  [0.0, bath, () => bathCam, bathU('title'), t => hand(orbit(H_(hero), V3(0.6, 0.02, 1), -0.25, 0.1, 2.4, 1.5, 0.68, t / DAY1), t), { dof: 'head', amt: 22 }],   // slow push past the curtain to your face
+  [0.0, bath, () => bathCam, bathU('hook'), t => hand(fr(H_(hero), V3(1, 0.05, 0.25), lerp(1.1, 0.62, ease(clamp(t / 1.4, 0, 1))), 0.66), t, 2), { dof: 'head', amt: 26 }],   // HOOK: day 30, flies, a fast push into the face
+  [1.4, sub, () => subCam, subU, t => hand(fr(V3(0, 1.3, 0), V3(0.05, 0.2, 1), lerp(3.6, 2.6, ease(clamp((t - 1.4) / 1.0, 0, 1))), 0.5, 48), t, 3), { mb: true, whip: 1 }],   // the whole car recoils
+  [2.4, bath, () => bathCam, bathU('hook'), t => fr(H_(hero), V3(1, 0.05, 0.25), lerp(0.62, 1.4, ease(clamp((t - 2.4) / 0.6, 0, 1))), 0.66), { mb: true, whip: -1 }],   // ◀◀ rewind
+  [T0, bath, () => bathCam, bathU('title'), t => hand(orbit(H_(hero), V3(0.6, 0.02, 1), -0.25, 0.1, 2.4, 1.5, 0.68, (t - T0) / (DAY1 - T0)), t), { dof: 'head', amt: 22, whip: -1 }],   // slow push past the curtain to your face
   [DAY1, room, () => rmCam, home('day1'), t => hand(orbit(H_(hero), V3(-0.5, -0.05, 1), -0.35, 0.35, 2.2, 1.9, 0.62, (t - DAY1) / 6), t), { dof: 'head', amt: 16 }],   // the sun shafts, a slow arc
   [MICRO, micro, () => microCam, updateMicro, t => ({ pos: V3(lerp(-1.2, 1.2, sp(t, MICRO, DAY3)), lerp(1.6, 0.9, sp(t, MICRO, DAY3)), lerp(1.5, -0.6, sp(t, MICRO, DAY3))), look: V3(0, 0.35, -3.8), fov: 42 }), { dof: 'micro', amt: 30 }],   // macro: shallow focus on the pores
   [DAY3, room, () => rmCam, home('day3'), t => hand(orbit(H_(hero), V3(-0.4, -0.25, 1), -0.2, 0.25, 1.4, 1.05, 0.6, (t - DAY3) / 6), t), { dof: 'head', amt: 20, whip: 1 }],   // low angle, rim light on the greasy hair
@@ -579,12 +585,12 @@ const CAPS = [
   [DAY30 + 0.2, DAY30 + 4.0, 'Some people get dark, dirt-like patches.'], [DAY30 + 4.0, DOC - 0.1, 'Soap often won’t remove them. Rubbing alcohol does.'],
   [DOC + 0.3, DOC + 4.0, 'A doctor stopped showering for 5 years and wrote a book about it.'], [DOC + 4.0, SHOWER - 0.1, 'He still washes his hands. And he doesn’t recommend quitting cold turkey.'],
   [SHOWER + 0.2, ENDC - 0.1, 'Dermatologists: 2–3 showers a week is plenty for most people.']];
-const DAYS = [[0, '0'], [DAY1, '1'], [MICRO, '2'], [DAY3, '3'], [DAY7, '7'], [DAY14, '14'], [DAY30, '30'], [DOC, '5 YEARS'], [SHOWER, '0']];
-const POPS = [[DAY30 + 4.1, DOC - 0.2, () => 'TERRA FIRMA-FORME', 'DERMATOSIS · HARMLESS, RARE']];
-function updateDOM(t, i) { el.title.style.opacity = fadeWin(t, 0, DAY1, 0.35);
-  el.tl.style.opacity = smooth(DAY1 - 0.3, DAY1, t) * (1 - smooth(ENDC - 0.3, ENDC, t)) * (SHOTS[i][2] === undefined ? 1 : 1) * (t >= MICRO && t < DAY3 ? 0 : 1);
+const DAYS = [[0, '30'], [HOOK, '0'], [DAY1, '1'], [MICRO, '2'], [DAY3, '3'], [DAY7, '7'], [DAY14, '14'], [DAY30, '30'], [DOC, '5 YEARS'], [SHOWER, '0']];
+const POPS = [[0.15, 2.4, () => '<span style="color:#ff3b30;font-size:150px">DAY 30</span>', 'WITHOUT A SHOWER'], [2.4, HOOK, () => '<span style="font-size:120px">◀◀ DAY 0</span>', 'REWIND'], [DAY30 + 4.1, DOC - 0.2, () => 'TERRA FIRMA-FORME', 'DERMATOSIS · HARMLESS, RARE']];
+function updateDOM(t, i) { el.title.style.opacity = fadeWin(t, 0.1, DAY1, 0.25);
+  el.tl.style.opacity = (t < HOOK ? 0 : 1) * smooth(DAY1 - 0.3, DAY1, t) * (1 - smooth(ENDC - 0.3, ENDC, t)) * (SHOTS[i][2] === undefined ? 1 : 1) * (t >= MICRO && t < DAY3 ? 0 : 1);
   const d = [...DAYS].reverse().find(([a]) => t >= a)[1]; el.tlN.textContent = t >= DOC && t < SHOWER ? 'ONE DOCTOR’S EXPERIMENT' : t >= SHOWER ? 'DAYS WITHOUT A SHOWER · RESET' : 'DAYS WITHOUT A SHOWER'; el.tlC.textContent = d;
-  const pp = POPS.find(([a, b]) => t >= a && t < b); el.pop.innerHTML = pp ? `<span style="font-size:58px">${pp[2](t)}</span><div class="ps">${pp[3]}</div>` : ''; el.pop.style.opacity = pp ? fadeWin(t, pp[0], pp[1], 0.2) : 0; el.pop.style.transform = 'translateX(-50%)';
+  const pp = POPS.find(([a, b]) => t >= a && t < b); el.pop.innerHTML = pp ? `<span style="font-size:58px">${pp[2](t)}</span><div class="ps">${pp[3]}</div>` : ''; if (pp && t < HOOK) el.pop.style.setProperty('top', '1020px', 'important'); else el.pop.style.removeProperty('top'); el.pop.style.opacity = pp ? fadeWin(t, pp[0], pp[1], 0.2) : 0; el.pop.style.transform = 'translateX(-50%)';
   el.flash.style.opacity = 0.35 * Math.exp(-Math.pow((t - SHOWER) / 0.1, 2));
   const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.18) : 0;
   el.cap.style.transform = cp ? `scale(${(1 + 0.06 * Math.sin(Math.PI * clamp((t - cp[0]) / 0.25, 0, 1)) - 0.06 * (1 - clamp((t - cp[0]) / 0.18, 0, 1))).toFixed(3)})` : '';

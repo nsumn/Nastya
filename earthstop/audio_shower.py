@@ -7,7 +7,8 @@ import sys, os, numpy as np, scipy.io.wavfile as wf
 from scipy.signal import butter, sosfilt
 MUSIC = '--no-music' not in sys.argv
 SR = 44100
-DAY1, MICRO, DAY3, DAY7, DAY14, DAY30, DOC, SHOWER, ENDC, T_END = 4.0, 10.0, 17.0, 23.0, 30.0, 38.0, 46.0, 54.0, 60.0, 64.0
+HOOK = 3.0
+DAY1, MICRO, DAY3, DAY7, DAY14, DAY30, DOC, SHOWER, ENDC, T_END = 7.0, 13.0, 20.0, 26.0, 33.0, 41.0, 49.0, 57.0, 63.0, 67.0
 N = int(T_END * SR) + SR; L = np.zeros(N); R = np.zeros(N); rng = np.random.default_rng(61)
 def bp(x, lo, hi, o=2): return sosfilt(butter(o, [lo, hi], 'band', fs=SR, output='sos'), x)
 def lp(x, f, o=2): return sosfilt(butter(o, f, 'low', fs=SR, output='sos'), x)
@@ -48,13 +49,14 @@ def flip(): t = tt(0.12); return bp(rng.standard_normal(len(t)), 1500, 6000) * n
 def water(d): t = tt(d); n = rng.standard_normal(len(t)); return (bp(n, 600, 7000) * 0.35 + lp(n, 600) * 0.15) * np.minimum(1, t / 0.4) * np.minimum(1, (d - t) / 0.6) * 0.35
 def ding(m): t = tt(0.9); return (np.sin(2 * np.pi * hz(m) * t) + 0.35 * np.sin(2 * np.pi * hz(m) * 2.76 * t)) * np.exp(-t * 4) * 0.2
 if MUSIC:
+    put(0.0, bass(38, 2.4), 1.2); put(0.0, kick(), 1.4); put(0.0, snare(), 1.0); put(1.4, kick(), 1.2)   # hook stinger (the song starts after the rewind)
     BEAT = 60 / 112; BAR = 4 * BEAT
     MAJ = [(53, [65, 69, 72, 77]), (50, [62, 65, 69, 74]), (46, [62, 65, 70, 74]), (48, [64, 67, 70, 72])]   # F Dm Bb C
     MIN = [(50, [62, 65, 69, 74]), (46, [62, 65, 70, 74]), (45, [61, 64, 69, 73]), (50, [62, 65, 69, 74])]   # Dm Bb A Dm
     MOT = [0, None, 2, 1, 3, None, 2, 0]
     b = 0
-    while b * BAR < ENDC + 0.2:
-        t0 = b * BAR; gross = DAY7 <= t0 + 0.01 < SHOWER; root, tones = (MIN if gross else MAJ)[b % 4]; g = 0.85 if gross else 1.0
+    while HOOK + b * BAR < ENDC + 0.2:
+        t0 = HOOK + b * BAR; gross = DAY7 <= t0 + 0.01 < SHOWER; root, tones = (MIN if gross else MAJ)[b % 4]; g = 0.85 if gross else 1.0
         put(t0, bass(root, BAR * 0.95), 0.85 * g)
         for q in range(4): put(t0 + q * BEAT, kick() if q % 2 == 0 else snare(), 0.55 * g)
         for i, ix in enumerate(MOT):
@@ -63,7 +65,10 @@ if MUSIC:
         b += 1
     for m in (53, 65, 69, 72, 77): put(ENDC + 0.3, pluck(m, 3.0, 0.6), 0.6)
     put(ENDC + 0.3, bass(41, 3.0), 0.8)
-put(1.6, swish(), 1.0)
+put(HOOK + 1.6, swish(), 1.0)
+# the cold open: a stinger hit, flies, the subway gasp (air), a tape-rewind sweep into day 0
+def rewind(): t = tt(0.6); f = 2400 * (1 - t / 0.6) ** 2 + 200; return (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.15 + bp(rng.standard_normal(len(t)), 800, 5000) * 0.12) * np.sin(np.pi * t / 0.6)
+put(0.0, pfff(), 1.2); put(0.0, flies(2.4), 2.0); put(1.4, rumble(1.0), 1.2); put(1.45, pfff(), 1.0); put(2.4, rewind(), 1.2)
 for c in (DAY3, DAY7, DAY14, DOC, SHOWER): put(c - 0.18, swish(), 1.3)   # whip-pan cuts
 for c in (DAY1, DAY3, DAY7, DAY14, DAY30): put(c + 0.15, ding(84), 0.8)
 for k in range(14): put(MICRO + 3.0 + k * 0.28, squelch(320 + 60 * (k % 4)), 0.8, pan=(k % 3 - 1) * 0.3)
