@@ -132,6 +132,13 @@ def build_body():
     Dv = bone - bone.min(1, keepdims=True); tight = np.exp(-Dv / 0.005)   # only a thin seam blends between an arm and the torso: no gaps, no wings
     for b in (0, 1): w[arm & low, b] = tight[arm & low, b]
     for b in (2, 3, 4, 5): w[(~arm) & low, b] = tight[(~arm) & low, b]
+    if OUTFIT == 'tee_kr':   # the sleeve belongs to the arm: everything outside the tee's side wall (|x| > ~0.22) between the elbow and the shoulder top follows the shoulder bone
+        ax, yy = np.abs(bv[:, 0]), bv[:, 1]; sb = np.where(bv[:, 0] < 0, 2, 4)
+        armness = np.clip((ax - 0.205) / 0.04, 0, 1); armness = armness * armness * (3 - 2 * armness)
+        armness *= np.clip((1.52 - yy) / 0.1, 0, 1)                         # the shoulder top blends with the torso
+        sel = (yy > 1.12) & np.isin(dom, [1, 2, 4])
+        for i in np.where(sel)[0]: w[i, :] = 0; w[i, 1] = 1 - armness[i]; w[i, sb[i]] = armness[i]
+        dom = np.where(sel, np.where(armness > 0.5, sb, 1), dom)
     w[np.arange(len(w)), dom] = np.maximum(w[np.arange(len(w)), dom], 1e-6)
     idx = np.argsort(-w, 1)[:, :4]
     ww = np.take_along_axis(w, idx, 1); ww /= ww.sum(1, keepdims=True)

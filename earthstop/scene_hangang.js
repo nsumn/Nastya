@@ -518,7 +518,7 @@ const CROWD = [];
     if (rnd() < 0.6) { const cb = chickenBox(); cb.position.set(x + R(-0.3, 0.3), 0.02, z + R(-0.3, 0.3)); hw.add(cb); }
     if (rnd() < 0.4) tent(x + R(1.5, 2.5), z + R(1, 2), R(0, 6), pick(['#3a8ad0', '#f0a030', '#e04a5a', '#4ab07a'])); } }
 function sitPose(P, t, ph) { P.legs[0].rotation.set(-1.35, 0, -0.12); P.legs[1].rotation.set(-1.35, 0, 0.12); P.knees[0].rotation.x = 0.35; P.knees[1].rotation.x = 0.35;
-  P.arms[0].rotation.set(0.35, 0, 0.12); P.arms[1].rotation.set(0.35, 0, -0.12); P.elbows[0].rotation.x = -0.2; P.elbows[1].rotation.x = -0.2; P.torso.rotation.x = -0.05 + 0.02 * Math.sin(t * 0.9 + ph); }
+  P.arms[0].rotation.set(0.35, 0, -0.06); P.arms[1].rotation.set(0.35, 0, 0.06); P.elbows[0].rotation.x = -0.2; P.elbows[1].rotation.x = -0.2; P.torso.rotation.x = 0; P.head.rotation.x = 0.03 * Math.sin(t * 0.9 + ph); }
 // bikes (Seoul public bike "따릉이": green frame) along the promenade
 function bike(x, z, ry) { const g = grp(x, 0, z, ry, hw); const fr = M('#3fae5a', { roughness: 0.5, metalness: 0.3 }), tire = M('#1a1a1a');
   for (const s of [-0.5, 0.5]) { const w = mesh(new THREE.TorusGeometry(0.33, 0.035, 6, 20), tire); w.position.set(s, 0.36, 0); g.add(w); }
@@ -580,9 +580,9 @@ const DEB = [];
   for (let i = 0; i < 160; i++) { const [geo, col] = kinds[i < 70 ? 0 : i < 120 ? 1 : i < 125 ? 2 : 3]; const m = mesh(geo, M(col, { side: THREE.DoubleSide, roughness: 0.8 })); const x = R(-14, 14), z = R(-2, 9);
     m.userData = { x, z, d: R(0.0, 0.25), sp: R(9, 16), up: R(1.5, 4.5), sx: R(-1.5, 1.5), spin: V3(R(-9, 9), R(-9, 9), R(-9, 9)) }; m.position.set(x, 0.03, z); hw.add(m); DEB.push(m); } }
 // story time s (seconds after the vanish): debris flies toward -z, lifts, then falls into the canyon
-function debrisAt(s, t) { for (const m of DEB) { const u = m.userData, a = s - 0.12 - u.d; if (a <= 0) { m.position.set(u.x, 0.03, u.z); m.rotation.set(-Math.PI / 2, 0, 0); continue; }
+function debrisAt(s, t) { for (const m of DEB) { const u = m.userData, a = s - 0.12 - u.d; if (a <= 0) { m.visible = true; m.position.set(u.x, 0.03, u.z); m.rotation.set(-Math.PI / 2, 0, 0); continue; }
   let z = u.z - u.sp * a, y = 0.03 + u.up * a - 2.0 * a * a; const lip = bedHeight(u.x, z) + 0.03; if (z < -9) y = Math.max(y - 4.9 * Math.max(0, a - (u.z + 9) / u.sp) ** 2, lip); else y = Math.max(y, 0.03);
-  m.position.set(u.x + u.sx * a, y, z); m.rotation.set(u.spin.x * a, u.spin.y * a, u.spin.z * a); } }
+  m.position.set(u.x + u.sx * a, y, z); m.rotation.set(u.spin.x * a, u.spin.y * a, u.spin.z * a); m.visible = a < 2.6; } }
 // ---- mud splash when the ferry lands ----
 const splash = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), M('#4a3e30', { roughness: 0.4, flatShading: true }), 400); splash.frustumCulled = false; hw.add(splash);
 const SPL = []; { seed = 2401; for (let i = 0; i < 400; i++) { const a = R(0, 6.28); SPL.push({ a, v: R(3, 12), up: R(3, 11), sc: R(0.15, 0.6), ox: R(-20, 20), oz: R(-4, 4) }); } }
@@ -623,36 +623,36 @@ const PHONE_L = V3(-4.3, 0, -24.3); PHONE_L.y = bedHeight(PHONE_L.x, PHONE_L.z) 
 FISH.slice(0, 7).forEach((f, i) => { const x = PHONE_L.x - 1.2 + i * 0.7 + Math.sin(i * 3.1) * 0.5, z = PHONE_L.z + 1.0 + (i % 3) * 0.9; f.position.set(x, bedHeight(x, z) + 0.05, z); f.userData.y0 = f.position.y; });
 function groundY(x, z) { return z > -9 ? 0 : bedHeight(x, z); }
 function heading(a, b) { return Math.atan2(b.x - a.x, b.z - a.z); }
-function holdPhone(P) { P.arms[1].rotation.set(-1.35, 0.1, -0.15); P.elbows[1].rotation.x = -0.35; }
+function holdPhone(P) { P.arms[1].rotation.set(-0.55, 0, 0.05); P.elbows[1].rotation.x = -1.35; }
 function standPose(P) { for (const l of P.legs) l.rotation.set(0, 0, 0); for (const k of P.knees) k.rotation.x = 0.02; P.torso.rotation.set(0, 0, 0); }
 function heroAt(s, t) {
-  const P = hero; P.head.rotation.set(0, 0, 0); P.torso.rotation.set(0, 0, 0); P.arms[0].rotation.set(0, 0, 0); P.arms[1].rotation.set(0, 0, 0); P.elbows[0].rotation.x = -0.15; P.elbows[1].rotation.x = -0.15;
+  const P = hero; P.outer.rotation.order = 'YXZ'; P.outer.rotation.x = 0; P.head.rotation.set(0, 0, 0); P.torso.rotation.set(0, 0, 0); P.arms[0].rotation.set(0, 0, 0); P.arms[1].rotation.set(0, 0, 0); P.elbows[0].rotation.x = -0.15; P.elbows[1].rotation.x = -0.15;
   const facing = Math.PI + 0.42;
   if (s < 1.0) {   // sitting on the mat, filming; the wind hits at 0.15, rips the phone at 0.3
     P.outer.position.set(HERO_MAT.x - 0.1, 0.17, HERO_MAT.z + 0.15); P.outer.rotation.y = facing; sitPose(P, t, 0); holdPhone(P);
     const w = smooth(0.12, 0.3, s) * (1 - smooth(0.8, 1.0, s));
-    P.torso.rotation.x = -0.28 * w + 0.03 * w * Math.sin(t * 9); P.head.rotation.x = 0.15 * w;
-    if (s >= 0.3) { const k = smooth(0.3, 0.45, s); P.arms[1].rotation.set(lerp(-1.35, -1.9, k), 0.1, lerp(-0.15, 0.2, k)); P.elbows[1].rotation.x = lerp(-0.35, -0.05, k); }
-    P.arms[0].rotation.set(-0.6 * w, 0, 0.35 * w); P.elbows[0].rotation.x = -0.9 * w;
+    P.outer.rotation.x = -0.12 * w + 0.015 * w * Math.sin(t * 9); P.head.rotation.x = 0.1 * w;
+    if (s >= 0.3) { const k = smooth(0.3, 0.45, s); P.arms[1].rotation.set(lerp(-0.55, -0.75, k), 0, 0.08); P.elbows[1].rotation.x = lerp(-1.35, -0.3, k); }
+    P.arms[0].rotation.set(-0.45 * w, 0, 0); P.elbows[0].rotation.x = -0.15 - 1.55 * w;
     return; }
   if (s < 1.6) {   // gets up
     const k = smooth(1.0, 1.6, s); P.outer.position.set(HERO_MAT.x - 0.1, lerp(0.17, 0.95, k), HERO_MAT.z + 0.15); P.outer.rotation.y = lerp(facing, heading(PATH[0], PATH[1]), k);
     sitPose(P, t, 0); for (let i = 0; i < 2; i++) { P.legs[i].rotation.x = lerp(-1.35, 0, k); P.knees[i].rotation.x = lerp(0.35, 0.02, k) + 0.9 * Math.sin(k * Math.PI); }
-    P.torso.rotation.x = 0.45 * Math.sin(k * Math.PI); P.arms[1].rotation.set(lerp(-0.4, 0, k), 0, 0); return; }
+    P.outer.rotation.x = 0.25 * Math.sin(k * Math.PI); P.arms[1].rotation.set(lerp(-0.3, 0, k), 0, 0); return; }
   const seg = (a, b, s0, s1) => { const k = clamp((s - s0) / (s1 - s0), 0, 1); return [V3(lerp(a.x, b.x, k), 0, lerp(a.z, b.z, k)), k]; };
   if (s < 2.7 || (s >= 3.9 && s < 4.6)) {   // running (slow motion)
     const [a, b, s0, s1] = s < 2.7 ? [PATH[0], PATH[1], 1.6, 2.7] : [PATH[2], PATH[3], 3.9, 4.6]; const [p] = seg(a, b, s0, s1);
-    P.outer.position.set(p.x, groundY(p.x, p.z) + 0.95, p.z); P.outer.rotation.y = heading(a, b); standPose(P); poseWalk(P, (s - s0) * 10.5, 1.8); P.torso.rotation.x = 0.22; return; }
+    P.outer.position.set(p.x, groundY(p.x, p.z) + 0.95, p.z); P.outer.rotation.y = heading(a, b); standPose(P); poseWalk(P, (s - s0) * 10.5, 1.8); P.arms[0].rotation.x *= 0.6; P.arms[1].rotation.x *= 0.6; P.outer.rotation.x = 0.12; return; }
   if (s < 3.9) {   // sliding down the stone slope on his backside, arms up for balance
     const [p, k] = seg(PATH[1], PATH[2], 2.7, 3.9); const ee = smooth(0, 1, k); const q = V3(lerp(PATH[1].x, PATH[2].x, ee), 0, lerp(PATH[1].z, PATH[2].z, ee));
     P.outer.position.set(q.x, groundY(q.x, q.z) + 0.3, q.z); P.outer.rotation.y = heading(PATH[1], PATH[2]); sitPose(P, t, 0);
-    for (let i = 0; i < 2; i++) { P.legs[i].rotation.x = -1.15; P.knees[i].rotation.x = 0.25; } P.torso.rotation.x = -0.45 + 0.05 * Math.sin(t * 3);
-    P.arms[0].rotation.set(-2.5, 0, 0.5 + 0.1 * Math.sin(t * 4)); P.arms[1].rotation.set(-2.3, 0, -0.5); P.elbows[0].rotation.x = P.elbows[1].rotation.x = -0.4; return; }
+    for (let i = 0; i < 2; i++) { P.legs[i].rotation.x = -1.15; P.knees[i].rotation.x = 0.25; } P.outer.rotation.x = -0.25 + 0.03 * Math.sin(t * 3);
+    P.arms[0].rotation.set(0.45, 0, -0.08); P.arms[1].rotation.set(0.45, 0, 0.08); P.elbows[0].rotation.x = P.elbows[1].rotation.x = -0.1; return; }
   // picks the phone up, straightens, looks up
   const p = PATH[3], k = smooth(4.6, 4.75, s) * (1 - smooth(4.82, 4.95, s));
   P.outer.position.set(p.x, groundY(p.x, p.z) + 0.95 - 0.38 * k, p.z); P.outer.rotation.y = heading(PATH[2], PATH[3]) + 0.4 * smooth(4.85, 5.0, s); standPose(P);
-  for (let i = 0; i < 2; i++) { P.legs[i].rotation.x = -0.9 * k; P.knees[i].rotation.x = 1.4 * k; } P.torso.rotation.x = 0.7 * k;
-  P.arms[1].rotation.set(lerp(-0.6, -1.0, smooth(4.85, 4.95, s)), 0, 0); P.elbows[1].rotation.x = -0.9 * smooth(4.8, 4.95, s) - 0.3 * k;
+  for (let i = 0; i < 2; i++) { P.legs[i].rotation.x = -0.9 * k; P.knees[i].rotation.x = 1.4 * k; } P.outer.rotation.x = 0.3 * k;
+  P.arms[1].rotation.set(lerp(-0.65, -0.55, smooth(4.85, 4.95, s)), 0, 0.05); P.elbows[1].rotation.x = -0.9 - 0.45 * smooth(4.85, 4.95, s);
   P.head.rotation.x = -0.55 * smooth(4.88, 5.0, s);
 }
 function heroFace(t, s) { const f = t < 6 ? 'happy' : s < 0.2 ? 'neutral' : s < 0.45 ? 'surprised' : s < 1.6 ? 'anxious' : s < 4.7 ? 'angry' : s < 4.9 ? 'happy' : 'surprised'; hero.face(f, t); }
@@ -691,13 +691,13 @@ function worldAt(t) {
   splashAt(dry ? (t - (T_VAN + 0.98 * SLOW)) / SLOW * 3.0 : 0, ferry.position.x, ferry.position.z, fBed - 1.2);
   // wind + debris + the crowd leaning away
   const wind = dry ? smooth(0.12, 0.3, s) * (1 - smooth(0.8, 1.3, s)) : 0; grassU.uWind.value = wind; debrisAt(dry ? s : t < T_VAN ? -1 : 9, t);
-  CROWD.forEach((P, i) => { sitPose(P, t, i); P.torso.rotation.x += -0.3 * wind; if (wind > 0.3 && i % 3 === 0) { P.arms[0].rotation.set(-2.2, 0, 0.4); P.arms[1].rotation.set(-2.0, 0, -0.4); } if (back && dtR > 1) P.head.rotation.x = -0.1; });
+  CROWD.forEach((P, i) => { sitPose(P, t, i); P.outer.rotation.order = 'YXZ'; P.outer.rotation.x = -0.12 * wind; if (wind > 0.3 && i % 3 === 0) { P.arms[0].rotation.set(-0.45, 0, 0); P.arms[1].rotation.set(-0.5, 0, 0); P.elbows[0].rotation.x = -1.7; P.elbows[1].rotation.x = -1.6; } if (back && dtR > 1) P.head.rotation.x = -0.1; });
   // foam
   foamAt(back ? dtR : -1);
   // hero + phone
   if (t < T_RET) { hero.outer.visible = true; heroAt(Math.max(s, -1), t); heroFace(t, s); phoneAt(Math.max(s, -1), t); heroPhone.visible = true; }
   else if (t >= 52) { const P = hero; P.outer.visible = true; standPose(P); P.head.rotation.set(0, 0, 0); const k = smooth(52, 52.8, t);
-    P.outer.position.set(PATH[3].x, WATER_Y - 0.62 - 1.2 * (1 - k) + 0.06 * Math.sin(t * 2.2), PATH[3].z); P.outer.rotation.y = 0.5; P.arms[1].rotation.set(-2.95, 0, -0.15); P.elbows[1].rotation.x = -0.15; P.arms[0].rotation.set(-0.7, 0, 0.5); P.elbows[0].rotation.x = -0.6;
+    P.outer.position.set(PATH[3].x, WATER_Y - 0.62 - 1.2 * (1 - k) + 0.06 * Math.sin(t * 2.2), PATH[3].z); P.outer.rotation.y = 0.5; P.arms[1].rotation.set(-0.6, 0, 0.05); P.elbows[1].rotation.x = -1.9; P.arms[0].rotation.set(-0.3, 0, 0); P.elbows[0].rotation.x = -0.6;
     P.face(t < 53.2 ? 'surprised' : 'laugh', t); P.outer.updateMatrixWorld(true); const hp = V3(0, -0.3, 0.02); P.elbows[1].localToWorld(hp); heroPhone.position.copy(hp); heroPhone.rotation.set(0, 0.5 + Math.PI, 0.1); heroPhone.visible = true; }
   else { hero.outer.visible = false; heroPhone.visible = false; }
   return s;
@@ -709,7 +709,7 @@ function camAt(t, s) {
   if (t < 3) {   // S1: from inside the phone screen, pulling back past his head to over-the-shoulder
     const ph = heroPhone.position, n = V3(0, 0, 1).applyQuaternion(heroPhone.quaternion), u = ease(span(t, 0.2, 3.0));
     const f = V3(Math.sin(Math.PI + 0.42), 0, Math.cos(Math.PI + 0.42)), right = V3(-f.z, 0, f.x);
-    const p0 = ph.clone().addScaledVector(n, 0.26), p2 = hd.clone().addScaledVector(f, -0.8).addScaledVector(right, 0.2).add(V3(0, 0.08, 0)), mid = ph.clone().lerp(p2, 0.5).addScaledVector(right, 0.55);
+    const p0 = ph.clone().addScaledVector(n, 0.3).add(V3(0, 0.05, 0)), p2 = hd.clone().addScaledVector(f, -0.8).addScaledVector(right, 0.2).add(V3(0, 0.08, 0)), mid = ph.clone().lerp(p2, 0.5).addScaledVector(right, 0.55);
     const p = p0.clone().multiplyScalar((1 - u) ** 2).addScaledVector(mid, 2 * u * (1 - u)).addScaledVector(p2, u * u);
     LOOKC(p, ph.clone().lerp(hd.clone().addScaledVector(f, 30).add(V3(0, 2.5, 0)), smooth(0.35, 1, u)), 34); window.__dbg = [hd, p, ph, hero.outer.position].map(v => v.toArray().map(a => a.toFixed(2)).join(",")).join(" | "); dof(hCam, p.distanceTo(ph), lerp(6, 4, u)); aimSun(hd.x, hd.z); return; }
   if (t < 6) {   // S2: orbit from behind-right to front-right, food in the foreground

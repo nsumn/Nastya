@@ -21,9 +21,9 @@ const DEB = [];
   for (let i = 0; i < 160; i++) { const [geo, col] = kinds[i < 70 ? 0 : i < 120 ? 1 : i < 125 ? 2 : 3]; const m = mesh(geo, M(col, { side: THREE.DoubleSide, roughness: 0.8 })); const x = R(-14, 14), z = R(-2, 9);
     m.userData = { x, z, d: R(0.0, 0.25), sp: R(9, 16), up: R(1.5, 4.5), sx: R(-1.5, 1.5), spin: V3(R(-9, 9), R(-9, 9), R(-9, 9)) }; m.position.set(x, 0.03, z); hw.add(m); DEB.push(m); } }
 // story time s (seconds after the vanish): debris flies toward -z, lifts, then falls into the canyon
-function debrisAt(s, t) { for (const m of DEB) { const u = m.userData, a = s - 0.12 - u.d; if (a <= 0) { m.position.set(u.x, 0.03, u.z); m.rotation.set(-Math.PI / 2, 0, 0); continue; }
+function debrisAt(s, t) { for (const m of DEB) { const u = m.userData, a = s - 0.12 - u.d; if (a <= 0) { m.visible = true; m.position.set(u.x, 0.03, u.z); m.rotation.set(-Math.PI / 2, 0, 0); continue; }
   let z = u.z - u.sp * a, y = 0.03 + u.up * a - 2.0 * a * a; const lip = bedHeight(u.x, z) + 0.03; if (z < -9) y = Math.max(y - 4.9 * Math.max(0, a - (u.z + 9) / u.sp) ** 2, lip); else y = Math.max(y, 0.03);
-  m.position.set(u.x + u.sx * a, y, z); m.rotation.set(u.spin.x * a, u.spin.y * a, u.spin.z * a); } }
+  m.position.set(u.x + u.sx * a, y, z); m.rotation.set(u.spin.x * a, u.spin.y * a, u.spin.z * a); m.visible = a < 2.6; } }
 // ---- mud splash when the ferry lands ----
 const splash = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), M('#4a3e30', { roughness: 0.4, flatShading: true }), 400); splash.frustumCulled = false; hw.add(splash);
 const SPL = []; { seed = 2401; for (let i = 0; i < 400; i++) { const a = R(0, 6.28); SPL.push({ a, v: R(3, 12), up: R(3, 11), sc: R(0.15, 0.6), ox: R(-20, 20), oz: R(-4, 4) }); } }

@@ -201,7 +201,7 @@ const CROWD = [];
     if (rnd() < 0.6) { const cb = chickenBox(); cb.position.set(x + R(-0.3, 0.3), 0.02, z + R(-0.3, 0.3)); hw.add(cb); }
     if (rnd() < 0.4) tent(x + R(1.5, 2.5), z + R(1, 2), R(0, 6), pick(['#3a8ad0', '#f0a030', '#e04a5a', '#4ab07a'])); } }
 function sitPose(P, t, ph) { P.legs[0].rotation.set(-1.35, 0, -0.12); P.legs[1].rotation.set(-1.35, 0, 0.12); P.knees[0].rotation.x = 0.35; P.knees[1].rotation.x = 0.35;
-  P.arms[0].rotation.set(0.35, 0, 0.12); P.arms[1].rotation.set(0.35, 0, -0.12); P.elbows[0].rotation.x = -0.2; P.elbows[1].rotation.x = -0.2; P.torso.rotation.x = -0.05 + 0.02 * Math.sin(t * 0.9 + ph); }
+  P.arms[0].rotation.set(0.35, 0, -0.06); P.arms[1].rotation.set(0.35, 0, 0.06); P.elbows[0].rotation.x = -0.2; P.elbows[1].rotation.x = -0.2; P.torso.rotation.x = 0; P.head.rotation.x = 0.03 * Math.sin(t * 0.9 + ph); }
 // bikes (Seoul public bike "따릉이": green frame) along the promenade
 function bike(x, z, ry) { const g = grp(x, 0, z, ry, hw); const fr = M('#3fae5a', { roughness: 0.5, metalness: 0.3 }), tire = M('#1a1a1a');
   for (const s of [-0.5, 0.5]) { const w = mesh(new THREE.TorusGeometry(0.33, 0.035, 6, 20), tire); w.position.set(s, 0.36, 0); g.add(w); }
