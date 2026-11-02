@@ -86,7 +86,10 @@ const CT = {}; { const sc = CITY.sc; const gnd = new THREE.Mesh(new THREE.PlaneG
   for (let k = 0; k < 5; k++) bx(3, 1.6, 2.2, '#b8bcc4', 6 + (k % 3) * 4.5, 161.8, 6 + Math.floor(k / 3) * 5, rt); rt.position.set(840, 0, -2800); sc.add(rt); CT.roof = rt;
   // the office tower with an open window on floor 30 (the latte)
   const of = new THREE.Group(); bx(50, 220, 40, '#a8b8c8', 0, 110, 0, of); const room = new THREE.Group(); bx(10, 0.2, 6, '#8a8a92', 0, 0, 0, room); bx(10, 3.2, 0.2, '#e8e8ec', 0, 1.6, -3, room); bx(4, 0.8, 1.6, '#c8b8a0', 0, 0.75, -1.5, room);
-  const mon = bx(1.2, 0.7, 0.06, '#1a1a22', 0, 1.6, -2.0, room); room.position.set(0, 102, 20.3); of.add(room); CT.officeRoom = room; of.position.set(-420, 0, -600); sc.add(of); CT.office = of;
+  const mon = bx(1.2, 0.7, 0.06, '#1a1a22', 0, 1.6, -2.0, room); room.position.set(0, 102, 20.3); of.add(room); { const ot = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#e8e6e0'; g.fillRect(0, 0, w, h); g.fillStyle = '#fffbe8'; for (let x = 20; x < w; x += 90) g.fillRect(x, 10, 60, 8); g.fillStyle = '#c8c2b8'; g.fillRect(0, 150, w, 106);
+    for (let x = 10; x < w; x += 120) { g.fillStyle = '#b89a78'; g.fillRect(x, 140, 90, 14); g.fillStyle = '#2a2a30'; g.fillRect(x + 25, 100, 40, 32); g.fillStyle = '#5a9ad8'; g.fillRect(x + 28, 103, 34, 26); g.fillStyle = '#3a8a4a'; g.beginPath(); g.arc(x + 100, 120, 18, 0, 6.3); g.fill(); } });
+  const op = mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshBasicMaterial({ map: ot, color: new THREE.Color(1.1, 1.1, 1.1) }), false, false); op.position.set(0, 2.2, -0.25); room.add(op); }
+  CT.officeRoom = room; of.position.set(-420, 0, -600); sc.add(of); CT.office = of;
   { const r0 = seed; seed = 5150; const p = makePerson(rnd, { top: '#f4f4f0', longSleeve: true }); seed = r0; room.add(p.outer); p.outer.position.set(0.4, 0.95 + 0.1, 0.6); poseIdle(p, 0, 0); CT.worker = p; }
   // pigeons: 30 birds (body + 2 flapping wings)
   CT.birds = Array.from({ length: 30 }, (_, k) => { const g = new THREE.Group(), gm = F_(k % 5 ? '#8a8e9a' : '#6a6e7a'); const b = mesh(new THREE.SphereGeometry(0.16, 8, 6), gm); b.scale.set(1, 0.9, 1.7); g.add(b); const hd = mesh(new THREE.SphereGeometry(0.09, 8, 6), F_('#5a6a7a')); hd.position.set(0, 0.08, -0.26); g.add(hd);

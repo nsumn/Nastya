@@ -28,8 +28,8 @@ function pose(t, k) { const P = hero; poseReset(P, t); P.outer.rotation.order = 
     else if (t >= COLD && t < JET) { P.face('worried', t); frost.visible = true; P.outer.position.x += 0.01 * Math.sin(t * 40); }
     else if (t >= JET && t < COFFEE) { const tumble = smooth(JET + 3.0, JET + 3.6, t) * (1 - smooth(JET + 5.6, JET + 6.6, t)); P.outer.rotation.z += 6.0 * tumble * (t - JET - 3); P.face(tumble > 0.1 ? 'dumb' : 'surprised', t); }
     else P.face('laugh', t); }
-  else if (k === 'office') { const pos = CT.office.position.clone().add(V3(0, 102.6, 21.6)); place(P, 0, 0, 0, 0); P.outer.position.copy(pos).add(V3(0, 0.95 + 0.05 * Math.sin(t * 2), 0)); P.outer.rotation.y = Math.PI; P.legs.forEach((l, i) => l.rotation.x = 0.2 * Math.sin(t * 2 + i));
-    const got = t > COFFEE + 3.4; if (got) { P.arms[1].rotation.set(-1.5, 0, -0.1); P.elbows[1].rotation.x = -1.2 - 0.3 * smooth(COFFEE + 4.8, COFFEE + 5.3, t); attach(latte, P); latte.visible = true; } else { P.arms[1].rotation.set(-1.3, 0, -0.1); P.elbows[1].rotation.x = -0.4; }
+  else if (k === 'office') { const pos = CT.office.position.clone().add(V3(0, 102.6, 22.6)); place(P, 0, 0, 0, 0); P.outer.position.copy(pos).add(V3(0, 0.95 + 0.05 * Math.sin(t * 2), 0)); P.outer.rotation.y = Math.PI; P.legs.forEach((l, i) => l.rotation.x = 0.2 * Math.sin(t * 2 + i));
+    const got = t > COFFEE + 3.4; if (got) { P.arms[1].rotation.set(-1.5, 0, -0.1); P.elbows[1].rotation.x = -1.2 - 0.3 * smooth(COFFEE + 4.8, COFFEE + 5.3, t); attach(latte, P); latte.visible = true; } else { P.arms[1].rotation.set(-1.3, 0, -0.1); P.elbows[1].rotation.x = -0.4; CT.worker.outer.updateMatrixWorld(true); latte.visible = true; latte.position.copy(CT.worker.elbows[1].localToWorld(V3(0, -0.3, 0.06))); }
     P.face(t < COFFEE + 3.4 ? 'happy' : t < COFFEE + 5 ? 'proud' : 'love', t); CT.worker.arms[1].rotation.set(got ? -0.3 : -1.5, 0, -0.1); CT.worker.elbows[1].rotation.x = -0.2; }
   else if (k === 'lost') { const pos = flyPath(COFFEE).add(V3(0, 40, 0)); place(P, 0, 0, 0, 0); P.outer.position.copy(pos).add(V3(0, 0.95 + 0.08 * Math.sin(t * 2), 0)); P.outer.rotation.y = 0.8 * Math.sin((t - LOST) * 0.9);
     P.arms[1].rotation.set(-1.2, 0, -0.2); P.elbows[1].rotation.x = -1.4; attach(phone, P); phone.visible = true; phone.lookAt(headOf(P)); phone.userData.scr.material.color.set(t < LOST + 2.2 ? '#3a7ad8' : '#050505'); P.face(t < LOST + 2.2 ? 'worried' : 'sad', t); }
@@ -43,20 +43,26 @@ const SETS = { bed: BED, city: CITY, office: CITY, lost: CITY, yard: YARD, roof:
 const UPD = { bed: updateBed, city: updateCity, office: updateCity, lost: updateCity, yard: updateYard, roof: updateCity };
 const hd = () => headOf(hero);
 const chase = (back, up, side, look = 0.0) => t => { const p = fpos(t), d = fdir(t), s = V3(d.z, 0, -d.x); return { pos: p.clone().addScaledVector(d, -back).add(V3(0, up, 0)).addScaledVector(s, side), look: p.clone().addScaledVector(d, look), fov: 50 }; };
+// first person (her ask): the camera sits just in front of your face, looking where you look; your outstretched arm/hand is in frame
+const povFly = (pitch = -0.35) => t => { const h = hd(), d = fdir(t), look = h.clone().addScaledVector(d, 10).add(V3(0, 10 * Math.tan(pitch), 0)); return { pos: h.clone().addScaledVector(d, 0.22).add(V3(0, 0.12, 0)), look, fov: 62 }; };
 const SHOTS = [   // [start, set, camera(t), opts]
   [0, 'bed', t => lerpF(LOOK(1.6, 0.7, 1.4, -0.6, 1.6, -1.4), LOOK(0.6, 1.3, 0.2, -0.6, 2.2, -1.3), esin(span(t, 0, 1.6))), { dof: hd }],   // you float up out of bed… into the fan
   [1.6, 'bed', t => fr(hd(), V3(0.6, -0.1, 1), lerp(0.9, 0.75, span(t, 1.6, OUT)), 0.6), { dof: hd, whip: 1 }],   // BONK: dizzy stars
   [OUT, 'city', t => chase(4.5, 1.2, 1.4, 6)(t), { mb: true, whip: 1 }],   // out over Manhattan
+  [OUT + 1.4, 'city', t => povFly(-0.45)(t), { mb: true }],   // POV: Manhattan below, your arm out front
   [OUT + 2.8, 'city', t => orbit(fpos(t), V3(1, 0.25, 0.2), -0.6, 0.5, 9, 7, 0.55, span(t, OUT + 2.8, PIGEON)), { dof: () => fpos(t0g) }],   // golden hour orbit
-  [PIGEON, 'city', t => chase(2.6, 0.5, 1.6, 1)(t), { dof: hd }],   // pigeons attack
+  [PIGEON, 'city', t => povFly(-0.1)(t), { mb: true }],   // POV: pigeons straight at your face
+  [PIGEON + 1.5, 'city', t => chase(2.6, 0.5, 1.6, 1)(t), { dof: hd }],   // pigeons attack
   [PIGEON + 3.0, 'city', t => orbit(hd(), V3(-1, 0.1, 0.4), -0.3, 0.3, 2.0, 1.6, 0.55, span(t, PIGEON + 3, BUGS)), { dof: hd, whip: -1 }],
   [BUGS, 'city', t => { const h = hd(), d = fdir(t); return { pos: h.clone().addScaledVector(d, 0.42).add(V3(0, -0.62, 0)), look: h.clone().add(V3(0, -0.05, 0)), fov: 42 }; }, { dof: hd }],   // face first: bugs in the teeth
   [COLD, 'city', t => { const h = hd(), d = fdir(t), a = lerp(-0.4, 0.4, span(t, COLD, JET)); const s2 = V3(d.z, 0, -d.x); return { pos: h.clone().addScaledVector(d, 0.6 * Math.cos(a)).addScaledVector(s2, 0.6 * Math.sin(a)).add(V3(0, -0.7, 0)), look: h, fov: 42 }; }, { dof: hd, whip: 1 }],   // frost on your brows
   [JET, 'city', t => { const p = fpos(t); return { pos: p.clone().add(V3(14, 3, 26)), look: p.clone().add(V3(-6, 1, 0)), fov: 52 }; }, { mb: true }],   // a jet roars past behind you
-  [COFFEE, 'office', t => { const r = CT.office.position.clone().add(V3(0.8, 103.9, 18.6)); return { pos: r, look: CT.office.position.clone().add(V3(0, 103.6, 22)), fov: 48 }; }, { dof: hd, whip: -1 }],   // from inside the office: a latte, please
+  [COFFEE, 'office', t => { const h = hd(); return { pos: h.clone().add(V3(0, 0.08, -0.18)), look: CT.office.position.clone().add(V3(0.4, 103.75, 20.9)), fov: 58 }; }, { whip: -1 }],   // POV: you at the window, your hand reaching for the latte
+  [COFFEE + 2.2, 'office', t => { const r = CT.office.position.clone().add(V3(0.8, 103.9, 18.6)); return { pos: r, look: CT.office.position.clone().add(V3(0, 103.6, 22)), fov: 48 }; }, { dof: hd }],   // reverse: from inside the office   // from inside the office: a latte, please
   [COFFEE + 3.6, 'office', t => fr(hd(), V3(0.5, 0.05, -1), lerp(1.4, 1.2, span(t, COFFEE + 3.6, LOST)), 0.6), { dof: hd }],
   [LOST, 'lost', t => orbit(hd(), V3(0.4, 0.15, 1), -0.4, 0.4, 2.4, 1.8, 0.58, span(t, LOST, POOL)), { dof: hd, whip: 1 }],   // the phone dies
-  [POOL, 'yard', t => lerpF(LOOK(7, 3, 8, -3, 5, -2), LOOK(5, 1.6, 6, 0, 0.6, 0), esin(span(t, POOL, POOL + 2.2))), { mb: true }],   // incoming… SPLASH
+  [POOL, 'yard', t => { const h = hd(); return { pos: h.clone().add(V3(0.15, -0.15, 0.1)), look: V3(0, 0, 0), fov: 64 }; }, { mb: true }],   // POV: the pool rushing up at you
+  [POOL + 1.3, 'yard', t => lerpF(LOOK(7, 3, 8, -1, 2, -1), LOOK(5, 1.6, 6, 0, 0.6, 0), esin(span(t, POOL + 1.3, POOL + 2.2))), { mb: true }],   // incoming… SPLASH
   [POOL + 3.0, 'yard', t => fr(hd(), V3(0.5, 0.1, 1), lerp(1.8, 1.5, span(t, POOL + 3, ROOF)), 0.6), { dof: hd }],
   [ROOF, 'roof', t => orbit(hd(), V3(0.7, 0.12, 1), -0.25, 0.3, 3.2, 2.4, 0.56, span(t, ROOF, ENDC)), { dof: hd, whip: -1 }]];   // sunset on the roof: the power fades
 let t0g = 0;
