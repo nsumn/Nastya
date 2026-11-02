@@ -1,0 +1,29 @@
+# Han River video — cue sheet (vanish 6.0, ferry lands 13.06, phone lands 23.3, slide 25.4-34.1, run 34.1-39.1, pick-up 39.1, return 42.0, surface 52.0, end card 58)
+music music0 0.0 0.55 63.5
+0.0 amb 0.55
+5.0 amb 0.45
+0.0 fountain 0.3
+0.25 ping 0.25
+5.95 vanish 1.0
+6.25 thunder 0.95
+7.2 gust 0.85
+7.5 paper 0.6
+8.15 whoosh 0.7
+10.9 creak 0.55
+12.95 thud 1.0
+14.0 whoosh 0.45
+14.3 gust 0.35
+19.0 fish 0.45
+23.2 clatter 0.9
+25.4 slide 0.75
+28.4 slide 0.6
+31.4 slide 0.55
+29.3 pumps 0.65
+34.1 squelch 0.65
+36.3 heart 0.8
+39.1 pickup 0.8
+41.95 retboom 1.0
+42.6 fizz 0.85
+47.0 fizz 0.7
+52.0 surface 0.9
+58.0 ping 0.35
