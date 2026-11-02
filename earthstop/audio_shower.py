@@ -64,6 +64,7 @@ if MUSIC:
     for m in (53, 65, 69, 72, 77): put(ENDC + 0.3, pluck(m, 3.0, 0.6), 0.6)
     put(ENDC + 0.3, bass(41, 3.0), 0.8)
 put(1.6, swish(), 1.0)
+for c in (DAY3, DAY7, DAY14, DOC, SHOWER): put(c - 0.18, swish(), 1.3)   # whip-pan cuts
 for c in (DAY1, DAY3, DAY7, DAY14, DAY30): put(c + 0.15, ding(84), 0.8)
 for k in range(14): put(MICRO + 3.0 + k * 0.28, squelch(320 + 60 * (k % 4)), 0.8, pan=(k % 3 - 1) * 0.3)
 for c in (MICRO + 4.4, DAY3 + 0.8, DAY7 + 1.2, DAY14 + 0.6): put(c, pfff(), 1.0)

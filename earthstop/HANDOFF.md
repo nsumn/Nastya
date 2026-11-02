@@ -8,6 +8,10 @@ Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything be
 - Every video: research facts (web search, cite sources), compute numbers in `tools/*.py`, send a time-coded **script table**, wait for "ок/да", build, check a contact sheet, then send the mp4 + TikTok caption + 6–8 hashtags + 2 short alternatives + known flaws + posting tip (7–9 pm ET).
 - Commit + push engine changes (not frames / mp4 / wav / assets) after each step.
 
+## Latest (Nov 2): back to the body formula — "What if you stopped showering for a month?" (`parts_shower/`)
+- The ocean-jump and elevator videos did NOT take off (her words). Back to body/habit topics with the hero big in frame from the first second.
+- Her reminder mid-build: "Кинематографично делать нужно, помнишь?" — EVERY video must use the vizavi_motion craft (CLAUDE.md §7): moving cameras (orbit/push/low angles + handheld drift), depth of field (here: `RTA.depthTexture` + `dofMat`, per-shot focus key), motion blur on fast shots, whip-pan cuts with a whoosh, mood lighting (sun shafts + dust, rim light that follows the hero `placeRim`, cold/warm practicals, backlit steam). The first shower render was flat and she caught it — don't ship a flat pass again.
+
 ## Latest (Nov 1): look upgrade — she wants @man_ia_c-level rendering
 - Her notes: "мало локаций — неинтересно", "сделай людей людьми, больше деталей" (people from shapes = people.js, baked into instanced variants via `bake()` in parts_sea), then "отрисовка так себе, можешь лучше как @man_ia_c". Their look (analysed 4 videos): night/dusk scenes with thousands of lit windows + glow, wide close POV (hand in frame), scale escalation with a HUD counter + a round 'to scale' minimap, particles/flares. Same HUD/caption layout as ours.
 - Videos this round: ocean jump (`parts_sea/`, delivered), elevator to space (`parts_lift/`, the first in the new look). Candy (`parts_candy/`) was dropped after "мало локаций".

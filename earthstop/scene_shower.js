@@ -151,6 +151,11 @@ function drawFace(g, w, h, e, o, blink) {
     if (eye === 'dot' || eye === 'big' || eye === 'wide') {
       const es = o.eyeS || 1, rx = U((eye === 'dot' ? 0.045 : eye === 'big' ? 0.06 : 0.055) * es), ry = U((eye === 'dot' ? 0.058 : 0.075) * es);
       if (eye === 'wide') { g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(cx, cy, U(0.085), U(0.1), 0, 0, 7); g.fill(); g.lineWidth = U(0.012); g.stroke(); g.fillStyle = ink; g.beginPath(); g.ellipse(cx, cy, U(0.035), U(0.04), 0, 0, 7); g.fill(); }
+      else if (o.kr && eye === 'dot') {   // Korean eye: almond, slightly up-tilted outer corner, a lid line over it (monolid), iris highlight
+        const sx = x < 0.5 ? -1 : 1, ax = U(0.06 * es), ay = U(0.036 * es), px = cx + look[0] * ax * 0.6, py = cy + look[1] * ay;
+        g.save(); g.translate(cx, cy); g.rotate(-sx * 0.12); g.beginPath(); g.ellipse(0, 0, ax, ay, 0, 0, 7); g.restore(); g.fill();
+        g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - ax * 0.3, py - ay * 0.35, ax * 0.24, 0, 7); g.fill();
+        g.strokeStyle = ink; g.lineWidth = U(0.016); g.beginPath(); g.moveTo(cx - U(0.072), cy - ay * 0.2 + sx * U(0.006)); g.quadraticCurveTo(cx, cy - ay * 1.55, cx + U(0.072), cy - ay * 0.2 - sx * U(0.006)); g.stroke(); }
       else { const px = cx + look[0] * rx, py = cy + look[1] * ry; g.beginPath(); g.ellipse(px, py, rx, ry, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - rx * 0.35, py - ry * 0.4, rx * 0.36, 0, 7); g.fill(); }
     } else if (eye === 'happy') { g.beginPath(); g.arc(cx, cy + U(0.03), U(0.055), Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
     else if (eye === 'closed') { g.beginPath(); g.arc(cx, cy - U(0.02), U(0.055), Math.PI * 0.15, Math.PI * 0.85); g.stroke(); }
@@ -207,7 +212,7 @@ let denimLeg = null, denimHip = null;
 // (shoulders flow into the arms) on the makeBlock joints, in two outfits (hoodie | oversized tee), with faces grouped by region (skin, top, top2, sleeve, bottom, cuff, shoe, sole).
 const HUMAN_MESH = await fetch('data/human_mesh.json').then(r => r.json()).catch(() => null);
 const HUMAN_GEO = {};
-function humanGeo(k) { if (HUMAN_GEO[k]) return HUMAN_GEO[k]; const src = k === 'head' ? HUMAN_MESH.head : k === 'head_chubby' ? HUMAN_MESH.head_chubby : HUMAN_MESH.hair[k], g = new THREE.BufferGeometry();
+function humanGeo(k) { if (HUMAN_GEO[k]) return HUMAN_GEO[k]; const src = k.startsWith('head') ? HUMAN_MESH[k] : HUMAN_MESH.hair[k], g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(src.pos, 3)); g.setIndex(src.idx); g.computeVertexNormals(); return (HUMAN_GEO[k] = g); }
 function humanBodyGeo(k) { if (HUMAN_GEO[k]) return HUMAN_GEO[k]; const b = HUMAN_MESH.body[k], g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
@@ -239,14 +244,14 @@ function makeBlock(o = {}) {
   if (shape === 'box') { faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), roughness: 0.85 });
     head = new THREE.Mesh(BOX, [skinM, skinM, skinM, skinM, faceM, skinM]); head.scale.set(HEAD_W, HEAD_H, HEAD_D); }
   else {   // 'round' = a ball, 'soft' = a cube with rounded corners; the face is a transparent decal on the front
-    o.decal = true; if (shape === 'human') o.noNose = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : shape === 'human' ? humanGeo(o.chubbyHead ? 'head_chubby' : 'head') : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
+    o.decal = true; if (shape === 'human') o.noNose = true; const geo = shape === 'round' ? new THREE.SphereGeometry(0.5, 40, 28) : shape === 'human' ? humanGeo(o.headMesh || (o.chubbyHead ? 'head_chubby' : 'head')) : new RoundedBoxGeometry(1, 1, 1, 5, 0.16);
     const sc = { round: [1.1, 1.08, 1.15], human: [1.12, 1.2, 1.2], soft: [1, 1, 1] }[shape]; head = new THREE.Mesh(geo, shape === 'human' ? M(o.skin, { roughness: 0.8, flatShading: true }) : skinM); if (shape === 'human') head.scale.setScalar(0.42); else head.scale.set(HEAD_W * sc[0], HEAD_H * sc[1], HEAD_D * sc[2]);
     faceM = new THREE.MeshStandardMaterial({ map: faceTex(o, 'neutral', false), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.85 });
     head.add(new THREE.Mesh(decalGeo(geo, 1), faceM)); }
   head.position.set(0, HEAD_Y, 0); head.castShadow = true; torso.add(head);
   if (shape === 'round' || shape === 'human') {   // round / human head: ears are balls, hair is a tilted cap of a slightly bigger sphere
     const hsx = head.scale, hm = M(o.hair, { roughness: 0.95 }), hs = o.hairStyle;
-    if (shape === 'human') { const hk = { short: 'quiff', quiff: 'quiff', bangs: 'fringe', fringe: 'fringe', mop: 'curly' }[hs];   // ears are part of the head mesh
+    if (shape === 'human') { const hk = { short: 'quiff', quiff: 'quiff', bangs: 'fringe', fringe: 'fringe', mop: 'curly', twoblock: 'twoblock' }[hs];   // ears are part of the head mesh
       if (hk) { const m = mesh(humanGeo(hk), M(o.hair, { roughness: 0.95, flatShading: true })); m.scale.setScalar(0.42); m.position.set(0, HEAD_Y, 0); torso.add(m); }
     } else
     for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.035, 10, 8), skinM); e.position.set(s * hsx.x * 0.5, HEAD_Y - 0.01, 0); torso.add(e); }
@@ -286,7 +291,8 @@ function makeBlock(o = {}) {
     const F = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, flatShading: true }), topC = new THREE.Color(o.top);
     const mats = { skin: F(o.skin), top: F(o.top), top2: F(topC.clone().multiplyScalar(0.82)), sleeve: F(o.sleeve ? o.top : o.skin), bottom: o.jeans ? denimHuman : F(o.bottom),
       cuff: F(o.jeans ? '#5a7aa8' : o.bottom), shoe: F(o.shoe), sole: F(o.sole || '#e6e2da') };
-    const outfit = o.hoodie ? 'hoodie' : o.fat ? 'chubby' : 'tee', geo = humanBodyGeo(outfit), bodyM = new THREE.SkinnedMesh(geo, HUMAN_MESH.body[outfit].groups.map(([r]) => mats[r]));   // no hoodie = oversized tee bodyM.castShadow = bodyM.receiveShadow = true; bodyM.frustumCulled = false;
+    const outfit = o.outfit || (o.hoodie ? 'hoodie' : o.fat ? 'chubby' : 'tee'), geo = humanBodyGeo(outfit), bodyM = new THREE.SkinnedMesh(geo, HUMAN_MESH.body[outfit].groups.map(([r]) => mats[r]));   // no hoodie = oversized tee bodyM.castShadow = bodyM.receiveShadow = true; bodyM.frustumCulled = false;
+    if (o.collar) { const c = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.019, 5, 16), F(topC.clone().multiplyScalar(0.7))); c.rotation.x = Math.PI / 2 + 0.06; c.scale.set(1, 0.92, 1); c.position.set(0, o.collar, 0.0); torso.add(c); }   // crew-neck rib, darker than the tee
     root.add(bodyM); outer.updateMatrixWorld(true);
     bodyM.bind(new THREE.Skeleton([root, torso, arms[0], elbows[0], arms[1], elbows[1], legs[0], knees[0], legs[1], knees[1]]), bodyM.matrixWorld); }
   const p = { outer, root, torso, head, arms, elbows, legs, knees, h: o.h, sx: [-1, 1], o };
@@ -513,6 +519,19 @@ function updateHome(t, mode) { if (hero.outer.parent !== room) room.add(hero.out
   else if (mode === 'day3') { P.outer.position.set(0.3, 0.95, -0.6); P.outer.rotation.y = 0.2; P.arms[1].rotation.set(-2.7, 0, -0.3); P.elbows[1].rotation.x = -1.8 - 0.2 * Math.sin(t * 9); P.face('squint', t); }   // scratching his greasy head
   else if (mode === 'day14') { seatAt(P, -2.35, 0.45, 1.5, Math.PI / 2); P.face('neutral', t); shoes.visible = true; shoes.position.set(-1.7, 0, 1.55); socks.forEach((s, i) => { s.visible = false; s.position.set(-1.55 + i * 0.25, 0.1, 1.9 + 0.1 * i); s.rotation.set(0, i, 0.1); }); }
   else if (mode === 'doc') { seatAt(P, -1.0, 0.42, -1.3, 0); P.face(t < DOC + 2.6 ? 'surprised' : 'reading', t); } }
+// ---- cinematic light (her note: "кинематографично"): sun shafts with dust through the window, a rim light that always sits behind you, mood per place ----
+const shaftTex = canvasTex(64, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,220,160,0.0)'); gr.addColorStop(0.15, 'rgba(255,215,150,0.55)'); gr.addColorStop(1, 'rgba(255,200,130,0.0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  const gx = g.createLinearGradient(0, 0, w, 0); gx.addColorStop(0, 'rgba(0,0,0,1)'); gx.addColorStop(0.5, 'rgba(0,0,0,0)'); gx.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = gx; g.fillRect(0, 0, w, h); });
+const SHAFTS = [0.8, 1.15, 1.5, 1.8].map((x, k) => { const s = new THREE.Mesh(new THREE.PlaneGeometry(0.35 + 0.15 * hash(k), 4.2), new THREE.MeshBasicMaterial({ map: shaftTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.55 }));
+  s.position.set(x - 0.2, 1.1, -1.4); s.rotation.set(0.75, 0.15, 0.1); room.add(s); return s; });
+const dust = (() => { const n = 300, p = new Float32Array(n * 3), g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3)); const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: new THREE.Color(2.2, 1.9, 1.4), size: 0.012, transparent: true, opacity: 0.8, depthWrite: false })); pts.frustumCulled = false; room.add(pts); return pts; })();
+function updateDust(t) { const a = dust.geometry.attributes.position.array; for (let i = 0; i < 300; i++) { a[i * 3] = 0.5 + 1.6 * hash(i) + 0.05 * Math.sin(t * 0.3 + i); a[i * 3 + 1] = 0.2 + 2.2 * ((hash(i * 3) + t * 0.02 * (0.5 + hash(i * 7))) % 1); a[i * 3 + 2] = -2.6 + 2.4 * hash(i * 5) + 0.05 * Math.cos(t * 0.4 + i); } dust.geometry.attributes.position.needsUpdate = true; }
+const RIMS = new Map(); function rimFor(scene, col, I) { let r = RIMS.get(scene); if (!r) { r = new THREE.PointLight(col, I, 4, 1.4); scene.add(r); RIMS.set(scene, r); } r.color.set(col); r.intensity = I; return r; }
+function placeRim(scene, cam, col, I) { const r = rimFor(scene, col, I); hero.outer.updateMatrixWorld(true); const hd = headOf(hero), away = hd.clone().sub(cam.position).setY(0).normalize(); r.position.copy(hd).addScaledVector(away, 0.9).add(V3(0, 0.45, 0)); }
+// moods: the bathroom cold with a warm sink light; the subway fluorescent green-white; the shower backlit warm through the steam
+const sinkL = new THREE.PointLight(0xffb070, 3.0, 3, 1.3); sinkL.position.set(1.7, 1.9, 0.2); bath.add(sinkL);
+const showerBack = new THREE.PointLight(0xffc890, 0, 5, 1.2); showerBack.position.set(-1.6, 2.2, -1.95); bath.add(showerBack);
+sub.children.filter(o => o.isHemisphereLight).forEach(h => { h.color.set('#e8fff0'); h.intensity = 1.05; });
 // =================== SHOTS (every framing dollies), HUD = DAYS WITHOUT A SHOWER, captions in the series style (fade + pop) ===================
 const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy - 0.15, fov);
 const H_ = P => headOf(P);
@@ -526,22 +545,29 @@ function fx(t, scene, m) { const day = t < DAY3 ? 0 : t < DAY7 ? 3 : t < DAY14 ?
   else if (!shower && day >= 3 && m !== 'mirror' && m !== 'doc') { stinkAt(scene, hd.clone().add(V3(0, -0.75, 0)), t, Math.min(10, 2 + day), 0.22, Math.min(1, 0.4 + day / 14)); fliesAt(scene, hd, t, day >= 14 ? 4 : 0); }
   else { stinkAt(scene, hd, t, 0); fliesAt(scene, hd, t, 0); } }
 const subU = t => { updateSub(t); fx(t, sub, 'sub'); };
-// [start, scene, camera, update(t), framing(t)]
+// a camera that orbits its subject (eased), with a little handheld drift
+const orbit = (h, dir, a0, a1, d0, d1, hy, u, fov = 40) => { const dd = dir.clone().applyAxisAngle(V3(0, 1, 0), lerp(a0, a1, ease(clamp(u, 0, 1)))); return fr(h, dd, lerp(d0, d1, ease(clamp(u, 0, 1))), hy, fov); };
+const hand = (F, t, k = 1) => { F.pos.add(V3(Math.sin(t * 1.7) * 0.012, Math.sin(t * 2.3 + 1) * 0.01, Math.sin(t * 1.3 + 2) * 0.008).multiplyScalar(k)); F.look.add(V3(Math.sin(t * 1.1) * 0.01, Math.sin(t * 1.9) * 0.008, 0).multiplyScalar(k)); return F; };
+const FOCUS = { head: () => H_(hero), shoes: () => shoes.position.clone().add(V3(0, 0.08, 0)), micro: () => V3(0, 0.3, -3.5), cal: () => cal.position.clone() };
+// [start, scene, camera, update(t), framing(t), { dof: focus key, amt, mb, whip }]
 const SHOTS = [
-  [0.0, bath, () => bathCam, bathU('title'), t => fr(H_(hero), V3(0.35, 0.05, 1), lerp(2.0, 1.6, sp(t, 0, DAY1)), 0.68)],   // you, the shower… nope
-  [DAY1, room, () => rmCam, home('day1'), t => fr(H_(hero), V3(0.2, 0.08, 1), lerp(2.4, 2.0, sp(t, DAY1, MICRO)), 0.62)],   // day 1: totally fine
-  [MICRO, micro, () => microCam, updateMicro, t => ({ pos: V3(lerp(-1, 1, sp(t, MICRO, DAY3)), lerp(4.5, 2.4, sp(t, MICRO, DAY3)), lerp(5, 3, sp(t, MICRO, DAY3))), look: V3(0, 0.2, -4), fov: 45 })],   // skin: sweat + bacteria = stink
-  [DAY3, room, () => rmCam, home('day3'), t => fr(H_(hero), V3(-0.3, 0.12, 1), lerp(1.5, 1.25, sp(t, DAY3, DAY7)), 0.62)],   // greasy hair, the first stink lines
-  [DAY7, sub, () => subCam, subU, t => fr(V3(0, 1.3, 0), V3(0.1, 0.22, 1), lerp(5.2, 4.4, sp(t, DAY7, DAY7 + 3.6)), 0.5)],   // the subway: everybody edges away
-  [DAY7 + 3.6, sub, () => subCam, subU, t => fr(H_(hero), V3(0.4, 0.05, 1), lerp(1.4, 1.25, sp(t, DAY7 + 3.6, DAY14)), 0.62)],   // you sniff… smells fine to you
-  [DAY14, room, () => rmCam, home('day14'), t => fr(V3(-1.7, 0.25, 1.6), V3(0.6, 0.6, 1), lerp(2.1, 1.8, sp(t, DAY14, DAY14 + 4)), 0.5)],   // the shoes
-  [DAY14 + 4.0, room, () => rmCam, home('day14'), t => fr(H_(hero), V3(1, 0.1, 0.35), lerp(1.6, 1.4, sp(t, DAY14 + 4, DAY30)), 0.6)],
-  [DAY30, bath, () => bathCam, bathU('mirror'), t => fr(H_(hero), V3(1, 0.02, 0.15), lerp(1.3, 1.1, sp(t, DAY30, DAY30 + 4)), 0.5)],   // the mirror: dark patches on your neck
-  [DAY30 + 4.0, bath, () => bathCam, bathU('mirror'), t => fr(H_(hero), V3(0.7, 0.0, 0.7), lerp(1.2, 1.05, sp(t, DAY30 + 4, DOC)), 0.5)],
-  [DOC, room, () => rmCam, home('doc'), t => fr(V3(-0.2, 1.3, -2.2), V3(0.15, 0.05, 1), lerp(3.2, 2.6, sp(t, DOC, DOC + 4)), 0.5)],   // the calendar: 5 years
-  [DOC + 4.0, room, () => rmCam, home('doc'), t => fr(H_(hero), V3(0.25, 0.06, 1), lerp(1.5, 1.3, sp(t, DOC + 4, SHOWER)), 0.6)],
-  [SHOWER, bath, () => bathCam, bathU('shower'), t => fr(H_(hero), V3(0.6, 0.1, 1), lerp(2.0, 1.6, sp(t, SHOWER, T_END)), 0.62)]];   // the shower, finally
-function shootShot(S, t, rt) { const [, scene, cam, upd, frm] = S; upd(t); const c = cam(); applyF(c, frm(t)); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, scene, c); }
+  [0.0, bath, () => bathCam, bathU('title'), t => hand(orbit(H_(hero), V3(0.6, 0.02, 1), -0.25, 0.1, 2.4, 1.5, 0.68, t / DAY1), t), { dof: 'head', amt: 22 }],   // slow push past the curtain to your face
+  [DAY1, room, () => rmCam, home('day1'), t => hand(orbit(H_(hero), V3(-0.5, -0.05, 1), -0.35, 0.35, 2.2, 1.9, 0.62, (t - DAY1) / 6), t), { dof: 'head', amt: 16 }],   // the sun shafts, a slow arc
+  [MICRO, micro, () => microCam, updateMicro, t => ({ pos: V3(lerp(-1.2, 1.2, sp(t, MICRO, DAY3)), lerp(1.6, 0.9, sp(t, MICRO, DAY3)), lerp(1.5, -0.6, sp(t, MICRO, DAY3))), look: V3(0, 0.35, -3.8), fov: 42 }), { dof: 'micro', amt: 30 }],   // macro: shallow focus on the pores
+  [DAY3, room, () => rmCam, home('day3'), t => hand(orbit(H_(hero), V3(-0.4, -0.25, 1), -0.2, 0.25, 1.4, 1.05, 0.6, (t - DAY3) / 6), t), { dof: 'head', amt: 20, whip: 1 }],   // low angle, rim light on the greasy hair
+  [DAY7, sub, () => subCam, subU, t => hand(fr(V3(0, 1.4, lerp(3.0, 0.5, sp(t, DAY7, DAY7 + 3.6))), V3(0.08, 0.12, 1), 3.2, 0.5, 46), t, 2), { mb: true, whip: -1 }],   // tracking down the car as they edge away
+  [DAY7 + 3.6, sub, () => subCam, subU, t => hand(orbit(H_(hero), V3(0.5, 0.0, 1), 0.2, -0.15, 1.3, 1.15, 0.62, (t - DAY7 - 3.6) / 3.4), t, 1.5), { dof: 'head', amt: 20 }],
+  [DAY14, room, () => rmCam, home('day14'), t => hand(fr(V3(-1.7, 0.12, 1.6), V3(0.7, 0.18, 1), lerp(1.3, 1.0, sp(t, DAY14, DAY14 + 4)), 0.55, 44), t), { dof: 'shoes', amt: 26, whip: 1 }],   // floor level: the shoes sharp, you blurred behind
+  [DAY14 + 4.0, room, () => rmCam, home('day14'), t => hand(orbit(H_(hero), V3(1, 0.1, 0.35), -0.15, 0.2, 1.6, 1.35, 0.6, (t - DAY14 - 4) / 4), t), { dof: 'head', amt: 18 }],
+  [DAY30, bath, () => bathCam, bathU('mirror'), t => hand(fr(H_(hero), V3(1, 0.02, 0.15), lerp(1.3, 0.95, sp(t, DAY30, DAY30 + 4)), 0.5), t, 0.6), { dof: 'head', amt: 24 }],   // the mirror: a slow push
+  [DAY30 + 4.0, bath, () => bathCam, bathU('mirror'), t => hand(orbit(H_(hero), V3(0.7, 0.0, 0.7), 0.15, -0.1, 1.15, 1.0, 0.5, (t - DAY30 - 4) / 4), t, 0.6), { dof: 'head', amt: 24 }],
+  [DOC, room, () => rmCam, home('doc'), t => fr(V3(0.3, 1.6, -2.85), V3(0.05, 0.02, 1), lerp(1.4, 0.9, sp(t, DOC, DOC + 4)), 0.5), { dof: 'cal', amt: 22, whip: -1 }],   // the calendar flipping years
+  [DOC + 4.0, room, () => rmCam, home('doc'), t => hand(orbit(H_(hero), V3(0.25, 0.06, 1), -0.2, 0.15, 1.6, 1.3, 0.6, (t - DOC - 4) / 4), t), { dof: 'head', amt: 18 }],
+  [SHOWER, bath, () => bathCam, bathU('shower'), t => hand(orbit(H_(hero), V3(0.6, -0.15, 1), -0.3, 0.3, 1.9, 1.5, 0.64, (t - SHOWER) / 10), t, 0.6), { dof: 'head', amt: 16, whip: 1 }]];   // backlit steam, slow arc
+function shootShot(S, t, rt) { const [, scene, cam, upd, frm] = S; upd(t); const c = cam(); applyF(c, frm(t));
+  if (scene === room) { lightRoom('eve'); camKey.intensity = 0.7; SHAFTS.forEach((sh, k) => { sh.material.opacity = 0.45 + 0.12 * Math.sin(t * 0.7 + k); }); updateDust(t); placeRim(room, c, 0xffc890, 5); }
+  if (scene === bath) { const shw = t >= SHOWER; bath.children.filter(o => o.isHemisphereLight).forEach(h => { h.color.set(shw ? '#fff0e0' : '#cfe0ff'); h.intensity = shw ? 0.6 : 0.75; }); showerBack.intensity = shw ? 3.2 : 0; placeRim(bath, c, shw ? 0xffd0a0 : 0xbfd8ff, shw ? 6 : 4); }
+  if (scene === sub) placeRim(sub, c, 0xd8ffe8, 4); smokeMat.uniforms.uScale.value = H / (2 * Math.tan(c.fov * Math.PI / 360)); shootTo(rt, scene, c); }
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'cap', 'end', 'endT', 'endS', 'tl', 'tlN', 'tlC', 'pop', 'flash'].map(k => [k, $(k)]));
 const CAPS = [
@@ -563,13 +589,38 @@ function updateDOM(t, i) { el.title.style.opacity = fadeWin(t, 0, DAY1, 0.35);
   const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? fadeWin(t, cp[0], cp[1], 0.18) : 0;
   el.cap.style.transform = cp ? `scale(${(1 + 0.06 * Math.sin(Math.PI * clamp((t - cp[0]) / 0.25, 0, 1)) - 0.06 * (1 - clamp((t - cp[0]) / 0.18, 0, 1))).toFixed(3)})` : '';
   el.end.style.opacity = smooth(ENDC, ENDC + 0.4, t) * 0.94; el.endT.style.opacity = smooth(ENDC + 0.2, ENDC + 0.6, t); el.endS.style.opacity = smooth(ENDC + 0.8, ENDC + 1.2, t); }
+// ---- optics: depth of field from the depth buffer, sub-frame motion blur, whip-pan cuts ----
+RTA.depthTexture = new THREE.DepthTexture(W, H); RTA.depthTexture.type = THREE.UnsignedIntType;
+const RTDOF = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType }), RTACC = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
+const fsq = mat => { const sc = new THREE.Scene(); sc.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat)); return sc; };
+const dofMat = new THREE.ShaderMaterial({ depthTest: false, depthWrite: false, uniforms: { tSrc: { value: null }, tDepth: { value: null }, uNear: { value: 0.03 }, uFar: { value: 60 }, uFocus: { value: 2 }, uAmt: { value: 20 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }',
+  fragmentShader: `uniform sampler2D tSrc, tDepth; uniform float uNear, uFar, uFocus, uAmt; varying vec2 vUv;
+    float dist(vec2 uv){ float d=texture2D(tDepth,uv).x; return uNear*uFar/(uFar-d*(uFar-uNear)); }
+    float coc(vec2 uv){ float z=dist(uv); return clamp(abs(z-uFocus)/max(z,0.001)*uAmt,0.0,18.0); }
+    void main(){ float c0=coc(vUv); vec3 acc=texture2D(tSrc,vUv).rgb; float w=1.0; vec2 px=vec2(1.0/1080.0,1.0/1920.0);
+      for(int i=0;i<28;i++){ float a=float(i)*2.39996; float r=sqrt((float(i)+0.5)/28.0); vec2 o=vec2(cos(a),sin(a))*r*c0*px; float cs=coc(vUv+o);
+        float k=smoothstep(r*c0-1.5,r*c0+0.5,cs+0.5*c0); acc+=texture2D(tSrc,vUv+o).rgb*k; w+=k; }
+      gl_FragColor=vec4(acc/w,1.0); }` });
+const accMat = new THREE.ShaderMaterial({ depthTest: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending, uniforms: { tSrc: { value: null }, uW: { value: 0.25 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }', fragmentShader: 'uniform sampler2D tSrc; uniform float uW; varying vec2 vUv; void main(){ gl_FragColor=vec4(texture2D(tSrc,vUv).rgb*uW,1.0); }' });
+const dofSc = fsq(dofMat), accSc = fsq(accMat), MB_K = 4, SHUTTER = 0.5 / 30;
+const whipAt = t => { let w = 0; for (const S of SHOTS) { const o = S[5] || {}; if (o.whip) { const k = Math.max(0, 1 - Math.abs(t - S[0]) / 0.16); w += o.whip * 0.12 * k * k; } } return w; };
 window.renderAt = (t) => {
   let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
   if (window.PASS === 'text') { updateDOM(t, i); return true; }
-  const S = SHOTS[i], P = i > 0 ? SHOTS[i - 1] : null, mix = P && P[1] !== S[1] ? smooth(S[0] - 0.001, S[0] + 0.3, t) : 1;
-  if (mix < 1) { shootShot(P, t, RTA); shootShot(S, t, RTB); } else shootShot(S, t, RTA);
-  compMat.uniforms.uWhip.value = 0; compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; compMat.uniforms.uT.value = t; compMat.uniforms.uLook.value = 1;
-  composite(mix < 1 ? mix : 0, 1.0, 1.0); updateDOM(t, i); return true; };
+  const S = SHOTS[i], o = S[5] || {}, P = i > 0 ? SHOTS[i - 1] : null, mix = P && P[1] !== S[1] && !o.whip ? smooth(S[0] - 0.001, S[0] + 0.3, t) : 1;
+  let src = RTA;
+  if (mix < 1) { shootShot(P, t, RTA); shootShot(S, t, RTB); }
+  else if (o.mb) { renderer.setRenderTarget(RTACC); renderer.setClearColor(0x000000, 1); renderer.clear();
+    for (let j = 0; j < MB_K; j++) { shootShot(S, Math.max(S[0], t + (j / (MB_K - 1) - 0.5) * SHUTTER * 2), RTA); accMat.uniforms.tSrc.value = RTA.texture; accMat.uniforms.uW.value = 1 / MB_K; renderer.setRenderTarget(RTACC); renderer.autoClear = false; renderer.render(accSc, compCam); renderer.autoClear = true; }
+    src = RTACC; }
+  else { shootShot(S, t, RTA);
+    if (o.dof) { const c = S[2](); dofMat.uniforms.tSrc.value = RTA.texture; dofMat.uniforms.tDepth.value = RTA.depthTexture; dofMat.uniforms.uNear.value = c.near; dofMat.uniforms.uFar.value = c.far; dofMat.uniforms.uFocus.value = c.position.distanceTo(FOCUS[o.dof]()); dofMat.uniforms.uAmt.value = o.amt || 20;
+      renderer.setRenderTarget(RTDOF); renderer.render(dofSc, compCam); src = RTDOF; } }
+  compMat.uniforms.tA.value = src.texture;
+  compMat.uniforms.uWhip.value = whipAt(t); compMat.uniforms.uPixOn.value = 0; compMat.uniforms.uRed.value = 0; compMat.uniforms.uT.value = t; compMat.uniforms.uLook.value = 1;
+  composite(mix < 1 ? mix : 0, 1.0, 1.0); compMat.uniforms.tA.value = RTA.texture; updateDOM(t, i); return true; };
 window.sceneReady = (async () => { await document.fonts.ready;
   for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(hero.o, n, b));
   for (const S of SHOTS) shootShot(S, S[0] + 0.5, RTA); window.renderAt(0); return true; })();
