@@ -361,13 +361,14 @@ function rep(t, x, y) { const c = t.clone(); c.wrapS = c.wrapT = THREE.RepeatWra
 const park = mesh(new THREE.PlaneGeometry(3000, 500), new THREE.MeshStandardMaterial({ map: rep(grassTex, 600, 100), roughness: 1, color: '#7d8a78' }), false, true); park.rotation.x = -Math.PI / 2; park.position.set(0, 0, 246); hw.add(park);
 const pave = mesh(new THREE.PlaneGeometry(3000, 6), new THREE.MeshStandardMaterial({ map: rep(paveTex, 600, 1), roughness: 0.9 }), false, true); pave.rotation.x = -Math.PI / 2; pave.position.set(0, 0.02, -6); hw.add(pave);
 // riverbed as one displaced surface: revetment slopes on both banks (stones), mud in between with ridges and channels
-const bedGeo = new THREE.PlaneGeometry(3000, 840, 300, 120); bedGeo.rotateX(-Math.PI / 2);
+const bedGeo = new THREE.PlaneGeometry(3000, 840, 300, 260); bedGeo.rotateX(-Math.PI / 2);
 function bedMud(z) { return clamp((-18 - z) / 12, 0, 1) * clamp((z - (RIV_N + 12)) / 12, 0, 1); }   // 0 on the stone slopes, 1 on the mud
 function bedHeight(x, z) { const s = clamp((-9 - z) / 9, 0, 1), nn = clamp((z - (RIV_N + 3)) / -9, 0, 1);
   let y = lerp(-0.2, BED_Y, smooth(0, 1, s)); y = lerp(y, -0.2, smooth(0, 1, nn));
   return y + bedMud(z) * (0.5 * Math.sin(x * 0.013 + z * 0.02) + 0.35 * Math.sin(x * 0.05 - z * 0.031) + 0.9 * Math.sin(z * 0.0075) - 0.6 + 0.12 * Math.sin(x * 0.3 + z * 0.4)); }
 { const P = bedGeo.attributes.position, col = [];
-  for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 412; P.setY(i, bedHeight(x, z)); P.setZ(i, z); const c = bedMud(z); col.push(c, c, c); }
+  const UV = bedGeo.attributes.uv, zmap = v => v < 0.3 ? lerp(8, -42, v / 0.3) : v < 0.85 ? lerp(-42, -788, (v - 0.3) / 0.55) : lerp(-788, -832, (v - 0.85) / 0.15);   // fine rows on the stone slopes
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = zmap((420 - P.getZ(i)) / 840); P.setY(i, bedHeight(x, z)); P.setZ(i, z); UV.setXY(i, (x + 1500) / 3000, (z + 832) / 840); const c = bedMud(z); col.push(c, c, c); }
   bedGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); bedGeo.computeVertexNormals(); }
 const bedMat = new THREE.MeshStandardMaterial({ map: rep(mudTex, 700, 196), roughness: 0.5, metalness: 0.05, envMapIntensity: 0.9, color: '#8a8278' });   // wet mud: shiny
 bedMat.onBeforeCompile = (sh) => { sh.uniforms.tStone = { value: rep(stoneTex, 300, 80) };
@@ -697,7 +698,7 @@ function worldAt(t) {
   // hero + phone
   if (t < T_RET) { hero.outer.visible = true; heroAt(Math.max(s, -1), t); heroFace(t, s); phoneAt(Math.max(s, -1), t); heroPhone.visible = true; }
   else if (t >= 52) { const P = hero; P.outer.visible = true; standPose(P); P.head.rotation.set(0, 0, 0); const k = smooth(52, 52.8, t);
-    P.outer.position.set(PATH[3].x, WATER_Y - 0.62 - 1.2 * (1 - k) + 0.06 * Math.sin(t * 2.2), PATH[3].z); P.outer.rotation.y = 0.5; P.arms[1].rotation.set(-0.6, 0, 0.05); P.elbows[1].rotation.x = -1.9; P.arms[0].rotation.set(-0.3, 0, 0); P.elbows[0].rotation.x = -0.6;
+    P.outer.position.set(PATH[3].x, WATER_Y - 0.3 - 1.4 * (1 - k) + 0.06 * Math.sin(t * 2.2), PATH[3].z); P.outer.rotation.y = 0.5; P.arms[1].rotation.set(-0.6, 0, 0.05); P.elbows[1].rotation.x = -1.9; P.arms[0].rotation.set(-0.3, 0, 0); P.elbows[0].rotation.x = -0.6;
     P.face(t < 53.2 ? 'surprised' : 'laugh', t); P.outer.updateMatrixWorld(true); const hp = V3(0, -0.3, 0.02); P.elbows[1].localToWorld(hp); heroPhone.position.copy(hp); heroPhone.rotation.set(0, 0.5 + Math.PI, 0.1); heroPhone.visible = true; }
   else { hero.outer.visible = false; heroPhone.visible = false; }
   return s;
@@ -734,7 +735,7 @@ function camAt(t, s) {
     const x = -3.4, z = -21.2, p = V3(x, bedHeight(x, z) + 0.55, z); LOOKC(p, hd.clone().add(V3(0, -0.4, 0)), lerp(36, 30, span(t, 24, 29))); dof(hCam, p.distanceTo(hd), 6); aimSun(hd.x, hd.z); return; }
   if (t < 35) {   // S9: follow behind him across the mud; the fountain sputters in the distance
     const dir = V3(PATH[3].x - PATH[2].x, 0, PATH[3].z - PATH[2].z).normalize(), side = V3(-dir.z, 0, dir.x), u = span(t, 29, 35);
-    const p = hd.clone().addScaledVector(dir, -lerp(2.6, 3.2, u)).addScaledVector(side, lerp(1.1, 1.6, u)).add(V3(0, 0.25, 0)); LOOKC(p, hd.clone().addScaledVector(dir, 3).add(V3(0, -0.3, 0)), 38); dof(hCam, 3, 4); aimSun(hd.x, hd.z); return; }
+    const p = hd.clone().addScaledVector(dir, -lerp(2.6, 3.2, u)).addScaledVector(side, lerp(1.1, 1.6, u)).add(V3(0, 0.25, 0)); LOOKC(p, hd.clone().addScaledVector(dir, 1.2).add(V3(0, -0.35, 0)), 38); dof(hCam, p.distanceTo(hd), 4); aimSun(hd.x, hd.z); return; }
   if (t < 40.2) {   // S10a: front, low, push in as he reaches the phone and picks it up
     const dir = V3(PATH[3].x - PATH[2].x, 0, PATH[3].z - PATH[2].z).normalize(), u = ease(span(t, 35, 40.2)), tgt = V3(PATH[3].x, groundY(PATH[3].x, PATH[3].z) + 1.0, PATH[3].z);
     const p = tgt.clone().addScaledVector(dir, lerp(4.6, 2.7, u)).add(V3(0.7, lerp(-0.1, 0.15, u), 0)); LOOKC(p, tgt.clone().add(V3(0, -0.05, 0)), 36); dof(hCam, p.distanceTo(tgt), 7); aimSun(tgt.x, tgt.z); return; }

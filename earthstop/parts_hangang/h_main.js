@@ -86,7 +86,7 @@ function worldAt(t) {
   // hero + phone
   if (t < T_RET) { hero.outer.visible = true; heroAt(Math.max(s, -1), t); heroFace(t, s); phoneAt(Math.max(s, -1), t); heroPhone.visible = true; }
   else if (t >= 52) { const P = hero; P.outer.visible = true; standPose(P); P.head.rotation.set(0, 0, 0); const k = smooth(52, 52.8, t);
-    P.outer.position.set(PATH[3].x, WATER_Y - 0.62 - 1.2 * (1 - k) + 0.06 * Math.sin(t * 2.2), PATH[3].z); P.outer.rotation.y = 0.5; P.arms[1].rotation.set(-0.6, 0, 0.05); P.elbows[1].rotation.x = -1.9; P.arms[0].rotation.set(-0.3, 0, 0); P.elbows[0].rotation.x = -0.6;
+    P.outer.position.set(PATH[3].x, WATER_Y - 0.3 - 1.4 * (1 - k) + 0.06 * Math.sin(t * 2.2), PATH[3].z); P.outer.rotation.y = 0.5; P.arms[1].rotation.set(-0.6, 0, 0.05); P.elbows[1].rotation.x = -1.9; P.arms[0].rotation.set(-0.3, 0, 0); P.elbows[0].rotation.x = -0.6;
     P.face(t < 53.2 ? 'surprised' : 'laugh', t); P.outer.updateMatrixWorld(true); const hp = V3(0, -0.3, 0.02); P.elbows[1].localToWorld(hp); heroPhone.position.copy(hp); heroPhone.rotation.set(0, 0.5 + Math.PI, 0.1); heroPhone.visible = true; }
   else { hero.outer.visible = false; heroPhone.visible = false; }
   return s;
@@ -123,7 +123,7 @@ function camAt(t, s) {
     const x = -3.4, z = -21.2, p = V3(x, bedHeight(x, z) + 0.55, z); LOOKC(p, hd.clone().add(V3(0, -0.4, 0)), lerp(36, 30, span(t, 24, 29))); dof(hCam, p.distanceTo(hd), 6); aimSun(hd.x, hd.z); return; }
   if (t < 35) {   // S9: follow behind him across the mud; the fountain sputters in the distance
     const dir = V3(PATH[3].x - PATH[2].x, 0, PATH[3].z - PATH[2].z).normalize(), side = V3(-dir.z, 0, dir.x), u = span(t, 29, 35);
-    const p = hd.clone().addScaledVector(dir, -lerp(2.6, 3.2, u)).addScaledVector(side, lerp(1.1, 1.6, u)).add(V3(0, 0.25, 0)); LOOKC(p, hd.clone().addScaledVector(dir, 3).add(V3(0, -0.3, 0)), 38); dof(hCam, 3, 4); aimSun(hd.x, hd.z); return; }
+    const p = hd.clone().addScaledVector(dir, -lerp(2.6, 3.2, u)).addScaledVector(side, lerp(1.1, 1.6, u)).add(V3(0, 0.25, 0)); LOOKC(p, hd.clone().addScaledVector(dir, 1.2).add(V3(0, -0.35, 0)), 38); dof(hCam, p.distanceTo(hd), 4); aimSun(hd.x, hd.z); return; }
   if (t < 40.2) {   // S10a: front, low, push in as he reaches the phone and picks it up
     const dir = V3(PATH[3].x - PATH[2].x, 0, PATH[3].z - PATH[2].z).normalize(), u = ease(span(t, 35, 40.2)), tgt = V3(PATH[3].x, groundY(PATH[3].x, PATH[3].z) + 1.0, PATH[3].z);
     const p = tgt.clone().addScaledVector(dir, lerp(4.6, 2.7, u)).add(V3(0.7, lerp(-0.1, 0.15, u), 0)); LOOKC(p, tgt.clone().add(V3(0, -0.05, 0)), 36); dof(hCam, p.distanceTo(tgt), 7); aimSun(tgt.x, tgt.z); return; }
