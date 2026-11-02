@@ -11,3 +11,4 @@ env/
 *.db
 *.sqlite3
 *.log
+earthstop/data/kr_head.json
