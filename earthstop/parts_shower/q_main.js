@@ -4,23 +4,22 @@ const H_ = P => headOf(P);
 const sp = (t, a, b) => ease(clamp((t - a) / (b - a), 0, 1));
 const home = m => t => { updateHome(t, m); fx(t, room, m); }, bathU = m => t => { updateBath(t, m); fx(t, bath, m); };
 // the smell / flies / grease / patches by day
-function fx(t, scene, m) { const day = t < HOOK ? 30 : t < DAY3 ? 0 : t < DAY7 ? 3 : t < DAY14 ? 7 : t < DAY30 ? 14 : 30, shower = t >= SHOWER;
+function fx(t, scene, m) { const day = t < HOOK ? 0 : t < DAY3 ? 0 : t < DAY7 ? 3 : t < DAY14 ? 7 : t < DAY30 ? 14 : 30, shower = t >= SHOWER;
   greasy(shower ? 0 : day >= 3 ? Math.min(1, 0.5 + day / 30) : 0); PATCHES.forEach(p => p.visible = day >= 30 && !shower);
   hero.outer.updateMatrixWorld(true); const hd = H_(hero);
   if (m === 'day14') { stinkAt(scene, shoes.position.clone().add(V3(0, 0.1, 0)), t, 6, 0.3, 1); fliesAt(scene, shoes.position.clone().add(V3(0, 0.25, 0)), t, 5, 0.18); }
-  else if (m === 'hook') { stinkAt(scene, hd.clone().add(V3(0, -0.55, 0)), t, 10, 0.3, 1); fliesAt(scene, hd.clone().add(V3(0.05, 0.05, 0.1)), t, 6, 0.22); }
+  else if (m === 'hook') { stinkAt(scene, hd, t, 0); fliesAt(scene, hd, t, 0); }
   else if (!shower && day >= 3 && m !== 'mirror' && m !== 'doc') { stinkAt(scene, hd.clone().add(V3(0, -0.75, 0)), t, Math.min(10, 2 + day), 0.22, Math.min(1, 0.4 + day / 14)); fliesAt(scene, hd, t, day >= 14 ? 4 : 0); }
   else { stinkAt(scene, hd, t, 0); fliesAt(scene, hd, t, 0); } }
 const subU = t => { updateSub(t); fx(t, sub, 'sub'); };
 // a camera that orbits its subject (eased), with a little handheld drift
 const orbit = (h, dir, a0, a1, d0, d1, hy, u, fov = 40) => { const dd = dir.clone().applyAxisAngle(V3(0, 1, 0), lerp(a0, a1, ease(clamp(u, 0, 1)))); return fr(h, dd, lerp(d0, d1, ease(clamp(u, 0, 1))), hy, fov); };
 const hand = (F, t, k = 1) => { F.pos.add(V3(Math.sin(t * 1.7) * 0.012, Math.sin(t * 2.3 + 1) * 0.01, Math.sin(t * 1.3 + 2) * 0.008).multiplyScalar(k)); F.look.add(V3(Math.sin(t * 1.1) * 0.01, Math.sin(t * 1.9) * 0.008, 0).multiplyScalar(k)); return F; };
-const FOCUS = { head: () => H_(hero), shoes: () => shoes.position.clone().add(V3(0, 0.08, 0)), micro: () => V3(0, 0.3, -3.5), cal: () => cal.position.clone() };
+const FOCUS = { bottle: () => bottle.position.clone(), head: () => H_(hero), shoes: () => shoes.position.clone().add(V3(0, 0.08, 0)), micro: () => V3(0, 0.3, -3.5), cal: () => cal.position.clone() };
 // [start, scene, camera, update(t), framing(t), { dof: focus key, amt, mb, whip }]
 const SHOTS = [
-  [0.0, bath, () => bathCam, bathU('hook'), t => hand(fr(H_(hero), V3(1, 0.05, 0.25), lerp(1.1, 0.62, ease(clamp(t / 1.4, 0, 1))), 0.66), t, 2), { dof: 'head', amt: 26 }],   // HOOK: day 30, flies, a fast push into the face
-  [1.4, sub, () => subCam, subU, t => hand(fr(V3(0, 1.3, 0), V3(0.05, 0.2, 1), lerp(3.6, 2.6, ease(clamp((t - 1.4) / 1.0, 0, 1))), 0.5, 48), t, 3), { mb: true, whip: 1 }],   // the whole car recoils
-  [2.4, bath, () => bathCam, bathU('hook'), t => fr(H_(hero), V3(1, 0.05, 0.25), lerp(0.62, 1.4, ease(clamp((t - 2.4) / 0.6, 0, 1))), 0.66), { mb: true, whip: -1 }],   // ◀◀ rewind
+  [0.0, bath, () => bathCam, bathU('hook'), t => hand(fr(HOOKP.clone().add(V3(0, -0.1, 0)), V3(0.25, 0.05, 1), lerp(0.75, 0.6, ease(clamp(t / 2.2, 0, 1))), 0.7, 38), t, 0.4), { dof: 'bottle', amt: 30 }],   // HOOK (her idea): macro on the shampoo bottle… squeeze… pfrrt
+  [2.2, bath, () => bathCam, bathU('hook'), t => hand(fr(H_(hero), V3(0.45, 0.02, 1), lerp(0.9, 0.8, ease(clamp((t - 2.2) / 0.8, 0, 1))), 0.6), t, 0.5), { dof: 'head', amt: 26, whip: 1 }],   // his face
   [T0, bath, () => bathCam, bathU('title'), t => hand(orbit(H_(hero), V3(0.6, 0.02, 1), -0.25, 0.1, 2.4, 1.5, 0.68, (t - T0) / (DAY1 - T0)), t), { dof: 'head', amt: 22, whip: -1 }],   // slow push past the curtain to your face
   [DAY1, room, () => rmCam, home('day1'), t => hand(orbit(H_(hero), V3(-0.5, -0.05, 1), -0.35, 0.35, 2.2, 1.9, 0.62, (t - DAY1) / 6), t), { dof: 'head', amt: 16 }],   // the sun shafts, a slow arc
   [MICRO, micro, () => microCam, updateMicro, t => ({ pos: V3(lerp(-1.2, 1.2, sp(t, MICRO, DAY3)), lerp(1.6, 0.9, sp(t, MICRO, DAY3)), lerp(1.5, -0.6, sp(t, MICRO, DAY3))), look: V3(0, 0.35, -3.8), fov: 42 }), { dof: 'micro', amt: 30 }],   // macro: shallow focus on the pores
@@ -49,8 +48,8 @@ const CAPS = [
   [DAY30 + 0.2, DAY30 + 4.0, 'Some people get dark, dirt-like patches.'], [DAY30 + 4.0, DOC - 0.1, 'Soap often won’t remove them. Rubbing alcohol does.'],
   [DOC + 0.3, DOC + 4.0, 'A doctor stopped showering for 5 years and wrote a book about it.'], [DOC + 4.0, SHOWER - 0.1, 'He still washes his hands. And he doesn’t recommend quitting cold turkey.'],
   [SHOWER + 0.2, ENDC - 0.1, 'Dermatologists: 2–3 showers a week is plenty for most people.']];
-const DAYS = [[0, '30'], [HOOK, '0'], [DAY1, '1'], [MICRO, '2'], [DAY3, '3'], [DAY7, '7'], [DAY14, '14'], [DAY30, '30'], [DOC, '5 YEARS'], [SHOWER, '0']];
-const POPS = [[0.15, 2.4, () => '<span style="color:#ff3b30;font-size:150px">DAY 30</span>', 'WITHOUT A SHOWER'], [2.4, HOOK, () => '<span style="font-size:120px">◀◀ DAY 0</span>', 'REWIND'], [DAY30 + 4.1, DOC - 0.2, () => 'TERRA FIRMA-FORME', 'DERMATOSIS · HARMLESS, RARE']];
+const DAYS = [[0, '0'], [DAY1, '1'], [MICRO, '2'], [DAY3, '3'], [DAY7, '7'], [DAY14, '14'], [DAY30, '30'], [DOC, '5 YEARS'], [SHOWER, '0']];
+const POPS = [[DAY30 + 4.1, DOC - 0.2, () => 'TERRA FIRMA-FORME', 'DERMATOSIS · HARMLESS, RARE']];
 function updateDOM(t, i) { el.title.style.opacity = fadeWin(t, 0.1, DAY1, 0.25);
   el.tl.style.opacity = (t < HOOK ? 0 : 1) * smooth(DAY1 - 0.3, DAY1, t) * (1 - smooth(ENDC - 0.3, ENDC, t)) * (SHOTS[i][2] === undefined ? 1 : 1) * (t >= MICRO && t < DAY3 ? 0 : 1);
   const d = [...DAYS].reverse().find(([a]) => t >= a)[1]; el.tlN.textContent = t >= DOC && t < SHOWER ? 'ONE DOCTOR’S EXPERIMENT' : t >= SHOWER ? 'DAYS WITHOUT A SHOWER · RESET' : 'DAYS WITHOUT A SHOWER'; el.tlC.textContent = d;

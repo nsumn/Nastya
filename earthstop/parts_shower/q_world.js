@@ -53,10 +53,48 @@ const BT = {}; { const tile = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '
   BT.drain = mesh(new THREE.CircleGeometry(0.45, 24), new THREE.MeshBasicMaterial({ color: '#6a4a2a', transparent: true, opacity: 0.6, depthWrite: false }), false, false); BT.drain.rotation.x = -Math.PI / 2; BT.drain.position.set(-1.3, 0.106, -1.3); bath.add(BT.drain);
   BT.foam = Array.from({ length: 18 }, (_, i) => { const b = mesh(new THREE.SphereGeometry(0.03 + 0.03 * hash(i), 8, 6), F_('#ffffff', { roughness: 0.3, flatShading: false })); bath.add(b); return b; }); }
 const steam = makeSmoke(bath, 120);
-function updateBath(t, mode) { if (hero.outer.parent !== bath) bath.add(hero.outer); const P = hero; poseReset(P, t); BT.water.visible = BT.drain.visible = false; BT.foam.forEach(b => b.visible = false); steam.begin();
-  const curOpen = mode === 'shower' ? 1 : mode === 'title' ? 1 - smooth(T0 + 1.6, T0 + 2.6, t) : 0; { const p = BT.curtain.geometry.attributes.position, a = p.array, c0 = BT.cur0; for (let i = 0; i < a.length; i += 3) { const u = (c0[i] + 0.65) / 1.3; a[i] = -0.65 + 1.3 * u * (1 - 0.8 * curOpen); a[i + 2] = 0.06 * Math.sin(u * 30) * (1 - 0.6 * curOpen); } p.needsUpdate = true; BT.curtain.geometry.computeVertexNormals(); }
+// the hook (her idea): a real-looking shampoo bottle (oval, glossy, flip-top cap, bubbly label) in a real hand (palm, 4 curled fingers, thumb), squeezed… pfrrt
+const BOT_H = 0.17, bottle = new THREE.Group(); let botGeo, bot0;
+{ const lab = canvasTex(512, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#36c8d8'); gr.addColorStop(1, '#1670b8'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = 0; i < 26; i++) { g.beginPath(); g.arc(80 + 230 * hash(i), 40 + 180 * hash(i * 3), 4 + 14 * hash(i * 5), 0, 6.3); g.fill(); }
+    g.fillStyle = '#fff'; g.fillRect(70, 96, 250, 4); g.font = '900 46px Inter'; g.textAlign = 'center'; g.fillText('SHAMPOO', 195, 150); g.font = '600 20px Inter'; g.fillText('FRESH OCEAN · 400 ml', 195, 182); });
+  botGeo = new THREE.CylinderGeometry(0.042, 0.042, BOT_H, 40, 24); botGeo.scale(1, 1, 0.55); bot0 = botGeo.attributes.position.array.slice();
+  const b = mesh(botGeo, [new THREE.MeshPhysicalMaterial({ map: lab, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 }), new THREE.MeshPhysicalMaterial({ color: '#1670b8', roughness: 0.2, clearcoat: 1 }), new THREE.MeshPhysicalMaterial({ color: '#1670b8', roughness: 0.2, clearcoat: 1 })]); bottle.add(b);
+  const capM = new THREE.MeshPhysicalMaterial({ color: '#f6f6f2', roughness: 0.25, clearcoat: 1 });
+  const cap = mesh(new THREE.CylinderGeometry(0.034, 0.038, 0.035, 32), capM); cap.scale.z = 0.62; cap.position.y = BOT_H / 2 + 0.017; bottle.add(cap);
+  const lid = mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.012, 32), capM); lid.scale.z = 0.62; lid.position.set(0, BOT_H / 2 + 0.04, 0); bottle.add(lid);
+  const hinge = mesh(new THREE.BoxGeometry(0.03, 0.006, 0.006), capM); hinge.position.set(0, BOT_H / 2 + 0.035, -0.019); bottle.add(hinge);
+  const spout = mesh(new THREE.CylinderGeometry(0.005, 0.007, 0.01, 12), capM); spout.position.set(0, BOT_H / 2 + 0.052, 0.006); bottle.add(spout); }
+bath.add(bottle); bottle.visible = false;
+function squeezeBottle(k) { const p = botGeo.attributes.position, a = p.array; for (let i = 0; i < a.length; i += 3) { const y = bot0[i + 1], pin = 1 - 0.42 * k * Math.exp(-Math.pow((y + 0.005) / 0.035, 2)); a[i] = bot0[i] * pin; a[i + 2] = bot0[i + 2] * (1 - 0.25 * k * Math.exp(-Math.pow((y + 0.005) / 0.035, 2))); } p.needsUpdate = true; botGeo.computeVertexNormals(); }
+const sadBubble = mesh(new THREE.SphereGeometry(0.009, 16, 12), new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.02, transmission: 0.6, thickness: 0.01, clearcoat: 1, transparent: true, opacity: 0.9 }), false, false); bath.add(sadBubble); sadBubble.visible = false;
+const skinM2 = new THREE.MeshStandardMaterial({ color: '#e9b98f', roughness: 0.6 });
+// a fist wrapped around the bottle: palm on the back (−z), four fingers curling round the front (+z), the thumb over the top; joints bend more on the squeeze
+const fist = new THREE.Group(); const FING = [];
+{ const palmM = mesh(new RoundedBoxGeometry(0.085, 0.09, 0.028, 4, 0.012), skinM2); palmM.position.set(0, 0, -0.04); palmM.visible = false; fist.add(palmM);
+  const fore = mesh(new THREE.CapsuleGeometry(0.032, 0.22, 6, 14), skinM2); fore.rotation.x = Math.PI / 2 - 0.25; fore.position.set(0.01, -0.04, -0.17); fist.add(fore);
+  for (let f = 0; f < 4; f++) { const root = new THREE.Group(); root.position.set(0.03, 0.033 - f * 0.022, -0.03); fist.add(root); const segs = []; let par = root;
+    for (const [L, r] of [[0.042, 0.0105], [0.03, 0.0098], [0.024, 0.009]]) { const j = new THREE.Group(); par.add(j); const sg = mesh(new THREE.CapsuleGeometry(r, L, 4, 10), skinM2); sg.rotation.z = Math.PI / 2; sg.position.x = L / 2 + r * 0.4; j.add(sg); const nx = new THREE.Group(); nx.position.x = L + r * 0.6; j.add(nx); segs.push(j); par = nx; }
+    root.rotation.y = -0.15; FING.push(segs); }
+  const th = new THREE.Group(); th.position.set(-0.035, 0.04, -0.03); fist.add(th); const t1 = mesh(new THREE.CapsuleGeometry(0.012, 0.035, 4, 10), skinM2); t1.rotation.z = Math.PI / 2; t1.position.x = 0.022; th.add(t1); const t2g = new THREE.Group(); t2g.position.x = 0.045; th.add(t2g); const t2 = mesh(new THREE.CapsuleGeometry(0.011, 0.026, 4, 10), skinM2); t2.rotation.z = Math.PI / 2; t2.position.x = 0.016; t2g.add(t2);
+  th.rotation.set(0, -1.25, 0.2); fist.userData.thumb = [th, t2g]; }
+function curl(k) { FING.forEach((segs, f) => segs.forEach((j, s2) => { j.rotation.y = -(0.95 + 0.35 * k) * (s2 === 0 ? 0.9 : 1.05); })); fist.userData.thumb[1].rotation.y = -0.6 - 0.4 * k; }
+bath.add(fist); fist.visible = false;
+// the other hand, cupped, waiting under the cap
+const palm = new THREE.Group(); { const pb = mesh(new RoundedBoxGeometry(0.09, 0.024, 0.085, 4, 0.01), skinM2); palm.add(pb);
+  for (let f = 0; f < 4; f++) { const fg = mesh(new THREE.CapsuleGeometry(0.0095, 0.055, 4, 10), skinM2); fg.rotation.set(0, 0, Math.PI / 2 - 0.2); fg.position.set(0.075, 0.006, -0.03 + f * 0.02); palm.add(fg); }
+  const tb = mesh(new THREE.CapsuleGeometry(0.011, 0.04, 4, 10), skinM2); tb.rotation.set(0.6, 0, Math.PI / 2); tb.position.set(0.02, 0.01, 0.055); palm.add(tb);
+  const fore = mesh(new THREE.CapsuleGeometry(0.032, 0.22, 6, 14), skinM2); fore.rotation.z = Math.PI / 2 - 0.1; fore.position.set(-0.17, -0.01, 0); palm.add(fore); } bath.add(palm); palm.visible = false;
+const HOOKP = V3(-1.0, 1.32, -0.95);   // where the squeeze happens (in the stall, near the camera)
+function updateBath(t, mode) { if (hero.outer.parent !== bath) bath.add(hero.outer); const P = hero; poseReset(P, t); BT.water.visible = BT.drain.visible = false; bottle.visible = sadBubble.visible = fist.visible = palm.visible = false; BT.foam.forEach(b => b.visible = false); steam.begin();
+  const curOpen = mode === 'shower' || mode === 'hook' ? 1 : mode === 'title' ? 1 - smooth(T0 + 1.6, T0 + 2.6, t) : 0; { const p = BT.curtain.geometry.attributes.position, a = p.array, c0 = BT.cur0; for (let i = 0; i < a.length; i += 3) { const u = (c0[i] + 0.65) / 1.3; a[i] = -0.65 + 1.3 * u * (1 - 0.8 * curOpen); a[i + 2] = 0.06 * Math.sin(u * 30) * (1 - 0.6 * curOpen); } p.needsUpdate = true; BT.curtain.geometry.computeVertexNormals(); }
   if (mode === 'title') { P.outer.position.set(0.1, 0.95, 0.2); P.outer.rotation.y = -0.6 + 0.3 * smooth(T0 + 1.6, T0 + 2.6, t); P.face(t < T0 + 1.6 ? 'squint' : t < T0 + 2.8 ? 'smirk' : 'happy', t); if (t > T0 + 1.4 && t < T0 + 2.8) { P.arms[1].rotation.set(-1.4, 0, -0.6); P.elbows[1].rotation.x = -0.3; } }
-  else if (mode === 'hook') { P.outer.position.set(0.55, 0.95, 0.2); P.outer.rotation.y = Math.PI / 2 - 0.3; P.face('anxious', t); }
+  else if (mode === 'hook') {   // in the shower, water running: squeeze… nothing
+    P.outer.position.set(-1.3, 1.05, -1.3); P.outer.rotation.y = 0.3; P.face(t < 2.2 ? 'neutral' : 'sleepy', t); P.outer.position.x -= 0.25;
+    bottle.visible = fist.visible = palm.visible = true; bottle.position.copy(HOOKP); bottle.rotation.set(0, Math.PI - 0.35, Math.PI + 0.05);
+    const sq = smooth(0.5, 1.5, t) * (1 - smooth(1.9, 2.2, t)); squeezeBottle(sq); curl(sq); fist.position.copy(HOOKP).add(V3(0, 0.005, 0)); fist.rotation.set(0, 0.1, 0); palm.position.copy(HOOKP).add(V3(-0.02, -0.19, 0.0)); palm.rotation.set(0, 0.2, 0.08);
+    const bt = t - 1.55; sadBubble.visible = bt > 0 && bt < 0.9; bottle.updateMatrixWorld(true); const tip = bottle.localToWorld(V3(0, BOT_H / 2 + 0.058, 0.006)); sadBubble.position.copy(tip).add(V3(0, -0.006 - 0.03 * bt - 0.12 * bt * bt, 0)); sadBubble.scale.setScalar(bt < 0.75 ? Math.min(1, bt * 6) : Math.max(0.01, 1 - (bt - 0.75) * 8));
+    BT.water.visible = true; for (let k = 0; k < 160; k++) { const u = ((t * 2.2 + hash(k)) % 1), a = hash(k * 3) * 6.28, r = 0.05 + 0.25 * hash(k * 7) + 0.15 * u; _o.position.set(-1.3 + Math.cos(a) * r, 1.95 - 1.9 * u, -1.65 + Math.sin(a) * r * 0.8 + 0.35 * u); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); BT.water.setMatrixAt(k, _o.matrix); } BT.water.instanceMatrix.needsUpdate = true; }
   else if (mode === 'mirror') { P.outer.position.set(0.55, 0.95, 0.2); P.outer.rotation.y = Math.PI / 2; P.face(t < DAY30 + 3 ? 'worried' : 'surprised', t); P.arms[0].rotation.set(-1.9, 0, -0.5); P.elbows[0].rotation.x = -1.5; }
   else { P.outer.position.set(-1.3, 1.05, -1.3); P.outer.rotation.y = 0.3; P.face('love', t); P.arms.forEach((a, i) => a.rotation.set(-2.6, 0, i ? -0.4 : 0.4)); P.elbows.forEach(e => e.rotation.x = -1.6);
     BT.water.visible = true; for (let k = 0; k < 160; k++) { const u = ((t * 2.2 + hash(k)) % 1), a = hash(k * 3) * 6.28, r = 0.05 + 0.25 * hash(k * 7) + 0.15 * u; _o.position.set(-1.3 + Math.cos(a) * r, 1.95 - 1.9 * u, -1.65 + Math.sin(a) * r * 0.8 + 0.35 * u); _o.rotation.set(0, 0, 0); _o.scale.setScalar(1); _o.updateMatrix(); BT.water.setMatrixAt(k, _o.matrix); } BT.water.instanceMatrix.needsUpdate = true;

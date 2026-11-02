@@ -49,7 +49,6 @@ def flip(): t = tt(0.12); return bp(rng.standard_normal(len(t)), 1500, 6000) * n
 def water(d): t = tt(d); n = rng.standard_normal(len(t)); return (bp(n, 600, 7000) * 0.35 + lp(n, 600) * 0.15) * np.minimum(1, t / 0.4) * np.minimum(1, (d - t) / 0.6) * 0.35
 def ding(m): t = tt(0.9); return (np.sin(2 * np.pi * hz(m) * t) + 0.35 * np.sin(2 * np.pi * hz(m) * 2.76 * t)) * np.exp(-t * 4) * 0.2
 if MUSIC:
-    put(0.0, bass(38, 2.4), 1.2); put(0.0, kick(), 1.4); put(0.0, snare(), 1.0); put(1.4, kick(), 1.2)   # hook stinger (the song starts after the rewind)
     BEAT = 60 / 112; BAR = 4 * BEAT
     MAJ = [(53, [65, 69, 72, 77]), (50, [62, 65, 69, 74]), (46, [62, 65, 70, 74]), (48, [64, 67, 70, 72])]   # F Dm Bb C
     MIN = [(50, [62, 65, 69, 74]), (46, [62, 65, 70, 74]), (45, [61, 64, 69, 73]), (50, [62, 65, 69, 74])]   # Dm Bb A Dm
@@ -66,9 +65,11 @@ if MUSIC:
     for m in (53, 65, 69, 72, 77): put(ENDC + 0.3, pluck(m, 3.0, 0.6), 0.6)
     put(ENDC + 0.3, bass(41, 3.0), 0.8)
 put(HOOK + 1.6, swish(), 1.0)
-# the cold open: a stinger hit, flies, the subway gasp (air), a tape-rewind sweep into day 0
-def rewind(): t = tt(0.6); f = 2400 * (1 - t / 0.6) ** 2 + 200; return (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.15 + bp(rng.standard_normal(len(t)), 800, 5000) * 0.12) * np.sin(np.pi * t / 0.6)
-put(0.0, pfff(), 1.2); put(0.0, flies(2.4), 2.0); put(1.4, rumble(1.0), 1.2); put(1.45, pfff(), 1.0); put(2.4, rewind(), 1.2)
+# the hook (her idea): shower running, the bottle squeaks as it's squeezed… pfrrt (a short raspy air burst, no voice) + one tiny bubble "plip"; a deadpan beat
+def squeak(): t = tt(0.5); f = 900 + 500 * np.sin(np.pi * t / 0.5); return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / 0.5) ** 2 * 0.06
+def pfrrt(): t = tt(0.45); n = rng.standard_normal(len(t)); env = (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 38 * t))) * np.sin(np.pi * t / 0.45); return bp(n, 150, 1400) * env * 0.5
+def plip(): t = tt(0.12); f = 1200 * (1 + 2 * t / 0.12); return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 30) * 0.2
+put(0.0, water(HOOK + 0.1), 0.8); put(0.7, squeak(), 1.0); put(1.5, pfrrt(), 1.2); put(2.05, plip(), 1.0)
 for c in (DAY3, DAY7, DAY14, DOC, SHOWER): put(c - 0.18, swish(), 1.3)   # whip-pan cuts
 for c in (DAY1, DAY3, DAY7, DAY14, DAY30): put(c + 0.15, ding(84), 0.8)
 for k in range(14): put(MICRO + 3.0 + k * 0.28, squelch(320 + 60 * (k % 4)), 0.8, pan=(k % 3 - 1) * 0.3)
