@@ -1,14 +1,15 @@
-"""Lumean TTS client for the German voiceover (template: ElevenLabs, voice Victor Voss, de).
+"""Lumean TTS client for the German voiceover (template: ElevenLabs, voice Lennard, fast, de).
 
 The API key is read from the LUMEAN_API_KEY environment variable — never write it into a file in this repo.
 
   python lumean.py preview <script.txt>             # free: shows how the text is split into chunks
   python lumean.py order   <script.txt> <out_dir>   # paid: voices the text, waits, downloads mp3 + alignment
+  python lumean.py resume  <out_dir>                # free: re-poll/download an order already placed (order_id file)
 """
-import json, os, sys, time, urllib.request
+import json, os, sys, time, urllib.request, urllib.error
 
 BASE = "https://api.lumean.app/api/public"
-TEMPLATE_ID = os.environ.get("LUMEAN_TEMPLATE", "01a19cc2-21f4-71d2-8350-d972ccc61e0f")   # "DE Wie es gebaut wird – Victor Voss"
+TEMPLATE_ID = os.environ.get("LUMEAN_TEMPLATE", "01a19cd5-d1f0-72c5-b74f-09412a0f7369")   # "DE Wie es gebaut wird – Lennard schnell" (speed 1.15)
 
 def key():
     k = os.environ.get("LUMEAN_API_KEY", "").strip()
@@ -18,7 +19,12 @@ def key():
 def call(method, path, body=None):
     req = urllib.request.Request(BASE + path, method=method, data=None if body is None else json.dumps(body).encode(),
                                  headers={"X-API-KEY": key(), "Content-Type": "application/json", "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=120) as r: return json.loads(r.read().decode())
+    for i in range(6):                       # the proxy sometimes resets the connection: retry
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r: return json.loads(r.read().decode())
+        except (urllib.error.URLError, ConnectionError) as e:
+            if i == 5: raise
+            print("retry", e); time.sleep(2 ** i)
 
 def read_script(p):
     t = open(p, encoding="utf-8").read().strip()
@@ -33,18 +39,20 @@ def download(path, dst):
     url = call("POST", "/storage/url", {"path": path})["data"]["url"]
     urllib.request.urlretrieve(url, dst)
 
-def order(p, out):
+def order(p, out, oid=None):
     os.makedirs(out, exist_ok=True)
-    name = os.path.basename(os.path.dirname(os.path.abspath(p)))
-    o = call("POST", "/orders", {"template_id": TEMPLATE_ID, "input_text": read_script(p), "name": name})["data"]
-    oid = o["id"]; open(f"{out}/order_id", "w").write(oid); print("order", oid)
+    if oid is None:
+        name = os.path.basename(os.path.dirname(os.path.abspath(p)))
+        o = call("POST", "/orders", {"template_id": TEMPLATE_ID, "input_text": read_script(p), "name": name})["data"]
+        oid = o["id"]; open(f"{out}/order_id", "w").write(oid)
+    print("order", oid)
     while True:
         d = call("GET", f"/orders/{oid}")["data"]; st = d["status"]; print("status", st)
         if st in ("completed", "partially_completed"): break
         if st in ("failed", "cancelled", "canceled"): sys.exit(json.dumps(d, ensure_ascii=False)[:2000])
         time.sleep(10)
     res = d["result"]
-    for _ in range(12):        # subtitles/alignment can show up a few seconds after 'completed'
+    for _ in range(24):        # subtitles/alignment can show up a few seconds after 'completed'
         if res.get("service_files"): break
         time.sleep(5); res = call("GET", f"/orders/{oid}")["data"]["result"]
     for path in res.get("files", []) + res.get("service_files", []):
@@ -54,4 +62,5 @@ def order(p, out):
 if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "preview": preview(sys.argv[2])
     elif len(sys.argv) >= 4 and sys.argv[1] == "order": order(sys.argv[2], sys.argv[3])
+    elif len(sys.argv) >= 3 and sys.argv[1] == "resume": order(None, sys.argv[2], open(f"{sys.argv[2]}/order_id").read().strip())
     else: print(__doc__)

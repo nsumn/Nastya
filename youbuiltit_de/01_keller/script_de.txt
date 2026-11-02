@@ -1,15 +1,10 @@
-Ein Loch im Garten. In ein paar Wochen wird daraus ein Keller. Und der muss trocken bleiben, solange das Haus steht.
-{{pause=0.5}}
-Zuerst kommt der Bagger. Die Grube wird breiter als das Haus, damit man später von außen an die Wände kommt.
-Unten kommt eine dünne Schicht Magerbeton hinein, die Sauberkeitsschicht. Sie ist nur dafür da, dass der Stahl nicht im Dreck liegt.
-{{pause=0.5}}
-Darauf ein Gitter aus Bewehrungsstahl, und dann die Bodenplatte. Rund fünfundzwanzig Zentimeter Beton.
-Aber im Boden steht Wasser. Und Wasser drückt. Gegen die Wände, und von unten gegen die Platte.
-{{pause=0.5}}
-Darum bauen viele in Deutschland eine weiße Wanne. Der Beton ist so dicht, dass Wasser nicht durchkommt. Ohne Folie, ohne Anstrich.
-Nur die Fugen sind gefährlich. Dort kommt ein Fugenblech aus Stahl hinein, damit das Wasser keinen Weg findet.
-{{pause=0.5}}
-Außen kommen Dämmplatten an die Wand, damit der Keller nicht kalt wird.
-Und vor das Fenster ein Lichtschacht, sonst wäre es unten dunkel.
-{{pause=0.5}}
-Dann wird die Grube wieder zugeschüttet. Und aus dem Loch im Garten wird der Raum für die Waschmaschine, die Vorräte und das Fahrrad.
+Wenn du ein Loch in deinen Garten gräbst und ein Dach drüber baust, hast du einen Keller. Aber nach dem ersten Regen steht das Wasser bis zu den Knien, und die Wände aus Erde rutschen nach.
+Also gießt du eine Bodenplatte aus Beton mit einem Gitter aus Stahl drin und ziehst Betonwände hoch.
+Aber das Grundwasser drückt von allen Seiten, und normaler Beton hat winzige Poren. Die Wände werden feucht, und an der Decke wächst Schimmel.
+Also mischst du den Beton so dicht, dass kein Wasser mehr durchkommt. Das ist eine weiße Wanne.
+Aber da, wo die Wand auf der Platte steht, bleibt eine Fuge. Und genau da drückt das Wasser rein.
+Also steckst du ein Stahlblech in die Fuge, bevor die Wand gegossen wird. Um das Blech kommt das Wasser nicht herum.
+Jetzt ist es trocken, aber eiskalt. Also klebst du außen Dämmplatten an die Wände. Und weil es unten stockdunkel ist, baust du vor das Fenster einen Lichtschacht.
+Dann kommt ein Sommergewitter. Die Kanalisation läuft über, und das Abwasser drückt zurück, durch den Abfluss im Boden, direkt in deinen Keller.
+Also baust du eine Klappe ins Rohr. Wasser darf raus, aber nicht mehr rein. Das ist eine Rückstauklappe.
+Schütte die Grube zu, stell eine Waschmaschine und ein Regal mit Vorräten rein. Glückwunsch! Du hast einen Keller gebaut.
