@@ -79,20 +79,20 @@ def figure(w):
         "pelvis": (0, 0, z(0.82)), "waist": (0, 0.005, z(1.0)), "chest": (0, 0, z(1.16)), "neck": (0, 0, z(1.3)),
         "hipL": (-0.075, 0, z(0.8)), "kneeL": (-0.08, -0.01, z(0.43)), "ankL": (-0.075, 0.0, z(0.06)),
         "hipR": (0.075, 0, z(0.8)), "kneeR": (0.08, -0.01, z(0.43)), "ankR": (0.075, 0.0, z(0.06)),
-        "shL": (-sw, 0, z(1.22)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
-        "shR": (sw, 0, z(1.22)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
+        "shL": (-sw + 0.01, 0, z(1.18)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
+        "shR": (sw - 0.01, 0, z(1.18)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
     }
     E = [("pelvis", "waist"), ("waist", "chest"), ("chest", "neck"), ("pelvis", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"),
          ("pelvis", "hipR"), ("hipR", "kneeR"), ("kneeR", "ankR"), ("chest", "shL"), ("shL", "elL"), ("elL", "haL"),
          ("chest", "shR"), ("shR", "elR"), ("elR", "haR")]
     r = {"pelvis": ((0.112 if w else 0.105), 0.08), "waist": ((0.072 if w else 0.11), 0.068), "chest": ((0.1 if w else 0.135), (0.075 if w else 0.088)),
          "neck": 0.045 * k, "hipL": 0.062 * k, "kneeL": 0.046 * k, "ankL": 0.035 * k, "hipR": 0.062 * k, "kneeR": 0.046 * k, "ankR": 0.035 * k,
-         "shL": 0.046 * k, "elL": 0.034 * k, "haL": 0.033 * k, "shR": 0.046 * k, "elR": 0.034 * k, "haR": 0.033 * k}
+         "shL": 0.06 * k, "elL": 0.034 * k, "haL": 0.033 * k, "shR": 0.06 * k, "elR": 0.034 * k, "haR": 0.033 * k}
     N = list(P)
     m = PINK if w else BLUE
     T = 1.16
     r = {n: ((v[0] * T, v[1] * T) if isinstance(v, tuple) else v * T) for n, v in r.items()}
-    skin("body", [P[n] for n in N], [(N.index(a), N.index(b)) for a, b in E], [r[n] for n in N], m)
+    skin("body", [P[n] for n in N], [(N.index(a), N.index(b)) for a, b in E], [r[n] for n in N], m, sub=3)
     # mitten hands with a small thumb, rounded feet
     for s in (-1, 1):
         hx = s * (sw + 0.05)
@@ -159,9 +159,11 @@ def figure(w):
             zz = -L * s ** 0.85
             env = 1.13 * R * max(0.0, 1 - (zz / (1.13 * R)) ** 2) ** 0.5   # around the skull: stay just outside the head
             def smax(p_, q_, k_=0.12 * R): return (p_ + q_ + ((p_ - q_) ** 2 + k_ * k_) ** 0.5) / 2
-            rx = smax(R * (1.0 + 0.10 * s) * rho, env)                  # width: head-wide, slightly fuller at the ends
+            tt = min(1.0, -zz / L)                                      # 0 at the head centre .. 1 at the ends
+            rx = R * (1.13 - 0.06 * tt) * rho                           # width: one smooth line from the head down
+
             x = h.x * rx
-            yb = smax(R * 0.80 * rho, env)                              # depth at the back
+            yb = R * (1.13 - 0.36 * tt ** 1.4) * rho                    # back profile: one convex curve from the crown to the ends
             if h.y >= 0:
                 y = h.y * yb
             else:   # front half: same depth at the sides (no crease), then curves back behind the neck in the middle
@@ -194,6 +196,9 @@ def figure(w):
         for v, c in zip(head.data.vertices, head.data.color_attributes["hairmask"].data):
             q = Mw @ v.co - H; dist = q.length
             hm_ = max(c.color[0], sstep(1.02 * R, 1.07 * R, dist), sstep(-0.82 * R, -0.95 * R, q.z) * sstep(-0.25 * R, -0.05 * R, q.y))
+            # side hairline: one line from the temple down the cheek into the front edge of the hanging hair
+            yl = -0.10 * R - 0.65 * R * sstep(-1.1 * R, 0.5 * R, q.z)
+            hm_ = max(hm_, sstep(yl - 0.03 * R, yl + 0.03 * R, q.y) * sstep(0.45 * R, 0.6 * R, abs(q.x)) * (1 - sstep(0.45 * R, 0.6 * R, q.z)))
             c.color = (hm_, hm_, hm_, 1)
         head.data.materials.clear(); head.data.materials.append(hm); smooth(head)
     else:
@@ -247,9 +252,11 @@ def shoot(pos, tgt, path):
     sc.render.filepath = path; bpy.ops.render.render(write_still=True); print("DONE", path)
 
 
-shoot((0.0, -3.9, 1.1), (0, 0, 0.92), PRE + "_front.png")
+if not (len(argv) > 3 and argv[3] == "side"): shoot((0.0, -3.9, 1.1), (0, 0, 0.92), PRE + "_front.png")
 her.rotation_euler = (0, 0, math.radians(150)); him.rotation_euler = (0, 0, math.radians(-150))
-shoot((0.0, -3.9, 1.1), (0, 0, 0.92), PRE + "_back.png")
+if not (len(argv) > 3 and argv[3] == "side"): shoot((0.0, -3.9, 1.1), (0, 0, 0.92), PRE + "_back.png")
+if len(argv) > 3 and argv[3] == "side":            # quick: only her side close-up
+    her.rotation_euler = (0, 0, math.radians(70)); shoot((-0.38, -1.5, 1.45), (-0.38, 0, 1.35), PRE + "_cu_side.png")
 if len(argv) > 3 and argv[3] == "cu":               # close-ups of her head (front, back, side)
     her.rotation_euler = (0, 0, 0); hz = her.location.z + 1.5
     for nm, ang in (("cu_front", 0), ("cu_side", 70), ("cu_back", 180)):
