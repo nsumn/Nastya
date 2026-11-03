@@ -122,33 +122,53 @@ export function makeFigure(kind) {
   return J;
 }
 
-// ---------------------------------------------------------------- mannequin (mono mode): capsules on the FK rig
-const MK = new THREE.MeshStandardMaterial({ color: '#e6e6ea', roughness: 0.55, metalness: 0 });
-function cap(parent, r, len, y0, sx = 1, sz = 1) {     // capsule hanging from y0 down by len in the parent's frame
-  const m = M(new THREE.CapsuleGeometry(r, Math.max(0.001, len - 2 * r), 8, 24), MK, parent); m.position.y = y0 - len / 2; m.scale.set(sx, 1, sz); return m;
+// ---------------------------------------------------------------- mannequin (mono mode): capsules on the FK rig, dressed
+const mat = (c, r = 0.6) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: 0 });
+const MK = mat('#e9e8e6', 0.5);
+const CLOTH = {
+  w: { top: mat('#c98a93', 0.85), cuff: mat('#bb7c86', 0.9), legs: mat('#3a4150', 0.8), shoe: mat('#5a3a2a', 0.5), hair: mat('#6b3e2a', 0.65) },
+  m: { top: mat('#7d9a84', 0.85), cuff: mat('#6f8b76', 0.9), legs: mat('#33363d', 0.8), shoe: mat('#2c2826', 0.5), hair: mat('#2e2624', 0.7) },
+};
+function capM(parent, r, len, y0, m, sx = 1, sz = 1) {
+  const g = M(new THREE.CapsuleGeometry(r, Math.max(0.001, len - 2 * r), 10, 32), m, parent); g.position.y = y0 - len / 2; g.scale.set(sx, 1, sz); return g;
 }
+function ringM(parent, r, t, y, m) { const g = M(new THREE.TorusGeometry(r, t, 12, 40), m, parent); g.rotation.x = Math.PI / 2; g.position.y = y; return g; }
 function buildManikin(J, isW) {
-  const d = J.dims, R = J.R;
-  // torso: chest + waist + pelvis
-  const chestR = isW ? 0.105 : 0.125;
-  const ch = ball(J.spine, chestR, MK, 0, d.torso * 0.72, 0, 1.15, 1.25, 0.78);
-  ball(J.spine, isW ? 0.085 : 0.095, MK, 0, d.torso * 0.32, 0, 1.1, 1.2, 0.8);
-  ball(J.pelvis, isW ? 0.11 : 0.105, MK, 0, 0.0, 0, 1.15, 0.75, 0.8);
-  if (isW) for (const s of [-1, 1]) ball(J.spine, 0.04, MK, s * 0.045, d.torso * 0.64, 0.045, 1, 0.85, 0.6);
-  cap(J.neck, 0.038, 0.12, 0.12);
-  // limbs
+  const d = J.dims, R = J.R, C = CLOTH[isW ? 'w' : 'm'];
+  // torso: one smooth sweater capsule from the pelvis to the shoulders, slightly flattened front-to-back
+  const tr = isW ? 0.112 : 0.13;
+  capM(J.spine, tr, d.torso + 0.09, d.torso + 0.03, C.top, 1.12, 0.78);
+  ringM(J.neck, 0.05, 0.014, -0.005, C.cuff);                             // round neckline
+  // hips / legs
+  const lr = isW ? 0.056 : 0.06;
+  ball(J.pelvis, isW ? 0.115 : 0.112, C.legs, 0, -0.01, 0, 1.12, 0.7, 0.8);
+  capM(J.neck, 0.044, 0.11, 0.1, MK);
   for (const k of ['L', 'R']) {
-    ball(J['sh' + k], 0.045, MK);
-    cap(J['sh' + k], isW ? 0.036 : 0.042, d.upper, 0.0);
-    cap(J['el' + k], isW ? 0.031 : 0.036, d.fore, 0.0);
-    ball(J['ha' + k], isW ? 0.03 : 0.034, MK, 0, -0.035, 0.005, 0.8, 1.4, 0.55);
-    cap(J['hip' + k], isW ? 0.05 : 0.055, d.thigh + 0.02, 0.02);
-    cap(J['kn' + k], isW ? 0.04 : 0.045, d.shin, 0.0);
-    ball(J['an' + k], 0.038, MK, 0, -0.02, 0.045, 0.85, 0.6, 1.7);
+    ball(J['sh' + k], isW ? 0.047 : 0.054, C.top);
+    capM(J['sh' + k], isW ? 0.04 : 0.046, d.upper + 0.02, 0.01, C.top);
+    ball(J['el' + k], isW ? 0.038 : 0.044, C.top);
+    capM(J['el' + k], isW ? 0.037 : 0.043, d.fore - 0.01, 0.0, C.top);
+    ringM(J['ha' + k], isW ? 0.036 : 0.042, 0.012, 0.012, C.cuff);
+    ball(J['ha' + k], isW ? 0.03 : 0.034, MK, 0, -0.04, 0.005, 0.78, 1.45, 0.55);
+    capM(J['hip' + k], lr, d.thigh + 0.03, 0.02, C.legs);
+    ball(J['kn' + k], lr * 0.92, C.legs);
+    capM(J['kn' + k], lr * 0.85, d.shin - 0.01, 0.0, C.legs);
+    ball(J['an' + k], 0.042, C.shoe, 0, -0.02, 0.05, 0.9, 0.62, 1.75);
   }
-  // head: slightly egg-shaped
-  const h = ball(J.head, R, MK, 0, 0, 0, 0.94, 1.06, 0.98);
-  if (isW) ball(J.head, R * 0.42, MK, 0, R * 0.62, -R * 0.72);   // bun
+  // head (egg) + hair
+  ball(J.head, R, MK, 0, 0, 0, 0.94, 1.06, 0.98);
+  if (isW) {
+    const cap = M(new THREE.SphereGeometry(R * 1.035, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.5), C.hair, J.head);
+    cap.position.set(0, R * 0.04, -R * 0.04); cap.rotation.x = -0.75; cap.scale.set(0.98, 1.04, 1.02);
+    // side-parted front edge: a soft roll along the hairline
+    const roll = M(new THREE.TorusGeometry(R * 0.86, R * 0.09, 12, 40, Math.PI * 0.95), C.hair, J.head);
+    roll.position.set(0, R * 0.22, R * 0.2); roll.rotation.set(-0.95, 0, 0.05 + Math.PI * 0.025);
+    ball(J.head, R * 0.4, C.hair, 0, R * 0.55, -R * 0.82);                // bun
+    for (const s of [-1, 1]) ball(J.head, 0.012, mat('#e2b545', 0.3), s * R * 0.93, -R * 0.3, R * 0.12);   // earrings
+  } else {
+    const cap = M(new THREE.SphereGeometry(R * 1.035, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.42), C.hair, J.head);
+    cap.position.set(0, R * 0.06, -R * 0.06); cap.rotation.x = -0.8; cap.scale.set(0.98, 1.0, 1.02);
+  }
   J.manikin = true;
 }
 

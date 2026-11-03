@@ -30,10 +30,10 @@ window.MONO = Q.get('mono') === '1';
 const shot = SHOTS[Q.get('shot') || 'sofa'];
 if (window.MONO) {
   const W = '#e8e8ec';
-  for (const k of ['skin','skinSh','dress','shirt','pants','skirt','shoeM','shoeW','stubble']) MAT[k].color.set(W);
+  for (const k of ['skin','skinSh']) MAT[k].color.set('#e9e8e6');
   MAT.hairW.color.set('#d9d9de'); MAT.hairM.color.set('#d4d4d9'); MAT.blush.visible = false; MAT.gold.color.set(W);
   MAT.mouth.color.set('#2a2a30'); MAT.mouthIn.color.set('#202026');
-  const dark = { wall: '#4b4f5b', wall2: '#444854', floor: '#3a3d47', wood: '#555965', dark: '#2c2e36', mid: '#474b56', soft: '#5a5e6a', light: '#6a6e7a', white: '#7a7e8a' };
+  const dark = { wall: '#555a66', wall2: '#4c515d', floor: '#3e414b', wood: '#5d6170', dark: '#2e3038', mid: '#4d515c', soft: '#626674', light: '#757986', white: '#858996' };
   for (const [k, c] of Object.entries(dark)) SM[k].color.set(c);
   SM.glass.color.set('#e9ecf2'); SM.night.color.set('#2a3348');
 }
