@@ -107,17 +107,26 @@ def figure(w):
         arc(on_head(H, R, (s * 0.38, -1, 0.42), 0.002), on_head(H, R, (s * 0.38, -1, 0.42)) - H, (0, 0, 1), 0.036 * k, 0.0055, 20, 160, INK)
     arc(on_head(H, R, (0, -1, -0.38), 0.002), on_head(H, R, (0, -1, -0.38)) - H, (0, 0, 1), 0.04 * k, 0.0065, 205, 335, INK)   # smile
     if w:
-        # hair: loose, just below the shoulders; no fringe, forehead and brows free
-        sphere("cap", H + Vector((0, 0.075, 0.055)), R * 1.02, HAIR, (1.0, 1.0, 1.0))
-        shz = z(1.22)
-        # back sheet of hair from the crown down to just below the shoulders
-        skin("back", [tuple(H + Vector((0, R * 0.55, R * 0.35))), tuple(H + Vector((0, R * 0.8, -R * 0.4))), (0, H.y + R * 0.7, shz + 0.02), (0, H.y + R * 0.62, shz - 0.1)],
-             [(0, 1), (1, 2), (2, 3)], [(R * 0.88, R * 0.55), (R * 1.0, R * 0.5), (R * 0.95, R * 0.3), (R * 0.75, R * 0.16)], HAIR)
-        # side locks falling past the ears onto the shoulders
-        for s in (-1, 1):
-            skin("lock", [tuple(H + Vector((s * R * 0.72, R * 0.25, R * 0.35))), tuple(H + Vector((s * R * 0.92, R * 0.3, -R * 0.35))),
-                          (s * R * 0.85, H.y + R * 0.38, shz + 0.02), (s * R * 0.78, H.y + R * 0.42, shz - 0.09)],
-                 [(0, 1), (1, 2), (2, 3)], [R * 0.32, R * 0.3, R * 0.26, R * 0.14], HAIR)
+        # hair: ONE continuous shell around the head, open for the face, falling just below the shoulders
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=72, ring_count=40, radius=1.0, location=(0, 0, 0))
+        hs = bpy.context.active_object; hs.name = "hair"
+        bm = bmesh.new(); bm.from_mesh(hs.data)
+        drop = (H.z - R) - (z(1.22) - 0.14)                      # how far the ends hang below the head
+        kill = []
+        for v in bm.verts:
+            d = v.co.normalized()
+            face = d.y < -0.2 and (d.x / 0.8) ** 2 + ((d.z + 0.05) / 0.62) ** 2 < 1.0   # oval face window, brows free
+            chin = d.y < -0.1 and d.z < -0.25                           # nothing in front of the neck
+            if face or chin or d.z < -0.9: kill.append(v); continue
+            rr = R * (1.07 + 0.02 * max(0, d.z))
+            t = max(0.0, (0.15 - d.z) / 1.05)                           # 0 above the ears .. 1 at the bottom
+            sp = 1 + 0.12 * t ** 1.3                                    # ends flare a little
+            v.co = Vector((d.x * rr * sp, d.y * rr * sp + 0.02 * t, d.z * rr - drop * t ** 0.9))
+        bmesh.ops.delete(bm, geom=kill, context="VERTS"); bm.to_mesh(hs.data); bm.free()
+        hs.location = H + Vector((0, 0.012, 0))
+        so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.03; so.offset = -1
+        sb = hs.modifiers.new("sub", "SUBSURF"); sb.levels = sb.render_levels = 2
+        smooth(hs); hs.data.materials.append(HAIR); reg(hs)
     else:
         for s in (-1, 1):                 # small ears so his bald head reads as a head
             sphere("ear", H + Vector((s * R * 0.95, 0.01, -0.01)), R * 0.17, m, (0.5, 0.8, 1.0))
