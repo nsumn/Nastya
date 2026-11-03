@@ -41,7 +41,7 @@ def smooth(o):
 def skin(name, pts, edges, radii, m, sub=2):
     me = bpy.data.meshes.new(name); me.from_pydata([Vector(p) for p in pts], edges, [])
     o = bpy.data.objects.new(name, me); sc.collection.objects.link(o)
-    mod = o.modifiers.new("skin", "SKIN"); mod.use_smooth_shade = True
+    mod = o.modifiers.new("skin", "SKIN"); mod.use_smooth_shade = True; mod.branch_smoothing = 1.0
     for i, r in enumerate(radii): me.skin_vertices[0].data[i].radius = r if isinstance(r, tuple) else (r, r)
     me.skin_vertices[0].data[0].use_root = True
     s = o.modifiers.new("sub", "SUBSURF"); s.levels = s.render_levels = sub
@@ -73,16 +73,16 @@ def figure(w):
     """standing at the origin, facing -Y. returns list of objects."""
     start = len(made)
     k = 1.0 if w else 1.1
-    sw = 0.145 if w else 0.195
+    sw = 0.125 if w else 0.17
     z = lambda v: v * k
     P = {
-        "pelvis": (0, 0, z(0.82)), "waist": (0, 0.005, z(1.0)), "chest": (0, 0, z(1.16)), "nbase": (0, 0, z(1.27)), "neck": (0, 0, z(1.42)),
-        "hipL": (-0.085, 0, z(0.8)), "kneeL": (-0.09, -0.01, z(0.43)), "ankL": (-0.085, 0.0, z(0.06)),
-        "hipR": (0.085, 0, z(0.8)), "kneeR": (0.09, -0.01, z(0.43)), "ankR": (0.085, 0.0, z(0.06)),
-        "shL": (-sw, 0, z(1.22)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
-        "shR": (sw, 0, z(1.22)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
+        "pelvis": (0, 0, z(0.82)), "waist": (0, 0.005, z(1.0)), "chest": (0, 0, z(1.16)), "neck": (0, 0, z(1.3)),
+        "hipL": (-0.075, 0, z(0.8)), "kneeL": (-0.08, -0.01, z(0.43)), "ankL": (-0.075, 0.0, z(0.06)),
+        "hipR": (0.075, 0, z(0.8)), "kneeR": (0.08, -0.01, z(0.43)), "ankR": (0.075, 0.0, z(0.06)),
+        "shL": (-sw * 0.94, 0, z(1.19)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
+        "shR": (sw * 0.94, 0, z(1.19)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
     }
-    E = [("pelvis", "waist"), ("waist", "chest"), ("chest", "nbase"), ("nbase", "neck"), ("pelvis", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"),
+    E = [("pelvis", "waist"), ("waist", "chest"), ("chest", "neck"), ("pelvis", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"),
          ("pelvis", "hipR"), ("hipR", "kneeR"), ("kneeR", "ankR"), ("chest", "shL"), ("shL", "elL"), ("elL", "haL"),
          ("chest", "shR"), ("shR", "elR"), ("elR", "haR")]
     r = {"pelvis": ((0.112 if w else 0.105), 0.08), "waist": ((0.072 if w else 0.11), 0.068), "chest": ((0.1 if w else 0.135), (0.075 if w else 0.088)),
@@ -90,19 +90,18 @@ def figure(w):
          "shL": 0.046 * k, "elL": 0.034 * k, "haL": 0.033 * k, "shR": 0.046 * k, "elR": 0.034 * k, "haR": 0.033 * k}
     N = list(P)
     m = PINK if w else BLUE
-    T = 1.38
+    T = 1.16
     r = {n: ((v[0] * T, v[1] * T) if isinstance(v, tuple) else v * T) for n, v in r.items()}
-    r["nbase"] = (0.062 if w else 0.078); r["neck"] = (0.05 if w else 0.064)
     skin("body", [P[n] for n in N], [(N.index(a), N.index(b)) for a, b in E], [r[n] for n in N], m)
     # mitten hands with a small thumb, rounded feet
     for s in (-1, 1):
-        hx = s * (sw + 0.055)
-        sphere("hand", (hx, -0.01, z(0.745)), 0.05 * k, m, (0.78, 0.65, 1.15))
-        sphere("thumb", (hx - s * 0.028, -0.04, z(0.77)), 0.021 * k, m, (0.8, 0.8, 1.4), (0.3, 0, 0))
-        sphere("foot", (s * 0.085, -0.035, 0.045), 0.066 * k, m, (0.78, 1.35, 0.65))
+        hx = s * (sw + 0.05)
+        sphere("hand", (hx, -0.01, z(0.75)), 0.044 * k, m, (0.75, 0.62, 1.2))
+        sphere("thumb", (hx - s * 0.023, -0.036, z(0.772)), 0.018 * k, m, (0.8, 0.8, 1.4), (0.3, 0, 0))
+        sphere("foot", (s * 0.075, -0.03, 0.042), 0.06 * k, m, (0.75, 1.4, 0.62))
     # head
     R = 0.195 * k
-    H = Vector((0, -0.005, z(1.42) + R * 0.88))
+    H = Vector((0, -0.005, z(1.3) - 0.025 + R))
     sphere("head", H, R, m, (0.97, 0.98, 1.03))
     F = (0, -1, 0)
     for s in (-1, 1):                     # open eyes: glossy dark ovals + brows
@@ -135,9 +134,27 @@ def figure(w):
         ring2 = set(e.other_vert(v) for v in ring for e in v.link_edges) | ring
         for _ in range(30): bmesh.ops.smooth_vert(bm, verts=list(edge), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
         for _ in range(10): bmesh.ops.smooth_vert(bm, verts=list(ring2), factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        # distance (in edge rings) from the face opening
+        ringd = {v: 0 for v in edge}; front = list(edge); NR = 7
+        for i in range(1, NR + 1):
+            nxt = []
+            for v in front:
+                for e in v.link_edges:
+                    o = e.other_vert(v)
+                    if o not in ringd: ringd[o] = i; nxt.append(o)
+            front = nxt
+        dl = bm.verts.layers.deform.verify()
+        for v in bm.verts:
+            i = ringd.get(v, NR); s_ = (i / NR) ** 0.7
+            if i < NR:                                    # pull the edge in until it lies flush on the head
+                n = v.co.normalized(); cur = v.co.length
+                zf = min(1.0, max(0.0, (v.co.z + R * 0.75) / (R * 0.6)))   # fades out below the cheeks
+                v.co = n * (cur - (1 - s_) * zf * (cur - R * 1.0))
+            v[dl][0] = 0.12 + 0.88 * s_
         bm.to_mesh(hs.data); bm.free()
+        hs.vertex_groups.new(name="thick")
         hs.location = H + Vector((0, 0.012, 0))
-        so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.03; so.offset = -1
+        so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.03; so.offset = -1; so.vertex_group = "thick"; so.thickness_vertex_group = 0.12
         sb = hs.modifiers.new("sub", "SUBSURF"); sb.levels = sb.render_levels = 2
         smooth(hs); hs.data.materials.append(HAIR); reg(hs)
     else:
