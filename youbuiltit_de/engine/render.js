@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 8766;
   const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
   p.on('pageerror', e => console.log('ERR', e.message)); p.on('console', m => { if (m.type() === 'error') console.log('console', m.text()); });
-  await p.goto(`http://localhost:${PORT}/engine/index_keller.html`);
+  await p.goto(`http://localhost:${PORT}/engine/${process.env.PAGE || 'index_keller.html'}`);
   await p.waitForFunction('window.__done === true', null, { timeout: 300000 });
   fs.mkdirSync('frames', { recursive: true });
   const grab = async t => Buffer.from((await p.evaluate(t => window.renderAt(t), t)).split(',')[1], 'base64');
