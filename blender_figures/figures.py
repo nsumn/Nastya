@@ -23,7 +23,7 @@ def mat(name, rgb, rough=0.42, sss=0.0):
 
 
 PINK = mat("pink", (0.86, 0.46, 0.56), 0.4, 0.08)
-HAIR = mat("hair", (0.6, 0.22, 0.34), 0.48, 0.04)
+HAIR = mat("hair", (0.46, 0.13, 0.24), 0.5, 0.03)
 BLUE = mat("blue", (0.30, 0.55, 0.92), 0.4, 0.08)
 INK = mat("ink", (0.025, 0.02, 0.03), 0.35)
 BG = mat("bg", (0.03, 0.04, 0.075), 0.9)
@@ -108,21 +108,31 @@ def figure(w):
     arc(on_head(H, R, (0, -1, -0.38), 0.002), on_head(H, R, (0, -1, -0.38)) - H, (0, 0, 1), 0.04 * k, 0.0065, 205, 335, INK)   # smile
     if w:
         # hair: ONE continuous shell around the head, open for the face, falling just below the shoulders
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=72, ring_count=40, radius=1.0, location=(0, 0, 0))
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=160, ring_count=90, radius=1.0, location=(0, 0, 0))
         hs = bpy.context.active_object; hs.name = "hair"
         bm = bmesh.new(); bm.from_mesh(hs.data)
         drop = (H.z - R) - (z(1.22) - 0.14)                      # how far the ends hang below the head
         kill = []
         for v in bm.verts:
             d = v.co.normalized()
-            face = d.y < -0.2 and (d.x / 0.8) ** 2 + ((d.z + 0.05) / 0.62) ** 2 < 1.0   # oval face window, brows free
-            chin = d.y < -0.1 and d.z < -0.25                           # nothing in front of the neck
+            # face window: narrow at the centre part, opening down to the cheeks (forehead + brows free)
+            wz = 0.2 + 0.58 * min(1.0, max(0.0, (0.82 - d.z) / 0.85))
+            face = d.y < -0.22 and abs(d.x) < wz and d.z < 0.86
+            chin = d.y < 0.05 and d.z < -0.2                            # nothing in front: hair falls only behind and at the sides
             if face or chin or d.z < -0.9: kill.append(v); continue
             rr = R * (1.07 + 0.02 * max(0, d.z))
+            if abs(d.x) < 0.06 and d.z > 0.55: rr *= 0.985              # soft centre part
             t = max(0.0, (0.15 - d.z) / 1.05)                           # 0 above the ears .. 1 at the bottom
             sp = 1 + 0.12 * t ** 1.3                                    # ends flare a little
-            v.co = Vector((d.x * rr * sp, d.y * rr * sp + 0.02 * t, d.z * rr - drop * t ** 0.9))
-        bmesh.ops.delete(bm, geom=kill, context="VERTS"); bm.to_mesh(hs.data); bm.free()
+            x, y = d.x * rr * sp, d.y * rr * sp + 0.02 * t
+            v.co = Vector((x, y, d.z * rr - drop * t ** 0.9))
+        bmesh.ops.delete(bm, geom=kill, context="VERTS")
+        edge = set(v for v in bm.verts if v.is_boundary)
+        ring = set(e.other_vert(v) for v in edge for e in v.link_edges) | edge
+        ring2 = set(e.other_vert(v) for v in ring for e in v.link_edges) | ring
+        for _ in range(30): bmesh.ops.smooth_vert(bm, verts=list(edge), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        for _ in range(10): bmesh.ops.smooth_vert(bm, verts=list(ring2), factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        bm.to_mesh(hs.data); bm.free()
         hs.location = H + Vector((0, 0.012, 0))
         so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.03; so.offset = -1
         sb = hs.modifiers.new("sub", "SUBSURF"); sb.levels = sb.render_levels = 2
