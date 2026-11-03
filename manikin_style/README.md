@@ -10,3 +10,6 @@ MONO=1 CAPS='{"sofa":"Eine Frau, die keine Nähe mehr bekommt,"}' NODE_PATH=$(np
 ```
 (для шрифта субтитров нужен `tiktok_de/render/fonts` рядом — см. ветку festive-lovelace.)
 Скорость: ~10 с на кадр 1080×1920 в облаке без GPU.
+
+## v3 (`frames_dress/`)
+Цельное «лепное» тело (SDF, без швов), она в платье до колена с длинными рукавами, волосы с пучком, он в шалфейном свитере.

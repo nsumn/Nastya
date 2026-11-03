@@ -117,7 +117,7 @@ export function makeFigure(kind) {
   }
   J.bodyMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0, side: THREE.DoubleSide });
   J.kind = kind; J.R = R; J.dims = dims; J.mono = MONO;
-  if (MONO) buildManikin(J, isW);
+  if (MONO) hairMono(J, isW);
   root.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
   return J;
 }
@@ -133,6 +133,19 @@ function capM(parent, r, len, y0, m, sx = 1, sz = 1) {
   const g = M(new THREE.CapsuleGeometry(r, Math.max(0.001, len - 2 * r), 10, 32), m, parent); g.position.y = y0 - len / 2; g.scale.set(sx, 1, sz); return g;
 }
 function ringM(parent, r, t, y, m) { const g = M(new THREE.TorusGeometry(r, t, 12, 40), m, parent); g.rotation.x = Math.PI / 2; g.position.y = y; return g; }
+function hairMono(J, isW) {
+  const R = J.R, C = CLOTH[isW ? 'w' : 'm'];
+  if (isW) {
+    const cap = M(new THREE.SphereGeometry(R * 1.04, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.5), C.hair, J.head);
+    cap.position.set(0, R * 0.05, -R * 0.06); cap.rotation.x = -0.98; cap.scale.set(1.0, 1.05, 1.04);
+    for (const s of [-1, 1]) ball(J.head, R * 0.36, C.hair, s * R * 0.8, -R * 0.08, -R * 0.32, 0.55, 1.05, 1.05);   // hair over the ears
+    ball(J.head, R * 0.42, C.hair, 0, R * 0.5, -R * 0.86);                // bun
+    for (const s of [-1, 1]) ball(J.head, 0.011, mat('#e2b545', 0.3), s * R * 0.95, -R * 0.32, R * 0.1);
+  } else {
+    const cap = M(new THREE.SphereGeometry(R * 1.035, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.42), C.hair, J.head);
+    cap.position.set(0, R * 0.06, -R * 0.06); cap.rotation.x = -0.8; cap.scale.set(0.98, 1.0, 1.02);
+  }
+}
 function buildManikin(J, isW) {
   const d = J.dims, R = J.R, C = CLOTH[isW ? 'w' : 'm'];
   // torso: one smooth sweater capsule from the pelvis to the shoulders, slightly flattened front-to-back
@@ -199,7 +212,9 @@ function bodyPrims(J) {
     const ax = at(J.hipR).sub(at(J.hipL)).normalize(), ay = knM.clone().sub(pel), L = ay.length(); ay.normalize();
     const az = new THREE.Vector3().crossVectors(ax, ay).normalize(); ax.crossVectors(ay, az).normalize();
     const Fk = new THREE.Matrix4().makeBasis(ax, ay, az).setPosition(pel);
-    add(cone(v(0, 0.0, 0), v(0, Math.min(L * 0.82, 0.21), 0), 0.118, 0.138, C(MAT.skirt), 0.04, Fk, 0.62));
+    const MONOd = typeof window !== 'undefined' && window.MONO;
+    if (MONOd) add(cone(v(0, -0.01, 0), v(0, Math.min(L * 1.02, 0.29), 0), 0.122, 0.175, top, 0.04, Fk, 0.6));
+    else add(cone(v(0, 0.0, 0), v(0, Math.min(L * 0.82, 0.21), 0), 0.118, 0.138, C(MAT.skirt), 0.04, Fk, 0.62));
   } else {
     const low = add(cone(v(0, -0.02, 0), v(0, 0.22, 0), 0.128, 0.14, top, 0.05, Fs, 0.74)); low.split = { y: 0.03, col: C(MAT.pants) };
     add(cone(v(-0.11, 0.29, 0), v(0.11, 0.29, 0), 0.075, 0.075, top, 0.05, Fs, 0.78));
@@ -213,7 +228,8 @@ function bodyPrims(J) {
   // --- hair: one sculpted chain with the face carved out
   const H = isW ? C(MAT.hairW) : C(MAT.hairM);
   const MONO = typeof window !== 'undefined' && window.MONO;
-  if (isW && MONO) {
+  if (MONO) {
+  } else if (false) {
     add(ell(v(0, 0.12 * R, -0.08 * R), 1.06 * R, 1.0 * R, 1.05 * R, H, 0.03, Fh), 'hair', 0.008);
     add(ell(v(0, 0.95 * R, -0.45 * R), 0.46 * R, 0.42 * R, 0.46 * R, H, 0.04, Fh), 'hair');
     const c1 = add(ell(v(0, -0.5 * R, 0.62 * R), 1.22 * R, 1.0 * R, 1.0 * R, H, 0.02, Fh), 'hair'); c1.sub = true;
@@ -295,6 +311,6 @@ export function pose(J, p) {
   J.pelvis.position.y = p.seat !== undefined ? p.seat + (J.kind === 'w' ? 0.06 : 0.066) : J.dims.thigh + J.dims.shin + 0.07 + (p.y || 0);
   // ankles keep the feet flat-ish
   for (const s of ['L', 'R']) { const h = (p['hip' + s] || [0])[0], k = (p['kn' + s] || [0])[0]; J['an' + s].rotation.x = -(h + k) * 0.9; }
-  if (!J.mono) rebuildBody(J);
+  rebuildBody(J);
 }
 export function place(J, x, z, yaw = 0, y = 0) { J.root.position.set(x, y, z); J.root.rotation.y = yaw; }
