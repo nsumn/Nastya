@@ -7,6 +7,16 @@ const WORRY = { brow: 0.7, mouth: -0.35, lid: 0.2, look: [0, -0.2] };
 const BLANK = { brow: 0.1, mouth: -0.1, lid: 0.45, look: [0, -0.9] };
 
 export const SHOTS = {
+  dbg: {
+    set: 'minimal', cap: '',
+    fig: [{ kind: 'w', at: [0, 0], yaw: Math.PI / 2, pose: POSES.stand, face: SAD }],
+    cam: { pos: [0, 0.95, 2.2], look: [0, 0.9, 0], fov: 22 },
+  },
+  side: {
+    set: 'minimal', cap: 'Sie hört auf zu fragen.',
+    fig: [{ kind: 'w', at: [-0.1, -0.1], yaw: 1.75, pose: mix(POSES.armsCrossed, { head: [0.3, 0, 0] }), face: SAD }],
+    cam: { pos: [0.9, 1.05, 2.5], look: [-0.1, 0.9, -0.1], fov: 26 },
+  },
   stand2: {
     set: 'minimal', cap: 'zieht sich irgendwann zurück.',
     fig: [

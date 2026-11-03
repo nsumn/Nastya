@@ -172,7 +172,16 @@ function buildManikin(J, isW) {
     ball(J['an' + k], isW ? 0.034 : 0.043, FM, 0, -0.022, 0.045, 0.9, 0.6, 1.75);
   }
   ball(J.head, R, FM, 0, 0, 0, 0.92, 1.06, 0.97);
-  if (isW) ball(J.head, R * 0.4, FM, 0, R * 0.62, -R * 0.74);            // bun
+  if (isW) {                                                            // hair: cap + ponytail
+    const HM = new THREE.MeshStandardMaterial({ color: '#a65d70', roughness: 0.6, metalness: 0 });
+    // hair volume: a sphere a bit larger than the head, shifted back and up; where it meets the head it forms the hairline
+    ball(J.head, R * 1.02, HM, 0, R * 0.16, -R * 0.2, 0.97, 1.0, 1.0);
+    // ponytail: tie + tapered tail hanging down the back
+    const tail = new THREE.Group(); tail.position.set(0, R * 0.3, -R * 1.1); tail.rotation.x = 0.22; J.head.add(tail);
+    ringM(tail, R * 0.16, R * 0.065, 0, HM);
+    const prof = [[0.001, 0.02], [0.2, 0.0], [0.28, -0.25], [0.26, -0.7], [0.17, -1.15], [0.06, -1.45], [0.001, -1.48]].map(([r, y]) => new THREE.Vector2(r * R, y * R));
+    const pt = M(new THREE.LatheGeometry(prof, 32), HM, tail); pt.scale.set(1, 1, 0.82);
+  }
   J.head.traverse(o => { if (o.isMesh && (o.material === MAT.skin || o.material === MAT.skinSh)) o.material = FM; });
   J.manikin = true;
 }
