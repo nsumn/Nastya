@@ -701,7 +701,7 @@ function smokeAt(T, t) { for (const s of SMOKE) { const u = s.userData, a = T - 
   let p, sc; if (!u.col) { const r = u.r0 + 340 * (1 - Math.exp(-u.v * Math.pow(a, 0.75) * 6 / 340)); p = V3(namsan.position.x + Math.cos(u.a) * r, TW0.y - 10 + Math.min(60, a * 4) + 30 * Math.sin(u.a * 3), namsan.position.z + Math.sin(u.a) * r * 0.8); sc = u.sc * (1 + a * 0.35); }
   else { p = rocketPosW(u.t0).add(V3(Math.cos(u.a) * 8 * a, -10 + Math.sin(u.a) * 4 * a, Math.sin(u.a) * 8 * a)); sc = u.sc * (0.6 + a * 0.25); }
   s.position.copy(p); s.scale.set(sc, sc, 1); const nz = rocketPosW(T).add(V3(0, -40, 0)), near = Math.pow(Math.max(0, 1 - p.distanceTo(nz) / 160), 2) * (T < 70 ? 1 : 0);
-  s.material.color.setRGB(0.62 + 0.75 * near, 0.62 + 0.3 * near, 0.64 - 0.1 * near); s.material.opacity = 0.75 * smooth(0, 1.2, a) * (1 - (u.col ? 0.8 : 1) * smooth(120, 400, a)) * (t > 27.5 ? 0.12 : 1); } }
+  s.material.color.setRGB(0.62 + 0.75 * near, 0.62 + 0.3 * near, 0.64 - 0.1 * near); s.material.opacity = 0.75 * smooth(0, 1.2, a) * (1 - (u.col ? 0.8 : 1) * smooth(120, 400, a)) * (t >= 27.5 ? 0.12 : 1); } }
 // ---- the rocket in space (km): a scaled clone of the tower + flame + a glow marker ----
 const spRocket = new THREE.Group(); sp.add(spRocket);
 { const c = NTW.clone(true); c.position.set(0, 0, 0); c.scale.setScalar(0.001); spRocket.add(c); }
@@ -800,7 +800,7 @@ const accRT = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
 const accMat = new THREE.ShaderMaterial({ uniforms: { tex: { value: RTA.texture }, w: { value: 0.25 } }, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false,
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }', fragmentShader: 'uniform sampler2D tex; uniform float w; varying vec2 vUv; void main(){ gl_FragColor=vec4(texture2D(tex,vUv).rgb*w,1.0); }' });
 const accScene = new THREE.Scene(); accScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), accMat));
-const MB = t => (t >= 19.5 && t < 25) || (t >= 16.4 && t < 17.2);
+const MB = t => (t >= 19.5 && t < 25) || (t >= 16.51 && t < 17.2);
 window.renderAt = (t) => {
   text(t);
   if (window.PASS === 'text') return true;
