@@ -5,7 +5,7 @@ const $ = id => document.getElementById(id);
 const easeOutBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
 const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 const T0 = 3, T_ON = 24, END0 = 26.2, LEN = 30;
-function storyT(t) { if (t < 4.6) return t - T0 < 0 ? t - T0 : 0.0002 * (t - T0) / 1.6; if (t < 6.5) return 0.0002 * Math.pow(1000, (t - 4.6) / 1.9); return 0.2 + 4.8 * span(t, 6.5, T_ON); }
+function storyT(t) { if (t < 5.6) return t - T0 < 0 ? t - T0 : 0.0001 * (t - T0) / 2.6; if (t < 6.5) return 0.0001 * Math.pow(2000, (t - 5.6) / 0.9); return 0.2 + 4.8 * span(t, 6.5, T_ON); }
 const limAt = t => t >= T0 && t < T_ON ? 2.6 + 3.9 * smooth(9.6, 15.2, t) : 2;   // star limiting magnitude (also drives the HUD counter in the text pass)
 // hide what this video does not use; night lighting
 foamAt(-1); splashAt(0, 0, 0, 0); bedStuff.visible = false; vanishRing.visible = false; ferry.visible = true;
@@ -39,10 +39,10 @@ function worldAt(t) {
   const on = dark ? 0 : back ? 1 + 0.6 * Math.exp(-(t - T_ON) * 3) : 1; lightsK(on);
   setJets(t, 32, dark ? 0 : back ? smooth(T_ON, T_ON + 1.5, t) : 1, WATER_Y);
   // sky: the glow dome drains in ~0.1 ms of story time; stars and the Milky Way grow as the camera "adapts"
-  const glow = t < T0 ? 1 : dark ? 1 - smooth(0, 0.0001, T) : 1, lim = limAt(t), mw = dark ? smooth(13.5, 17.5, t) : 0;
+  const glow = t < T0 ? 1 : dark ? 1 - smooth(0.000025, 0.0001, T) : 1, lim = limAt(t), mw = dark ? smooth(13.5, 17.5, t) : 0;
   // adaptation: the dark sky and the starlight grow brighter (pupil, then rods) — done on the light, not the camera exposure (keeps the water black)
   const AD = dark ? lerp(0.25, 1.0, smooth(T0 + 0.1, 8, t)) + 0.8 * smooth(8, 16, t) : 1;
-  skyState(glow, lim, mw, glow > 0.5 ? 1 : AD);
+  skyState(glow, lim, mw, lerp(AD, 1, glow));
   hw.fog.color.setRGB(0.08, 0.07, 0.08).lerp(new THREE.Color(0.012, 0.016, 0.03), 1 - glow); hw.fog.density = 0.00035 * (0.4 + 0.6 * glow);
   hHemi.color.setRGB(0.32, 0.34, 0.5).lerp(new THREE.Color(0.35, 0.42, 0.7), 1 - glow); hHemi.groundColor.setRGB(0.12, 0.1, 0.1); hHemi.intensity = 0.35 * glow + 0.55 * AD * (1 - glow);
   { const ru = river.material.uniforms; ru.sunColor.value.setRGB(0.25, 0.18, 0.12).multiplyScalar(on); ru.distortionScale.value = 0.5; }
@@ -104,7 +104,7 @@ function text(t) {
   const c = CAPS.find(c => t >= c[0] && t < c[1]), cp = $('cap');
   if (c) { if (lastCap !== c[2]) { cp.innerHTML = kineticHTML(c[2]); lastCap = c[2]; } cp.style.opacity = 1 - smooth(c[1] - 0.2, c[1], t);
     cp.querySelectorAll('span.w').forEach(e => { const i = +e.dataset.i, k = clamp((t - c[0] - i * 0.07) / 0.28, 0, 1); e.style.opacity = k; e.style.transform = `translateY(${(1 - easeOutBack(k)) * 18}px)`; }); } else cp.style.opacity = 0;
-  $('flash').style.opacity = 0.5 * Math.max(0, 1 - Math.abs(t - T_ON - 0.03) / 0.2);
+  $('flash').style.opacity = t >= T_ON ? 0.5 * Math.exp(-(t - T_ON) / 0.12) : 0;
   $('end').style.opacity = smooth(END0, END0 + 0.5, t); $('endT').style.opacity = smooth(END0 + 0.3, END0 + 0.9, t); $('endS').style.opacity = smooth(END0 + 0.8, END0 + 1.4, t);
 }
 // ---- render ----
