@@ -1,3 +1,7 @@
 node_modules/
 frames/
 *.mp4
+burg.js
+keller.js
+*.log
+burg_list.txt
