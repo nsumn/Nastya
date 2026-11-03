@@ -109,53 +109,59 @@ def figure(w):
         arc(on_head(H, R, (s * 0.38, -1, 0.42), 0.002), on_head(H, R, (s * 0.38, -1, 0.42)) - H, (0, 0, 1), 0.036 * k, 0.0055, 20, 160, INK)
     arc(on_head(H, R, (0, -1, -0.38), 0.002), on_head(H, R, (0, -1, -0.38)) - H, (0, 0, 1), 0.04 * k, 0.0065, 205, 335, INK)   # smile
     if w:
-        # hair: ONE continuous shell around the head, open for the face, falling just below the shoulders
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=160, ring_count=90, radius=1.0, location=(0, 0, 0))
+        # hair on the head = part of the head itself: a raised region with a soft colour/shape blend into the face
+        head = [o for o in made if o.name.startswith("head")][-1]
+        bpy.ops.object.select_all(action="DESELECT"); head.select_set(True); bpy.context.view_layer.objects.active = head
+        sub_ = head.modifiers.new("sub", "SUBSURF"); sub_.levels = sub_.render_levels = 1
+        bpy.ops.object.modifier_apply(modifier="sub")
+        me = head.data
+        col = me.color_attributes.new("hairmask", "FLOAT_COLOR", "POINT")
+        def window(d):    # >0 outside the face opening (hair), <0 inside (face)
+            if d.y >= -0.05: return 1.0
+            e = ((d.x / 0.8) ** 2 + (d.z / 0.72) ** 2) ** 0.5 - 1 if d.z >= 0 else abs(d.x) / 0.8 - 1
+            if d.z < -0.2: e = min(e, -0.2 - d.z - 0.0) if abs(d.x) < 0.8 else e   # jaw stays skin
+            return e
+        def sstep(a, b, x):
+            t = min(1, max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t)
+        for v, c in zip(me.vertices, col.data):
+            d = v.co.normalized()
+            h = sstep(-0.02, 0.1, window(d))
+            if d.z < -0.35 and d.y < 0.4: h = min(h, sstep(-0.6, -0.35, d.z))       # no hair under the chin
+            part = sstep(0.0, 0.06, abs(d.x)) if (d.z > 0.45 and d.y < 0.35) else 1.0  # soft centre part
+            v.co = v.co * (1 + 0.075 * h * (0.75 + 0.25 * part))
+            c.color = (h, h, h, 1)
+        # material: mix skin and hair by the mask
+        hm = bpy.data.materials.new("skin_hair"); hm.use_nodes = True; nt = hm.node_tree
+        bsdf = nt.nodes["Principled BSDF"]; attr = nt.nodes.new("ShaderNodeAttribute"); attr.attribute_name = "hairmask"
+        mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"
+        mix.inputs[6].default_value = PINK.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value
+        mix.inputs[7].default_value = HAIR.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value
+        nt.links.new(attr.outputs["Fac"], mix.inputs[0]); nt.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
+        bsdf.inputs["Roughness"].default_value = 0.42; bsdf.inputs["Subsurface Weight"].default_value = 0.06
+        head.data.materials.clear(); head.data.materials.append(hm)
+        # the hanging part: a curtain from the ears down to just below the shoulders, its top hidden inside the head
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=72, radius=1.0, location=(0, 0, 0))
         hs = bpy.context.active_object; hs.name = "hair"
         bm = bmesh.new(); bm.from_mesh(hs.data)
-        drop = (H.z - R) - (z(1.22) - 0.14)                      # how far the ends hang below the head
+        drop = (H.z - R) - (z(1.22) - 0.14)
         kill = []
         for v in bm.verts:
             d = v.co.normalized()
-            # face window: narrow at the centre part, opening down to the cheeks (forehead + brows free)
-            # face opening: a smooth arch over the forehead that continues straight down the cheeks (no ledge)
-            inside = ((d.x / 0.8) ** 2 + (d.z / 0.72) ** 2 < 1.0) if d.z >= 0 else abs(d.x) < 0.8
-            face = d.y < -0.15 and inside
-            chin = d.y < 0.05 and d.z < -0.2 and abs(d.x) < 0.8         # nothing in front of the neck
-            if face or chin or d.z < -0.9: kill.append(v); continue
-            rr = R * (1.07 + 0.02 * max(0, d.z))
-            if abs(d.x) < 0.06 and d.z > 0.55: rr *= 0.985              # soft centre part
-            t = max(0.0, (0.15 - d.z) / 1.05)                           # 0 above the ears .. 1 at the bottom
-            sp = 1 + 0.12 * t ** 1.3                                    # ends flare a little
-            x, y = d.x * rr * sp, d.y * rr * sp + 0.02 * t
-            v.co = Vector((x, y, d.z * rr - drop * t ** 0.9))
+            if d.z > 0.25 or (d.y < -0.05 and window(d) < 0.05) or (d.y < 0.05 and d.z < -0.2 and abs(d.x) < 0.8) or d.z < -0.9:
+                kill.append(v); continue
+            t = max(0.0, (0.15 - d.z) / 1.05)
+            em = sstep(0.28, -0.15, d.z)                        # emerges tangentially out of the head
+            rr = R * (1.0 + 0.095 * em); sp = 1 + 0.12 * t ** 1.3
+            v.co = Vector((d.x * rr * sp, d.y * rr * sp + 0.02 * t, d.z * rr - drop * t ** 0.9))
         bmesh.ops.delete(bm, geom=kill, context="VERTS")
         edge = set(v for v in bm.verts if v.is_boundary)
         ring = set(e.other_vert(v) for v in edge for e in v.link_edges) | edge
-        ring2 = set(e.other_vert(v) for v in ring for e in v.link_edges) | ring
-        for _ in range(30): bmesh.ops.smooth_vert(bm, verts=list(edge), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-        for _ in range(10): bmesh.ops.smooth_vert(bm, verts=list(ring2), factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-        # distance (in edge rings) from the face opening
-        ringd = {v: 0 for v in edge}; front = list(edge); NR = 7
-        for i in range(1, NR + 1):
-            nxt = []
-            for v in front:
-                for e in v.link_edges:
-                    o = e.other_vert(v)
-                    if o not in ringd: ringd[o] = i; nxt.append(o)
-            front = nxt
-        dl = bm.verts.layers.deform.verify()
-        for v in bm.verts:
-            i = ringd.get(v, NR); s_ = (i / NR) ** 0.7
-            if i < NR:                                    # pull the edge in until it lies flush on the head
-                n = v.co.normalized(); cur = v.co.length
-                zf = min(1.0, max(0.0, (v.co.z + R * 0.75) / (R * 0.6)))   # fades out below the cheeks
-                v.co = n * (cur - (1 - s_) * zf * (cur - R * 1.0))
-            v[dl][0] = 0.12 + 0.88 * s_
+        ring = set(e.other_vert(v) for v in ring for e in v.link_edges) | ring
+        for _ in range(40): bmesh.ops.smooth_vert(bm, verts=list(edge), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        for _ in range(15): bmesh.ops.smooth_vert(bm, verts=list(ring), factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
         bm.to_mesh(hs.data); bm.free()
-        hs.vertex_groups.new(name="thick")
-        hs.location = H + Vector((0, 0.012, 0))
-        so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.03; so.offset = -1; so.vertex_group = "thick"; so.thickness_vertex_group = 0.12
+        hs.location = H + Vector((0, 0.0, 0)); hs.scale = (0.97, 0.98, 1.03)
+        so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.026; so.offset = 0
         sb = hs.modifiers.new("sub", "SUBSURF"); sb.levels = sb.render_levels = 2
         smooth(hs); hs.data.materials.append(HAIR); reg(hs)
     else:
