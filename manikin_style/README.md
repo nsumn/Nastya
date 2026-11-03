@@ -30,3 +30,8 @@ MONO=1 CAPS='{"sofa":"Eine Frau, die keine Nähe mehr bekommt,"}' NODE_PATH=$(np
 ```
 GUMMY=1 NODE_PATH=$(npm root -g) node still.js ../out pair,stand2,close
 ```
+
+## Blender (Cycles)
+`EXPORT=1 GUMMY=1 node still.js ../out pair` -> `pair.glb`, затем
+`blender -b -P blender/render_shot.py -- ../out/pair.glb ../out/pair_bl.png 24 night` (Blender 4.2 LTS в /opt/blender).
+В облаке без GPU: ~70 с на кадр 1080x1920 при 24 сэмплах. Пример: `frames_gummy/pair_blender.jpg`.
