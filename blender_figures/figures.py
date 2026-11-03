@@ -41,7 +41,7 @@ def smooth(o):
 def skin(name, pts, edges, radii, m, sub=2):
     me = bpy.data.meshes.new(name); me.from_pydata([Vector(p) for p in pts], edges, [])
     o = bpy.data.objects.new(name, me); sc.collection.objects.link(o)
-    mod = o.modifiers.new("skin", "SKIN"); mod.use_smooth_shade = True; mod.branch_smoothing = 1.0
+    mod = o.modifiers.new("skin", "SKIN"); mod.use_smooth_shade = True
     for i, r in enumerate(radii): me.skin_vertices[0].data[i].radius = r if isinstance(r, tuple) else (r, r)
     me.skin_vertices[0].data[0].use_root = True
     s = o.modifiers.new("sub", "SUBSURF"); s.levels = s.render_levels = sub
@@ -79,8 +79,8 @@ def figure(w):
         "pelvis": (0, 0, z(0.82)), "waist": (0, 0.005, z(1.0)), "chest": (0, 0, z(1.16)), "neck": (0, 0, z(1.3)),
         "hipL": (-0.075, 0, z(0.8)), "kneeL": (-0.08, -0.01, z(0.43)), "ankL": (-0.075, 0.0, z(0.06)),
         "hipR": (0.075, 0, z(0.8)), "kneeR": (0.08, -0.01, z(0.43)), "ankR": (0.075, 0.0, z(0.06)),
-        "shL": (-sw * 0.94, 0, z(1.19)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
-        "shR": (sw * 0.94, 0, z(1.19)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
+        "shL": (-sw, 0, z(1.22)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
+        "shR": (sw, 0, z(1.22)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
     }
     E = [("pelvis", "waist"), ("waist", "chest"), ("chest", "neck"), ("pelvis", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"),
          ("pelvis", "hipR"), ("hipR", "kneeR"), ("kneeR", "ankR"), ("chest", "shL"), ("shL", "elL"), ("elL", "haL"),
@@ -96,12 +96,12 @@ def figure(w):
     # mitten hands with a small thumb, rounded feet
     for s in (-1, 1):
         hx = s * (sw + 0.05)
-        sphere("hand", (hx, -0.01, z(0.75)), 0.044 * k, m, (0.75, 0.62, 1.2))
-        sphere("thumb", (hx - s * 0.023, -0.036, z(0.772)), 0.018 * k, m, (0.8, 0.8, 1.4), (0.3, 0, 0))
-        sphere("foot", (s * 0.075, -0.03, 0.042), 0.06 * k, m, (0.75, 1.4, 0.62))
+        sphere("hand", (hx, -0.01, z(0.755)), 0.038 * 1.16 * k, m, (0.75, 0.62, 1.2))
+        sphere("thumb", (hx - s * 0.02, -0.032, z(0.775)), 0.016 * 1.16 * k, m, (0.8, 0.8, 1.4), (0.3, 0, 0))
+        sphere("foot", (s * 0.075, -0.03, 0.04), 0.052 * 1.16 * k, m, (0.75, 1.4, 0.62))
     # head
     R = 0.195 * k
-    H = Vector((0, -0.005, z(1.3) - 0.025 + R))
+    H = Vector((0, -0.005, z(1.3) + 0.01 + R))
     sphere("head", H, R, m, (0.97, 0.98, 1.03))
     F = (0, -1, 0)
     for s in (-1, 1):                     # open eyes: glossy dark ovals + brows
@@ -118,8 +118,7 @@ def figure(w):
         for v in bm.verts:
             d = v.co.normalized()
             # face window: narrow at the centre part, opening down to the cheeks (forehead + brows free)
-            wz = 0.2 + 0.58 * min(1.0, max(0.0, (0.82 - d.z) / 0.85))
-            face = d.y < -0.22 and abs(d.x) < wz and d.z < 0.86
+            face = d.y < -0.15 and (d.x / 0.8) ** 2 + ((d.z + 0.02) / 0.74) ** 2 < 1.0   # smooth arch over the forehead
             chin = d.y < 0.05 and d.z < -0.2                            # nothing in front: hair falls only behind and at the sides
             if face or chin or d.z < -0.9: kill.append(v); continue
             rr = R * (1.07 + 0.02 * max(0, d.z))
