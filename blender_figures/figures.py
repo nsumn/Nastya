@@ -73,16 +73,16 @@ def figure(w):
     """standing at the origin, facing -Y. returns list of objects."""
     start = len(made)
     k = 1.0 if w else 1.1
-    sw = 0.125 if w else 0.17
+    sw = 0.145 if w else 0.195
     z = lambda v: v * k
     P = {
-        "pelvis": (0, 0, z(0.82)), "waist": (0, 0.005, z(1.0)), "chest": (0, 0, z(1.16)), "neck": (0, 0, z(1.3)),
-        "hipL": (-0.075, 0, z(0.8)), "kneeL": (-0.08, -0.01, z(0.43)), "ankL": (-0.075, 0.0, z(0.06)),
-        "hipR": (0.075, 0, z(0.8)), "kneeR": (0.08, -0.01, z(0.43)), "ankR": (0.075, 0.0, z(0.06)),
+        "pelvis": (0, 0, z(0.82)), "waist": (0, 0.005, z(1.0)), "chest": (0, 0, z(1.16)), "nbase": (0, 0, z(1.27)), "neck": (0, 0, z(1.42)),
+        "hipL": (-0.085, 0, z(0.8)), "kneeL": (-0.09, -0.01, z(0.43)), "ankL": (-0.085, 0.0, z(0.06)),
+        "hipR": (0.085, 0, z(0.8)), "kneeR": (0.09, -0.01, z(0.43)), "ankR": (0.085, 0.0, z(0.06)),
         "shL": (-sw, 0, z(1.22)), "elL": (-sw - 0.04, 0.02, z(0.98)), "haL": (-sw - 0.05, -0.01, z(0.77)),
         "shR": (sw, 0, z(1.22)), "elR": (sw + 0.04, 0.02, z(0.98)), "haR": (sw + 0.05, -0.01, z(0.77)),
     }
-    E = [("pelvis", "waist"), ("waist", "chest"), ("chest", "neck"), ("pelvis", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"),
+    E = [("pelvis", "waist"), ("waist", "chest"), ("chest", "nbase"), ("nbase", "neck"), ("pelvis", "hipL"), ("hipL", "kneeL"), ("kneeL", "ankL"),
          ("pelvis", "hipR"), ("hipR", "kneeR"), ("kneeR", "ankR"), ("chest", "shL"), ("shL", "elL"), ("elL", "haL"),
          ("chest", "shR"), ("shR", "elR"), ("elR", "haR")]
     r = {"pelvis": ((0.112 if w else 0.105), 0.08), "waist": ((0.072 if w else 0.11), 0.068), "chest": ((0.1 if w else 0.135), (0.075 if w else 0.088)),
@@ -90,16 +90,19 @@ def figure(w):
          "shL": 0.046 * k, "elL": 0.034 * k, "haL": 0.033 * k, "shR": 0.046 * k, "elR": 0.034 * k, "haR": 0.033 * k}
     N = list(P)
     m = PINK if w else BLUE
+    T = 1.38
+    r = {n: ((v[0] * T, v[1] * T) if isinstance(v, tuple) else v * T) for n, v in r.items()}
+    r["nbase"] = (0.062 if w else 0.078); r["neck"] = (0.05 if w else 0.064)
     skin("body", [P[n] for n in N], [(N.index(a), N.index(b)) for a, b in E], [r[n] for n in N], m)
     # mitten hands with a small thumb, rounded feet
     for s in (-1, 1):
-        hx = s * (sw + 0.05)
-        sphere("hand", (hx, -0.01, z(0.755)), 0.038 * k, m, (0.75, 0.62, 1.2))
-        sphere("thumb", (hx - s * 0.02, -0.032, z(0.775)), 0.016 * k, m, (0.8, 0.8, 1.4), (0.3, 0, 0))
-        sphere("foot", (s * 0.075, -0.03, 0.04), 0.052 * k, m, (0.75, 1.4, 0.62))
+        hx = s * (sw + 0.055)
+        sphere("hand", (hx, -0.01, z(0.745)), 0.05 * k, m, (0.78, 0.65, 1.15))
+        sphere("thumb", (hx - s * 0.028, -0.04, z(0.77)), 0.021 * k, m, (0.8, 0.8, 1.4), (0.3, 0, 0))
+        sphere("foot", (s * 0.085, -0.035, 0.045), 0.066 * k, m, (0.78, 1.35, 0.65))
     # head
     R = 0.195 * k
-    H = Vector((0, -0.005, z(1.3) + 0.01 + R))
+    H = Vector((0, -0.005, z(1.42) + R * 0.88))
     sphere("head", H, R, m, (0.97, 0.98, 1.03))
     F = (0, -1, 0)
     for s in (-1, 1):                     # open eyes: glossy dark ovals + brows
