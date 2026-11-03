@@ -95,12 +95,15 @@ export function makeFigure(kind) {
   const isW = kind === 'w';
   const root = new THREE.Group();
   const MONO = typeof window !== 'undefined' && window.MONO;
-  const R = MONO ? (isW ? 0.108 : 0.114) : 0.215;
+  const R = (typeof window !== 'undefined' && window.GUMMY) ? (isW ? 0.145 : 0.152) : MONO ? (isW ? 0.108 : 0.114) : 0.215;
   const dims0 = isW ? { hipW: 0.062, thigh: 0.24, shin: 0.22, torso: 0.3, shW: 0.145, upper: 0.19, fore: 0.17 }
                    : { hipW: 0.072, thigh: 0.26, shin: 0.24, torso: 0.33, shW: 0.17, upper: 0.21, fore: 0.19 };
   const dims = !MONO ? dims0 : isW ? { hipW: 0.072, thigh: 0.4, shin: 0.39, torso: 0.42, shW: 0.128, upper: 0.27, fore: 0.24 }
                                    : { hipW: 0.08, thigh: 0.44, shin: 0.43, torso: 0.5, shW: 0.205, upper: 0.31, fore: 0.28 };
-  const K = MONO ? (isW ? 0.72 : 0.78) : 1;   // adult proportions, scaled to the size the sets were built for
+  const GUM = typeof window !== 'undefined' && window.GUMMY;
+  if (GUM) Object.assign(dims, isW ? { hipW: 0.06, thigh: 0.3, shin: 0.29, torso: 0.36, shW: 0.115, upper: 0.22, fore: 0.2 }
+                                   : { hipW: 0.07, thigh: 0.33, shin: 0.32, torso: 0.4, shW: 0.15, upper: 0.24, fore: 0.22 });
+  const K = GUM ? (isW ? 0.9 : 0.94) : MONO ? (isW ? 0.72 : 0.78) : 1;   // adult proportions, scaled to the size the sets were built for
   const J = { root };
   const pelvis = J.pelvis = G(root, 0, dims.thigh + dims.shin + 0.07, 0);
   const spine = J.spine = G(pelvis);
@@ -119,7 +122,13 @@ export function makeFigure(kind) {
   }
   J.bodyMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0, side: THREE.DoubleSide });
   J.kind = kind; J.R = R; J.dims = dims; J.mono = MONO; J.K = K; root.scale.setScalar(K);
-  if (MONO) buildManikin(J, isW);
+  if (MONO && !GUM) buildManikin(J, isW);
+  if (GUM) {
+    J.figCol = new THREE.Color(isW ? '#e7a2b4' : '#6fa3e0');
+    J.bodyMat.roughness = 0.55;
+    const FM = new THREE.MeshStandardMaterial({ color: J.figCol, roughness: 0.55 });
+    J.head.traverse(o => { if (o.isMesh && (o.material === MAT.skin || o.material === MAT.skinSh)) o.material = FM; });
+  }
   root.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
   return J;
 }
@@ -203,6 +212,42 @@ function bodyPrims(J) {
   const add = (p, g, attach) => { if (g) p.g = g; if (attach !== undefined) p.attach = attach; P.push(p); return p; };
   // --- core: torso (sweater), neckline, head
   const MO = typeof window !== 'undefined' && window.MONO, ts = d.torso / (isW ? 0.3 : 0.33);
+  const GU = typeof window !== 'undefined' && window.GUMMY;
+  if (GU) {
+    const c = J.figCol, T = d.torso, hc = isW ? new THREE.Color('#d98ea2') : c;
+    if (isW) {
+      add(cone(v(0, -0.01, 0), v(0, 0.48 * T, 0), 0.088, 0.066, c, 0.06, Fs, 0.8));
+      add(cone(v(0, 0.48 * T, 0), v(0, 0.88 * T, 0), 0.07, 0.082, c, 0.06, Fs, 0.8));
+      add(cone(v(-0.06, 0.95 * T, 0), v(0.06, 0.95 * T, 0), 0.05, 0.05, c, 0.06, Fs, 0.8));
+    } else {
+      add(cone(v(0, -0.01, 0), v(0, 0.55 * T, 0), 0.1, 0.106, c, 0.06, Fs, 0.78));
+      add(cone(v(0, 0.55 * T, 0), v(0, 0.88 * T, 0), 0.106, 0.116, c, 0.06, Fs, 0.75));
+      add(cone(v(-0.09, 0.95 * T, 0), v(0.09, 0.95 * T, 0), 0.062, 0.062, c, 0.06, Fs, 0.78));
+    }
+    add(cone(at(J.hipL, 0, -0.01, 0), at(J.hipR, 0, -0.01, 0), isW ? 0.05 : 0.06, isW ? 0.05 : 0.06, c, 0.05));
+    add(cone(v(0, -0.03, 0), v(0, 0.09, 0), isW ? 0.042 : 0.05, isW ? 0.04 : 0.048, c, 0.05, Fn));
+    add(ell(v(0, 0, 0), R, R * 1.02, R * 0.98, c, 0.05, Fh));
+    if (isW) {   // hair: smooth cap, side-swept fringe, ponytail
+      add(ell(v(0, 0.12 * R, -0.1 * R), 1.06 * R, 1.0 * R, 1.04 * R, hc, 0.03, Fh), 'hair', 0.01);
+      add(ell(v(0, 0, 0), 0.75 * R, 0.26 * R, 0.4 * R, hc, 0.05, sub(Fh, -0.25 * R, 0.62 * R, 0.62 * R, 0, 0, 0.42)), 'hair');
+      add(cone(v(0, 0.2 * R, -1.0 * R), v(0, -0.75 * R, -1.32 * R), 0.32 * R, 0.13 * R, hc, 0.06, Fh), 'hair');
+      add(ell(v(0, 0.22 * R, -1.02 * R), 0.22 * R, 0.22 * R, 0.22 * R, hc, 0.03, Fh), 'hair');
+      const cut = add(ell(v(0, -0.42 * R, 0.72 * R), 0.95 * R, 0.98 * R, 0.86 * R, hc, 0.02, Fh), 'hair'); cut.sub = true;
+    }
+    for (const [s, k] of [[-1, 'L'], [1, 'R']]) {
+      const g = 'arm' + k, sh = at(J['sh' + k]), el = at(J['el' + k]), ha = at(J['ha' + k]), Fa = fr(J['ha' + k]);
+      add(cone(sh, el, isW ? 0.032 : 0.039, isW ? 0.028 : 0.034, c, 0.03), g, 0.05);
+      add(cone(el, ha, isW ? 0.028 : 0.034, isW ? 0.026 : 0.031, c, 0.03), g);
+      add(ell(v(0, -0.045, 0.004), isW ? 0.03 : 0.035, isW ? 0.045 : 0.05, isW ? 0.022 : 0.025, c, 0.025, Fa), g);
+    }
+    for (const k of ['L', 'R']) {
+      const g = 'leg' + k, hp = at(J['hip' + k]), kn = at(J['kn' + k]), an = at(J['an' + k]), Fan = fr(J['an' + k]);
+      add(cone(hp, kn, isW ? 0.046 : 0.053, isW ? 0.038 : 0.044, c, 0.03), g, 0.03);
+      add(cone(kn, an, isW ? 0.038 : 0.044, isW ? 0.03 : 0.036, c, 0.03), g);
+      add(ell(v(0, -0.03, 0.035), isW ? 0.034 : 0.04, isW ? 0.028 : 0.032, isW ? 0.064 : 0.074, c, 0.02, Fan), g);
+    }
+    return P;
+  }
   if (MO && isW) {
     add(cone(v(0, 0.0, 0), v(0, 0.19 * ts, 0), 0.118, 0.072, top, 0.05, Fs, 0.8));        // hips -> waist
     add(cone(v(0, 0.19 * ts, 0), v(0, 0.262 * ts, 0), 0.072, 0.09, top, 0.05, Fs, 0.8));  // waist -> bust
@@ -292,7 +337,7 @@ function bodyPrims(J) {
   }
   return P;
 }
-export function rebuildBody(J, h = 0.0075) {
+export function rebuildBody(J, h = (typeof window !== 'undefined' && window.GUMMY) ? 0.0055 : 0.0075) {
   if (J.body) { J.root.remove(J.body); J.body.geometry.dispose(); }
   const g = meshPrims(bodyPrims(J), h);
   J.body = new THREE.Mesh(g, J.bodyMat); J.body.castShadow = J.body.receiveShadow = true; J.root.add(J.body);

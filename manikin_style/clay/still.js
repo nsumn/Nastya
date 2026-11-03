@@ -20,7 +20,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.otf': 'font/ot
     const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
     p.on('pageerror', e => console.log(n, 'ERR', e.message));
     const caps = process.env.CAPS ? JSON.parse(process.env.CAPS) : {};
-    await p.goto(`http://localhost:${port}/clay/index.html?shot=${n}${process.env.MONO ? '&mono=1' : ''}${caps[n] ? '&cap=' + encodeURIComponent(caps[n]) : ''}${process.env.EXPORT ? '&export=1' : ''}`);
+    await p.goto(`http://localhost:${port}/clay/index.html?shot=${n}${process.env.MONO ? '&mono=1' : ''}${process.env.GUMMY ? '&gummy=1' : ''}${caps[n] ? '&cap=' + encodeURIComponent(caps[n]) : ''}${process.env.EXPORT ? '&export=1' : ''}`);
     await p.waitForFunction(() => window.DONE, null, { timeout: 180000 });
     if (process.env.EXPORT) fs.writeFileSync(path.join(out, `${n}.glb`), Buffer.from(await p.evaluate(() => window.GLB), 'base64'));
     else await p.screenshot({ path: path.join(out, `${n}.png`) });

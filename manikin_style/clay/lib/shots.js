@@ -7,6 +7,16 @@ const WORRY = { brow: 0.7, mouth: -0.35, lid: 0.2, look: [0, -0.2] };
 const BLANK = { brow: 0.1, mouth: -0.1, lid: 0.45, look: [0, -0.9] };
 
 export const SHOTS = {
+  inbed: {
+    set: 'bedroom', night: true, cap: 'Eine Frau, die nachts seine Hand sucht,',
+    fig: [
+      { kind: 'w', at: [-0.55, 0.42], lie: true, roll: 0.55, y: 0.4, pose: mix(POSES.stand, { head: [0, 0.35, 0], shL: [0, 0, -0.05], shR: [0, 0, 0.05] }), face: { brow: 0.2, mouth: 0.2, lid: 0.3, closed: true } },
+      { kind: 'm', at: [0.08, 0.48], lie: true, roll: -0.3, y: 0.41, pose: mix(POSES.stand, { head: [0, -0.2, 0], shL: [0, 0, -0.05], shR: [0, 0, 0.05] }), face: { brow: 0, mouth: 0.1, closed: true } },
+    ],
+    duvet: { at: [-0.25, 0.5, 0.36], w: 1.52, h: 0.16, d: 1.2, col: '#2f3a57' },
+    lamp: [-1.3, 0.75, -0.9, 1.4],
+    cam: { pos: [-0.25, 2.5, 1.75], look: [-0.25, 0.38, -0.35], fov: 36 },
+  },
   dbg: {
     set: 'minimal', cap: '',
     fig: [{ kind: 'w', at: [0, 0], yaw: Math.PI / 2, pose: POSES.stand, face: SAD }],

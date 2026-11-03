@@ -9,6 +9,7 @@
   .cap{position:absolute;left:0;right:0;top:1290px;text-align:center;font:70px/1.15 InterBlack;color:#fff;padding:0 160px;
        -webkit-text-stroke:12px #17141b;paint-order:stroke fill}
   .mono .cap{top:330px;font:62px/1.15 InterBlack;padding:0 120px;-webkit-text-stroke:0;text-shadow:0 3px 10px rgba(0,0,0,.6);text-transform:uppercase;letter-spacing:.5px}
+  .gummy .cap{top:420px;font:52px/1.2 InterBlack;font-weight:600;text-transform:none;letter-spacing:0;text-shadow:0 2px 8px rgba(0,0,0,.7)}
 </style>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
 </head><body><div id="wrap"><div class="cap" id="cap"></div></div>
@@ -24,9 +25,11 @@ import { SETS, lights, S as SM } from './lib/sets.js';
 import { MAT } from './lib/figure.js';
 import { SHOTS } from './lib/shots.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const Q = new URLSearchParams(location.search);
-window.MONO = Q.get('mono') === '1';
+window.MONO = Q.get('mono') === '1' || Q.get('gummy') === '1';
+window.GUMMY = Q.get('gummy') === '1';
 const shot = SHOTS[Q.get('shot') || 'sofa'];
 if (window.MONO) {
   const W = '#e8e8ec';
@@ -37,6 +40,10 @@ if (window.MONO) {
   const dark = { wall: '#555a66', wall2: '#4c515d', floor: '#3e414b', wood: '#5d6170', dark: '#2e3038', mid: '#4d515c', soft: '#626674', light: '#757986', white: '#858996' };
   for (const [k, c] of Object.entries(dark)) SM[k].color.set(c);
   SM.glass.color.set('#e9ecf2'); SM.night.color.set('#2a3348');
+  if (window.GUMMY) {
+    const navy = { wall: '#283044', wall2: '#242b3d', floor: '#1e2433', wood: '#2c3447', dark: '#1a1f2c', mid: '#2f3750', soft: '#384262', light: '#3e4866', white: '#56617f' };
+    for (const [k, c] of Object.entries(navy)) SM[k].color.set(c);
+  }
 }
 const W = 1080, H = 1920;
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -46,15 +53,18 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 document.getElementById('wrap').prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(window.MONO ? '#2a2c33' : (shot.night ? '#6f737b' : '#8d8f93'));
+scene.background = new THREE.Color(window.GUMMY ? '#141824' : window.MONO ? '#2a2c33' : (shot.night ? '#6f737b' : '#8d8f93'));
 const set = new THREE.Group(); scene.add(set); SETS[shot.set](set);
 lights(scene, { night: shot.night });
 
 for (const f of shot.fig) {
   const J = makeFigure(f.kind); scene.add(J.root);
   pose(J, f.pose); setFace(J.face, f.face); place(J, f.at[0], f.at[1], f.yaw || 0, f.y || 0);
+  if (f.lie) { J.root.rotation.set(-Math.PI / 2, f.roll || 0, 0); }
 }
 
+if (shot.duvet) { const d = shot.duvet; const m = new THREE.Mesh(new RoundedBoxGeometry(d.w, d.h, d.d, 6, Math.min(0.06, d.h / 2 - 0.001)), new THREE.MeshStandardMaterial({ color: d.col || '#3a4460', roughness: 0.85 })); m.position.set(...d.at); m.castShadow = m.receiveShadow = true; scene.add(m); }
+if (shot.lamp) { const L = new THREE.PointLight('#ffc98a', shot.lamp[3] ?? 1.6, 3.5, 1.6); L.position.set(shot.lamp[0], shot.lamp[1], shot.lamp[2]); L.castShadow = true; scene.add(L); }
 const cam = new THREE.PerspectiveCamera(shot.cam.fov, W / H, 0.05, 40);
 cam.position.set(...shot.cam.pos); const look = new THREE.Vector3(...shot.cam.look); cam.lookAt(look);
 // soft fill from the camera so faces never drop into shadow (clay "studio" look)
@@ -69,6 +79,7 @@ comp.addPass(new OutputPass());
 await document.fonts.load('70px InterBlack');
 comp.render();
 if (window.MONO) document.getElementById('wrap').classList.add('mono');
+if (window.GUMMY) document.getElementById('wrap').classList.add('gummy');
 document.getElementById('cap').textContent = Q.get('cap') ?? shot.cap ?? '';
 if (Q.get('export')) {   // hand the whole shot (sets, heroes, camera) to Blender as GLB, see blender/render_shot.py
   scene.add(cam); cam.name = 'ShotCam';
