@@ -118,8 +118,10 @@ def figure(w):
         for v in bm.verts:
             d = v.co.normalized()
             # face window: narrow at the centre part, opening down to the cheeks (forehead + brows free)
-            face = d.y < -0.15 and (d.x / 0.8) ** 2 + ((d.z + 0.02) / 0.74) ** 2 < 1.0   # smooth arch over the forehead
-            chin = d.y < 0.05 and d.z < -0.2                            # nothing in front: hair falls only behind and at the sides
+            # face opening: a smooth arch over the forehead that continues straight down the cheeks (no ledge)
+            inside = ((d.x / 0.8) ** 2 + (d.z / 0.72) ** 2 < 1.0) if d.z >= 0 else abs(d.x) < 0.8
+            face = d.y < -0.15 and inside
+            chin = d.y < 0.05 and d.z < -0.2 and abs(d.x) < 0.8         # nothing in front of the neck
             if face or chin or d.z < -0.9: kill.append(v); continue
             rr = R * (1.07 + 0.02 * max(0, d.z))
             if abs(d.x) < 0.06 and d.z > 0.55: rr *= 0.985              # soft centre part
