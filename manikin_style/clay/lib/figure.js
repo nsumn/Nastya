@@ -95,10 +95,12 @@ export function makeFigure(kind) {
   const isW = kind === 'w';
   const root = new THREE.Group();
   const MONO = typeof window !== 'undefined' && window.MONO;
-  const R = MONO ? 0.135 : 0.215;
+  const R = MONO ? (isW ? 0.108 : 0.114) : 0.215;
   const dims0 = isW ? { hipW: 0.062, thigh: 0.24, shin: 0.22, torso: 0.3, shW: 0.145, upper: 0.19, fore: 0.17 }
                    : { hipW: 0.072, thigh: 0.26, shin: 0.24, torso: 0.33, shW: 0.17, upper: 0.21, fore: 0.19 };
-  const dims = MONO ? { ...dims0, torso: dims0.torso * 1.22, upper: dims0.upper * 1.2, fore: dims0.fore * 1.15 } : dims0;
+  const dims = !MONO ? dims0 : isW ? { hipW: 0.068, thigh: 0.4, shin: 0.39, torso: 0.44, shW: 0.15, upper: 0.28, fore: 0.25 }
+                                   : { hipW: 0.078, thigh: 0.43, shin: 0.42, torso: 0.48, shW: 0.175, upper: 0.3, fore: 0.27 };
+  const K = MONO ? 0.76 : 1;   // adult proportions, scaled to the size the sets were built for
   const J = { root };
   const pelvis = J.pelvis = G(root, 0, dims.thigh + dims.shin + 0.07, 0);
   const spine = J.spine = G(pelvis);
@@ -116,7 +118,7 @@ export function makeFigure(kind) {
     J['an' + k] = G(kn, 0, -dims.shin, 0);
   }
   J.bodyMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0, side: THREE.DoubleSide });
-  J.kind = kind; J.R = R; J.dims = dims; J.mono = MONO;
+  J.kind = kind; J.R = R; J.dims = dims; J.mono = MONO; J.K = K; root.scale.setScalar(K);
   if (MONO) hairMono(J, isW);
   root.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
   return J;
@@ -201,7 +203,21 @@ function bodyPrims(J) {
   const Fs = fr(J.spine), Fn = fr(J.neck), Fh = fr(J.head), P = [];
   const add = (p, g, attach) => { if (g) p.g = g; if (attach !== undefined) p.attach = attach; P.push(p); return p; };
   // --- core: torso (sweater), neckline, head
-  if (isW) {
+  const MO = typeof window !== 'undefined' && window.MONO, ts = d.torso / (isW ? 0.3 : 0.33);
+  if (MO && isW) {
+    add(cone(v(0, 0.0, 0), v(0, 0.2 * ts, 0), 0.108, 0.082, top, 0.05, Fs, 0.8));        // hips -> waist
+    add(cone(v(0, 0.2 * ts, 0), v(0, 0.265 * ts, 0), 0.082, 0.098, top, 0.05, Fs, 0.8));  // waist -> bust
+    add(cone(v(-0.082, 0.285 * ts, 0), v(0.082, 0.285 * ts, 0), 0.055, 0.055, top, 0.04, Fs, 0.8));
+    const pel = at(J.pelvis, 0, 0.02, 0), knM = at(J.knL).add(at(J.knR)).multiplyScalar(0.5);
+    const ax = at(J.hipR).sub(at(J.hipL)).normalize(), ay = knM.clone().sub(pel), L = ay.length(); ay.normalize();
+    const az = new THREE.Vector3().crossVectors(ax, ay).normalize(); ax.crossVectors(ay, az).normalize();
+    const Fk = new THREE.Matrix4().makeBasis(ax, ay, az).setPosition(pel);
+    add(cone(v(0, -0.01, 0), v(0, L * 1.04, 0), 0.112, 0.126, top, 0.035, Fk, 0.62));    // fitted skirt to the knee
+  } else if (MO) {
+    const low = add(cone(v(0, -0.02, 0), v(0, 0.24 * ts, 0), 0.112, 0.122, top, 0.05, Fs, 0.74)); low.split = { y: 0.03, col: C(MAT.pants) };
+    add(cone(v(-0.105, 0.285 * ts, 0), v(0.105, 0.285 * ts, 0), 0.068, 0.068, top, 0.05, Fs, 0.78));
+    add(cone(at(J.hipL, 0, -0.02, 0), at(J.hipR, 0, -0.02, 0), 0.07, 0.07, C(MAT.pants), 0.04));
+  } else if (isW) {
     add(cone(v(0, 0.0, 0), v(0, 0.15, 0), 0.125, 0.11, top, 0.05, Fs, 0.8));
     add(cone(v(0, 0.15, 0), v(0, 0.25, 0), 0.11, 0.118, top, 0.05, Fs, 0.8));
     add(cone(v(-0.095, 0.265, 0), v(0.095, 0.265, 0), 0.066, 0.066, top, 0.05, Fs, 0.8));
@@ -221,8 +237,8 @@ function bodyPrims(J) {
     add(cone(at(J.hipL, 0, -0.02, 0), at(J.hipR, 0, -0.02, 0), 0.078, 0.078, C(MAT.pants), 0.04));
     add(cone(v(0, 0.025, 0), v(0, 0.045, 0), 0.142, 0.142, top, 0.015, Fs, 0.76)); // hem band
   }
-  add(cone(v(0, -0.035, 0), v(0, 0.005, 0), isW ? 0.068 : 0.074, isW ? 0.064 : 0.07, top, 0.02, Fn)); // collar
-  add(cone(v(0, -0.02, 0), v(0, 0.13, 0), 0.052, 0.05, skin, 0.035, Fn));
+  add(cone(v(0, -0.035, 0), v(0, 0.005, 0), MO ? 0.055 : (isW ? 0.068 : 0.074), MO ? 0.05 : (isW ? 0.064 : 0.07), top, 0.02, Fn)); // collar
+  add(cone(v(0, -0.02, 0), v(0, 0.13, 0), MO ? 0.04 : 0.052, MO ? 0.038 : 0.05, skin, 0.035, Fn));
   add(ell(v(0, 0, 0), R, R * 1.03, R * 0.97, skin, 0.04, Fh));
   add(ell(v(0, -0.28 * R, 0.08 * R), R * 0.85, R * 0.68, R * 0.82, skin, 0.03, Fh));
   // --- hair: one sculpted chain with the face carved out
@@ -256,8 +272,9 @@ function bodyPrims(J) {
   // --- arms: sleeve -> ribbed cuff -> wrist -> mitten hand with a thumb
   for (const [s, k] of [[-1, 'L'], [1, 'R']]) {
     const g = 'arm' + k, sh = at(J['sh' + k]), el = at(J['el' + k]), ha = at(J['ha' + k]), Fa = fr(J['ha' + k]);
-    add(cone(sh, el, isW ? 0.05 : 0.056, isW ? 0.045 : 0.05, top, 0.03), g, 0.05);
-    add(cone(el, ha, isW ? 0.045 : 0.05, isW ? 0.043 : 0.048, top, 0.03), g);
+    const am = MO ? 0.8 : 1;
+    add(cone(sh, el, (isW ? 0.05 : 0.056) * am, (isW ? 0.045 : 0.05) * am, top, 0.03), g, 0.05);
+    add(cone(el, ha, (isW ? 0.045 : 0.05) * am, (isW ? 0.043 : 0.048) * am, top, 0.03), g);
     add(cone(v(0, 0.025, 0), v(0, 0.0, 0), isW ? 0.049 : 0.054, isW ? 0.047 : 0.052, top, 0.01, Fa), g);
     add(cone(v(0, -0.005, 0), v(0, -0.035, 0), isW ? 0.03 : 0.035, isW ? 0.031 : 0.036, skin, 0.012, Fa), g);
     add(ell(v(0, -0.07, 0.004), isW ? 0.036 : 0.042, isW ? 0.05 : 0.056, isW ? 0.024 : 0.028, skin, 0.025, Fa), g);
@@ -308,7 +325,7 @@ const KEYS = ['spine', 'chest', 'neck', 'head', 'shL', 'elL', 'haL', 'shR', 'elR
 export function pose(J, p) {
   for (const k of KEYS) { const v = p[k] || [0, 0, 0]; J[k].rotation.set(v[0], v[1], v[2]); }
   // p.seat = height of the seat surface: the pelvis rests on it instead of sinking in
-  J.pelvis.position.y = p.seat !== undefined ? p.seat + (J.kind === 'w' ? 0.06 : 0.066) : J.dims.thigh + J.dims.shin + 0.07 + (p.y || 0);
+  J.pelvis.position.y = p.seat !== undefined ? p.seat / (J.K || 1) + (J.kind === 'w' ? 0.06 : 0.066) : J.dims.thigh + J.dims.shin + 0.07 + (p.y || 0);
   // ankles keep the feet flat-ish
   for (const s of ['L', 'R']) { const h = (p['hip' + s] || [0])[0], k = (p['kn' + s] || [0])[0]; J['an' + s].rotation.x = -(h + k) * 0.9; }
   rebuildBody(J);

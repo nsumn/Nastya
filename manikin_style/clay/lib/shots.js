@@ -7,6 +7,14 @@ const WORRY = { brow: 0.7, mouth: -0.35, lid: 0.2, look: [0, -0.2] };
 const BLANK = { brow: 0.1, mouth: -0.1, lid: 0.45, look: [0, -0.9] };
 
 export const SHOTS = {
+  pair: {
+    set: 'minimal', cap: 'Eine Frau, die keine Nähe mehr bekommt,',
+    fig: [
+      { kind: 'w', at: [-0.3, -0.66], yaw: 0.28, pose: mix(POSES.sitSad, { head: [0.38, 0.12, 0], neck: [0.12, 0, 0] }), face: SAD },
+      { kind: 'm', at: [0.55, -0.66], yaw: -0.4, pose: mix(POSES.sitPhone, { spine: [0.3, 0, 0], head: [0.15, -0.45, 0], neck: [0.05, -0.15, 0] }), face: { ...WORRY, look: [-0.7, -0.2] } },
+    ],
+    cam: { pos: [0.05, 0.95, 3.7], look: [0.1, 0.62, -0.6], fov: 30 },
+  },
   sofa: {
     set: 'living', cap: 'Je mehr sie liebt,',
     fig: [

@@ -58,6 +58,10 @@ export function sofa(g, x, z, w = 1.9) {
 
 // ---------------------------------------------------------------- sets
 export const SETS = {
+  minimal(g) {   // empty room: wall, one big bright window, the sofa
+    shell(g, { panels: false }); windowAt(g, -0.55, 1.45, 1.2, 1.5);
+    sofa(g, 0.15, -0.75, 1.9);
+  },
   living(g) {
     shell(g); windowAt(g, -0.95, 1.55); frame(g, 0.75, 1.75, 0.42, 0.32); frame(g, 1.25, 1.62, 0.28, 0.36);
     for (let i = 0; i < 5; i++) M(cyl(0.045, 0.06, 1.7, 16), S.white, g, -1.55 + i * 0.07, 1.3, -1.1);
