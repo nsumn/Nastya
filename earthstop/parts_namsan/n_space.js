@@ -35,7 +35,7 @@ sp.environment = hw.environment; sp.environmentIntensity = 0.45;
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   sp.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#ffffff', size: 1.6, sizeAttenuation: false, fog: false }))); }
 // sky colour inside the atmosphere (fades to black with camera altitude)
-function spSky(alt) { const k = smooth(15, 90, alt); sp.background = new THREE.Color('#7fa8d8').lerp(new THREE.Color('#02030a'), k); clouds.material.opacity = 0.85; return k; }
+function spSky(alt) { const k = smooth(15, 90, alt); sp.background = new THREE.Color('#3a5f9a').lerp(new THREE.Color('#02030a'), smooth(8, 70, alt)); clouds.material.opacity = 0.85; return k; }
 // airliner (A330-ish, ~64 m) + its contrail, flying at 11 km
 const plane = new THREE.Group(); { const wM = M('#f4f5f7', { roughness: 0.35, metalness: 0.2 }), bl = M('#2f5fa8');
   const f = mesh(new THREE.CapsuleGeometry(0.0028, 0.058, 6, 12), wM); f.rotation.z = Math.PI / 2; plane.add(f);

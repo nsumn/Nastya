@@ -647,7 +647,7 @@ sp.environment = hw.environment; sp.environmentIntensity = 0.45;
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   sp.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#ffffff', size: 1.6, sizeAttenuation: false, fog: false }))); }
 // sky colour inside the atmosphere (fades to black with camera altitude)
-function spSky(alt) { const k = smooth(15, 90, alt); sp.background = new THREE.Color('#7fa8d8').lerp(new THREE.Color('#02030a'), k); clouds.material.opacity = 0.85; return k; }
+function spSky(alt) { const k = smooth(15, 90, alt); sp.background = new THREE.Color('#3a5f9a').lerp(new THREE.Color('#02030a'), smooth(8, 70, alt)); clouds.material.opacity = 0.85; return k; }
 // airliner (A330-ish, ~64 m) + its contrail, flying at 11 km
 const plane = new THREE.Group(); { const wM = M('#f4f5f7', { roughness: 0.35, metalness: 0.2 }), bl = M('#2f5fa8');
   const f = mesh(new THREE.CapsuleGeometry(0.0028, 0.058, 6, 12), wM); f.rotation.z = Math.PI / 2; plane.add(f);
@@ -732,8 +732,8 @@ function worldAt(t) {
   CROWD.forEach((P, i) => { sitPose(P, t, i); P.outer.rotation.order = 'YXZ'; P.outer.rotation.y = Math.PI + (i % 5 - 2) * 0.12; const up = (i % 3 === 0) && t > 8 + (i % 4) * 0.6; if (up) { P.outer.position.y = 0.95; for (const l of P.legs) l.rotation.set(0, 0, 0); for (const k of P.knees) k.rotation.x = 0.02; P.arms[0].rotation.set(0, 0, 0); P.arms[1].rotation.set(-0.55, 0, 0.05); P.elbows[1].rotation.x = -1.35; } else P.outer.position.y = 0.17;
     P.outer.position.x += shock * 0.02 * Math.sin(t * 50 + i); });
   // space
-  const rk = rocketPosK(T); spRocket.position.copy(rk); spRocket.rotation.z = -0.9 * smooth(20, 200, T) - downM(T) / 1000 / RE; spGlow.position.copy(rk); spGlow.scale.setScalar(Math.max(0.4, 0.004 * spCam.position.distanceTo(rk)) * burn);
-  const r0 = rocketPosK(Math.max(1, T * 0.35)); spTrail.position.copy(r0.clone().lerp(rk, 0.5)); spTrail.scale.set(0.15 + 0.002 * spCam.position.distanceTo(rk), r0.distanceTo(rk), 0.15 + 0.002 * spCam.position.distanceTo(rk)); spTrail.lookAt(rk); spTrail.rotateX(Math.PI / 2); spTrail.visible = T > 30 && T < 520;
+  const rk = rocketPosK(T); spRocket.position.copy(rk); spRocket.rotation.z = -0.9 * smooth(20, 200, T) - downM(T) / 1000 / RE; spGlow.position.copy(rk); spGlow.scale.setScalar(0.004 * spCam.position.distanceTo(rk) * burn);
+  const r0 = rocketPosK(Math.max(1, T * 0.35)); spTrail.position.copy(r0.clone().lerp(rk, 0.5)); spTrail.scale.set(0.01 + 0.002 * spCam.position.distanceTo(rk), r0.distanceTo(rk), 0.01 + 0.002 * spCam.position.distanceTo(rk)); spTrail.lookAt(rk); spTrail.rotateX(Math.PI / 2); spTrail.visible = T > 30 && T < 520;
   return T;
 }
 const FACE_OK = f => f;   // all names exist in d_block FACE
