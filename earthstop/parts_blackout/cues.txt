@@ -1,0 +1,16 @@
+# Blackout video — cue sheet (lights off 3.0, stars fill 10–15, Milky Way 13.5–17.5, lights back 24.0, end card 26.2). Derived clips (ffmpeg trims): amb_pre / fountain_pre (cut at 3.05), night_in (fade-in), night_end (cut at 24).
+music stars0 7.0 0.28 28.6
+0.0 amb_pre 1.0
+0.0 fountain_pre 0.55
+2.98 cut 1.0
+3.15 night_in 0.9
+13.1 night 0.7
+23.05 night_end 0.7
+6.6 gasp 0.45 -0.2
+10.2 shimmer 0.45
+13.6 shimmer 0.4 0.2
+21.3 wow 0.5 0.15
+23.95 whoosh 0.45
+24.0 poweron 1.0
+24.05 amb 0.9
+24.1 fountain 0.5
