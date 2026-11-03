@@ -139,24 +139,63 @@ def figure(w):
         nt.links.new(attr.outputs["Fac"], mix.inputs[0]); nt.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
         bsdf.inputs["Roughness"].default_value = 0.42; bsdf.inputs["Subsurface Weight"].default_value = 0.06
         head.data.materials.clear(); head.data.materials.append(hm)
-        # the hanging part: soft blobby volume (metaballs) behind and beside the head, down to just below the shoulders
-        mb = bpy.data.metaballs.new("hairmb"); mb.resolution = 0.012; mb.render_resolution = 0.007; mb.threshold = 0.75
+        # the hanging part: ONE closed smooth mass (a deformed sphere) - hugs the back of the head, falls to just below
+        # the shoulders, comes forward only at the sides (frames the face), stays behind the neck in front; rounded ends
         bottom = -((H.z - R) - (z(1.22) - 0.13)) - R              # z of the hair ends, relative to the head centre
-        def blob(co, rad, sx, sy, sz):
-            e = mb.elements.new(); e.type = "ELLIPSOID"; e.co = co; e.radius = rad
-            e.size_x, e.size_y, e.size_z = sx, sy, sz; e.stiffness = 1.6
-        n = 22
-        blob((0, R * 0.3, R * 0.1), R * 0.93, 1.0, 0.9, 1.0)          # back of the head: hair dome merged with the strands
-        for i in range(n):
-            t = i / (n - 1); zz = 0.3 * R + (bottom + 0.06 - 0.3 * R) * t
-            fl = 1 + 0.18 * t                                    # ends flare a little
-            blob((0, R * (0.5 + 0.2 * min(1, t * 3) - 0.02 * t), zz), R * 0.42, 1.95 * fl, 0.72, 0.9)              # back sheet
-            for s in (-1, 1):
-                if t > 0.12:
-                    blob((s * R * 0.86 * fl, R * (0.2 + 0.05 * t), zz), R * 0.3, 0.8, 1.2, 0.9)   # side curtains
-                if t > 0.12: blob((s * R * 0.64 * fl, R * (0.46 + 0.1 * t), zz), R * 0.34, 1.0, 0.95, 0.9)        # corners
-        hs = bpy.data.objects.new("hair", mb); sc.collection.objects.link(hs)
-        hs.location = H; mb.materials.append(HAIR); reg(hs)
+        def sstep(a, b, x):
+            t = min(1, max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=64, radius=1.0, location=(0, 0, 0))
+        hs = bpy.context.active_object; hs.name = "hair"
+        L = -bottom
+        for v in hs.data.vertices:
+            d = v.co.normalized()
+            # cap over the skull: just inside the raised hair of the head; pulled well inside at the face
+            back_bump = 0.09 * sstep(-0.2, 0.6, d.y) * (1 - sstep(0.05, 0.95, d.z))  # meets the curtain without a seam
+            cap = d * R * (1.03 + back_bump - 0.16 * sstep(-0.05, -0.45, d.y))
+            if d.z >= 0: v.co = cap; continue
+            s = -d.z
+            h = Vector((d.x, d.y, 0)); h = h.normalized() if h.length > 1e-6 else Vector((0, 1, 0))
+            rho = (1 - s ** 6) ** 0.3                                   # keeps the width, rounds off only at the very end
+            zz = -L * s ** 0.85
+            env = 1.13 * R * max(0.0, 1 - (zz / (1.13 * R)) ** 2) ** 0.5   # around the skull: stay just outside the head
+            def smax(p_, q_, k_=0.12 * R): return (p_ + q_ + ((p_ - q_) ** 2 + k_ * k_) ** 0.5) / 2
+            rx = smax(R * (1.0 + 0.10 * s) * rho, env)                  # width: head-wide, slightly fuller at the ends
+            x = h.x * rx
+            yb = smax(R * 0.80 * rho, env)                              # depth at the back
+            if h.y >= 0:
+                y = h.y * yb
+            else:   # front half: same depth at the sides (no crease), then curves back behind the neck in the middle
+                u = math.atan2(-h.y, abs(h.x)) / (math.pi / 2)           # 0 at the side .. 1 straight ahead
+                y = h.y * (yb - (yb + R * 0.30 * rho) * sstep(0.0, 0.55, u))   # sides stay behind the shoulders
+            curtain = Vector((x, y, zz))
+            bl = sstep(0.0, 0.45, s)                                    # blend from the skull cap into the curtain
+            v.co = cap.lerp(curtain, bl)
+        smooth(hs)
+        sub_h = hs.modifiers.new("sub", "SUBSURF"); sub_h.levels = sub_h.render_levels = 2
+        hs.location = H; hs.data.materials.append(HAIR)
+        # fuse head + hair into ONE surface (voxel remesh) and soften the junction, so there is no seam at the sides;
+        # the hair/skin colour mask is copied back from the original head
+        src = head.copy(); src.data = head.data.copy(); sc.collection.objects.link(src); src.hide_render = True; src.hide_viewport = True
+        bpy.ops.object.select_all(action="DESELECT"); hs.select_set(True); bpy.context.view_layer.objects.active = hs
+        bpy.ops.object.modifier_apply(modifier="sub")
+        head.select_set(True); bpy.context.view_layer.objects.active = head
+        bpy.ops.object.join()
+        rm = head.modifiers.new("remesh", "REMESH"); rm.mode = "VOXEL"; rm.voxel_size = 0.0035; rm.use_smooth_shade = True
+        bpy.ops.object.modifier_apply(modifier="remesh")
+        sm = head.modifiers.new("smooth", "SMOOTH"); sm.factor = 0.6; sm.iterations = 12
+        bpy.ops.object.modifier_apply(modifier="smooth")
+        head.data.color_attributes.new("hairmask", "FLOAT_COLOR", "POINT")
+        dt = head.modifiers.new("mask", "DATA_TRANSFER"); dt.object = src
+        dt.use_vert_data = True; dt.data_types_verts = {"COLOR_VERTEX"}; dt.vert_mapping = "POLYINTERP_NEAREST"
+        dt.layers_vcol_vert_select_src = "ALL"; dt.layers_vcol_vert_select_dst = "NAME"
+        bpy.ops.object.modifier_apply(modifier="mask")
+        # everything outside the original skull or hanging below it is hair; the face keeps the copied mask
+        Mw = head.matrix_world.copy()
+        for v, c in zip(head.data.vertices, head.data.color_attributes["hairmask"].data):
+            q = Mw @ v.co - H; dist = q.length
+            hm_ = max(c.color[0], sstep(1.02 * R, 1.07 * R, dist), sstep(-0.82 * R, -0.95 * R, q.z) * sstep(-0.25 * R, -0.05 * R, q.y))
+            c.color = (hm_, hm_, hm_, 1)
+        head.data.materials.clear(); head.data.materials.append(hm); smooth(head)
     else:
         for s in (-1, 1):                 # small ears so his bald head reads as a head
             sphere("ear", H + Vector((s * R * 0.95, 0.01, -0.01)), R * 0.17, m, (0.5, 0.8, 1.0))
@@ -211,3 +250,8 @@ def shoot(pos, tgt, path):
 shoot((0.0, -3.9, 1.1), (0, 0, 0.92), PRE + "_front.png")
 her.rotation_euler = (0, 0, math.radians(150)); him.rotation_euler = (0, 0, math.radians(-150))
 shoot((0.0, -3.9, 1.1), (0, 0, 0.92), PRE + "_back.png")
+if len(argv) > 3 and argv[3] == "cu":               # close-ups of her head (front, back, side)
+    her.rotation_euler = (0, 0, 0); hz = her.location.z + 1.5
+    for nm, ang in (("cu_front", 0), ("cu_side", 70), ("cu_back", 180)):
+        her.rotation_euler = (0, 0, math.radians(ang))
+        shoot((-0.38, -1.5, 1.45), (-0.38, 0, 1.35), PRE + "_" + nm + ".png")
