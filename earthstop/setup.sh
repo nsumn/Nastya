@@ -11,6 +11,12 @@ if command -v Xvfb >/dev/null; then
 else
   echo "Xvfb missing — render.mjs will fall back to GL=swiftshader (slower)"
 fi
+# optional: Blender 4.2 LTS for the new realistic format  (BLENDER=1 bash earthstop/setup.sh)
+if [ "$BLENDER" = 1 ] && [ ! -x /opt/blender/blender-4.2.3-linux-x64/blender ]; then
+  mkdir -p /opt/blender && curl -sSL https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz | tar xJ -C /opt/blender
+  (apt-get install -y -q libegl1 libgl1 libxkbcommon0 >/dev/null 2>&1 || (apt-get update -q >/dev/null 2>&1 && apt-get install -y -q libegl1 libgl1 libxkbcommon0 >/dev/null 2>&1))
+  /opt/blender/blender-4.2.3-linux-x64/blender -b --version | head -1
+fi
 curl -s -o /dev/null http://127.0.0.1:8765/ || (setsid nohup python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &)
 sleep 1
 curl -s -o /dev/null -w "http server: %{http_code}\n" http://127.0.0.1:8765/

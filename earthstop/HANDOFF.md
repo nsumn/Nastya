@@ -1,12 +1,19 @@
 # Handoff — state of the "What if…" TikTok work
 
 Read this first in a new session, then `earthstop/CLAUDE.md` (workflow, safe zones, pitfalls) and `README.md` (scene list).
-Branch: `claude/what-if-video-ideas-veem1s` (repo `nsumn/Nastya`). Everything below is committed there.
+Branch: `claude/what-if-video-ideas-nmv78w` (repo `nsumn/Nastya`) — the CURRENT branch, everything is committed there (the older `…-veem1s` is fully contained in it). Two people / two Claude Code accounts push to it (Anastasia's US "What if" videos and the Korean shorts: `parts_growkr`, `parts_krf`, `*_kr*`, Namsan): always `git fetch origin claude/what-if-video-ideas-nmv78w && git rebase origin/claude/what-if-video-ideas-nmv78w` before `git push`, never force-push.
 
 ## Who / how
 - Anastasia (talk to her in **Russian**, short messages, she is on a phone). On-screen text is **English, US units**.
 - Every video: research facts (web search, cite sources), compute numbers in `tools/*.py`, send a time-coded **script table**, wait for "ок/да", build, check a contact sheet, then send the mp4 + TikTok caption + 6–8 hashtags + 2 short alternatives + known flaws + posting tip (7–9 pm ET).
 - Commit + push engine changes (not frames / mp4 / wav / assets) after each step.
+
+## NOW (Nov 3) — the format is changing: realistic Blender shorts in the style of Zack D. Films
+- Her words: "не залетают больше видео… пора менять контент, уходить от «что если»… подключиться к блендеру и делать более качественный контент, как Zack D. Films". The last low-poly videos (ocean jump, elevator, shower, fly) did not take off.
+- Zack D. Films formula: 20–40 s, near-realistic 3D (Blender, rigged human models + mocap), a VOICE-OVER narrator from the first second ("This is what happens when…"), fast cuts, close-ups, X-ray/inside-the-body shots, topics = your body, danger/survival, weird real cases.
+- Blender works on the cloud server: `BLENDER=1 bash earthstop/setup.sh` installs Blender 4.2.3 LTS to `/opt/blender/` + libEGL. Measured with `tools/blender_bench.py` (4 CPU cores, no GPU): Cycles 32 spp + denoise at 1080×1920 = 73 s/frame on a SIMPLE scene; EEVEE Next (Xvfb :99 + llvmpipe) = 137 s for the first frame incl. shader compile, steady-state not measured yet, and it rendered flat. Plan: Cycles at 540×960 (or 720×1280) + denoise + upscale, ~15–20 s/frame estimated → a 30 s video ≈ 4–5 h of rendering; keep videos 25–35 s; render a single test shot first and show it before the full render.
+- Open questions to her (not answered yet): (1) OK to use the Lumean voice-over (real TTS, not our synthetic buzz — the "no voices" rule was about the synth)? (2) Will she download rigged characters + animations from Mixamo (needs her Adobe login; Claude cannot log in) and send the FBX files? Environments/HDRIs/textures can come from Poly Haven (CC0, downloadable from the server). (3) Topic: suggested "What happens if you swallow gum" (inside-the-body, no human rig needed), "…fall into a frozen lake", "the triangle of death pimple", "…hold in a sneeze".
+- Last low-poly video: "What if you could fly for one day?" (`parts_fly/`, 64 s) delivered Nov 3 with and without music (README entry). Her notes during it: alternate first-person and third-person shots; "the city is just empty boxes — I said cinematic AND detailed" → detailed Manhattan (see README).
 
 ## Latest (Nov 2): back to the body formula — "What if you stopped showering for a month?" (`parts_shower/`)
 - The ocean-jump and elevator videos did NOT take off (her words). Back to body/habit topics with the hero big in frame from the first second.
