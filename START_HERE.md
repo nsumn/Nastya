@@ -2,8 +2,11 @@
 
 Здесь лежит всё, что нужно, чтобы делать 3D-ролики «What if…» для TikTok в том же стиле: движок, все прошлые видео, правила канала и навыки для Claude.
 
+## Корейский канал 뚝딱 (@ttukttak3d)
+Для корейских роликов главный файл — `earthstop/KOREA.md`: канал, правила и замечания, герой-кореец, движок, текущий ролик в работе и следующие идеи. Перед работой и перед каждым пушем: `git pull --rebase origin claude/what-if-video-ideas-nmv78w` (в эту же ветку пишет сессия американского канала).
+
 ## Где что лежит
-- **Ветка:** `claude/what-if-video-ideas-veem1s`. Вся работа там, а не в `main`.
+- **Ветка:** `claude/what-if-video-ideas-nmv78w`. Вся работа там, а не в `main`.
 - `earthstop/`: движок (three.js + Python для звука), сцены всех видео, инструменты расчётов.
   - `earthstop/HANDOFF.md`: текущее состояние и все замечания по прошлым видео. Это главный файл.
   - `earthstop/CLAUDE.md`: как Claude должен работать: процесс, безопасные зоны TikTok, рендер, кодирование, ошибки.
@@ -15,10 +18,10 @@
 
 ## Как начать в Claude Code (в браузере, claude.ai/code)
 1. Подключить GitHub-аккаунт, на котором лежит репозиторий `nsumn/Nastya`.
-2. Создать сессию с этим репозиторием и выбрать ветку `claude/what-if-video-ideas-veem1s`. Либо написать Claude: «работаем в ветке claude/what-if-video-ideas-veem1s».
+2. Создать сессию с этим репозиторием и выбрать ветку `claude/what-if-video-ideas-nmv78w`. Либо написать Claude: «работаем в ветке claude/what-if-video-ideas-nmv78w».
 3. Первым сообщением написать, например: «Прочитай earthstop/HANDOFF.md и earthstop/CLAUDE.md, запусти bash earthstop/setup.sh и предложи 5 идей What if». Дальше Claude ведёт сам: идеи → сценарий с фактами → согласование → рендер → видео и описание для TikTok.
 
-Локально тоже можно: `git clone`, `git checkout claude/what-if-video-ideas-veem1s`, `bash earthstop/setup.sh`. Нужны Node 18+, Python 3, ffmpeg, Chromium через Playwright.
+Локально тоже можно: `git clone`, `git checkout claude/what-if-video-ideas-nmv78w`, `bash earthstop/setup.sh`. Нужны Node 18+, Python 3, ffmpeg, Chromium через Playwright.
 
 ## Что НЕ лежит в репозитории (и почему)
 - **Готовые mp4, кадры, wav** (`earthstop/out/`): они тяжёлые. Их можно перерендерить из исходников командами из `earthstop/CLAUDE.md`.
