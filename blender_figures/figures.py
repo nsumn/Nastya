@@ -107,16 +107,17 @@ def figure(w):
         arc(on_head(H, R, (s * 0.38, -1, 0.42), 0.002), on_head(H, R, (s * 0.38, -1, 0.42)) - H, (0, 0, 1), 0.036 * k, 0.0055, 20, 160, INK)
     arc(on_head(H, R, (0, -1, -0.38), 0.002), on_head(H, R, (0, -1, -0.38)) - H, (0, 0, 1), 0.04 * k, 0.0065, 205, 335, INK)   # smile
     if w:
-        # hair: a cap set back on the head + side-swept fringe + volume over the ears + ponytail
-        sphere("cap", H + Vector((0, 0.045, 0.03)), R * 1.04, HAIR, (1.0, 1.0, 1.0))
-        sphere("fringe", on_head(H, R, (-0.45, -0.75, 0.75), -0.03), R * 0.52, HAIR, (1.25, 0.6, 0.62), (0.35, 0.1, -0.45))
-        sphere("fringe2", on_head(H, R, (0.25, -0.7, 0.85), -0.03), R * 0.38, HAIR, (1.2, 0.6, 0.6), (0.4, 0, 0.3))
+        # hair: loose, just below the shoulders; no fringe, forehead and brows free
+        sphere("cap", H + Vector((0, 0.075, 0.055)), R * 1.02, HAIR, (1.0, 1.0, 1.0))
+        shz = z(1.22)
+        # back sheet of hair from the crown down to just below the shoulders
+        skin("back", [tuple(H + Vector((0, R * 0.55, R * 0.35))), tuple(H + Vector((0, R * 0.8, -R * 0.4))), (0, H.y + R * 0.7, shz + 0.02), (0, H.y + R * 0.62, shz - 0.1)],
+             [(0, 1), (1, 2), (2, 3)], [(R * 0.88, R * 0.55), (R * 1.0, R * 0.5), (R * 0.95, R * 0.3), (R * 0.75, R * 0.16)], HAIR)
+        # side locks falling past the ears onto the shoulders
         for s in (-1, 1):
-            sphere("side", H + Vector((s * R * 0.78, 0.05, -0.02)), R * 0.42, HAIR, (0.55, 0.9, 1.15))
-        tie = H + Vector((0, R * 0.95, R * 0.25))
-        sphere("tie", tie, R * 0.17, HAIR)
-        skin("tail", [tuple(tie + Vector((0, 0.01, 0))), tuple(tie + Vector((0, 0.07, -0.12))), tuple(tie + Vector((0, 0.07, -0.27))), tuple(tie + Vector((0, 0.03, -0.38)))],
-             [(0, 1), (1, 2), (2, 3)], [0.05, 0.058, 0.045, 0.015], HAIR)
+            skin("lock", [tuple(H + Vector((s * R * 0.72, R * 0.25, R * 0.35))), tuple(H + Vector((s * R * 0.92, R * 0.3, -R * 0.35))),
+                          (s * R * 0.85, H.y + R * 0.38, shz + 0.02), (s * R * 0.78, H.y + R * 0.42, shz - 0.09)],
+                 [(0, 1), (1, 2), (2, 3)], [R * 0.32, R * 0.3, R * 0.26, R * 0.14], HAIR)
     else:
         for s in (-1, 1):                 # small ears so his bald head reads as a head
             sphere("ear", H + Vector((s * R * 0.95, 0.01, -0.01)), R * 0.17, m, (0.5, 0.8, 1.0))
