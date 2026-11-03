@@ -139,31 +139,24 @@ def figure(w):
         nt.links.new(attr.outputs["Fac"], mix.inputs[0]); nt.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
         bsdf.inputs["Roughness"].default_value = 0.42; bsdf.inputs["Subsurface Weight"].default_value = 0.06
         head.data.materials.clear(); head.data.materials.append(hm)
-        # the hanging part: a curtain from the ears down to just below the shoulders, its top hidden inside the head
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=72, radius=1.0, location=(0, 0, 0))
-        hs = bpy.context.active_object; hs.name = "hair"
-        bm = bmesh.new(); bm.from_mesh(hs.data)
-        drop = (H.z - R) - (z(1.22) - 0.14)
-        kill = []
-        for v in bm.verts:
-            d = v.co.normalized()
-            if d.z > 0.25 or (d.y < -0.05 and window(d) < 0.05) or (d.y < 0.05 and d.z < -0.2 and abs(d.x) < 0.8) or d.z < -0.9:
-                kill.append(v); continue
-            t = max(0.0, (0.15 - d.z) / 1.05)
-            em = sstep(0.28, -0.15, d.z)                        # emerges tangentially out of the head
-            rr = R * (1.0 + 0.095 * em); sp = 1 + 0.12 * t ** 1.3
-            v.co = Vector((d.x * rr * sp, d.y * rr * sp + 0.02 * t, d.z * rr - drop * t ** 0.9))
-        bmesh.ops.delete(bm, geom=kill, context="VERTS")
-        edge = set(v for v in bm.verts if v.is_boundary)
-        ring = set(e.other_vert(v) for v in edge for e in v.link_edges) | edge
-        ring = set(e.other_vert(v) for v in ring for e in v.link_edges) | ring
-        for _ in range(40): bmesh.ops.smooth_vert(bm, verts=list(edge), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-        for _ in range(15): bmesh.ops.smooth_vert(bm, verts=list(ring), factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-        bm.to_mesh(hs.data); bm.free()
-        hs.location = H + Vector((0, 0.0, 0)); hs.scale = (0.97, 0.98, 1.03)
-        so = hs.modifiers.new("thick", "SOLIDIFY"); so.thickness = 0.026; so.offset = 0
-        sb = hs.modifiers.new("sub", "SUBSURF"); sb.levels = sb.render_levels = 2
-        smooth(hs); hs.data.materials.append(HAIR); reg(hs)
+        # the hanging part: soft blobby volume (metaballs) behind and beside the head, down to just below the shoulders
+        mb = bpy.data.metaballs.new("hairmb"); mb.resolution = 0.012; mb.render_resolution = 0.007; mb.threshold = 0.75
+        bottom = -((H.z - R) - (z(1.22) - 0.13)) - R              # z of the hair ends, relative to the head centre
+        def blob(co, rad, sx, sy, sz):
+            e = mb.elements.new(); e.type = "ELLIPSOID"; e.co = co; e.radius = rad
+            e.size_x, e.size_y, e.size_z = sx, sy, sz; e.stiffness = 1.6
+        n = 22
+        blob((0, R * 0.3, R * 0.1), R * 0.93, 1.0, 0.9, 1.0)          # back of the head: hair dome merged with the strands
+        for i in range(n):
+            t = i / (n - 1); zz = 0.3 * R + (bottom + 0.06 - 0.3 * R) * t
+            fl = 1 + 0.18 * t                                    # ends flare a little
+            blob((0, R * (0.5 + 0.2 * min(1, t * 3) - 0.02 * t), zz), R * 0.42, 1.95 * fl, 0.72, 0.9)              # back sheet
+            for s in (-1, 1):
+                if t > 0.12:
+                    blob((s * R * 0.86 * fl, R * (0.2 + 0.05 * t), zz), R * 0.3, 0.8, 1.2, 0.9)   # side curtains
+                if t > 0.12: blob((s * R * 0.64 * fl, R * (0.46 + 0.1 * t), zz), R * 0.34, 1.0, 0.95, 0.9)        # corners
+        hs = bpy.data.objects.new("hair", mb); sc.collection.objects.link(hs)
+        hs.location = H; mb.materials.append(HAIR); reg(hs)
     else:
         for s in (-1, 1):                 # small ears so his bald head reads as a head
             sphere("ear", H + Vector((s * R * 0.95, 0.01, -0.01)), R * 0.17, m, (0.5, 0.8, 1.0))
