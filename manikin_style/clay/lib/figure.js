@@ -100,7 +100,7 @@ export function makeFigure(kind) {
                    : { hipW: 0.072, thigh: 0.26, shin: 0.24, torso: 0.33, shW: 0.17, upper: 0.21, fore: 0.19 };
   const dims = !MONO ? dims0 : isW ? { hipW: 0.072, thigh: 0.4, shin: 0.39, torso: 0.42, shW: 0.128, upper: 0.27, fore: 0.24 }
                                    : { hipW: 0.08, thigh: 0.44, shin: 0.43, torso: 0.5, shW: 0.205, upper: 0.31, fore: 0.28 };
-  const K = MONO ? (isW ? 0.72 : 0.775) : 1;   // adult proportions, scaled to the size the sets were built for
+  const K = MONO ? (isW ? 0.72 : 0.78) : 1;   // adult proportions, scaled to the size the sets were built for
   const J = { root };
   const pelvis = J.pelvis = G(root, 0, dims.thigh + dims.shin + 0.07, 0);
   const spine = J.spine = G(pelvis);
@@ -119,7 +119,7 @@ export function makeFigure(kind) {
   }
   J.bodyMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0, side: THREE.DoubleSide });
   J.kind = kind; J.R = R; J.dims = dims; J.mono = MONO; J.K = K; root.scale.setScalar(K);
-  if (MONO) hairMono(J, isW);
+  if (MONO) buildManikin(J, isW);
   root.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
   return J;
 }
@@ -149,41 +149,31 @@ function hairMono(J, isW) {
   }
 }
 function buildManikin(J, isW) {
-  const d = J.dims, R = J.R, C = CLOTH[isW ? 'w' : 'm'];
-  // torso: one smooth sweater capsule from the pelvis to the shoulders, slightly flattened front-to-back
-  const tr = isW ? 0.112 : 0.13;
-  capM(J.spine, tr, d.torso + 0.09, d.torso + 0.03, C.top, 1.12, 0.78);
-  ringM(J.neck, 0.05, 0.014, -0.005, C.cuff);                             // round neckline
-  // hips / legs
-  const lr = isW ? 0.056 : 0.06;
-  ball(J.pelvis, isW ? 0.115 : 0.112, C.legs, 0, -0.01, 0, 1.12, 0.7, 0.8);
-  capM(J.neck, 0.044, 0.11, 0.1, MK);
+  const d = J.dims, R = J.R;
+  const FM = new THREE.MeshStandardMaterial({ color: isW ? '#dc9eac' : '#7f9dcc', roughness: 0.45, metalness: 0 });
+  J.figMat = FM;
+  // torso: one smooth lathe from the hips to the shoulders, flattened front-to-back
+  const prof = isW
+    ? [[0.001, -0.075], [0.08, -0.068], [0.116, -0.01], [0.114, 0.07], [0.086, 0.18], [0.074, 0.23], [0.088, 0.31], [0.098, 0.36], [0.094, 0.41], [0.075, 0.44], [0.04, 0.458], [0.001, 0.462]]
+    : [[0.001, -0.075], [0.085, -0.068], [0.112, -0.01], [0.112, 0.1], [0.114, 0.22], [0.132, 0.33], [0.146, 0.42], [0.14, 0.475], [0.105, 0.505], [0.05, 0.52], [0.001, 0.524]];
+  const tor = M(new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 48), FM, J.spine);
+  tor.scale.set(isW ? 1.04 : 1.16, 1, isW ? 0.72 : 0.64);
+  ball(J.pelvis, isW ? 0.1 : 0.1, FM, 0, -0.02, 0, isW ? 1.16 : 1.12, 0.72, 0.74);
+  capM(J.neck, isW ? 0.036 : 0.048, 0.12, 0.11, FM);
   for (const k of ['L', 'R']) {
-    ball(J['sh' + k], isW ? 0.047 : 0.054, C.top);
-    capM(J['sh' + k], isW ? 0.04 : 0.046, d.upper + 0.02, 0.01, C.top);
-    ball(J['el' + k], isW ? 0.038 : 0.044, C.top);
-    capM(J['el' + k], isW ? 0.037 : 0.043, d.fore - 0.01, 0.0, C.top);
-    ringM(J['ha' + k], isW ? 0.036 : 0.042, 0.012, 0.012, C.cuff);
-    ball(J['ha' + k], isW ? 0.03 : 0.034, MK, 0, -0.04, 0.005, 0.78, 1.45, 0.55);
-    capM(J['hip' + k], lr, d.thigh + 0.03, 0.02, C.legs);
-    ball(J['kn' + k], lr * 0.92, C.legs);
-    capM(J['kn' + k], lr * 0.85, d.shin - 0.01, 0.0, C.legs);
-    ball(J['an' + k], 0.042, C.shoe, 0, -0.02, 0.05, 0.9, 0.62, 1.75);
+    const ar = isW ? 0.034 : 0.046, fr = isW ? 0.03 : 0.04;
+    ball(J['sh' + k], ar * 1.12, FM);
+    capM(J['sh' + k], ar, d.upper + ar, ar * 0.5, FM);
+    capM(J['el' + k], fr, d.fore + fr * 0.6, fr * 0.6, FM);
+    ball(J['ha' + k], isW ? 0.029 : 0.037, FM, 0, -0.04, 0.004, 0.75, 1.45, 0.5);
+    const tr = isW ? 0.057 : 0.064, sr = isW ? 0.041 : 0.05;
+    capM(J['hip' + k], tr, d.thigh + tr, tr * 0.5, FM);
+    capM(J['kn' + k], sr, d.shin + sr * 0.4, sr * 0.6, FM);
+    ball(J['an' + k], isW ? 0.034 : 0.043, FM, 0, -0.022, 0.045, 0.9, 0.6, 1.75);
   }
-  // head (egg) + hair
-  ball(J.head, R, MK, 0, 0, 0, 0.94, 1.06, 0.98);
-  if (isW) {
-    const cap = M(new THREE.SphereGeometry(R * 1.035, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.5), C.hair, J.head);
-    cap.position.set(0, R * 0.04, -R * 0.04); cap.rotation.x = -0.75; cap.scale.set(0.98, 1.04, 1.02);
-    // side-parted front edge: a soft roll along the hairline
-    const roll = M(new THREE.TorusGeometry(R * 0.86, R * 0.09, 12, 40, Math.PI * 0.95), C.hair, J.head);
-    roll.position.set(0, R * 0.22, R * 0.2); roll.rotation.set(-0.95, 0, 0.05 + Math.PI * 0.025);
-    ball(J.head, R * 0.4, C.hair, 0, R * 0.55, -R * 0.82);                // bun
-    for (const s of [-1, 1]) ball(J.head, 0.012, mat('#e2b545', 0.3), s * R * 0.93, -R * 0.3, R * 0.12);   // earrings
-  } else {
-    const cap = M(new THREE.SphereGeometry(R * 1.035, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.42), C.hair, J.head);
-    cap.position.set(0, R * 0.06, -R * 0.06); cap.rotation.x = -0.8; cap.scale.set(0.98, 1.0, 1.02);
-  }
+  ball(J.head, R, FM, 0, 0, 0, 0.92, 1.06, 0.97);
+  if (isW) ball(J.head, R * 0.4, FM, 0, R * 0.62, -R * 0.74);            // bun
+  J.head.traverse(o => { if (o.isMesh && (o.material === MAT.skin || o.material === MAT.skinSh)) o.material = FM; });
   J.manikin = true;
 }
 
@@ -331,6 +321,6 @@ export function pose(J, p) {
   J.pelvis.position.y = p.seat !== undefined ? p.seat / (J.K || 1) + (J.kind === 'w' ? 0.06 : 0.066) : J.dims.thigh + J.dims.shin + 0.07 + (p.y || 0);
   // ankles keep the feet flat-ish
   for (const s of ['L', 'R']) { const h = (p['hip' + s] || [0])[0], k = (p['kn' + s] || [0])[0]; J['an' + s].rotation.x = -(h + k) * 0.9; }
-  rebuildBody(J);
+  if (!J.manikin) rebuildBody(J);
 }
 export function place(J, x, z, yaw = 0, y = 0) { J.root.position.set(x, y, z); J.root.rotation.y = yaw; }
