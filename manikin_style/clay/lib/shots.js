@@ -7,13 +7,21 @@ const WORRY = { brow: 0.7, mouth: -0.35, lid: 0.2, look: [0, -0.2] };
 const BLANK = { brow: 0.1, mouth: -0.1, lid: 0.45, look: [0, -0.9] };
 
 export const SHOTS = {
+  stand2: {
+    set: 'minimal', cap: 'zieht sich irgendwann zurück.',
+    fig: [
+      { kind: 'w', at: [-0.42, -0.1], yaw: 0.55, pose: mix(POSES.armsCrossed, { head: [0.25, 0.25, 0] }), face: SAD },
+      { kind: 'm', at: [0.45, 0.0], yaw: -0.6, pose: mix(POSES.stand, { head: [0.05, 0.1, 0] }), face: { ...WORRY, look: [-0.6, 0] } },
+    ],
+    cam: { pos: [0.0, 1.0, 4.4], look: [0.0, 0.75, -0.2], fov: 30 },
+  },
   pair: {
     set: 'minimal', cap: 'Eine Frau, die keine Nähe mehr bekommt,',
     fig: [
-      { kind: 'w', at: [-0.3, -0.66], yaw: 0.28, pose: mix(POSES.sitSad, { head: [0.38, 0.12, 0], neck: [0.12, 0, 0] }), face: SAD },
-      { kind: 'm', at: [0.55, -0.66], yaw: -0.4, pose: mix(POSES.sitPhone, { spine: [0.3, 0, 0], head: [0.15, -0.45, 0], neck: [0.05, -0.15, 0] }), face: { ...WORRY, look: [-0.7, -0.2] } },
+      { kind: 'w', at: [-0.3, -0.58], yaw: 0.28, pose: mix(POSES.sitSad, { head: [0.38, 0.12, 0], neck: [0.12, 0, 0] }), face: SAD },
+      { kind: 'm', at: [0.55, -0.56], yaw: -0.4, pose: mix(POSES.sitPhone, { spine: [0.3, 0, 0], head: [0.15, -0.45, 0], neck: [0.05, -0.15, 0] }), face: { ...WORRY, look: [-0.7, -0.2] } },
     ],
-    cam: { pos: [0.05, 0.95, 3.7], look: [0.1, 0.62, -0.6], fov: 30 },
+    cam: { pos: [0.25, 0.9, 3.4], look: [0.15, 0.62, -0.6], fov: 30 },
   },
   sofa: {
     set: 'living', cap: 'Je mehr sie liebt,',

@@ -10,7 +10,7 @@ export const MAT = {
   mouth: clay('#83403b', 0.6), mouthIn: clay('#4a2422', 0.7), blush: clay('#eaa596', 0.85), tear: new THREE.MeshPhysicalMaterial({ color: '#cfe6ff', roughness: 0.05, transmission: 0.6, thickness: 0.01 }),
   dress: clay('#c98a93'), hairW: clay('#6b3e2a', 0.72), skirt: clay('#4a4f5c', 0.8), gold: clay('#e9c56a', 0.3),
   shirt: clay('#7fa58a'), pants: clay('#3d4047', 0.8), hairM: clay('#2e2624', 0.78), stubble: clay('#cbb5a5', 0.9), shoeM: clay('#3b3533', 0.6),
-  shoeW: clay('#7d4a2e', 0.6),
+  shoeW: clay('#7d4a2e', 0.6), tights: clay('#3a3036', 0.7),
 };
 
 function M(geo, mat, parent) { const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; parent.add(m); return m; }
@@ -98,9 +98,9 @@ export function makeFigure(kind) {
   const R = MONO ? (isW ? 0.108 : 0.114) : 0.215;
   const dims0 = isW ? { hipW: 0.062, thigh: 0.24, shin: 0.22, torso: 0.3, shW: 0.145, upper: 0.19, fore: 0.17 }
                    : { hipW: 0.072, thigh: 0.26, shin: 0.24, torso: 0.33, shW: 0.17, upper: 0.21, fore: 0.19 };
-  const dims = !MONO ? dims0 : isW ? { hipW: 0.068, thigh: 0.4, shin: 0.39, torso: 0.44, shW: 0.15, upper: 0.28, fore: 0.25 }
-                                   : { hipW: 0.078, thigh: 0.43, shin: 0.42, torso: 0.48, shW: 0.175, upper: 0.3, fore: 0.27 };
-  const K = MONO ? 0.76 : 1;   // adult proportions, scaled to the size the sets were built for
+  const dims = !MONO ? dims0 : isW ? { hipW: 0.072, thigh: 0.4, shin: 0.39, torso: 0.42, shW: 0.128, upper: 0.27, fore: 0.24 }
+                                   : { hipW: 0.08, thigh: 0.44, shin: 0.43, torso: 0.5, shW: 0.205, upper: 0.31, fore: 0.28 };
+  const K = MONO ? (isW ? 0.72 : 0.775) : 1;   // adult proportions, scaled to the size the sets were built for
   const J = { root };
   const pelvis = J.pelvis = G(root, 0, dims.thigh + dims.shin + 0.07, 0);
   const spine = J.spine = G(pelvis);
@@ -205,17 +205,20 @@ function bodyPrims(J) {
   // --- core: torso (sweater), neckline, head
   const MO = typeof window !== 'undefined' && window.MONO, ts = d.torso / (isW ? 0.3 : 0.33);
   if (MO && isW) {
-    add(cone(v(0, 0.0, 0), v(0, 0.2 * ts, 0), 0.108, 0.082, top, 0.05, Fs, 0.8));        // hips -> waist
-    add(cone(v(0, 0.2 * ts, 0), v(0, 0.265 * ts, 0), 0.082, 0.098, top, 0.05, Fs, 0.8));  // waist -> bust
-    add(cone(v(-0.082, 0.285 * ts, 0), v(0.082, 0.285 * ts, 0), 0.055, 0.055, top, 0.04, Fs, 0.8));
+    add(cone(v(0, 0.0, 0), v(0, 0.19 * ts, 0), 0.118, 0.072, top, 0.05, Fs, 0.8));        // hips -> waist
+    add(cone(v(0, 0.19 * ts, 0), v(0, 0.262 * ts, 0), 0.072, 0.09, top, 0.05, Fs, 0.8));  // waist -> bust
+    for (const s of [-1, 1]) add(ell(v(s * 0.04, 0.245 * ts, 0.05), 0.045, 0.04, 0.035, top, 0.04, Fs));   // bust
+    add(cone(v(-0.07, 0.285 * ts, 0), v(0.07, 0.285 * ts, 0), 0.045, 0.045, top, 0.04, Fs, 0.8));
     const pel = at(J.pelvis, 0, 0.02, 0), knM = at(J.knL).add(at(J.knR)).multiplyScalar(0.5);
     const ax = at(J.hipR).sub(at(J.hipL)).normalize(), ay = knM.clone().sub(pel), L = ay.length(); ay.normalize();
     const az = new THREE.Vector3().crossVectors(ax, ay).normalize(); ax.crossVectors(ay, az).normalize();
     const Fk = new THREE.Matrix4().makeBasis(ax, ay, az).setPosition(pel);
-    add(cone(v(0, -0.01, 0), v(0, L * 1.04, 0), 0.112, 0.126, top, 0.035, Fk, 0.62));    // fitted skirt to the knee
+    add(cone(v(0, -0.01, 0), v(0, L * 0.86, 0), 0.122, 0.13, top, 0.03, Fk, 0.6));       // fitted skirt, ends above the knee
+    add(cone(v(0, L * 0.82, 0), v(0, L * 0.88, 0), 0.134, 0.134, C(MAT.skirt), 0.012, Fk, 0.6));   // clean darker hem
   } else if (MO) {
-    const low = add(cone(v(0, -0.02, 0), v(0, 0.24 * ts, 0), 0.112, 0.122, top, 0.05, Fs, 0.74)); low.split = { y: 0.03, col: C(MAT.pants) };
-    add(cone(v(-0.105, 0.285 * ts, 0), v(0.105, 0.285 * ts, 0), 0.068, 0.068, top, 0.05, Fs, 0.78));
+    const low = add(cone(v(0, -0.02, 0), v(0, 0.22 * ts, 0), 0.115, 0.138, top, 0.05, Fs, 0.72)); low.split = { y: 0.03, col: C(MAT.pants) };
+    add(cone(v(0, 0.22 * ts, 0), v(0, 0.27 * ts, 0), 0.138, 0.14, top, 0.05, Fs, 0.72));
+    add(cone(v(-0.15, 0.285 * ts, 0), v(0.15, 0.285 * ts, 0), 0.078, 0.078, top, 0.05, Fs, 0.75));
     add(cone(at(J.hipL, 0, -0.02, 0), at(J.hipR, 0, -0.02, 0), 0.07, 0.07, C(MAT.pants), 0.04));
   } else if (isW) {
     add(cone(v(0, 0.0, 0), v(0, 0.15, 0), 0.125, 0.11, top, 0.05, Fs, 0.8));
@@ -272,7 +275,7 @@ function bodyPrims(J) {
   // --- arms: sleeve -> ribbed cuff -> wrist -> mitten hand with a thumb
   for (const [s, k] of [[-1, 'L'], [1, 'R']]) {
     const g = 'arm' + k, sh = at(J['sh' + k]), el = at(J['el' + k]), ha = at(J['ha' + k]), Fa = fr(J['ha' + k]);
-    const am = MO ? 0.8 : 1;
+    const am = MO ? (isW ? 0.74 : 0.98) : 1;
     add(cone(sh, el, (isW ? 0.05 : 0.056) * am, (isW ? 0.045 : 0.05) * am, top, 0.03), g, 0.05);
     add(cone(el, ha, (isW ? 0.045 : 0.05) * am, (isW ? 0.043 : 0.048) * am, top, 0.03), g);
     add(cone(v(0, 0.025, 0), v(0, 0.0, 0), isW ? 0.049 : 0.054, isW ? 0.047 : 0.052, top, 0.01, Fa), g);
@@ -283,7 +286,7 @@ function bodyPrims(J) {
   // --- legs: each its own chain
   for (const k of ['L', 'R']) {
     const g = 'leg' + k, hp = at(J['hip' + k]), kn = at(J['kn' + k]), an = at(J['an' + k]), Fan = fr(J['an' + k]);
-    const legC = C(isW ? MAT.skin : MAT.pants);
+    const legC = C(isW ? (MO ? MAT.tights : MAT.skin) : MAT.pants);
     add(cone(hp, kn, isW ? 0.05 : 0.064, isW ? 0.043 : 0.057, legC, 0.03), g, 0.03);
     add(cone(kn, an, isW ? 0.043 : 0.057, isW ? 0.033 : 0.05, legC, 0.03), g);
     add(ell(v(0, -0.035, 0.04), isW ? 0.044 : 0.054, isW ? 0.034 : 0.04, isW ? 0.078 : 0.09, C(isW ? MAT.shoeW : MAT.shoeM), 0.02, Fan), g);
