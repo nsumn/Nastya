@@ -1,0 +1,23 @@
+# Namsan rocket video — cue sheet (ignition 3.0; hill shots S2 3-7 / S4 10.5-13 are LOUD, park shots S3 7-10.5 / S5 13-16.5 hear nothing yet;
+# the sound reaches Banpo at 16.5; chase 19.5; space 22-27.5; park again 27.5; end card 30.5). Derived clips: ignite_s2/ignite_s4 (trimmed + faded from ignite).
+music tension0 0.0 0.3 13.6
+music launch0 16.45 0.6 31.6
+0.0 amb 0.22
+0.0 fountain 0.12
+9.8 amb 0.18
+0.0 beep 0.45
+1.0 beep 0.45
+2.0 beep 0.45
+3.0 flash 0.7
+3.0 ignite_s2 1.0
+8.1 gasp 0.5
+10.5 ignite_s4 0.9
+16.5 roar 1.0
+16.5 glass 0.6 0.3
+16.55 gust 0.7 -0.3
+19.5 rumble 0.8
+21.9 whoosh 0.6
+22.3 space 0.5
+27.4 whoosh 0.35
+27.5 amb 0.2
+27.5 fountain 0.1

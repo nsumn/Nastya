@@ -701,7 +701,7 @@ function smokeAt(T, t) { for (const s of SMOKE) { const u = s.userData, a = T - 
   let p, sc; if (!u.col) { const r = u.r0 + 340 * (1 - Math.exp(-u.v * Math.pow(a, 0.75) * 6 / 340)); p = V3(namsan.position.x + Math.cos(u.a) * r, TW0.y - 10 + Math.min(60, a * 4) + 30 * Math.sin(u.a * 3), namsan.position.z + Math.sin(u.a) * r * 0.8); sc = u.sc * (1 + a * 0.35); }
   else { p = rocketPosW(u.t0).add(V3(Math.cos(u.a) * 8 * a, -10 + Math.sin(u.a) * 4 * a, Math.sin(u.a) * 8 * a)); sc = u.sc * (0.6 + a * 0.25); }
   s.position.copy(p); s.scale.set(sc, sc, 1); const nz = rocketPosW(T).add(V3(0, -40, 0)), near = Math.pow(Math.max(0, 1 - p.distanceTo(nz) / 160), 2) * (T < 70 ? 1 : 0);
-  s.material.color.setRGB(0.62 + 0.75 * near, 0.62 + 0.3 * near, 0.64 - 0.1 * near); s.material.opacity = 0.75 * smooth(0, 1.2, a) * (1 - smooth(120, 300, a)); } }
+  s.material.color.setRGB(0.62 + 0.75 * near, 0.62 + 0.3 * near, 0.64 - 0.1 * near); s.material.opacity = 0.75 * smooth(0, 1.2, a) * (1 - (u.col ? 0.8 : 1) * smooth(120, 400, a)) * (t > 27.5 ? 0.12 : 1); } }
 // ---- the rocket in space (km): a scaled clone of the tower + flame + a glow marker ----
 const spRocket = new THREE.Group(); sp.add(spRocket);
 { const c = NTW.clone(true); c.position.set(0, 0, 0); c.scale.setScalar(0.001); spRocket.add(c); }
@@ -719,10 +719,12 @@ function worldAt(t) {
   const lift = T > 0, h = altM(T), burn = T > -0.4 && T < 520 ? smooth(-0.4, 0.6, T) : 0;
   NTW.position.set(TW0.x + downM(T) * 0.25, TW0.y + h, TW0.z); NTW.rotation.z = -0.9 * smooth(20, 200, T);
   flame.visible = burn > 0.01; const fl = (60 + 30 * Math.sin(t * 23)) * (1 + smooth(5, 60, T) * 3); flame.scale.set(1.5 + smooth(10, 60, T), fl * 1.3, 1.5 + smooth(10, 60, T)); flame.position.y = -4 - fl * 1.3 / 2;
-  flameMat.uniforms.uT.value = t; flameMat.uniforms.uK.value = burn; flameGlow.visible = burn > 0.01; flameGlow.position.y = -12; flameGlow.scale.setScalar(110 * burn * (1 + 0.1 * Math.sin(t * 31)));
+  flameMat.uniforms.uT.value = t; flameMat.uniforms.uK.value = burn; flameGlow.visible = burn > 0.01; flameGlow.position.y = -12; flameGlow.scale.setScalar(70 * burn * (1 + 0.1 * Math.sin(t * 31)));
   fireLight.position.copy(rocketPosW(T)).add(V3(0, -20, 0)); fireLight.intensity = 6e7 * burn * (1 + 0.15 * Math.sin(t * 29)) / (1 + Math.max(0, h - 300) / 1500);
   hHemi.color.setRGB(0.44, 0.52, 0.78).lerp(new THREE.Color(1.0, 0.6, 0.35), 0.35 * burn * (h < 3000 ? 1 : 0.3));
   smokeAt(T, t);
+  { const ru = river.material.uniforms, k = burn * (h < 4000 ? 1 : 0); if (!ru.sunColor0) { ru.sunColor0 = ru.sunColor.value.clone(); ru.sunDir0 = ru.sunDirection.value.clone(); }
+    if (k > 0.01) { ru.sunDirection.value.copy(rocketPosW(T)).sub(V3(0, WATER_Y, 0)).normalize(); ru.sunColor.value.setRGB(1.0, 0.55, 0.2).multiplyScalar(1 + 2.5 * k); } else { ru.sunDirection.value.copy(ru.sunDir0); ru.sunColor.value.copy(ru.sunColor0); } }
   // fog thins as the camera climbs (set in camAt)
   // sound arrives at the park
   const shock = T >= T_SND ? Math.exp(-(T - T_SND) * 1.4) : 0; grassU.uWind.value = 0.6 * shock; river.material.uniforms.distortionScale.value = 0.7 + 4 * shock + (T > T_SND ? 0.8 : 0);
@@ -747,30 +749,30 @@ function camAt(t, T) {
     const u = ease(span(t, 3, 7)), p = NS.clone().add(V3(lerp(380, 300, u), lerp(330, 360, u), lerp(560, 470, u))); LOOKC(hCam, p, V3(NS.x, rk.y + 20, NS.z), 42); TWM.emissiveIntensity = 0.12; hCam.near = 0.5; hw.fog.density = 0.00012;
     const sh = 0.6 * smooth(3, 3.4, t) * Math.sin(t * 40); hCam.position.y += sh; aimSun(NS.x, NS.z); return; }
   if (t < 10.5) {   // S3 the park: the river turns orange, people stand up
-    const u = ease(span(t, 7, 10.5)), p = V3(lerp(9, 6, u), lerp(1.4, 1.8, u), lerp(14, 11, u)); LOOKC(hCam, p, V3(NS.x, 200 + (rk.y - 255) * 0.6, NS.z), 30); hw.fog.density = 0.00022; dof(hCam, 9, 3); aimSun(0, 4); return; }
+    const u = ease(span(t, 7, 10.5)), p = V3(lerp(-1, -4, u), lerp(1.3, 1.9, u), lerp(13, 10, u)); LOOKC(hCam, p, V3(NS.x, 200 + (rk.y - 255) * 0.6, NS.z), 30); hw.fog.density = 0.00022; dof(hCam, 9, 3); aimSun(0, 4); return; }
   if (t < 13) {   // S4 low under the rising tower, smoke boiling around the summit
     const u = ease(span(t, 10.5, 13)), p = NS.clone().add(V3(lerp(-900, -760, u), lerp(420, 520, u), lerp(1500, 1350, u))); LOOKC(hCam, p, V3(NS.x, (TW0.y + rk.y) * 0.5 + 60, NS.z), 40); TWM.emissiveIntensity = 0.35; hCam.near = 0.5; hw.fog.density = 0.00012; aimSun(NS.x, NS.z); return; }
   if (t < 16.5) {   // S5 his face, lit by the far fire, waiting for the sound
     const f = V3(Math.sin(Math.PI - 0.1), 0, Math.cos(Math.PI - 0.1)), u = span(t, 13, 16.5), p = hd.clone().addScaledVector(f, lerp(1.6, 1.25, ease(u))).add(V3(0.35, -0.12, 0));
     LOOKC(hCam, p, hd.clone().add(V3(0, -0.1, 0)), 32); dof(hCam, p.distanceTo(hd), 9); aimSun(hd.x, hd.z); return; }
   if (t < 19.5) {   // S6 the sound hits: shaking side view of the picnic row
-    const sh = 0.05 * Math.exp(-(t - 16.5) * 1.3) * (t > 16.5 ? 1 : 0), u = span(t, 16.5, 19.5), p = hd.clone().add(V3(lerp(3.2, 2.8, u) + sh * Math.sin(t * 61), 0.2 + sh * Math.cos(t * 53), lerp(1.4, 1.0, u)));
-    LOOKC(hCam, p, hd.clone().add(V3(-2, 0.1, -3)), 36); dof(hCam, p.distanceTo(hd), 5); aimSun(hd.x, hd.z); return; }
+    const sh = 0.05 * Math.exp(-(t - 16.5) * 1.3) * (t > 16.5 ? 1 : 0), u = ease(span(t, 16.5, 19.5)), p = hd.clone().add(V3(lerp(2.4, 2.0, u) + sh * Math.sin(t * 61), 0.15 + sh * Math.cos(t * 53), lerp(0.9, 0.5, u)));
+    LOOKC(hCam, p, hd.clone().add(V3(-1.6, 0.0, -0.9)), 40); dof(hCam, p.distanceTo(hd), 5); aimSun(hd.x, hd.z); return; }
   if (t < 22) {   // S7 chase the climb over the city lights
     const u = span(t, 19.5, 22), off = V3(lerp(260, 900, u), lerp(-80, -500, u), lerp(420, 1100, u)); LOOKC(hCam, rk.clone().add(off), rk.clone().add(V3(0, -40, 0)), 40); hCam.near = 1; hCam.far = 60000;
     hw.fog.density = lerp(0.00012, 0.00002, smooth(500, 9000, rk.y)); aimSun(rk.x, rk.z); return; }
   USE_SP = true;
   if (t < 25) {   // S8 space: from beside the rocket out to the Earth's curve
-    const u = ease(span(t, 22, 25)), rkK = rocketPosK(T), off = V3(lerp(1.5, 380, u), lerp(-0.6, 160, u), lerp(2.5, 520, u)); LOOKC(spCam, rkK.clone().add(off), rkK.clone().lerp(V3(0, -RE * 0.02, 0), u * 0.4), lerp(40, 46, u)); spSky(rkK.y); return; }
+    const u = Math.pow(ease(span(t, 22, 25)), 2.2), rkK = rocketPosK(T), off = V3(lerp(0.25, 380, u), lerp(-0.12, 160, u), lerp(0.45, 520, u)); LOOKC(spCam, rkK.clone().add(off), rkK.clone().lerp(V3(0, -RE * 0.02, 0), u * 0.4), lerp(34, 46, u)); spCam.near = Math.min(0.01, off.length() * 0.02); spSky(rkK.y); return; }
   if (t < 27.5) {   // S9 orbit over Korea at night
     const rkK = rocketPosK(T), u = span(t, 25, 27.5); LOOKC(spCam, rkK.clone().add(V3(-250 + 60 * u, 220, 420)), rkK.clone().add(V3(0, -200, 0)), 46); spSky(400); return; }
   USE_SP = false;   // S10 back at the park: Namsan without its tower
-  const u = ease(span(t, 27.5, END0)), p = hd.clone().add(V3(lerp(0.6, 0.4, u), 0.2, lerp(1.0, 0.7, u))); LOOKC(hCam, p, V3(NS.x, 300, NS.z), lerp(30, 24, u)); hw.fog.density = 0.00022; dof(hCam, 4000, 5); aimSun(hd.x, hd.z);
+  const u = ease(span(t, 27.5, END0)), p = hd.clone().add(V3(lerp(0.55, 0.45, u), 0.18, lerp(1.1, 0.9, u))); LOOKC(hCam, p, V3(NS.x, TW0.y + 60, NS.z), lerp(24, 18, u)); hw.fog.density = 0.00022; dof(hCam, 4000, 4);   // mirrors S1: same view, no tower aimSun(hd.x, hd.z);
 }
 // ---- text ----
 const TITLE = ['만약', '<span class="hl">남산타워</span>가', '<br>', '로켓이라면?'];
 const CAPS = [[3.3, 6.8, '높이 237m — 스타십의 <span class="hl">2배</span>'], [7.3, 10.3, '빛은 <span class="hl">바로</span> 온다'], [10.6, 12.9, '소리는 <span class="hl">아직</span> 오는 중…'],
-  [13.2, 16.3, '반포에서 남산까지 <span class="hl">4.6km</span>'], [16.7, 19.3, '소리는 <span class="hl">13.5초</span> 늦게 도착한다'], [19.7, 24.6, '<span class="m">MODEL</span>우주정거장 높이 <span class="hl">400km</span>까지 8분 30초'],
+  [13.2, 16.3, '반포에서 남산까지 <span class="hl">4.6km</span>'], [16.7, 19.3, '소리는 <span class="hl">13.5초</span> 늦게 도착한다'], [19.7, 24.6, '<span class="m">MODEL</span>우주정거장 높이까지 <span class="hl">8분 30초</span>'],
   [25.1, 27.4, '초속 <span class="hl">7.7km</span> · 92분에 지구 한 바퀴'], [27.8, 30.3, '남산엔 이제 <span class="hl">산</span>만 남았다']];
 const fmtMT = T => { const s = Math.max(0, T), m = Math.floor(s / 60); return `T+${m}:${(s - m * 60).toFixed(3).padStart(6, '0')}`; };
 let lastCap = '';
