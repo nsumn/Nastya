@@ -198,7 +198,7 @@ def figure(w):
             hm_ = max(c.color[0], sstep(1.02 * R, 1.07 * R, dist), sstep(-0.82 * R, -0.95 * R, q.z) * sstep(-0.25 * R, -0.05 * R, q.y))
             # side hairline: one line from the temple down the cheek into the front edge of the hanging hair
             yl = -0.10 * R - 0.65 * R * sstep(-1.1 * R, 0.5 * R, q.z)
-            hm_ = max(hm_, sstep(yl - 0.03 * R, yl + 0.03 * R, q.y) * sstep(0.45 * R, 0.6 * R, abs(q.x)) * (1 - sstep(0.45 * R, 0.6 * R, q.z)))
+            hm_ = max(hm_, sstep(yl - 0.03 * R, yl + 0.03 * R, q.y) * sstep(0.80 * R, 0.90 * R, abs(q.x)) * (1 - sstep(0.2 * R, 0.45 * R, q.z)))   # only the side of the head, never on the face
             c.color = (hm_, hm_, hm_, 1)
         head.data.materials.clear(); head.data.materials.append(hm); smooth(head)
     else:
