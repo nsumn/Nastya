@@ -5,6 +5,8 @@ The API key is read from the LUMEAN_API_KEY environment variable — never write
   python lumean.py preview <script.txt>             # free: shows how the text is split into chunks
   python lumean.py order   <script.txt> <out_dir>   # paid: voices the text, waits, downloads mp3 + alignment
   python lumean.py resume  <out_dir>                # free: re-poll/download an order already placed (order_id file)
+  python lumean.py template                         # free: create the Lennard template on YOUR Lumean account, prints its id
+                                                    #       -> then export LUMEAN_TEMPLATE=<id> (the default id only exists on Nastya's account)
 """
 import json, os, sys, time, urllib.request, urllib.error
 
@@ -25,6 +27,16 @@ def call(method, path, body=None):
         except (urllib.error.URLError, ConnectionError) as e:
             if i == 5: raise
             print("retry", e); time.sleep(2 ** i)
+
+# Voice of the channel: ElevenLabs "Lennard - Warm & Trustworthy" (de, male), sped up to 1.15
+LENNARD = {"tts_settings": {"model_id": "eleven_multilingual_v2", "voice_id": "HNYELfQMgCeL9N0RGyxo", "mode": "mode_v1",
+           "voice_settings": {"use_speaker_boost": True, "speed": 1.15, "stability": 0.45, "similarity_boost": 0.8, "style": 0.2},
+           "language_code": "de", "advanced_voice_settings": True, "prev_next_text": True},
+           "output_settings": {"audio_format": "mp3", "audio_quality": "high", "sample_rate": 44100}}
+
+def make_template():
+    r = call("POST", "/templates", {"service_key": "elevenlabs", "name": "DE Wie es gebaut wird – Lennard schnell", "config": LENNARD})
+    print("template id:", r["data"]["id"], "\n-> export LUMEAN_TEMPLATE=" + r["data"]["id"])
 
 def read_script(p):
     t = open(p, encoding="utf-8").read().strip()
@@ -63,4 +75,5 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "preview": preview(sys.argv[2])
     elif len(sys.argv) >= 4 and sys.argv[1] == "order": order(sys.argv[2], sys.argv[3])
     elif len(sys.argv) >= 3 and sys.argv[1] == "resume": order(None, sys.argv[2], open(f"{sys.argv[2]}/order_id").read().strip())
+    elif len(sys.argv) >= 2 and sys.argv[1] == "template": make_template()
     else: print(__doc__)
