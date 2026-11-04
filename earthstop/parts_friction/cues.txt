@@ -1,0 +1,18 @@
+# Friction video — cue sheet (friction gone 3.0: slip; on his back ~4.8; slide to 18.0; cut to the wide 12.4; stop 18.0; end card 18.6). slide_end = slide trimmed to 1.25 s.
+music light1 0.0 0.28 21.5
+0.0 amb 0.6
+10.0 amb 0.55
+20.0 amb 0.5
+0.0 fountain 0.3
+6.0 fountain 0.3
+0.0 beep 0.45
+1.0 beep 0.45
+2.0 beep 0.45
+2.95 slip 1.0
+4.7 thud 1.0
+4.9 gasp 0.4 0.3
+4.8 slide 0.6
+10.8 slide 0.6
+16.8 slide_end 0.6
+12.35 whoosh 0.4
+18.0 stop 1.0
