@@ -7,6 +7,7 @@ const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 const T0 = 3, T1 = 17, END0 = 20, VS = 369;
 function storyT(t) { if (t < T0) return t - T0; if (t < 8) return 0.25 * (t - T0) / 5; if (t < T1) return 0.25 + 4.75 * Math.pow((t - 8) / 9, 1.6); return 5; }
 const D = T => VS * clamp(T, 0, 5);
+riverFar.position.y = WATER_Y - 0.6; bedFar.position.y -= 0.6;   // no z-fight with the reflecting river on the long shots
 foamAt(-1); bedStuff.visible = false; vanishRing.visible = false; ferry.visible = true; heroPhone.visible = false;
 // flight path of a loose thing that starts at (x0, y0, z0): east with the old speed, lifted and tumbled by the supersonic wind, drifting north over the river
 function flyPos(T, x0, y0, z0, k) { const d = D(T), lift = 2.2 * smooth(0, 0.04, T) + (6 + 4 * k) * smooth(0.04, 1.2, T) - (6 + 4 * k + 2.2 + y0 - WATER_Y) * smooth(4.2, 5, T) * (k < 0.5 ? 1 : 0);
@@ -49,7 +50,7 @@ function camAt(t) {
   dof(hCam, 1, 0); hCam.near = 0.05; hCam.far = 40000; const hd = (hero.outer.updateMatrixWorld(true), hero.head.getWorldPosition(V3(0, 0, 0)));
   if (t < 3.6) { const u = ease(span(t, 0, 3.6)); const p = HERO0.clone().add(V3(lerp(-3.5, -3.0, u), 1.4, lerp(3.2, 2.6, u))); LOOKC(hCam, p, HERO0.clone().add(V3(1.5, 0.9, -1)), 44); dof(hCam, 3.8, 3); return; }
   if (t < 8) { const u = ease(span(t, 3.6, 8)); const p = hd.clone().add(V3(lerp(1.6, 2.2, u), lerp(-0.1, 0.3, u), lerp(2.6, 3.2, u))); LOOKC(hCam, p, hd.clone().add(V3(-0.6, -0.2, 0)), 46); dof(hCam, p.distanceTo(hd), 4); return; }
-  if (t < 12) { const u = ease(span(t, 8, 12)); const p = hd.clone().add(V3(lerp(-40, -70, u), lerp(25, 40, u), lerp(45, 70, u))); LOOKC(hCam, p, hd.clone().add(V3(lerp(-10, 20, u), -4, 0)), 50); hCam.near = 0.3; return; }
+  if (t < 12) { const u = ease(span(t, 8, 12)); const p = hd.clone().add(V3(lerp(-40, -70, u), lerp(25, 40, u), lerp(45, 70, u))); LOOKC(hCam, p, hd.clone().add(V3(lerp(-10, 20, u), -4, 0)), 50); hCam.near = 2; return; }
   if (t < T1) { const u = ease(span(t, 12, T1)); const p = hd.clone().add(V3(lerp(4, 3, u), lerp(1.2, 2.0, u), lerp(4, 5, u))); LOOKC(hCam, p, hd.clone().add(V3(-1.5, -0.6, -1)), 44); dof(hCam, p.distanceTo(hd), 3); return; }
   const hp = flyPos(5, HERO0.x, 0.95, HERO0.z, 0.2), u = ease(span(t, T1, END0)); LOOKC(hCam, hp.clone().add(V3(lerp(-7, -5.5, u), lerp(2.6, 2.2, u), lerp(6, 4.8, u))), hp.clone().add(V3(0, 0.6, 0)), 44); hCam.near = 0.2;
 }
