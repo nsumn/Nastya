@@ -126,8 +126,10 @@ def two_windows(c, t, lit=1.0, moods=("calm", "calm"), phones=(True, True), thre
     window_room(c, LX - 200, y - 260 * r / 88, 400, wh, P.ROSE, lit); window_room(c, RX - 200, y - 260 * r / 88, 400, wh, SKY, lit)
     P.person(c, True, LX, y, r, moods[0], blink=blink(t), arms=("phone", "phone") if phones[0] else ("down", "down"), phone=phones[0], look=0.3, breath=breath(t))
     P.person(c, False, RX, y + 4, r * 1.05, moods[1], blink=blink(t, 2.8), arms=("phone", "phone") if phones[1] else ("down", "down"), phone=phones[1], look=-0.3)
-    thread(c, t, (LX + 40, y + 120), (RX - 40, y + 120), thread_s, 160)
-    heart_dot(c, t, LX + 40, y + 120, 0.8 + 0.2 * thread_s); heart_dot(c, t, RX - 40, y + 120, 0.8 + 0.2 * thread_s, SKY)
+    hy = y + r * 2.45                                                  # on the chest, below the phone
+    thread(c, t, (LX + r * 0.25, hy), (RX - r * 0.25, hy), thread_s, 160)
+    hs = r / 88 * (1.55 + 0.25 * thread_s)
+    heart_dot(c, t, LX, hy, hs); heart_dot(c, t, RX, hy, hs, SKY)
 
 
 def sh_hook(c, t):
@@ -184,7 +186,7 @@ def sh_study(c, t):
 def sh_send(c, t):
     two_windows(c, t, 1.0, ("calm", "neutral"), (True, True), 0.8); t0 = t_of("einfach so eine")
     u = slide(t, t0 + 0.2, 1.0, "whoosh")
-    x = LX + (RX - LX) * u; y = 900 + 120 + 160 * math.sin(math.pi * u) * 0.75 - 140
+    x = LX + (RX - LX) * u; y = 900 + 88 * 2.45 - 40 - 300 * math.sin(math.pi * u)
     envelope(c, x, y, 0.8)
 
 
