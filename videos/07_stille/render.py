@@ -297,7 +297,8 @@ SHOTS = [(0.0, sh_hook, GOLD), (t_of("Sie hält das Handy"), sh_her, ROSE_), (t_
          (t_of("So entsteht"), sh_silence, SKY), (t_of("Aus Stolz"), sh_reasons, ROSE_), (t_of("Dabei ist die Verbindung"), sh_still_there, GOLD),
          (t_of("Sie wartet nur"), sh_step, ROSE_), (t_of("Manchmal reicht"), sh_message, GOLD), (t_of("Schick das"), sh_share, GOLD)]
 
-P.LIT["on"] = True
+GLOW = False                                       # glow look switched off (user: no glow)
+P.LIT["on"] = GLOW
 P.GLOW_COLS.update({GOLD, GOLD_D, SKY, GREEN, RED_})
 STARTS = [s[0] for s in SHOTS]
 XF = 0.25                                                                     # cross-fade length
@@ -391,7 +392,9 @@ def collect_cues(step=1 / 15):
 
 def draw(t, k):
     """the shot at time t with its glow: drawn twice, normally and as the glow mask"""
-    a = draw_raw(t, k); P.MASK["on"] = True
+    a = draw_raw(t, k)
+    if not GLOW: return a
+    P.MASK["on"] = True
     try: m = draw_raw(t, k)
     finally: P.MASK["on"] = False
     return P.glow(a, m)
