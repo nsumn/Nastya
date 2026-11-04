@@ -28,6 +28,7 @@ def paper(c, path_fn, col, depth=1.0, alpha=1.0):
 
 
 def ell(c, x, y, rx, ry, rot=0.0):
+    rx, ry = max(rx, 1e-3), max(ry, 1e-3)                    # a pop-in starts at size 0: keep the matrix invertible
     c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx, ry); c.arc(0, 0, 1, 0, 2 * math.pi); c.restore()
 
 
@@ -65,6 +66,12 @@ def face(c, x, y, r, mood="neutral", talk=0.0, blink=False, look=0.0):
     c.set_source_rgb(*INK); c.set_line_cap(cairo.LINE_CAP_ROUND); c.set_line_width(r * 0.075)
     for s in (-1, 1):
         ex = x + s * r * 0.33 + lx
+        if mood == "roll" and not blink:                          # eye roll: whites with the pupils up
+            ell(c, ex, ey, r * 0.13, r * 0.15); c.set_source_rgb(1, 1, 1); c.fill(); c.set_source_rgb(*INK)
+            ell(c, ex + r * 0.03, ey - r * 0.08, r * 0.06, r * 0.06); c.fill(); continue
+        if mood == "shock" and not blink:
+            ell(c, ex, ey, r * 0.15, r * 0.17); c.set_source_rgb(1, 1, 1); c.fill(); c.set_source_rgb(*INK)
+            ell(c, ex, ey, r * 0.07, r * 0.08); c.fill(); continue
         if blink or mood == "calm":
             c.new_sub_path(); c.arc(ex, ey, r * 0.12, 0.15 * math.pi, 0.85 * math.pi); c.stroke()
         else:
@@ -75,6 +82,10 @@ def face(c, x, y, r, mood="neutral", talk=0.0, blink=False, look=0.0):
     my = y + r * 0.40; mx = x + lx
     if mood == "shout":
         o = 0.6 + 0.4 * talk; ell(c, mx, my + r * 0.04, r * 0.17, r * 0.13 * o); c.fill()
+    elif mood in ("roll", "smirk"):                               # one-sided smirk
+        c.move_to(mx - r * 0.12, my + r * 0.02); c.curve_to(mx, my + r * 0.04, mx + r * 0.1, my, mx + r * 0.16, my - r * 0.08); c.stroke()
+    elif mood == "shock":
+        ell(c, mx, my + r * 0.04, r * 0.07, r * 0.09); c.fill()
     elif talk > 0.05:
         ell(c, mx, my, r * 0.12, r * 0.05 + r * 0.08 * talk); c.fill()
     elif mood in ("sad",):
@@ -185,3 +196,96 @@ def grain(arr):
         yy, xx = np.mgrid[0:H, 0:W]; v = 1 - 0.35 * (((xx - W / 2) / (W * 0.75)) ** 2 + ((yy - H / 2) / (H * 0.75)) ** 2)
         _GRAIN = (1 + 0.05 * n)[:, :, None] * v[:, :, None]
     return np.clip(arr * _GRAIN, 0, 255)
+
+
+# ---------------------------------------------------------------- animation cues (every pop-in also places a sound)
+CUES = set()          # (time, kind) collected while drawing; the sound pass turns them into SFX
+
+
+def cue(t0, kind):
+    CUES.add((round(t0, 3), kind))
+
+
+def _ease(u): u = max(0.0, min(1.0, u)); return u * u * (3 - 2 * u)
+
+
+def pop(t, t0, d=0.32, kind="pop"):
+    """0..1 with an overshoot; registers a sound at t0"""
+    cue(t0, kind)
+    u = (t - t0) / d
+    if u <= 0: return 0.0
+    if u >= 1: return 1.0
+    return 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2
+
+
+def slide(t, t0, d=0.45, kind="whoosh"):
+    """0..1 smooth arrival with a little settle; registers a whoosh"""
+    cue(t0, kind)
+    u = (t - t0) / d
+    if u <= 0: return 0.0
+    if u >= 1: return 1.0
+    return 1 - (1 - u) ** 3 * math.cos(u * 4.0)
+
+
+def squash(t, t0, d=0.5):
+    """(sx, sy) bounce for a landing character: squash, stretch, settle"""
+    u = (t - t0) / d
+    if u <= 0 or u >= 1: return 1.0, 1.0
+    k = math.sin(u * math.pi * 3) * (1 - u) * 0.12
+    return 1 + k, 1 - k
+
+
+def mark(c, kind, x, y, s, a=1.0):
+    """small comic marks that pop around heads: ! ? heart drop bolt zzz vein star"""
+    if a <= 0: return
+    c.save(); c.translate(x, y); c.scale(max(s * a, 1e-3), max(s * a, 1e-3))
+    if kind == "!":
+        paper(c, lambda c: rrect(c, -9, -46, 18, 56, 9), ROSE, 1.3); paper(c, lambda c: ell(c, 0, 26, 10, 10), ROSE, 1.3)
+    elif kind == "?":
+        c.select_font_face("Inter", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD); c.set_font_size(80)
+        paper(c, lambda c: (c.move_to(-22, 28), c.text_path("?")), CREAM, 1.3)
+    elif kind == "heart":
+        paper(c, lambda c: heart(c, 0, 0, 26), ROSE, 1.3)
+    elif kind == "drop":
+        paper(c, lambda c: (c.move_to(0, -30), c.curve_to(22, 0, 18, 22, 0, 22), c.curve_to(-18, 22, -22, 0, 0, -30), c.close_path()), (0.65, 0.82, 1.0), 1.3)
+    elif kind == "bolt":
+        paper(c, lambda c: (c.move_to(8, -44), c.line_to(-16, 4), c.line_to(2, 4), c.line_to(-8, 44), c.line_to(18, -6), c.line_to(0, -6), c.close_path()), MOON, 1.3)
+    elif kind == "vein":
+        c.set_source_rgb(0.85, 0.20, 0.30); c.set_line_width(7); c.set_line_cap(cairo.LINE_CAP_ROUND)
+        for a in (0, 1, 2, 3):
+            c.save(); c.rotate(a * math.pi / 2); c.move_to(6, -6); c.curve_to(10, -20, 22, -18, 24, -8); c.stroke(); c.restore()
+    elif kind == "zzz":
+        c.select_font_face("Inter", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+        for i in range(3):
+            c.set_font_size(30 + 12 * i); c.move_to(i * 22, -i * 30); c.set_source_rgb(*CREAM); c.show_text("z")
+    elif kind == "star":
+        paper(c, lambda c: star(c, 0, 0, 24), MOON, 1.3)
+    elif kind == "tear":
+        paper(c, lambda c: (c.move_to(0, -18), c.curve_to(14, 0, 12, 14, 0, 14), c.curve_to(-12, 14, -14, 0, 0, -18), c.close_path()), (0.65, 0.85, 1.0), 1.2)
+    c.restore()
+
+
+def marks_around(c, t, t0, x, y, r, kinds, step=0.28, kind_sound=None):
+    """pop several marks around a head one after another (each with its own sound)"""
+    spots = [(-1.15, -1.0), (1.2, -1.05), (-1.45, -0.2), (1.5, -0.25), (0.0, -1.55), (-0.6, -1.5), (0.7, -1.5)]
+    for i, k in enumerate(kinds):
+        ti = t0 + i * step
+        a = pop(t, ti, 0.28, kind_sound or {"heart": "sparkle", "bolt": "zap", "!": "pop", "vein": "buzz", "drop": "drip", "zzz": "soft", "tear": "drip"}.get(k, "pop"))
+        wob = 1 + 0.06 * math.sin((t - ti) * 9)
+        sx, sy = spots[i % len(spots)]
+        mark(c, k, x + sx * r, y + sy * r + 6 * math.sin(t * 3 + i), wob, a)
+
+
+def enter(c, t, t0, dx, foot, draw, d=0.45, kind="whoosh"):
+    """slide a character in from dx pixels away and land with a squash; foot = (x, y) of the feet for the squash pivot"""
+    u = slide(t, t0, d, kind)
+    sx, sy = squash(t, t0 + d * 0.8)
+    c.save(); c.translate((1 - u) * dx, 0)
+    c.translate(foot[0], foot[1]); c.scale(sx, sy); c.translate(-foot[0], -foot[1])
+    draw(); c.restore()
+
+
+def shake(t, t0, d=0.4, amp=10):
+    """horizontal head-shake / tremble offset"""
+    u = (t - t0) / d
+    return 0.0 if (u <= 0 or u >= 1) else amp * math.sin(u * math.pi * 6) * (1 - u)
