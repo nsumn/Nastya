@@ -1,0 +1,15 @@
+# Earth-stop video — cue sheet (stop 3.0: ambience cut by the wind; cuts 3.6 / 8 / 12; plunge 17.0; end card 20). amb_pre / wind_end = ffmpeg trims with fades.
+music launch0 3.0 0.32 22.5
+0.0 amb_pre 0.6
+0.0 fountain 0.3
+0.0 beep 0.45
+1.0 beep 0.45
+2.0 beep 0.45
+2.98 roar 0.8
+3.0 wind 1.0
+3.1 gasp 0.5 0.3
+7.95 whoosh 0.45
+10.5 wind_end 0.9
+11.95 whoosh 0.45
+17.0 plunge 1.0
+17.3 amb 0.4
