@@ -16,6 +16,7 @@ LILAC, PLUM, ROSE, SAGE, WOOD = (0.85, 0.80, 0.86), (0.26, 0.24, 0.40), (1.0, 0.
 
 CAM = {"dx": 0.0}            # set per frame by the shot: horizontal camera drift, used for parallax
 MASK = {"on": False}         # mask pass for glow(): glowing paper -> magenta, other paper -> black, background -> blue
+LIT = {"on": False}          # glow look: glowing paper casts no dark drop shadow (it would read as a dirty blotch in its halo)
 GLOW_COLS = {PINK, PINK_D, PINK_H, BLUE, BLUE_D, BLUE_H, ROSE, MOON}    # paper colours that give off light (renders add more)
 
 
@@ -25,7 +26,7 @@ def paper(c, path_fn, col, depth=1.0, alpha=1.0):
     c.save(); c.translate(off, 0)
     if MASK["on"]:
         path_fn(c); c.set_source_rgba(*((1, 0, 1) if tuple(col) in GLOW_COLS else (0, 0, 0)), alpha); c.fill(); c.restore(); return
-    for k, (dx, dy, a) in enumerate(((3, 6, 0.10), (6, 11, 0.08), (10, 17, 0.05))):
+    for k, (dx, dy, a) in enumerate(((3, 6, 0.10), (6, 11, 0.08), (10, 17, 0.05)) if not (LIT["on"] and tuple(col) in GLOW_COLS) else ()):
         c.save(); c.translate(dx * depth, dy * depth); path_fn(c); c.set_source_rgba(0.02, 0.0, 0.05, a * alpha); c.fill(); c.restore()
     path_fn(c); c.set_source_rgba(*col, alpha); c.fill()
     c.restore()

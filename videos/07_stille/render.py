@@ -297,6 +297,7 @@ SHOTS = [(0.0, sh_hook, GOLD), (t_of("Sie hält das Handy"), sh_her, ROSE_), (t_
          (t_of("So entsteht"), sh_silence, SKY), (t_of("Aus Stolz"), sh_reasons, ROSE_), (t_of("Dabei ist die Verbindung"), sh_still_there, GOLD),
          (t_of("Sie wartet nur"), sh_step, ROSE_), (t_of("Manchmal reicht"), sh_message, GOLD), (t_of("Schick das"), sh_share, GOLD)]
 
+P.LIT["on"] = True
 P.GLOW_COLS.update({GOLD, GOLD_D, SKY, GREEN, RED_})
 STARTS = [s[0] for s in SHOTS]
 XF = 0.25                                                                     # cross-fade length

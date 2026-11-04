@@ -352,6 +352,7 @@ SHOTS = [(0.0, sh_hook, BIRD), (t_of("Eine Frau steht"), sh_window, BIRD), (t_of
          (t_of("Es geht also nicht"), sh_big, ROSE_), (t_of("Es geht um den"), sh_bird, M_), (t_of("Eine Frau, die immer"), sh_void, B_),
          (t_of("Nicht, weil die"), sh_hurt, ROSE_), (t_of("Das Gute daran"), sh_seconds, G_), (t_of("Aufschauen"), sh_steps, G_), (t_of("Schreib in"), sh_end, M_)]
 
+P.LIT["on"] = True
 P.GLOW_COLS.update({BIRD, BIRD_D, SKY, GREEN, RED_})
 STARTS = [s[0] for s in SHOTS]
 XF = 0.25                                                                     # cross-fade length
