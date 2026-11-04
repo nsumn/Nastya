@@ -1,0 +1,20 @@
+# Fountain-1000x video — cue sheet (boost 3.0, rain over the park from ~4.6, cuts 8 / 12 / 18, back to normal 18.0, rain fades to ~20, end card 20). torrent_end / rain_end = ffmpeg trims with fades.
+music launch1 3.0 0.35 22.5
+0.0 amb 0.6
+10.0 amb 0.5
+20.0 amb 0.5
+0.0 fountain 0.35
+0.0 beep 0.45
+1.0 beep 0.45
+2.0 beep 0.45
+2.95 torrent 1.0
+3.0 gust 0.6
+8.95 torrent 0.85
+14.95 torrent_end 0.8
+4.6 rain 0.8
+12.6 rain_end 0.8
+5.3 gasp 0.5 0.3
+7.95 whoosh 0.4
+11.95 whoosh 0.4
+17.95 splash 0.6
+18.2 fountain 0.35
