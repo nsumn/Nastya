@@ -198,6 +198,30 @@ def grain(arr):
     return np.clip(arr * _GRAIN, 0, 255)
 
 
+def glow(arr, strength=1.0):
+    """light pass for the 'lit paper' look: saturated bright shapes (the pink and blue characters, hearts, moon, lamps)
+    throw a soft coloured halo into the dark night around them; the shapes themselves stay crisp, the night gets a little
+    deeper so the light reads. arr: HxWx3 float 0..255"""
+    import cv2
+    x = arr / 255.0
+    mx, mn = x.max(2), x.min(2)
+    sat = (mx - mn) / (mx + 1e-4)
+    m = np.clip((mx - 0.5) / 0.35, 0, 1) * np.clip((sat - 0.12) / 0.3, 0, 1)    # what emits light (not cream/lilac)
+    src = x * m[:, :, None]
+    src = np.clip(src + (src - src.mean(2, keepdims=True)) * 0.6, 0, 1).astype(np.float32)   # richer halo colour
+    small = cv2.resize(src, (W // 4, H // 4), interpolation=cv2.INTER_AREA)
+    halo = 0.7 * cv2.GaussianBlur(small, (0, 0), 5) + 0.9 * cv2.GaussianBlur(small, (0, 0), 18)
+    halo = cv2.resize(halo, (W, H), interpolation=cv2.INTER_LINEAR)
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (41, 41))
+    inside = cv2.morphologyEx((m > 0.3).astype(np.uint8), cv2.MORPH_CLOSE, k).astype(np.float32)   # fill eyes/text holes
+    inside = cv2.GaussianBlur(np.maximum(inside, m), (0, 0), 2)
+    halo *= (1 - 0.95 * inside)[:, :, None]                                    # halo around the shape, not over it
+    dark = 1 - 0.25 * strength * (1 - np.clip(mx / 0.45, 0, 1))                 # deepen the night only where it is dark
+    x = x * dark[:, :, None]
+    x = 1 - (1 - x) * (1 - np.clip(halo * 1.3 * strength, 0, 1))              # screen blend
+    return np.clip(x * 255, 0, 255)
+
+
 # ---------------------------------------------------------------- animation cues (every pop-in also places a sound)
 CUES = set()          # (time, kind) collected while drawing; the sound pass turns them into SFX
 

@@ -425,6 +425,7 @@ def frame(t):
     if k + 1 < len(STARTS) and t > STARTS[k + 1] - XF:                          # cross-fade into the next shot
         a = ease((t - (STARTS[k + 1] - XF)) / XF); arr = arr * (1 - a) + draw(t, k + 1) * a
     if t > DUR - 0.8: arr = arr * max(0.0, (DUR - t) / 0.8)
+    if os.environ.get("GLOW"): arr = P.glow(arr)
     im = Image.fromarray(P.grain(arr).astype(np.uint8)); caption(im, t)
     return np.asarray(im)
 
