@@ -360,6 +360,7 @@ FONT = ImageFont.truetype(os.path.join(HERE, "fonts", "Inter-ExtraBold.otf"), 60
 KEY = {"Vogel", "Ehe", "Fenster", "schöner", "liest", "zwei", "lächelt", "brummt", "weiter", "Gottman", "Angebot", "Nähe", "Blick",
        "Seufzer", "Frage", "Foto", "Labor", "sechs", "zusammen", "siebenundachtzig", "geschiedenen", "dreiunddreißig", "Liebeserklärungen",
        "Leere", "fragen", "Liebe", "weh", "übersehen", "Sekunden", "Aufschauen", "Nachfragen", "Handy", "Kommentare"}
+BIG_HOOK = False                                   # big first sentence at the top: switched off (user: no huge text)
 HOOK_END = t_of("Eine Frau steht")
 BIG = ImageFont.truetype(os.path.join(HERE, "fonts", "Inter-ExtraBold.otf"), 92)
 def words():
@@ -384,7 +385,7 @@ GROUPS = groups(WORDS)
 def caption(im, t):
     """CAPS, words appear one by one; keywords take the accent colour of the shot that is on screen"""
     d = ImageDraw.Draw(im)
-    if t < HOOK_END - 0.05: return hook_title(d, t)
+    if BIG_HOOK and t < HOOK_END - 0.05: return hook_title(d, t)
     k = max(i for i, s0 in enumerate(STARTS) if s0 <= t); acc = tuple(int(v * 255) for v in SHOTS[k][2])
     for i, g in enumerate(GROUPS):
         end = GROUPS[i + 1][0][1] if i + 1 < len(GROUPS) else g[-1][2] + 0.8
