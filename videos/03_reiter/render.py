@@ -16,7 +16,9 @@ import paperlib as P
 import sfx
 
 W, H, FPS, SR = 1080, 1920, 30, 44100
-rows = list(csv.DictReader(open(os.path.join(HERE, "voice", "alignment.csv"), encoding="utf-8")))
+TIGHT = os.path.exists(os.path.join(HERE, "voice", "tight.wav"))             # pauses removed by ../tighten.py
+VOICE = os.path.join(HERE, "voice", "tight.wav" if TIGHT else "result.mp3")
+rows = list(csv.DictReader(open(os.path.join(HERE, "voice", "alignment_tight.csv" if TIGHT else "alignment.csv"), encoding="utf-8")))
 CH = "".join(r["char"] for r in rows); ST = [float(r["start"]) for r in rows]; EN = [float(r["end"]) for r in rows]
 DUR = EN[-1] + 1.3
 
@@ -131,16 +133,16 @@ def number_ring(c, t, t0, n, word, col, icon):
     for i in range(12): P.paper(c, lambda c, i=i: P.star(c, 80 + (i * 173) % 920, 420 + (i * 271) % 1100, 9), P.MOON, 0.6, 0.6)
     u = ease((t - t0) / 0.6); cue(t0, "swirl")
     if u > 0.01:
-        c.new_sub_path(); c.arc(540, 1000, 230, -math.pi / 2, -math.pi / 2 + 2 * math.pi * u)
+        c.new_sub_path(); c.arc(540, 960, 230, -math.pi / 2, -math.pi / 2 + 2 * math.pi * u)
         c.set_source_rgba(*col, 0.35); c.set_line_width(46); c.stroke()
-        c.new_sub_path(); c.arc(540, 1000, 230, -math.pi / 2, -math.pi / 2 + 2 * math.pi * u)
+        c.new_sub_path(); c.arc(540, 960, 230, -math.pi / 2, -math.pi / 2 + 2 * math.pi * u)
         c.set_source_rgb(*col); c.set_line_width(22); c.set_line_cap(cairo.LINE_CAP_ROUND); c.stroke()
     a = pop(t, t0 + 0.35, 0.35, "thud")
-    scaled(c, 540, 1000, a, lambda: (P.paper(c, lambda c: P.ell(c, 540, 1000, 190, 190), P.CREAM, 1.2), label(c, str(n), 540, 1075, 220, P.INK)))
+    scaled(c, 540, 960, a, lambda: (P.paper(c, lambda c: P.ell(c, 540, 960, 190, 190), P.CREAM, 1.2), label(c, str(n), 540, 1035, 220, P.INK)))
     b = pop(t, t0 + 0.7, 0.35, "pop")
-    scaled(c, 540, 680, b, lambda: icon(c, 540, 680))
+    scaled(c, 540, 600, b, lambda: icon(c, 540, 600))
     w = slide(t, t0 + 0.9, 0.4, "swish")
-    label(c, word, 540, 1380 + 60 * (1 - w), 92, col, w)
+    label(c, word, 540, 1275 + 60 * (1 - w), 92, col, w)
 
 
 def ic_cloud_bolt(c, x, y):
@@ -371,8 +373,9 @@ def caption(im, t):
                 if a <= 0: x += f.getlength(tok + " "); continue
                 core = re.sub(r"[.,:;!?]", "", tok)
                 col = (255, 172, 196) if core in KEY else (250, 244, 236)
-                y = 250 + 18 * (1 - a)
-                d.text((x + 3, y + 5), tok, font=f, fill=(15, 10, 30))
+                y = 1330 + 18 * (1 - a)                          # bottom, above the TikTok buttons/description
+                for ox, oy in ((-3, 0), (3, 0), (0, -3), (0, 3), (3, 6)):     # dark outline so it reads over the scene
+                    d.text((x + ox, y + oy), tok, font=f, fill=(15, 10, 30))
                 d.text((x, y), tok, font=f, fill=tuple(int(v * a + 30 * (1 - a)) for v in col))
                 x += f.getlength(tok + " ")
             return
@@ -454,7 +457,7 @@ if __name__ == "__main__":
     lst = OUT + ".list.txt"; open(lst, "w").write("".join(f"file '{p}'\n" for p in paths))
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", OUT + ".video.mp4"], check=True)
     music(OUT + ".music.wav")
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", OUT + ".video.mp4", "-i", os.path.join(HERE, "voice", "result.mp3"), "-i", OUT + ".music.wav", "-filter_complex",
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", OUT + ".video.mp4", "-i", VOICE, "-i", OUT + ".music.wav", "-filter_complex",
                     "[2:a]volume=0.20[m];[1:a]asplit=2[v][sc];[m][sc]sidechaincompress=threshold=0.03:ratio=4:attack=20:release=400[md];"
                     "[v][md]amix=inputs=2:duration=longest:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=44100[a]",
                     "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", f"{DUR:.2f}", OUT], check=True)
