@@ -1,0 +1,20 @@
+# Half-gravity video — cue sheet (g halves at 3.0, crouch 6.6, push-off 7.2, landing 11.03, cut to the fountain 11.4, g back at 18.0, end card 21.2)
+music light0 0.0 0.3 23.5
+0.0 amb 0.6
+10.0 amb 0.55
+20.0 amb 0.5
+0.0 fountain 0.3
+6.0 fountain 0.3
+0.0 beep 0.45
+1.0 beep 0.45
+2.0 beep 0.45
+2.95 shift 1.0
+3.1 float 0.6
+3.5 gasp 0.4 0.3
+7.15 jump 0.9
+11.0 land 0.9
+11.3 whoosh 0.45
+11.5 splash 0.7
+14.5 splash 0.55 -0.2
+18.0 heavy 1.0
+18.05 land 0.6
