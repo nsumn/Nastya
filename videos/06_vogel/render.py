@@ -352,6 +352,7 @@ SHOTS = [(0.0, sh_hook, BIRD), (t_of("Eine Frau steht"), sh_window, BIRD), (t_of
          (t_of("Es geht also nicht"), sh_big, ROSE_), (t_of("Es geht um den"), sh_bird, M_), (t_of("Eine Frau, die immer"), sh_void, B_),
          (t_of("Nicht, weil die"), sh_hurt, ROSE_), (t_of("Das Gute daran"), sh_seconds, G_), (t_of("Aufschauen"), sh_steps, G_), (t_of("Schreib in"), sh_end, M_)]
 
+P.GLOW_COLS.update({BIRD, BIRD_D, SKY, GREEN, RED_})
 STARTS = [s[0] for s in SHOTS]
 XF = 0.25                                                                     # cross-fade length
 
@@ -443,6 +444,14 @@ def collect_cues(step=1 / 15):
 
 
 def draw(t, k):
+    """the shot at time t with its glow: drawn twice, normally and as the glow mask"""
+    a = draw_raw(t, k); P.MASK["on"] = True
+    try: m = draw_raw(t, k)
+    finally: P.MASK["on"] = False
+    return P.glow(a, m)
+
+
+def draw_raw(t, k):
     s = cairo.ImageSurface(cairo.FORMAT_RGB24, W, H); c = cairo.Context(s)
     t0 = STARTS[k]; t1 = STARTS[k + 1] if k + 1 < len(STARTS) else DUR
     u = ease((t - t0) / max(0.5, t1 - t0)); z = 1.0 + 0.05 * u                  # slow push in every shot
@@ -459,7 +468,6 @@ def frame(t):
     if k + 1 < len(STARTS) and t > STARTS[k + 1] - XF:                          # cross-fade into the next shot
         a = ease((t - (STARTS[k + 1] - XF)) / XF); arr = arr * (1 - a) + draw(t, k + 1) * a
     if t > DUR - 0.8: arr = arr * max(0.0, (DUR - t) / 0.8)
-    arr = P.glow(arr)
     im = Image.fromarray(P.grain(arr).astype(np.uint8)); caption(im, t)
     return np.asarray(im)
 

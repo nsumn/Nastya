@@ -15,12 +15,16 @@ INK = (0.15, 0.10, 0.18)
 LILAC, PLUM, ROSE, SAGE, WOOD = (0.85, 0.80, 0.86), (0.26, 0.24, 0.40), (1.0, 0.68, 0.76), (0.62, 0.74, 0.64), (0.55, 0.40, 0.36)
 
 CAM = {"dx": 0.0}            # set per frame by the shot: horizontal camera drift, used for parallax
+MASK = {"on": False}         # mask pass for glow(): glowing paper -> magenta, other paper -> black, background -> blue
+GLOW_COLS = {PINK, PINK_D, PINK_H, BLUE, BLUE_D, BLUE_H, ROSE, MOON}    # paper colours that give off light (renders add more)
 
 
 def paper(c, path_fn, col, depth=1.0, alpha=1.0):
     """shadow (soft: 3 offset copies) + fill. path_fn(c) builds the path."""
     off = CAM["dx"] * (depth - 1.0) * 0.6
     c.save(); c.translate(off, 0)
+    if MASK["on"]:
+        path_fn(c); c.set_source_rgba(*((1, 0, 1) if tuple(col) in GLOW_COLS else (0, 0, 0)), alpha); c.fill(); c.restore(); return
     for k, (dx, dy, a) in enumerate(((3, 6, 0.10), (6, 11, 0.08), (10, 17, 0.05))):
         c.save(); c.translate(dx * depth, dy * depth); path_fn(c); c.set_source_rgba(0.02, 0.0, 0.05, a * alpha); c.fill(); c.restore()
     path_fn(c); c.set_source_rgba(*col, alpha); c.fill()
@@ -43,6 +47,7 @@ def capsule(c, p0, p1, r):
 
 
 def background(c, top=NIGHT0, bottom=NIGHT1):
+    if MASK["on"]: c.set_source_rgb(0, 0, 1); c.paint(); return
     g = cairo.LinearGradient(0, 0, 0, H); g.add_color_stop_rgb(0, *top); g.add_color_stop_rgb(1, *bottom); c.set_source(g); c.paint()
 
 
@@ -198,26 +203,33 @@ def grain(arr):
     return np.clip(arr * _GRAIN, 0, 255)
 
 
-def glow(arr, strength=1.0):
-    """light pass for the 'lit paper' look: saturated bright shapes (the pink and blue characters, hearts, moon, lamps)
-    throw a soft coloured halo into the dark night around them; the shapes themselves stay crisp, the night gets a little
-    deeper so the light reads. arr: HxWx3 float 0..255"""
+def glow(arr, mask=None, strength=1.0):
+    """light pass for the 'lit paper' look: the glowing shapes throw a soft coloured halo into the night around them.
+    mask = the same frame drawn with MASK on: then the halo comes exactly from the silhouettes of the glowing paper
+    (characters incl. hair, hearts, bird ...) and never lies on top of them, so there are no blotches on dark parts.
+    Lines drawn directly with cairo (threads, rays, labels) glow by their own brightness. arr, mask: HxWx3 float 0..255"""
     import cv2
     x = arr / 255.0
     mx, mn = x.max(2), x.min(2)
     sat = (mx - mn) / (mx + 1e-4)
-    m = np.clip((mx - 0.5) / 0.35, 0, 1) * np.clip((sat - 0.12) / 0.3, 0, 1)    # what emits light (not cream/lilac)
-    src = x * m[:, :, None]
+    m_pix = np.clip((mx - 0.5) / 0.35, 0, 1) * np.clip((sat - 0.12) / 0.3, 0, 1)
+    if mask is None:
+        sil, direct = m_pix, np.zeros_like(m_pix)
+    else:
+        q = mask / 255.0
+        sil = np.clip(np.minimum(q[:, :, 0], q[:, :, 2]) - q[:, :, 1], 0, 1)                      # magenta = glowing paper
+        d = np.minimum.reduce([np.abs(q - np.array(v, np.float32)).sum(2) for v in ((0, 0, 0), (0, 0, 1), (1, 0, 1))])
+        direct = np.clip((d - 0.2) / 0.3, 0, 1)                                                    # drawn straight with cairo
+    emit = np.clip(sil + direct * m_pix, 0, 1)
+    src = x * emit[:, :, None]
     src = np.clip(src + (src - src.mean(2, keepdims=True)) * 0.6, 0, 1).astype(np.float32)   # richer halo colour
     small = cv2.resize(src, (W // 4, H // 4), interpolation=cv2.INTER_AREA)
     halo = 0.7 * cv2.GaussianBlur(small, (0, 0), 5) + 0.9 * cv2.GaussianBlur(small, (0, 0), 18)
     halo = cv2.resize(halo, (W, H), interpolation=cv2.INTER_LINEAR)
-    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (41, 41))
-    inside = cv2.morphologyEx((m > 0.3).astype(np.uint8), cv2.MORPH_CLOSE, k).astype(np.float32)   # fill eyes/text holes
-    inside = cv2.GaussianBlur(np.maximum(inside, m), (0, 0), 2)
-    halo *= (1 - 0.95 * inside)[:, :, None]                                    # halo around the shape, not over it
-    dark = 1 - 0.25 * strength * (1 - np.clip(mx / 0.45, 0, 1))                 # deepen the night only where it is dark
-    x = x * dark[:, :, None]
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (27, 27))                     # fill eyes / mouth / text holes
+    inside = cv2.morphologyEx((sil > 0.3).astype(np.uint8), cv2.MORPH_CLOSE, k).astype(np.float32)
+    inside = cv2.GaussianBlur(np.maximum(inside, sil), (0, 0), 1.2)
+    halo *= (1 - inside)[:, :, None]                                             # halo around the shape, never on it
     x = 1 - (1 - x) * (1 - np.clip(halo * 1.3 * strength, 0, 1))              # screen blend
     return np.clip(x * 255, 0, 255)
 
@@ -339,6 +351,8 @@ def rays(c, t, t0, x, y, col=MOON, n=18, kind="rise"):
     """light rays bursting out behind something"""
     cue(t0, kind); u = _ease((t - t0) / 0.6)
     if u <= 0: return
+    g = cairo.RadialGradient(x, y, 0, x, y, 260)                      # soft light in the centre (no dark hole)
+    g.add_color_stop_rgba(0, *col, 0.45 * u); g.add_color_stop_rgba(1, *col, 0); c.set_source(g); c.arc(x, y, 260, 0, 2 * math.pi); c.fill()
     for i in range(n):
         a = i * 2 * math.pi / n + t * 0.25; r0, r1 = 90, 90 + 420 * u
         c.move_to(x + r0 * math.cos(a - 0.05), y + r0 * math.sin(a - 0.05)); c.line_to(x + r1 * math.cos(a), y + r1 * math.sin(a))
