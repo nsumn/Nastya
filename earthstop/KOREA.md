@@ -50,7 +50,8 @@ Also read `earthstop/CLAUDE.md` (engine workflow, render, pitfalls) and `/.claud
 
 ## Done (Nov 4, quick format — her words "сильно не старайся"): "만약 5초 동안 중력이 절반이 된다면?" (`parts_gravity/`, `index_gravity.html`, 25 s)
 - `scene_gravity.js` = `cat parts_hangang/h_head.js parts_coffee/c_smoke.js parts_dad/d_block.js parts_hangang/h_set.js parts_hangang/h_fx.js parts_gravity/g_main.js`. Story T = (t-3)/3. Jump v0 3.13 m/s → 1.0 m / 1.28 s at 4.9 m/s² (0.5 m / 0.64 s normally). `setJetsG()` = fountain with a gravity factor. Audio: `tools/gravity_audio.py`, `parts_gravity/cues.txt`.
-- Remaining ideas: 5초 동안 마찰이 사라진다면, 반포대교 분수가 1000배 세진다면.
+- Done too (Nov 4, quick): "만약 5초 동안 마찰이 사라진다면?" (`parts_friction/`, `index_friction.html`, 24 s): slip at T=0, falls on his back, glides 7 m at 1.4 m/s to the top of the stone slope. Audio `tools/friction_audio.py`, `parts_friction/cues.txt`.
+- Remaining idea: 반포대교 분수가 1000배 세진다면.
 
 ## Delivery checklist (every video)
 Script table + sources → her "да" → test sheet → full render → contact sheet + dense frames at cuts + flicker check (frame-difference numbers) → mp4 (SendUserFile) + Korean TikTok caption (hook + facts + "댓글로 👇"), 6–8 hashtags (#만약에 #과학 #3D애니메이션 #fyp + topic), 2 short alternatives, known flaws, posting time 19–21 KST. Commit + push engine changes (never out/, mp4, wav, assets, keys).

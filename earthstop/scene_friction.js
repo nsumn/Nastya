@@ -610,14 +610,14 @@ const phoneRT = new THREE.WebGLRenderTarget(360, 720, { type: THREE.HalfFloatTyp
 const phoneCam = new THREE.PerspectiveCamera(48, 0.5, 0.05, 40000);
 heroPhone.userData.screen.material = new THREE.MeshBasicMaterial({ map: phoneRT.texture, color: new THREE.Color(1.15, 1.15, 1.15) });
 heroPhone.userData.screen.scale.set(0.068, 0.145, 0.002);
-// =================== "만약 5초 동안 마찰이 사라진다면?" — 22.5 s, quick format. Banpo park at dusk (h_set.js).
+// =================== "만약 5초 동안 마찰이 사라진다면?" — 24 s, quick format. Banpo park at dusk (h_set.js).
 // Story T = (t-3)/3. He walks north toward the river at 1.4 m/s; at T=0 friction = 0: the planted foot shoots forward, he falls on his back
 // and keeps gliding at the same 1.4 m/s (nothing can slow him) → 7 m in 5 s, stopping right at the top of the stone slope when friction returns.
 // Facts on screen: a car at 60 km/h covers 83 m in 5 s with no brakes and no steering; standing still on flat ground nothing would happen.
 const $ = id => document.getElementById(id);
 const easeOutBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
 const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
-const T0 = 3, T1 = 18, END0 = 18.6, SL = 3, VW = 1.4, X0 = 11, Z_SLIP = -2.0;
+const T0 = 3, T1 = 18, END0 = 20, SL = 3, VW = 1.4, X0 = 11, Z_SLIP = -2.0;
 const storyT = t => (t - T0) / SL;
 foamAt(-1); splashAt(0, 0, 0, 0); bedStuff.visible = false; vanishRing.visible = false; ferry.visible = true; heroPhone.visible = false;
 // position along the walk (z decreases = toward the river); before T0 he walks at real speed, after it the slide runs in story time; stops at T1
@@ -654,7 +654,7 @@ function camAt(t) {
 // ---- text ----
 const TITLE = ['만약', '<span class="hl">5초</span>', '동안', '<br>', '<span class="hl">마찰</span>이', '사라진다면?'];
 const CAPS = [[3.3, 6.4, '발이 <span class="hl">그대로</span> 미끄러진다'], [6.6, 9.8, '마찰이 없으면<br><span class="hl">멈출 수가 없다</span>'], [10.0, 12.3, '일어나려 해도 손발이 <span class="hl">헛돈다</span>'],
-  [12.6, 15.8, '시속 60km 자동차는 5초 동안<br><span class="hl">83m</span>를 브레이크 없이 미끄러진다'], [16.2, 18.4, '5초 끝. 강 <span class="hl">바로 앞</span>에서 멈췄다']];
+  [12.6, 15.8, '시속 60km 자동차는 5초 동안<br><span class="hl">83m</span>를 브레이크 없이 미끄러진다'], [16.2, 17.95, '강까지 <span class="hl">1m</span>도 안 남았다'], [18.05, 19.9, '5초 끝. 강 <span class="hl">바로 앞</span>에서 멈췄다']];
 let lastCap = '';
 function kineticHTML(html) { const out = []; let i = 0; for (const p of html.split(/(<[^>]+>)/)) { if (!p) continue; if (p.startsWith('<')) { out.push(p); continue; } for (const w of p.split(/(\s+)/)) { if (!w) continue; if (/^\s+$/.test(w)) out.push(w); else out.push(`<span class="w" data-i="${i++}">${w}</span>`); } } return out.join(''); }
 function text(t) {
