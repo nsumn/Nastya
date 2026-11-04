@@ -289,3 +289,116 @@ def shake(t, t0, d=0.4, amp=10):
     """horizontal head-shake / tremble offset"""
     u = (t - t0) / d
     return 0.0 if (u <= 0 or u >= 1) else amp * math.sin(u * math.pi * 6) * (1 - u)
+
+
+# ---------------------------------------------------------------- animated pieces seen in the reference, in paper style
+SAGE_C, VIOLET_C, BLUE_C = (0.55, 0.80, 0.62), (0.72, 0.60, 0.98), (0.55, 0.75, 1.0)
+
+
+def draw_ring(c, t, t0, x, y, R, col, width=22, d=0.6, kind="swirl"):
+    """a ring that draws itself (0 -> 360 deg) with a soft paper rim"""
+    cue(t0, kind); u = _ease((t - t0) / d)
+    if u <= 0.01: return u
+    c.new_sub_path(); c.arc(x, y, R, -math.pi / 2, -math.pi / 2 + 2 * math.pi * u)
+    c.set_source_rgba(*col, 0.3); c.set_line_width(width * 2.1); c.set_line_cap(cairo.LINE_CAP_ROUND); c.stroke()
+    c.new_sub_path(); c.arc(x, y, R, -math.pi / 2, -math.pi / 2 + 2 * math.pi * u); c.set_source_rgb(*col); c.set_line_width(width); c.stroke()
+    return u
+
+
+def progress_dots(c, x, y, n, k, col):
+    for i in range(n):
+        ell(c, x + (i - (n - 1) / 2) * 34, y, 9 if i != k else 13, 9 if i != k else 13)
+        c.set_source_rgb(*(col if i <= k else (0.35, 0.33, 0.48))); c.fill()
+
+
+def rays(c, t, t0, x, y, col=MOON, n=18, kind="rise"):
+    """light rays bursting out behind something"""
+    cue(t0, kind); u = _ease((t - t0) / 0.6)
+    if u <= 0: return
+    for i in range(n):
+        a = i * 2 * math.pi / n + t * 0.25; r0, r1 = 90, 90 + 420 * u
+        c.move_to(x + r0 * math.cos(a - 0.05), y + r0 * math.sin(a - 0.05)); c.line_to(x + r1 * math.cos(a), y + r1 * math.sin(a))
+        c.line_to(x + r0 * math.cos(a + 0.05), y + r0 * math.sin(a + 0.05)); c.close_path()
+        c.set_source_rgba(*col, 0.35 * u); c.fill()
+
+
+def orbits(c, t, t0, x, y, col):
+    cue(t0, "swirl"); u = _ease((t - t0) / 0.5)
+    for i, (rx, ry, sp) in enumerate(((200, 70, 1.4), (240, 95, -1.0), (280, 120, 0.8))):
+        c.save(); c.translate(x, y); c.rotate(0.3 * i); c.scale(rx * u + 1e-3, ry * u + 1e-3)
+        c.new_sub_path(); c.arc(0, 0, 1, 0, 2 * math.pi); c.restore(); c.set_source_rgba(*col, 0.6); c.set_line_width(5); c.stroke()
+        a = t * sp + i; c.save(); c.translate(x, y); c.rotate(0.3 * i)
+        ell(c, rx * u * math.cos(a), ry * u * math.sin(a), 12, 12); c.set_source_rgb(*col); c.fill(); c.restore()
+
+
+def phone_big(c, t, x, y, msgs, col_mine=ROSE, a=1.0):
+    """msgs: list of (text, mine, t_appear); returns nothing. A paper phone with chat bubbles popping in."""
+    paper(c, lambda c: rrect(c, x - 230, y - 400, 460, 800, 60), (0.14, 0.14, 0.22), 1.2)
+    paper(c, lambda c: rrect(c, x - 200, y - 360, 400, 720, 40), (0.92, 0.90, 0.95), 1.25)
+    yy = y - 300
+    c.select_font_face("Inter", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD); c.set_font_size(30)
+    for txt, mine, ta in msgs:
+        u = pop(t, ta, 0.3, "ping" if not mine else "pop")
+        if u <= 0: continue
+        w = c.text_extents(txt)[4] + 50; bx = x + 180 - w if mine else x - 180
+        c.save(); c.translate(bx + w / 2, yy + 35); c.scale(max(u, 1e-3), max(u, 1e-3)); c.translate(-(bx + w / 2), -(yy + 35))
+        rrect(c, bx, yy, w, 70, 30); c.set_source_rgb(*(col_mine if mine else (0.80, 0.80, 0.88))); c.fill()
+        c.move_to(bx + 25, yy + 46); c.set_source_rgb(*INK); c.show_text(txt); c.restore()
+        yy += 95
+
+
+def padlock(c, x, y, s, col=MOON):
+    c.set_source_rgb(*INK); c.set_line_width(14 * s); c.new_sub_path(); c.arc(x, y - 30 * s, 40 * s, math.pi, 0); c.stroke()
+    paper(c, lambda c: rrect(c, x - 60 * s, y - 30 * s, 120 * s, 100 * s, 16 * s), col, 1.4)
+    paper(c, lambda c: ell(c, x, y + 15 * s, 12 * s, 12 * s), INK, 1.45)
+
+
+def snowflake(c, x, y, s, a=1.0):
+    c.set_source_rgba(0.85, 0.93, 1.0, a); c.set_line_width(5 * s); c.set_line_cap(cairo.LINE_CAP_ROUND)
+    for i in range(6):
+        ang = i * math.pi / 3; c.move_to(x, y); c.line_to(x + 30 * s * math.cos(ang), y + 30 * s * math.sin(ang)); c.stroke()
+
+
+def umbrella(c, x, y, s, col=ROSE):
+    paper(c, lambda c: (c.move_to(x - 160 * s, y), c.curve_to(x - 150 * s, y - 150 * s, x + 150 * s, y - 150 * s, x + 160 * s, y),
+                        c.curve_to(x + 110 * s, y - 25 * s, x + 50 * s, y - 25 * s, x, y), c.curve_to(x - 50 * s, y - 25 * s, x - 110 * s, y - 25 * s, x - 160 * s, y),
+                        c.close_path()), col, 1.3)
+    c.set_source_rgb(*INK); c.set_line_width(8 * s); c.move_to(x, y - 10 * s); c.line_to(x, y + 170 * s); c.stroke()
+
+
+def rain(c, t, x0, y0, w, h, n=40, a=0.5):
+    for k in range(n):
+        x = x0 + (k * 97) % w; y = y0 + ((k * 151) + t * 800) % h
+        c.set_source_rgba(0.75, 0.85, 1.0, a); c.set_line_width(4); c.move_to(x, y); c.line_to(x - 5, y + 36); c.stroke()
+
+
+def magnet(c, x, y, s):
+    c.set_line_width(46 * s); c.set_line_cap(cairo.LINE_CAP_BUTT)
+    c.new_sub_path(); c.arc(x, y, 70 * s, 0, math.pi); c.set_source_rgb(0.85, 0.30, 0.35); c.stroke()
+    for sd in (-1, 1):
+        c.set_source_rgb(0.85, 0.30, 0.35); c.move_to(x + sd * 70 * s, y); c.line_to(x + sd * 70 * s, y - 60 * s); c.stroke()
+        c.set_source_rgb(*CREAM); c.move_to(x + sd * 70 * s, y - 60 * s); c.line_to(x + sd * 70 * s, y - 100 * s); c.stroke()
+
+
+def chain(c, t, t0, x, y, col=(0.70, 0.70, 0.78)):
+    """a chain across the frame that snaps in the middle at t0"""
+    cue(t0, "clang"); g = _ease((t - t0) / 0.4)
+    for i in range(-5, 6):
+        if i == 0: continue
+        off = (-1 if i < 0 else 1) * 120 * g; drop = 40 * g * abs(i) / 5
+        c.save(); c.translate(x + i * 90 + off, y + drop); c.rotate(0.3 * g * (-1 if i < 0 else 1))
+        c.set_source_rgb(*col); c.set_line_width(14); ell(c, 0, 0, 52 if i % 2 else 30, 30 if i % 2 else 52); c.stroke(); c.restore()
+
+
+def stairs(c, t, t0, x0, y0, n, step, col, d=0.9):
+    """stairs drawing themselves step by step (tick per step); returns positions of the step tops"""
+    tops = []
+    c.set_source_rgb(*col); c.set_line_width(14); c.set_line_cap(cairo.LINE_CAP_ROUND); c.set_line_join(cairo.LINE_JOIN_ROUND)
+    u = (t - t0) / d * n; c.move_to(x0, y0); x, y = x0, y0
+    for i in range(n):
+        cue(t0 + i * d / n, "tick")
+        k = max(0.0, min(1.0, u - i))
+        if k <= 0: break
+        c.line_to(x + step * k, y); x += step * k
+        if k >= 1: c.line_to(x, y - step * 0.8); y -= step * 0.8; tops.append((x - step / 2, y))
+    c.stroke(); return tops
