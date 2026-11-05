@@ -97,8 +97,13 @@ for (x, y, s) in [(-8, -20, 1.3), (6, -24, 1.5), (-20, 4, 1.2), (19, -6, 1.3), (
 
 # sky + sun
 w = bpy.data.worlds.new('w'); sc.world = w; w.use_nodes = True
-sky = w.node_tree.nodes.new('ShaderNodeTexSky'); sky.sky_type = 'NISHITA'; sky.sun_elevation = math.radians(38); sky.sun_rotation = math.radians(140)
-sky.air_density = 1.0; sky.dust_density = .6
+sky = w.node_tree.nodes.new('ShaderNodeTexSky')
+for st in ('NISHITA', 'MULTIPLE_SCATTERING', 'SINGLE_SCATTERING'):   # Blender 4.x calls it NISHITA, 5.x MULTIPLE_SCATTERING
+    try: sky.sky_type = st; break
+    except TypeError: pass
+for k, v in (('sun_elevation', math.radians(38)), ('sun_rotation', math.radians(140)), ('air_density', 1.0), ('dust_density', .6)):
+    try: setattr(sky, k, v)
+    except (AttributeError, TypeError): pass
 w.node_tree.links.new(sky.outputs['Color'], w.node_tree.nodes['Background'].inputs['Color'])
 w.node_tree.nodes['Background'].inputs['Strength'].default_value = .22
 bpy.ops.object.light_add(type='SUN', rotation=(math.radians(52), 0, math.radians(-40)))
@@ -111,8 +116,15 @@ c = cam.constraints.new('TRACK_TO'); bpy.ops.object.empty_add(location=(0, 4, 3.
 cam.data.lens = 32
 
 r = sc.render; r.resolution_x, r.resolution_y, r.resolution_percentage = 1080, 1920, 100
-r.engine = ENGINE; r.filepath = OUT; r.image_settings.file_format = 'PNG'
-sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Medium High Contrast'
+if ENGINE.startswith('BLENDER_EEVEE'):            # 4.2-4.4: BLENDER_EEVEE_NEXT, 5.x: BLENDER_EEVEE
+    for e in ('BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE'):
+        try: r.engine = e; break
+        except TypeError: pass
+else: r.engine = ENGINE
+r.filepath = OUT; r.image_settings.file_format = 'PNG'
+sc.view_settings.view_transform = 'AgX'
+try: sc.view_settings.look = 'AgX - Medium High Contrast'
+except TypeError: pass
 if ENGINE == 'CYCLES':
     sc.cycles.device = 'CPU'
     if DEVICE == 'GPU':   # pick the best backend the machine has: OptiX (NVIDIA RTX) > CUDA > HIP (AMD) > oneAPI (Intel) > Metal (Mac)
@@ -130,7 +142,9 @@ if ENGINE == 'CYCLES':
     sc.cycles.use_denoising = True; sc.cycles.denoiser = 'OPENIMAGEDENOISE'; sc.cycles.max_bounces = 4
     sc.cycles.use_auto_tile = True
 else:
-    sc.eevee.taa_render_samples = SAMPLES; sc.eevee.use_shadows = True
+    sc.eevee.taa_render_samples = SAMPLES
+    try: sc.eevee.use_shadows = True
+    except AttributeError: pass
     try: sc.eevee.use_raytracing = True
     except Exception: pass
-t0 = time.time(); bpy.ops.render.render(write_still=True); print('RENDER_SECONDS', round(time.time() - t0, 1))
+t0 = time.time(); bpy.ops.render.render(write_still=True); print('RENDER_SECONDS', r.engine, round(time.time() - t0, 1))
