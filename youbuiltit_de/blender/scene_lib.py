@@ -188,6 +188,68 @@ def limb(root, key):
     return bpy.data.objects[root[key]]
 
 
+# ---------- rigged characters (Mixamo FBX, Quaternius glTF, or a .blend) ----------
+PEOPLE = os.path.join(HERE, 'assets', 'people')
+
+
+def character(filename, x, y, z=0, rot=0, height=None, name='char'):
+    """Imports a rigged character from blender/assets/people and returns its root object.
+
+    Mixamo exports .fbx at 100x scale and Z-up already; Quaternius ships .gltf/.glb.
+    When the file is not there yet this falls back to the primitive person(), so the scene
+    keeps working and only looks worse."""
+    path = os.path.join(PEOPLE, filename)
+    if not os.path.exists(path):
+        print('CHARACTER missing, using a placeholder:', path)
+        return person(x, y, z, rot, height or 1.75, name=name)
+    before = set(bpy.data.objects)
+    ext = os.path.splitext(filename)[1].lower()
+    if ext == '.fbx':
+        bpy.ops.import_scene.fbx(filepath=path, automatic_bone_orientation=True)
+    elif ext in ('.gltf', '.glb'):
+        bpy.ops.import_scene.gltf(filepath=path)
+    elif ext == '.obj':
+        bpy.ops.wm.obj_import(filepath=path)
+    else:
+        raise ValueError('unsupported character file: ' + filename)
+    new = [o for o in bpy.data.objects if o not in before]
+    roots = [o for o in new if o.parent is None]
+    root = roots[0] if len(roots) == 1 else empty(0, 0, 0, name + '_root')
+    if len(roots) > 1:
+        for o in roots:
+            o.parent = root
+    root.name = name
+    root.location = (x, y, z)
+    root.rotation_euler = (root.rotation_euler.x, root.rotation_euler.y, rot)
+    if height:
+        dims = [o for o in new if o.type == 'MESH']
+        cur = max((o.dimensions.z for o in dims), default=0) or 1.0
+        s = height / cur
+        root.scale = (s, s, s)
+    return root
+
+
+def character_at(root, t, action=None, loop=True):
+    """Poses an imported character at time t by moving its action's playhead. Does nothing
+    for a placeholder person(), which is posed with walk() instead."""
+    arm = next((o for o in [root] + root.children_recursive if o.type == 'ARMATURE'), None)
+    if arm is None:
+        return False
+    ad = arm.animation_data
+    if ad is None or ad.action is None:
+        if action and action in bpy.data.actions:
+            arm.animation_data_create().action = bpy.data.actions[action]
+            ad = arm.animation_data
+        else:
+            return False
+    a = ad.action
+    f0, f1 = a.frame_range
+    span = max(f1 - f0, 1)
+    f = f0 + ((t * FPS) % span if loop else min(t * FPS, span))
+    bpy.context.scene.frame_set(int(f))
+    return True
+
+
 def walk(root, t, speed=2.2, swing=.5):
     """Swings arms and legs so a person reads as walking."""
     a = math.sin(t * speed * math.pi) * swing

@@ -1,2 +1,4 @@
 gpu_*.png
 bench_*/
+assets/people/*
+!assets/people/README.md

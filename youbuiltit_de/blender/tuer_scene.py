@@ -161,10 +161,28 @@ L.cyl(.25, -.09, 1.55, .045, .02, glasslens, 'spion_lens', rot=(math.radians(90)
 L.cyl(.25, -.1, 1.55, .055, .01, brass, 'spion_ring', rot=(math.radians(90), 0, 0), verts=16, parent=spion)
 
 # ---------- people ----------
-you = L.person(-.35, -1.5, 0, math.radians(180), 1.75, skin, tunic_you, 'you')
-nachbar = L.person(.45, -3.2, 0, math.radians(180), 1.78, skin, tunic_nb, 'nachbar')
-crowd = [L.person(-1.6 + i * .8, -2.4 - (i % 2) * .5, 0, math.radians(180 + (i - 2) * 12),
-                  1.7 + (i % 3) * .05, skin, tunic_crowd, 'crowd_%d' % i) for i in range(5)]
+# Rigged characters when they are in blender/assets/people, primitive stand-ins otherwise.
+# The placeholders are the weakest part of the picture -- @oddtilt and @kerozni carry their
+# shots on real animated people, and here people are on screen almost the whole time.
+def actor(filename, x, y, rot, h, cloth, name):
+    root = L.character(filename, x, y, 0, rot, h, name)
+    if 'head' in root.keys():                       # a placeholder: colour it by hand
+        for key, mat in (('body', cloth), ('hip', cloth), ('leg_l', cloth), ('leg_r', cloth)):
+            m = L.limb(root, key).data.materials
+            m.clear()
+            m.append(cloth)
+    return root
+
+
+def pose(root, t, speed, swing):
+    if not L.character_at(root, t):                 # rigged: play its own action
+        L.walk(root, t, speed, swing)               # placeholder: swing the limbs
+
+
+you = actor('you.fbx', -.35, -1.5, math.radians(180), 1.75, tunic_you, 'you')
+nachbar = actor('nachbar.fbx', .45, -3.2, math.radians(180), 1.78, tunic_nb, 'nachbar')
+crowd = [actor('crowd.fbx', -1.6 + i * .8, -2.4 - (i % 2) * .5, math.radians(180 + (i - 2) * 12),
+               1.7 + (i % 3) * .05, tunic_crowd, 'crowd_%d' % i) for i in range(5)]
 
 # ---------- the wolf ----------
 wolf = L.empty(2.6, -4.0, 0, 'wolf')
@@ -274,12 +292,12 @@ def update(t):
     # people
     L.show(you, L.win(t, 0, tw['theater'], .4))
     you.location = (-.35, L.lerp(-1.5, -2.4, L.ease(t, tw['bretter'], tw['zapfen'])), 0)
-    L.walk(you, t, 1.2, .18)
+    pose(you, t, 1.2, .18)
 
     nb_in = L.win(t, tw['nachbar'] - .3, tw['raus'], .4)
     L.show(nachbar, nb_in)
     nachbar.location = (.45, L.lerp(-4.2, -.6, L.ease(t, tw['nachbar'], tw['nachbar'] + 1.2)), 0)
-    L.walk(nachbar, t, 2.4, .5)
+    pose(nachbar, t, 2.4, .5)
 
     push = L.win(t, tw['theater'], END, .5)
     for i, p in enumerate(crowd):
@@ -287,7 +305,7 @@ def update(t):
         p.location = (-1.6 + i * .8,
                       L.lerp(-5.0 - i * .4, -1.5 - (i % 2) * .35,
                              L.ease(t, tw['theater'], tw['druecken'] + .4)), 0)
-        L.walk(p, t + i * .3, 3.0, .55)
+        pose(p, t + i * .3, 3.0, .55)
 
     # the wolf trots up to the cave, then leaves when the hide goes up
     k_wolf = L.win(t, tw['wolf'] - .4, tw['fell'] + .3, .35)
