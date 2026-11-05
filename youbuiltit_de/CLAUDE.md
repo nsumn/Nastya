@@ -94,7 +94,10 @@ youbuiltit_frames/   первый разбор оригинала: кадры @y
    (cd youbuiltit_de && python3 -m http.server 8766 &)        # сервер должен работать во время рендера
    cd youbuiltit_de/engine
    PAGE=index_NN.html node render.js stills 1,5,10,15,20,...  # -> frames/still_<t>.jpg, ~2 с на кадр
+   GPU=1 PAGE=index_NN.html node render.js stills 1,5,10,...   # на машине с видеокартой: 0.4-0.5 с на кадр
    ```
+   `GPU=1` запускает Chromium через ANGLE/D3D11 на настоящей видеокарте вместо программного SwiftShader.
+   Кадры при этом попиксельно те же, а рендер быстрее примерно в 7 раз (проверено на RTX 3060, ролик 02).
    Склей 10–20 кадров в контактный лист (PIL) и посмотри на него. Типичные проблемы:
    - камера влетает в стражников или стены;
    - объекты видны раньше времени;
@@ -114,6 +117,10 @@ youbuiltit_frames/   первый разбор оригинала: кадры @y
 - В alignment Lumean бывают склеенные слова через точку, например `Sommergewitter.Die`. `make_words.py` их разделяет.
 - `T('Tür')` находит и «Türme», поэтому для нужного вхождения передавай номер: `T('Tür', 2)`. То же с `Leiter`/`Leitern`, `hochziehen`/`hochziehst`. Неверный номер ломает тайминг молча, так что проверяй стоп-кадрами.
 - SwiftShader (headless Chromium без GPU) работает медленно. Не увлекайся сегментами геометрии: рельеф 256×256 ещё нормально, деревьев не больше примерно 30.
+  На домашней машине с видеокартой это ограничение снимается: `GPU=1` (см. шаг 4), 0.4-0.5 с на кадр.
+- Windows: `setup.sh` рассчитан на bash и `python3`. Вручную это `npm install` и `npm install playwright` в `engine/`,
+  `npx playwright install chromium`, `python -m pip install numpy pillow`. Git, Node LTS, Python 3 и ffmpeg ставятся через winget.
+  Файл-сервер: `cd youbuiltit_de && python -m http.server 8766 &` — он должен работать во время рендера.
 - Кадры в видео первые 60 штук рендерятся медленнее (около 6 с на кадр), дальше 2.5–4 с.
 - Фоновые задачи в облачной сессии живут не дольше 2 часов, а контейнер может перезапуститься. Поэтому рендер всегда идёт кусками с докачкой.
 - `node_modules/`, `frames/`, `chunks/`, `*.mp4` в `engine/` и собранные `keller.js`/`burg.js` в git не идут. После клона запусти `bash setup.sh`.

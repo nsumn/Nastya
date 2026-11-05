@@ -4,7 +4,11 @@ const { chromium } = require('playwright'); const { spawn } = require('child_pro
 const PORT = process.env.PORT || 8766;
 (async () => {
   const [mode, a1, a2, a3, a4] = process.argv.slice(2);
-  const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  // GPU=1 uses the machine's real video card through ANGLE/D3D11 (Windows) instead of software SwiftShader.
+  const args = process.env.GPU === '1'
+    ? ['--use-angle=d3d11', '--ignore-gpu-blocklist', '--enable-gpu-rasterization', '--enable-zero-copy']
+    : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+  const b = await chromium.launch({ channel: process.env.GPU === '1' ? 'chromium' : undefined, args });
   const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
   p.on('pageerror', e => console.log('ERR', e.message)); p.on('console', m => { if (m.type() === 'error') console.log('console', m.text()); });
   await p.goto(`http://localhost:${PORT}/engine/${process.env.PAGE || 'index_keller.html'}`);
