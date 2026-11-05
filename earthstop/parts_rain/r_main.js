@@ -100,6 +100,7 @@ function shotOpts(i) { return SHOTS[i][3] || {}; }
 function whipAt(t) { let w = 0; for (const [c, , , o] of SHOTS) if (o && o.whip) { const k = Math.max(0, 1 - Math.abs(t - c) / 0.14); w += o.whip * 0.11 * k * k; } return w; }
 window.renderAt = (t) => {
   let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++;
+  document.body.classList.toggle('bright', SHOTS[i][1] === 'old' || SHOTS[i][1] === 'sky');   // soft dark backing under captions on bright sets
   if (window.PASS === 'text') { updateDOM(t, i); return true; }
   const o = shotOpts(i); let src = RTA;
   if (o.mb) {   // motion blur: average MB_K renders spread over the shutter (stay inside this shot)
