@@ -54,11 +54,12 @@ const AO = {}; function aoFor(k) { if (!AO[k]) { const S = SETS[k]; const g = ne
   g.updateGtaoMaterial({ radius: 0.5, distanceExponent: 1.5, thickness: 1.5, scale: 1.0, samples: 12 }); g.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 }); AO[k] = g; } return AO[k]; }
 const RTS = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
 function applyF(cam, F) { cam.position.copy(F.pos); cam.lookAt(F.look); cam.fov = F.fov; }
+const F_cam = (t, i) => SHOTS[i][2](t).pos;
 function shoot(i, t, rt) { const [, k, cf] = SHOTS[i], S = SETS[k]; puffsReset();
   if (['bed', 'nyc', 'trn', 'off', 'din'].includes(k)) S.sc.add(hero.outer);
   if (k === 'nyc') { updateDayNYC(t); NY.cabs.forEach(c => { if (t >= SQUARE && c.position.z < -40 && c.position.z > -135) c.visible = false; }); }
   if (k === 'bed') updateBED(t, t >= NIGHT); if (k === 'trn') updateTRN(t); if (k === 'off') updateOFF(t); if (k === 'din') updateDiner(t); if (k === 'burb') updateCITY(t); if (k === 'lab') updateLAB(t);
-  pose(t, k); if (k === 'nyc') for (const w of [...NY.walkers, ...NY.crowd]) if (w !== NY.butt && w.p.outer.position.distanceTo(hero.outer.position) < 0.8) w.p.outer.visible = false;   // nobody walks through you
+  pose(t, k); if (k === 'nyc') for (const w of [...NY.walkers, ...NY.crowd]) if (w !== NY.butt && (w.p.outer.position.distanceTo(hero.outer.position) < 0.8 || w.p.outer.position.distanceTo(F_cam(t, i)) < 1.6)) w.p.outer.visible = false;   // nobody walks through you
   const F = cf(t); applyF(S.cam, F); S.cam.updateMatrixWorld();
   if (k === 'burb') { shootTo(rt, S.sc, S.cam); return; }
   const far = F.pos.y > 20; if (far) { shootTo(rt, S.sc, S.cam); return; } shootTo(RTS, S.sc, S.cam);
@@ -75,7 +76,7 @@ const SPECIAL = [
 // the SKIBIDI kid in the subway: the person nearest to you (but not touching) — visible behind you in the close-up
 TR.kid = (() => { let b = 0, bd = 1e9; TR.people.forEach((w, i) => { const d = Math.hypot(w.x - 0.16, w.z - 2.0); if (d > 0.5 && d < bd && !w.sit) { bd = d; b = i; } }); return b; })();
 // on the sidewalk: the one walker right behind you (in the street close-up) thinks "nice a**"
-NY.butt = (() => { let b = NY.walkers[0], bd = 1e9; [...NY.walkers, ...NY.crowd].forEach(w => { if (w.side === 0) return; const z = (w.z0 ?? 0) + w.dir * w.sp * (8.5 - (w.side === undefined ? 0 : STREET)), hz = 2 - 1.25 * 1.5, d = Math.hypot(w.x - 8.7, z - hz - 1.6); if (d < bd && z > hz + 0.9) { bd = d; b = w; } }); return b; })();
+NY.butt = (() => { let b = NY.walkers[0], bd = 1e9; [...NY.walkers, ...NY.crowd].forEach(w => { if (w.side === 0) return; const z = (w.z0 ?? 0) + w.dir * w.sp * (8.5 - (w.side === undefined ? 0 : STREET)), hz = 2 - 1.25 * 1.5, d = Math.hypot(w.x - 8.7, z - hz - 1.6); if (d < bd && z > hz + 0.9 && w.dir < 0) { bd = d; b = w; } }); return b; })();
 // in Times Square the one person who notices the shirt: the crowd member closest to your path at 38.7 s
 NY.sqFan = (() => { let b = 0, bd = 1e9; NY.crowd.forEach((w, i) => { if (w.side !== 0) return; const z = w.z0 + w.dir * w.sp * (38.7 - STREET) * 0.4, d = Math.hypot(w.x - 0.6, z - (-60 - 1.05 * 6.7 - 3)); if (d < bd) { bd = d; b = i; } }); return b; })();
 function bubbleOf(th, t) { const T = 1 / th.rate, c = Math.floor((t + th.k * 3.3) / T), on = c * T - th.k * 3.3 + hash(th.k + c * 1.7) * T * 0.35, d = Math.min(1.7, T * 0.8);
@@ -86,11 +87,16 @@ function bubblesAt(t, i) { const [t0, k] = SHOTS[i], cam = SETS[k].cam, out = []
     let x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H; x = clamp(x, 70 + hw, Math.min(1010, 880 + (y > 1650 || y < 950 ? 130 : 0)) - hw); if (sc0 > 1) y = clamp(y, 720, 1130);   // scripted bubbles always stay readable
     const band = (y > 1150 && y < 1520) ? 0.0 : 1, top = smooth(k === 'bed' && t < STREET ? 640 : 560, (k === 'bed' && t < STREET ? 640 : 560) + 80, y);   // keep the caption band and the HUD clear
     const al = Math.min(band, top) * smooth(b.a - 0.01, b.a + 0.08, t) * (1 - smooth(b.b - 0.18, b.b, t)); if (al < 0.02) return;
-    const sp = s * pop(t, b.a, 0.26); out.push({ dist, h: `<div class="tb ${b.cls || ''}" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;opacity:${al.toFixed(2)};transform:translate(-50%,-100%) scale(${sp.toFixed(3)})"><div class="c">${b.txt}</div><div class="d1"></div><div class="d2"></div></div>` }); };
+    const sp = s * pop(t, b.a, 0.26); out.push({ dist, pri: sc0 > 1 ? 0 : dist, x, y, hw, hh: 62 * s, h: `<div class="tb ${b.cls || ''}" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;opacity:${al.toFixed(2)};transform:translate(-50%,-100%) scale(${sp.toFixed(3)})"><div class="c">${b.txt}</div><div class="d1"></div><div class="d2"></div></div>` }); };
   const ths = (k === 'bed' || k === 'lab' || k === 'burb') ? [] : (THINK[k] || []);
   if (!(k === 'din' && t < LIARS)) for (const th of ths) { const b = bubbleOf(th, t); if (b) add(th.head(), b); }
   for (const [a, b, kk, hf, txt, cls] of SPECIAL) if (kk === k && t >= a && t < b) add(hf(), { a, b, txt, cls }, 1.45);
-  out.sort((p, q) => q.dist - p.dist); return out.slice(-22).map(o => o.h).join(''); }
+  // no pile-ups: nearest (and scripted) bubbles win; a bubble that would cover another one or your face is skipped
+  const keep = [], hb = (hero.outer.visible && hero.outer.parent === SETS[k].sc) ? (() => { const v = H_(hero).project(cam); return v.z < 1 ? { x: (v.x + 1) / 2 * W, y: (1 - v.y) / 2 * H } : null; })() : null;
+  out.sort((p, q) => p.pri - q.pri);
+  for (const o of out) { if (keep.length >= 18) break; const over = keep.some(q => Math.abs(o.x - q.x) < (o.hw + q.hw) * 0.92 && Math.abs(o.y - q.y) < (o.hh + q.hh) * 0.5);
+    const face = hb && o.pri > 0 && Math.abs(o.x - hb.x) < o.hw + 110 && o.y > hb.y - 190 && o.y - o.hh < hb.y + 120; if (!over && !face) keep.push(o); }
+  keep.sort((p, q) => q.dist - p.dist); return keep.map(o => o.h).join(''); }
 // ---- DOM: title fades, captions pop (series style), HUD counters, bubbles, end card ----
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'cap', 'hud', 'stat', 'val', 'sub', 'labels', 'bubs', 'end', 'endT', 'endS'].map(k => [k, $(k)]));
