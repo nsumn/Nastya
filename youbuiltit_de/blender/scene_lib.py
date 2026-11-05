@@ -96,6 +96,23 @@ def pbr(name, diff, nor, scale=1.0, tint=(1, 1, 1, 1), rough=.9, ns=1.0):
     return m
 
 
+def volume(name, col=(.55, .55, .58, 1), density=.5):
+    """A smoke/haze material. Solid spheres with a grey surface shader read as white blobs,
+    which is what a first attempt at smoke looked like; this shades the inside instead."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    for n in list(nt.nodes):
+        if n.type != 'OUTPUT_MATERIAL':
+            nt.nodes.remove(n)
+    out = nt.nodes['Material Output']
+    pv = nt.nodes.new('ShaderNodeVolumePrincipled')
+    pv.inputs['Color'].default_value = col
+    pv.inputs['Density'].default_value = density
+    nt.links.new(pv.outputs['Volume'], out.inputs['Volume'])
+    return m
+
+
 def flat(name, col, rough=.6, metal=0.0, emit=None):
     m = bpy.data.materials.new(name)
     m.use_nodes = True

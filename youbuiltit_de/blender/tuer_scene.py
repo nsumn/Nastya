@@ -65,7 +65,7 @@ skin = L.flat('skin', (.86, .64, .48, 1), .55)
 tunic_you = L.flat('tunic_you', (.30, .09, .07, 1), .9)
 tunic_nb = L.flat('tunic_nb', (.07, .13, .26, 1), .9)
 tunic_crowd = L.flat('tunic_crowd', (.12, .12, .14, 1), .9)
-smoke_mat = L.flat('smoke', (.1, .1, .11, 1), 1)
+smoke_mat = L.volume('smoke', (.6, .6, .62, 1), .45)
 
 # ---------- the hill with a cave mouth ----------
 # The rock face looks at -Y; the camera stands on that side. The opening is 1.8 m wide, 2.1 m high.
@@ -202,11 +202,27 @@ for sx in (-1, 1):
 eyes = [L.ball(sx * .07, -.64, .76, .025, L.flat('eye', (1, .75, .15, 1), .3, emit=((1, .7, .1, 1), 3)),
                'wolf_eye', parent=wolf) for sx in (-1, 1)]
 
-# ---------- smoke for the theatre beat (no fire on screen) ----------
-smoke = L.empty(0, 3.0, 0, 'smoke_grp')
-for i in range(6):
-    s = L.ball(-.6 + i * .25, 2.6 + (i % 2) * .5, 2.2 + i * .35, .45 + i * .06, smoke_mat,
-               'smoke_%d' % i, parent=smoke)
+# ---------- smoke for the theatre beat (no fire on screen, this plays to a young audience) ----------
+# It has to drift out above the doorway and sit against the sky, not inside the dark tunnel,
+# or it is invisible. Grey and translucent rather than black.
+smoke = L.empty(0, -.1, OZ + .15, 'smoke_grp')
+random.seed(11)
+for i in range(14):                                # a puff hugging the rock, not a line of balls
+    px = random.uniform(-1.3, 1.3)
+    pz = random.uniform(.0, 1.5)
+    py = random.uniform(-.5, .2)
+    s = L.ball(px, py, pz, random.uniform(.25, .55), smoke_mat, 'smoke_%d' % i, parent=smoke)
+    s.location = (px, py, pz)
+
+# A dim bounce inside the cave: a pure black hole reads as a hole in the render, not as a room.
+cave_light = L.empty(0, 2.2, 1.2, 'cave_light_grp')
+bpy.ops.object.light_add(type='POINT', location=(0, 2.2, 1.3))
+cl_obj = bpy.context.object
+cl_obj.name = 'cave_light'
+cl_obj.data.energy = 14
+cl_obj.data.color = (1, .72, .42)
+cl_obj.data.shadow_soft_size = .6
+cl_obj.parent = cave_light
 
 # ---------- world, camera, render ----------
 world, sun = L.sky_sun(sc)
