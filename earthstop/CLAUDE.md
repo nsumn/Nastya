@@ -5,7 +5,7 @@ Anastasia runs a TikTok channel of low-poly 3D "What if…" videos for a US audi
 ## 1. Topic and script (before any code)
 - Offer 4–6 topic ideas, recommend one. US hooks work best: US landmarks (Statue of Liberty, NYC, the US map), "every American", seasonal US events (Halloween, Thanksgiving, Super Bowl). Only ~40% of her views are US, so push US cues into the first frame and the title.
 - Comment requests ("what if…" from a viewer) are great: suggest posting as Reply to comment so the comment shows as a sticker.
-- Research every fact with web search and cite sources. Compute numbers yourself (small Python scripts in `tools/`) and show the math. If the shape/scenario is invented, the numbers apply only to that model — say so; label your own simulations as "MODEL" in the HUD.
+- Research every fact with web search and cite sources. Compute numbers yourself (small Python scripts in `tools/`) and show the math. If the shape/scenario is invented, the numbers apply only to that model — say so; say so in the chat. NEVER write "MODEL" anywhere on screen (HUD, labels, captions) — her rule, repeated Nov 5 2026.
 - Send a second-by-second script table (time · on screen · caption/HUD) and wait for approval. Re-check the script for physics errors before building and tell her what you corrected.
 - Length ≥ 61 s (usually 63–67 s), end on a dark card with the title + a short plain ANSWER to the title question (3–6 short lines). No list of studies/authors on the card (her rule, Oct 2026) — sources go in the chat, not on screen.
 
