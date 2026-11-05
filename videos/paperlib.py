@@ -34,6 +34,7 @@ def paper(c, path_fn, col, depth=1.0, alpha=1.0):
 
 def ell(c, x, y, rx, ry, rot=0.0):
     rx, ry = max(rx, 1e-3), max(ry, 1e-3)                    # a pop-in starts at size 0: keep the matrix invertible
+    c.new_sub_path()                                          # several ellipses in one path must not be joined by lines
     c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx, ry); c.arc(0, 0, 1, 0, 2 * math.pi); c.restore()
 
 
