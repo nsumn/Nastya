@@ -3,6 +3,7 @@
 import bpy, sys, math, random, time
 argv = sys.argv[sys.argv.index('--') + 1:]
 ENGINE, SAMPLES, OUT = argv[0], int(argv[1]), argv[2]
+DEVICE = argv[3].upper() if len(argv) > 3 else 'CPU'   # CPU or GPU
 import os
 A = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'engine', 'assets') + '/'
 random.seed(3)
@@ -113,7 +114,19 @@ r = sc.render; r.resolution_x, r.resolution_y, r.resolution_percentage = 1080, 1
 r.engine = ENGINE; r.filepath = OUT; r.image_settings.file_format = 'PNG'
 sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Medium High Contrast'
 if ENGINE == 'CYCLES':
-    sc.cycles.device = 'CPU'; sc.cycles.samples = SAMPLES; sc.cycles.use_adaptive_sampling = True
+    sc.cycles.device = 'CPU'
+    if DEVICE == 'GPU':   # pick the best backend the machine has: OptiX (NVIDIA RTX) > CUDA > HIP (AMD) > oneAPI (Intel) > Metal (Mac)
+        cp = bpy.context.preferences.addons['cycles'].preferences
+        for backend in ('OPTIX', 'CUDA', 'HIP', 'ONEAPI', 'METAL'):
+            try: cp.compute_device_type = backend
+            except TypeError: continue
+            cp.refresh_devices()
+            gpus = [d for d in cp.devices if d.type == backend]
+            if gpus:
+                for d in cp.devices: d.use = d.type == backend
+                sc.cycles.device = 'GPU'; print('GPU_BACKEND', backend, [d.name for d in gpus]); break
+        else: print('GPU_BACKEND none found, rendering on CPU')
+    sc.cycles.samples = SAMPLES; sc.cycles.use_adaptive_sampling = True
     sc.cycles.use_denoising = True; sc.cycles.denoiser = 'OPENIMAGEDENOISE'; sc.cycles.max_bounces = 4
     sc.cycles.use_auto_tile = True
 else:
