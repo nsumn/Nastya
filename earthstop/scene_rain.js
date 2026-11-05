@@ -964,11 +964,11 @@ const CAPS = [[DRAIN, 7.0, 'NYC sewers handle about <b>1.75 in</b> of rain an ho
   [TWIST, 55.3, 'The twist? All the water in the sky right now…'], [55.3, ENDC, '…would make only about <b>1 inch</b> of rain worldwide.']];
 const hours = t => t < DRAIN ? 0 : t < MOLD ? lerp(0, 24, smooth(DRAIN, MOLD, t) * 0.0 + (t - DRAIN) / (MOLD - DRAIN)) : 0;
 function hudAt(t) {
-  if (t >= DRAIN && t < MOLD) { const h = Math.max(1, Math.ceil(hours(t))); return ['MODEL STORM · 2 IN/HR', 'HOUR ' + h, 'RAIN SO FAR: ' + fmt(2 * hours(t)) + ' IN']; }
+  if (t >= DRAIN && t < MOLD) { const h = Math.max(1, Math.ceil(hours(t))); return ['STORM · 2 IN/HR', 'HOUR ' + h, 'RAIN SO FAR: ' + fmt(2 * hours(t)) + ' IN']; }
   if (t >= MOLD && t < AERIAL) return ['FLOODED HOMES', 'DAY 2', 'MOLD CAN START IN 24–48 H (CDC)'];
-  if (t >= AERIAL && t < OLD) return ['MODEL · RAIN PER DAY', '4 FT', '48 IN · 24 H × 2 IN'];
+  if (t >= AERIAL && t < OLD) return ['RAIN PER DAY', '4 FT', '48 IN · 24 H × 2 IN'];
   if (t >= OLD && t < YEAR) return ['THE GREAT FLOOD', '1862', 'CALIFORNIA · 43 DAYS OF STORMS'];
-  if (t >= YEAR && t < TWIST) return ['MODEL · ONE YEAR OF RAIN', fmt(1460 * smooth(YEAR + 0.3, YEAR + 6.5, t)) + ' FT', 'EMPIRE STATE BUILDING: 1,454 FT'];
+  if (t >= YEAR && t < TWIST) return ['ONE YEAR OF RAIN', fmt(1460 * smooth(YEAR + 0.3, YEAR + 6.5, t)) + ' FT', 'EMPIRE STATE BUILDING: 1,454 FT'];
   if (t >= TWIST && t < ENDC) return ['ALL WATER IN THE SKY', '≈1 IN', 'IF IT FELL AT ONCE (USGS)'];
   return null; }
 function labelsAt(t, i) { const k = SHOTS[i][1]; const tag = (p, txt, cam) => { const v = p.clone().project(cam); return `<div class="lb" style="left:${clamp((v.x + 1) / 2 * W, 200, 880).toFixed(0)}px;top:${((1 - v.y) / 2 * H).toFixed(0)}px">${txt}</div>`; };
