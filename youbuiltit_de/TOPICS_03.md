@@ -61,3 +61,16 @@ Graben unter der Straße → **Aber** die Straße ist weg → **Also** Tunnel mi
 - Müllauto (Mülltrennung — очень немецкая тема).
 
 Идеи для бытовой серии (немецкие привычки): Stoßlüften vs. gekipptes Fenster, Heizkörper entlüften, Kalk im Wasserkocher, Schimmel hinter dem Schrank, Pfandflasche.
+
+## Разбор @kerozni и @oddtilt (2026-11-05)
+| Аккаунт | Медиана | Хиты | Формат и картинка |
+|---|---|---|---|
+| @oddtilt | ~450 тыс. (40 роликов) | «How you invented the door» 11 млн, shower 7.3 млн, fan 3.8 млн, toilet 3.5 млн | «How you invented X» от второго лица, 30–55 с, юмор, реалистичные анимированные люди, фото-текстуры |
+| @kerozni | ~38 тыс. (8 роликов, аккаунт новый) | лифт 616 тыс., шина 605 тыс., мост 475 тыс. | та же схема проблема → решение, реалистичный рендер, белые плашки-указатели («GOVERNOR»), субтитры по 2–3 слова |
+Оба выглядят как рендер на видеокарте (похоже на Unreal Engine 5 или Blender на GPU) с готовыми моделями людей.
+
+## Тест Blender в облачной сессии (без видеокарты, 4 ядра)
+- Cycles, 32 сэмпла + шумодав: 62 с на кадр, ролик 1800 кадров ≈ 31 ч.
+- Eevee через программный OpenGL: 60 с на кадр, по виду не лучше нашего HQ.
+- Вывод: Blender имеет смысл только на компьютере с видеокартой NVIDIA (или арендованной GPU). Скрипт сцены: `blender/castle_test.py`,
+  запуск: `blender -b -P blender/castle_test.py -- CYCLES 32 out.png` (или BLENDER_EEVEE_NEXT 16). Картинка теста: `blender/test_cycles_vs_eevee.jpg`.
