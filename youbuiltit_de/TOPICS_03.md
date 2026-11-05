@@ -47,3 +47,17 @@ Graben unter der Straße → **Aber** die Straße ist weg → **Also** Tunnel mi
 Финал: Berlins erste U-Bahn fuhr 1902.
 
 Запасная: Windrad (Fundament, Turm aus Segmenten, Gondel dreht sich zum Wind, Pitch bei Sturm, Blitzschutz, rotes Blinklicht).
+
+## Разбор конкурентов (2026-11-05, последние 30 роликов, TikTok)
+| Аккаунт | Медиана просмотров | Хиты | Вывод |
+|---|---|---|---|
+| @youbuiltit | ~590 тыс. | Shelter aus Ästen 5.8 млн, Blockhütte 2.7 млн, Wikingerschiff 2.3 млн, Kolosseum 2.1 млн, Müllauto 1.8 млн | основной формат, продолжаем |
+| @howyourhouseworks.au | ~110 тыс. | «Stop rinsing plates before the dishwasher» 1.4 млн, Handy auf 100 % 0.8 млн, Duschkopf 0.8 млн | бытовые «Stop doing X»: кандидат во вторую серию |
+| @thanksdave1 | ~29 тыс. | Bleistift → Diamant 1.6 млн, Tattoo 0.8 млн | нестабильно, держится на отдельных хитах |
+
+Новые темы по хитам @youbuiltit, с немецким углом:
+- Wikingerschiff aus Haithabu (Haithabu в Шлезвиг-Гольштейне);
+- Unterschlupf im Wald / Germanenhütte (выживание у них самое популярное);
+- Müllauto (Mülltrennung — очень немецкая тема).
+
+Идеи для бытовой серии (немецкие привычки): Stoßlüften vs. gekipptes Fenster, Heizkörper entlüften, Kalk im Wasserkocher, Schimmel hinter dem Schrank, Pfandflasche.
