@@ -136,7 +136,7 @@ BUBM = emis('bub', (1.0, 0.85, 0.75), 3.5, alpha=0.35)
 BUBS = balls('b', 40, 0.006, BUBM)
 MIST = balls('m', 140, 0.0013, emis('mist', (0.85, 0.9, 1.0), 1.2, alpha=0.55))
 BLOCK = balls('blk', 3, 0.012, emis('blk', (1.0, 0.08, 0.05), 8))    # red glow at the lips + nostrils
-FLASH = balls('fl', 1, 0.02, emis('fl', (1.0, 0.25, 0.1), 15))[0]
+FLASH = balls('fl', 1, 0.02, emis('fl', (1.0, 0.25, 0.1), 6, alpha=0.4))[0]
 CANAL = curve('canal', [EAR + Vector((0.004, 0, 0)), EAR + Vector((-0.012, 0.004, -0.004)), EAR + Vector((-0.026, 0.006, -0.006))], 0.0045, emis('canal', (1.0, 0.75, 0.55), 1.4, alpha=0.4))
 DRUM_C = EAR + Vector((-0.028, 0.006, -0.006))
 bpy.ops.mesh.primitive_uv_sphere_add(radius=1, location=DRUM_C, segments=24, ring_count=12); DRUM = bpy.context.object; DRUM.scale = (0.0012, 0.0055, 0.0055)
@@ -177,7 +177,7 @@ CAR += [box('seat', (0, 0.17, 0.82), (0.55, 0.12, 0.75), leather, 0.04), box('he
 bpy.ops.mesh.primitive_torus_add(location=(0, -0.42, 0.92), major_radius=0.19, minor_radius=0.018, rotation=(math.radians(62), 0, 0)); wheel = bpy.context.object; wheel.data.materials.append(dark); CAR.append(wheel)
 CAR.append(box('column', (0, -0.55, 0.86), (0.06, 0.25, 0.06), dark, 0.01))
 CAR.append(box('gauges', (0, -0.6, 0.98), (0.4, 0.02, 0.1), mat((0.02, 0.05, 0.1), 0.3, emit=(0.2, 0.55, 1.0), es=2.5), 0.005))
-for x in (-0.62, 0.62): p = box('pillar', (x, -0.75, 1.12), (0.06, 0.06, 0.6), dark, 0.01); p.rotation_euler = (math.radians(-35), 0, 0); CAR.append(p)
+p = box('pillar', (-0.62, -0.75, 1.12), (0.06, 0.06, 0.6), dark, 0.01); p.rotation_euler = (math.radians(-35), 0, 0); CAR.append(p)   # only the driver-side pillar (the other blocked the camera)
 CAR.append(box('roof', (0, -0.1, 1.45), (1.4, 1.4, 0.04), mat((0.08, 0.08, 0.09), 0.8), 0.01))
 STREET = []
 for i in range(14):
@@ -252,7 +252,7 @@ def frame(t):
             c = AW[4]; cam(c + Vector((0.5 - 0.15 * u, -0.25, 0.02)), c + Vector((0, 0, -0.01)), 45)
         elif k in ('tear', 'rupture'):   # a tear opens; air escapes into the neck (and, the second time, down into the chest)
             at = AW[6] if k == 'tear' else AW[3] + Vector((0, 0.008, -0.01)); hit = s['t0'] + (0.75 if k == 'tear' else 0.5)
-            FLASH.hide_render = not (hit <= t < hit + 0.25); FLASH.location = at; FLASH.scale = (1 + 4 * span(t, hit, hit + 0.25),) * 3
+            FLASH.hide_render = not (hit <= t < hit + 0.25); FLASH.location = at; FLASH.scale = (0.5 + 0.9 * span(t, hit, hit + 0.25),) * 3
             AIRE.inputs['Color'].default_value = (1.0, 0.1, 0.04, 1); AIRE.inputs['Strength'].default_value = 3.5
             for j, b in enumerate(BUBS):
                 a = span(t, hit + 0.03 * j, hit + 0.03 * j + (1.4 if k == 'tear' else 2.2)); b.hide_render = not (a > 0)
@@ -266,13 +266,13 @@ def frame(t):
             for j, bb in enumerate(BUBS[:16]): a = span(t, hit, hit + 0.8); bb.hide_render = not (0 < a < 1); bb.location = DRUM_C + Vector((0.04 * a, 0.02 * math.sin(j), 0.02 * math.cos(j * 1.7))); bb.scale = (0.22,) * 3
             cam(EAR + Vector((0.16 - 0.03 * u, -0.1, 0.03)), DRUM_C, 60)
     elif k == 'car':   # night drive: seated, holds it in; streetlights sweep through the car
-        world(None, 0); show(CAR, True); KEY.hide_render = FILL.hide_render = True; RIM.hide_render = False
+        world('blinds', 0.04); show(CAR, True); KEY.hide_render = True; FILL.hide_render = False; RIM.hide_render = False; FILL.data.energy = 4; FILL.data.color = (0.45, 0.6, 1.0)
         rot('thigh_r', -88, 0, 4); rot('thigh_l', -88, 0, -4); rot('calf_r', 92, 0, 0); rot('calf_l', 92, 0, 0); rot('spine_01', -6, 0, 0)
         rig.location = (0, 0.02, -0.42); ik.influence = ikl.influence = 1.0; IKT.location = Vector((-0.17, -0.36, 0.95)); IKP.location = Vector((-0.6, 0.3, 0.4)); IKT2.location = Vector((0.17, -0.36, 0.95)); IKP2.location = Vector((0.6, 0.3, 0.4))
         hold = ease(span(t, s['t0'] + 0.3, s['t0'] + 1.6)); face(**mix({}, HOLD, hold)); rot('head', -4 * hold, 0, 0)
         for j, L in enumerate(STREET): z = -6 + ((t * 9 + j * 4.3) % 60) - 30; L.location = ((j % 2 * 2 - 1) * 4.5, z, 3.5)
-        ph = (t * 1.6) % 1; SWEEP.location = (2.5, 2 - 4 * ph, 2.2); SWEEP.rotation_euler = (Vector((0, -0.3, 1.0)) - SWEEP.location).to_track_quat('-Z', 'Y').to_euler(); SWEEP.data.energy = 60 * math.sin(math.pi * ph) ** 2
-        aim(DASHL, (0, -0.55, 0.95), headpos()); aim(RIM, headpos() + Vector((0.6, 0.5, 0.3)), headpos())
+        ph = (t * 1.6) % 1; SWEEP.location = (2.5, 2 - 4 * ph, 2.2); SWEEP.rotation_euler = (Vector((0, -0.3, 1.0)) - SWEEP.location).to_track_quat('-Z', 'Y').to_euler(); SWEEP.data.energy = 25 + 90 * math.sin(math.pi * ph) ** 2
+        aim(DASHL, (0, -0.55, 0.95), headpos()); DASHL.data.energy = 14; aim(RIM, headpos() + Vector((0.6, 0.5, 0.3)), headpos()); aim(FILL, headpos() + Vector((0.9, -0.9, 0.1)), headpos())
         hp = headpos() + Vector((0, -0.07, 0.04)); cam(hp + Vector((0.78 - 0.1 * u, -0.78, -0.12)), hp + Vector((0, -0.12, -0.22)), 32, hp, 2.4)   # wide enough for the hands on the wheel
     elif k == 'hospital':   # a week in hospital, a feeding tube in the nose
         world('childrens_hospital', 0.7, 120); show(HOSP, True)
