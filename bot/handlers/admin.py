@@ -3,6 +3,8 @@
 /admin → меню с кнопками:
   💰 Изменить цену (RUB)      — цена тарифа везде
   ⭐ Изменить цену (звёзды)    — цена в звёздах для всех
+  🏷 Название тарифа          — название и текст кнопки
+  📝 Описание                 — текст карточки тарифа
   ⭐ Канал для звёзд           — куда попадает оплативший звёздами
   🔧 Способы оплаты           — вкл/выкл карта/СБП/звёзды
   📋 Кто оплатил              — журнал оплат со временем
@@ -28,6 +30,9 @@ router = Router(name="admin")
 
 class AdminSG(StatesGroup):
     price = State()
+    title = State()
+    button = State()
+    stars_title = State()
     stars_price = State()
     description = State()
     stars_channel = State()
@@ -102,6 +107,16 @@ async def btn_stars(message: Message, config: Config,
     await state.clear()
     await message.answer("⭐ У какого тарифа изменить цену в звёздах?",
                          reply_markup=kb.admin_tariff_pick_kb(config, "setstars"))
+
+
+@router.message(F.text == kb.ADM_BTN_TITLE)
+async def btn_title(message: Message, config: Config,
+                    state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    await state.clear()
+    await message.answer("🏷 У какого тарифа изменить название?",
+                         reply_markup=kb.admin_tariff_pick_kb(config, "titlemenu"))
 
 
 @router.message(F.text == kb.ADM_BTN_DESC)
@@ -471,6 +486,177 @@ async def adm_starschan_set(message: Message, config: Config,
         f"{await _stars_channel_state(message.bot, tariff)}\n\n"
         f"На экране «⭐ Telegram Stars» покупатель теперь видит "
         f"«{html.escape(tariff.stars_name)}».\n\n{status}",
+        reply_markup=kb.admin_stars_title_kb(tariff))
+
+
+# ---------- название тарифа и текст кнопки ----------
+
+@router.callback_query(F.data == "adm:title")
+async def adm_title(call: CallbackQuery, config: Config,
+                    state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    await state.clear()
+    await call.message.edit_text(
+        "🏷 У какого тарифа изменить название?",
+        reply_markup=kb.admin_tariff_pick_kb(config, "titlemenu"))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:titlemenu:"))
+async def adm_title_menu(call: CallbackQuery, config: Config,
+                         state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    tariff = config.tariffs.get(tid)
+    if tariff is None:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.clear()
+    await call.message.edit_text(
+        f"🏷 Тариф «{html.escape(tariff.button)}»\n\n"
+        f"Название (видно в карточке тарифа, на экранах оплаты и в чеках):\n"
+        f"{tariff.title}\n\n"
+        f"Текст кнопки в приветствии:\n{tariff.button}",
+        reply_markup=kb.admin_title_kb(tariff))
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm:settitle:"))
+async def adm_title_pick(call: CallbackQuery, config: Config,
+                         state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    if tid not in config.tariffs:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.title)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"🏷 Пришли новое название тарифа одним сообщением.\n\n"
+        f"Сейчас: {config.tariffs[tid].title}",
+        reply_markup=kb.admin_back_kb())
+    await call.answer()
+
+
+@router.message(StateFilter(AdminSG.title))
+async def adm_title_set(message: Message, config: Config,
+                        state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    text = (message.text or message.caption or "").strip()
+    if not text:
+        await message.answer("Пришли название одним сообщением.")
+        return
+    tid = (await state.get_data()).get("tid")
+    if not tid or tid not in config.tariffs:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+    await settings_store.set_title(config, tid, html.escape(text))
+    await state.clear()
+    await message.answer(
+        f"✅ Название обновлено:\n{config.tariffs[tid].title}",
+        reply_markup=kb.admin_menu_kb())
+
+
+@router.callback_query(F.data.startswith("adm:setbutton:"))
+async def adm_button_pick(call: CallbackQuery, config: Config,
+                          state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    if tid not in config.tariffs:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.button)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"🔘 Пришли новый текст кнопки одним сообщением (покороче, "
+        f"он должен помещаться в кнопку).\n\n"
+        f"Сейчас: {config.tariffs[tid].button}",
+        reply_markup=kb.admin_back_kb())
+    await call.answer()
+
+
+@router.message(StateFilter(AdminSG.button))
+async def adm_button_set(message: Message, config: Config,
+                         state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    text = (message.text or message.caption or "").strip()
+    if not text:
+        await message.answer("Пришли текст кнопки одним сообщением.")
+        return
+    tid = (await state.get_data()).get("tid")
+    if not tid or tid not in config.tariffs:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+    await settings_store.set_button(config, tid, html.escape(text))
+    await state.clear()
+    await message.answer(
+        f"✅ Текст кнопки обновлён: {config.tariffs[tid].button}",
+        reply_markup=kb.admin_menu_kb())
+
+
+# ---------- надпись на экране оплаты звёздами ----------
+
+@router.callback_query(F.data.startswith("adm:setstarstitle:"))
+async def adm_starstitle_pick(call: CallbackQuery, config: Config,
+                              state: FSMContext) -> None:
+    if not _is_admin(call.from_user.id, config):
+        await call.answer()
+        return
+    tid = call.data.split(":", 2)[2]
+    tariff = config.tariffs.get(tid)
+    if tariff is None:
+        await call.answer("Тариф не найден", show_alert=True)
+        return
+    await state.set_state(AdminSG.stars_title)
+    await state.update_data(tid=tid)
+    await call.message.edit_text(
+        f"✏️ Пришли, что писать на экране «⭐ Telegram Stars».\n\n"
+        f"Сейчас там: {html.escape(tariff.stars_name)}\n\n"
+        f"Длиннее 32 символов Telegram обрежет в заголовке счёта.\n"
+        f"Пришли «-», чтобы вернуть название канала.",
+        reply_markup=kb.admin_back_kb())
+    await call.answer()
+
+
+@router.message(StateFilter(AdminSG.stars_title))
+async def adm_starstitle_set(message: Message, config: Config,
+                             state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id, config):
+        return
+    text = (message.text or message.caption or "").strip()
+    if not text:
+        await message.answer("Пришли текст одним сообщением.")
+        return
+    tid = (await state.get_data()).get("tid")
+    tariff = config.tariffs.get(tid) if tid else None
+    if tariff is None:
+        await state.clear()
+        await message.answer("Тариф не найден.", reply_markup=kb.admin_menu_kb())
+        return
+    if text == "-":
+        # Вернуть название канала (или тарифа, если канал задан ссылкой).
+        title = await services.chat_title(message.bot, tariff.stars_channel_id)
+        await settings_store.set_stars_title(config, tid, title)
+    else:
+        await settings_store.set_stars_title(config, tid, html.escape(text))
+    await state.clear()
+    note = ("" if len(tariff.stars_name) <= 32 else
+            f"\n\n⚠️ В заголовке счёта поместится только: "
+            f"{tariff.stars_name[:32]}")
+    await message.answer(
+        f"✅ На экране оплаты звёздами теперь: {tariff.stars_name}{note}",
         reply_markup=kb.admin_menu_kb())
 
 

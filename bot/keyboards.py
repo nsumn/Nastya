@@ -28,6 +28,7 @@ def main_reply_kb() -> ReplyKeyboardMarkup:
 ADM_BTN_INVITE = "🔗 Ссылка для вступления"
 ADM_BTN_PRICE = "💰 Изменить цену"
 ADM_BTN_STARS = "⭐ Цена в звёздах"
+ADM_BTN_TITLE = "🏷 Название тарифа"
 ADM_BTN_DESC = "📝 Описание"
 ADM_BTN_STARS_CHAN = "⭐ Канал для звёзд"
 ADM_BTN_CARD = "💳 Карта"
@@ -42,8 +43,9 @@ def admin_reply_kb() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=ADM_BTN_INVITE)],
             [KeyboardButton(text=ADM_BTN_PRICE),
              KeyboardButton(text=ADM_BTN_STARS)],
-            [KeyboardButton(text=ADM_BTN_DESC),
-             KeyboardButton(text=ADM_BTN_CARD)],
+            [KeyboardButton(text=ADM_BTN_TITLE),
+             KeyboardButton(text=ADM_BTN_DESC)],
+            [KeyboardButton(text=ADM_BTN_CARD)],
             [KeyboardButton(text=ADM_BTN_STARS_CHAN)],
             [KeyboardButton(text=ADM_BTN_METHODS),
              KeyboardButton(text=ADM_BTN_PAYERS)],
@@ -133,6 +135,8 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
                                callback_data="adm:price"))
     b.row(InlineKeyboardButton(text="⭐ Изменить цену (звёзды)",
                                callback_data="adm:starsprice"))
+    b.row(InlineKeyboardButton(text="🏷 Название и кнопка тарифа",
+                               callback_data="adm:title"))
     b.row(InlineKeyboardButton(text="📝 Изменить описание",
                                callback_data="adm:desc"))
     b.row(InlineKeyboardButton(text="⭐ Канал для звёзд",
@@ -169,6 +173,26 @@ def admin_back_kb() -> InlineKeyboardMarkup:
     return b.as_markup()
 
 
+def admin_title_kb(t: Tariff) -> InlineKeyboardMarkup:
+    """Что именно править у тарифа: название или текст кнопки."""
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="🏷 Изменить название",
+                               callback_data=f"adm:settitle:{t.id}"))
+    b.row(InlineKeyboardButton(text="🔘 Изменить текст кнопки",
+                               callback_data=f"adm:setbutton:{t.id}"))
+    b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data="adm:menu"))
+    return b.as_markup()
+
+
+def admin_stars_title_kb(t: Tariff) -> InlineKeyboardMarkup:
+    """Вписать своё название для экрана оплаты звёздами."""
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="✏️ Вписать своё название",
+                               callback_data=f"adm:setstarstitle:{t.id}"))
+    b.row(InlineKeyboardButton(text="⬅️ В меню", callback_data="adm:menu"))
+    return b.as_markup()
+
+
 def admin_tariff_pick_kb(config: Config, action: str) -> InlineKeyboardMarkup:
     """Выбор тарифа. action: 'setprice', 'setstars', 'setdesc',
     'setstarschan' или 'makeinvite'."""
@@ -178,6 +202,8 @@ def admin_tariff_pick_kb(config: Config, action: str) -> InlineKeyboardMarkup:
             label = f"{t.button} — {t.price:g}₽"
         elif action == "setstars":
             label = f"{t.button} — {t.stars_price}⭐"
+        elif action in ("titlemenu", "settitle", "setbutton"):
+            label = f"{t.button} — {t.title}"[:60]
         elif action == "setstarschan":
             mark = "id есть" if t.stars_channel_id else "по ссылке"
             label = f"{t.button} — {mark}"

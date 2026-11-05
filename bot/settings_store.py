@@ -26,6 +26,12 @@ async def load_overrides(config: Config) -> None:
                 tariff.stars_price = int(sprice)
             except ValueError:
                 pass
+        title = settings.get(f"title:{tid}")
+        if title is not None:
+            tariff.title = title
+        button = settings.get(f"button:{tid}")
+        if button is not None:
+            tariff.button = button
         desc = settings.get(f"desc:{tid}")
         if desc is not None:
             tariff.description = desc
@@ -96,6 +102,18 @@ async def set_stars_title(config: Config, tariff_id: str, title: str) -> None:
 async def set_method(config: Config, name: str, enabled: bool) -> None:
     config.methods_enabled[name] = enabled
     await db.set_setting(f"method:{name}", "1" if enabled else "0")
+
+
+async def set_title(config: Config, tariff_id: str, title: str) -> None:
+    """Название тарифа — видно в карточке, чеках и на экранах оплаты."""
+    config.tariffs[tariff_id].title = title
+    await db.set_setting(f"title:{tariff_id}", title)
+
+
+async def set_button(config: Config, tariff_id: str, text: str) -> None:
+    """Текст кнопки тарифа в приветствии."""
+    config.tariffs[tariff_id].button = text
+    await db.set_setting(f"button:{tariff_id}", text)
 
 
 async def set_description(config: Config, tariff_id: str, desc: str) -> None:
