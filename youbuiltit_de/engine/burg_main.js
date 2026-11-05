@@ -119,7 +119,7 @@ for (let i = 0; i < 26; i++) {
 for (const [x, z, s] of [[-22, 9, 1.1], [23, 6, 1.2], [-25, -12, 1.3], [24, -16, 1.2], [-17, 20, .95], [19, 22, 1.05]]) { const tr = tree(x, z, s); tr.position.y = hAt(x, z) - .1; }
 
 // ---------- night sky ----------
-const daySky = scene.background;
+let daySky = scene.background;
 const nightSky = (() => { const [c, g] = cv(540, 960); const gr = g.createLinearGradient(0, 0, 0, 960);
   gr.addColorStop(0, '#060b1d'); gr.addColorStop(.6, '#142046'); gr.addColorStop(1, '#2a3561'); g.fillStyle = gr; g.fillRect(0, 0, 540, 960);
   for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(255,255,255,${rr(.3, 1)})`; g.beginPath(); g.arc(rr(0, 540), rr(0, 620), rr(.5, 1.8), 0, 7); g.fill(); }
