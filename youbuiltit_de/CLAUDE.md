@@ -138,6 +138,11 @@ cd youbuiltit_de/blender
 - Windows: `setup.sh` рассчитан на bash и `python3`. Вручную это `npm install` и `npm install playwright` в `engine/`,
   `npx playwright install chromium`, `python -m pip install numpy pillow`. Git, Node LTS, Python 3 и ffmpeg ставятся через winget.
   Файл-сервер: `cd youbuiltit_de && python -m http.server 8766 &` — он должен работать во время рендера.
+- Mixamo отдаёт FBX в сантиметрах, и `obj.dimensions` у мешей, привязанных к арматуре, мерит в единицах файла.
+  Человек ростом 1.75 м получался девятиметровым и уходил из кадра, оставляя в нём только свою тень.
+  Рост подгоняем по мировому bounding box (`matrix_world @ bound_box`) после `view_layer.update()`.
+- `show()` раньше затирал масштаб импортированной модели. Теперь масштаб из импорта хранится в `root['base_scale']`,
+  и `show()` на него умножает. Для анимаций ходьбы и толкания в Mixamo включаем **In Place**: позицию двигает сцена.
 - Кадры в видео первые 60 штук рендерятся медленнее (около 6 с на кадр), дальше 2.5–4 с.
 - Фоновые задачи в облачной сессии живут не дольше 2 часов, а контейнер может перезапуститься. Поэтому рендер всегда идёт кусками с докачкой.
 - `node_modules/`, `frames/`, `chunks/`, `*.mp4` в `engine/` и собранные `keller.js`/`burg.js` в git не идут. После клона запусти `bash setup.sh`.

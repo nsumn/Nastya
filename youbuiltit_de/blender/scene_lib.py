@@ -1,6 +1,7 @@
 # Shared scene building blocks for the Blender videos: materials, primitives, people,
 # sky, camera rig and render settings. Mirrors engine/lib.js so the timelines read the same.
 import bpy, math, os
+from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 A = os.path.join(HERE, '..', 'engine', 'assets') + os.sep
@@ -49,7 +50,10 @@ def show(obj, k):
     obj.hide_render = obj.hide_viewport = off
     for ch in obj.children_recursive:
         ch.hide_render = ch.hide_viewport = off
-    s = max(k, 0.001)
+    # An imported character carries its own scale (Mixamo exports in centimetres and the
+    # height fit is a scale too). Multiplying keeps it instead of resetting it to 1.
+    base = obj.get('base_scale', 1.0)
+    s = max(k, 0.001) * base
     obj.scale = (s, s, s)
 
 
@@ -238,11 +242,19 @@ def character(filename, x, y, z=0, rot=0, height=None, name='char'):
     root.name = name
     root.location = (x, y, z)
     root.rotation_euler = (root.rotation_euler.x, root.rotation_euler.y, rot)
+    s = root.scale.x
     if height:
-        dims = [o for o in new if o.type == 'MESH']
-        cur = max((o.dimensions.z for o in dims), default=0) or 1.0
-        s = height / cur
-        root.scale = (s, s, s)
+        # Measure the world bounding box, not obj.dimensions: the meshes are parented to the
+        # armature and their own dimensions are in the file's units (Mixamo exports in
+        # centimetres), which made a 1.75 m person come out about 9 m tall.
+        bpy.context.view_layer.update()
+        zs = [(o.matrix_world @ Vector(b)).z for o in new if o.type == 'MESH' for b in o.bound_box]
+        extent = (max(zs) - min(zs)) if zs else 0
+        if extent > 1e-6:
+            s = root.scale.x * height / extent
+            root.scale = (s, s, s)
+    root['base_scale'] = s                          # show() multiplies by this instead of overwriting
+    print('CHARACTER %s: %d objects, scale %.4f' % (name, len(new), s))
     return root
 
 
