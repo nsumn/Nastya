@@ -21,6 +21,14 @@
 |---|---|---|---|---|
 | 01 | `01_keller/` | Wie ein Loch im Garten zum Keller wird (подвал: weiße Wanne, Fugenblech, Dämmung, Lichtschacht, Rückstauklappe) | 65.8 с | готов, `DE_01_keller.mp4` |
 | 02 | `02_burg/` | Wie ein Hügel zur Ritterburg wird (Holzhütte, Palisade, Mauer, Zinnen, Graben, Zugbrücke, Türme, Belagerung, Brunnen, Bergfried) | 60.3 с | готов, `DE_02_burg.mp4` |
+| 03 | `03_kuehlschrank/` | **Формат @oddtilt:** Wie du den Kühlschrank erfunden hast (пещерный человек: снег → ледник в яме → ящик с соломой и льдом → испарение → насос → AKW, но «du bist in Deutschland» → Windrad) | 49.9 с | `DE_03_kuehlschrank.mp4` |
+
+### Второй формат: @oddtilt («How you invented …», 1–9 млн просмотров)
+- Герой — пещерный человек «du» (у нас мультяшный риг `caveman()` в `kuehl_main.js`: суставы плеч, локтей, бёдер и коленей, брови, рот; позы задаются массивом `POSE`, ходьба через `walkP`).
+- Текст: «Dein … stinkt/nervt … Also … Genial! Aber … Also … Glückwunsch! Du hast den/die/das … erfunden.» Около 170 слов, 45–50 с, юмор грубоватый (одно «Scheiße» допустимо).
+- В конце абсурдный поворот: у оригинала это атомная станция. Немецкая фишка: «Aber du bist in Deutschland, also schaltest du es wieder ab und stellst ein Windrad hin».
+- Темы: бытовые изобретения. Лучше всего зашли Tür (9.3M), Dusche (7.2M), Toilette (3.4M). Немецкие изобретения тоже подходят: Fahrrad (Drais), Dübel, Thermoskanne, Teebeutel, Zahnpastatube, Kühlschrank (Linde).
+- Описание: «Wie du den Kühlschrank erfunden hast 🥶 …» + `#erfindungen #wiedueserfundenhast …`.
 
 Описание к посту строится так: 1–2 строки, перечисление частей и вопрос в конце. К нему 5 хештегов, последний всегда серийный `#wiesgebautwird`.
 Пример для 02: «Von der Holzhütte auf dem Hügel zur echten Ritterburg 🏰 Mauer, Zinnen, Burggraben, Zugbrücke, Türme und Bergfried: jedes Teil hatte einen Grund. Welches hättest du zuerst gebaut? 👇» `#ritterburg #mittelalter #burg #geschichte #wiesgebautwird`
@@ -58,7 +66,9 @@ youbuiltit_de/
     assets/          текстуры и HDRI с Poly Haven (CC0, без указания авторства)
     index_*.html     страница (importmap на node_modules/three), грузит собранный *.js
     render.js        Playwright + ffmpeg: стоп-кадры или видео без звука
-    render_burg.sh   рендер кусками по 10 с, 3 параллельно, с докачкой; затем склейка и звук
+    kuehl_main.js    таймлайн ролика 03 (риг пещерного человека, сезоны, ящик-холодильник)
+    render_video.sh  ./render_video.sh <name> <NN_тема>: сборка, рендер кусками по 10 с (3 параллельно, с докачкой), склейка, звук
+    render_burg.sh   старый вариант того же только для 02
 youbuiltit_frames/   первый разбор оригинала: кадры @youbuiltit, воссозданные в three.js
 ```
 
@@ -104,7 +114,7 @@ youbuiltit_frames/   первый разбор оригинала: кадры @y
    - подписи уезжают за край кадра;
    - ничего не происходит на ключевом слове.
 5. **Полный рендер.** Это 2.5–4 с на кадр, то есть около 1800 кадров, 30–60 минут при параллельной работе.
-   Скопируй `render_burg.sh` и поменяй в нём `PAGE`, путь к words.json и имена. Рендер идёт кусками в `engine/chunks/`.
+   `cd engine && ./render_video.sh NN NN_тема`. Скрипт сам собирает `NN.js` и `index_NN.html`, а рендер идёт кусками в `engine/chunks/`.
    Если контейнер перезапустился, просто запусти скрипт снова: готовые куски не пересчитываются.
    Если скрипт повис после рендера на `wait`, склей вручную (последние 3 команды скрипта).
    Финальное кодирование делается так: `-crf 21 -preset slow -af apad -shortest`, тогда звук не обрезает конец видео, а файл весит около 50 МБ.
@@ -132,6 +142,7 @@ cd youbuiltit_de/blender
   (stoneMat, towerMat, woodMat, terrMat, tGrass, daySky — `let`). Для новой сцены называй материалы так же или поправь слой.
 - HDRI как фон в вертикальном кадре выглядит серым, поэтому фоном остаётся нарисованное небо (`?bg=1.5` включит HDRI-фон).
 - В alignment Lumean бывают склеенные слова через точку, например `Sommergewitter.Die`. `make_words.py` их разделяет.
+- В `lib.js` уже есть глобальные `P` (бассейн), `W`, `H`, `M`, `sun`, `fill`. Не объявляй их заново, иначе страница молча не загрузится и рендер упадёт по таймауту через 5 минут. Проверить конфликты можно так: `comm -12 <(grep -oE "^(const|let|function) +\w+" lib.js | awk '{print $NF}' | sort -u) <(grep -oE "^(const|let|function) +\w+" NN_main.js | awk '{print $NF}' | sort -u)`.
 - `T('Tür')` находит и «Türme», поэтому для нужного вхождения передавай номер: `T('Tür', 2)`. То же с `Leiter`/`Leitern`, `hochziehen`/`hochziehst`. Неверный номер ломает тайминг молча, так что проверяй стоп-кадрами.
 - SwiftShader (headless Chromium без GPU) работает медленно. Не увлекайся сегментами геометрии: рельеф 256×256 ещё нормально, деревьев не больше примерно 30.
   На домашней машине с видеокартой это ограничение снимается: `GPU=1` (см. шаг 4), 0.4-0.5 с на кадр.
