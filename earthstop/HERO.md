@@ -1,4 +1,4 @@
-# HERO.md — the hero and the "same quality" recipe
+# HERO.md — the hero and the overall quality recipe
 
 For anyone (or any Claude session) making a video in the same look as Anastasia's latest ones
 ("What if you could hear everyone's thoughts", the rain video, "everyone disappeared").
@@ -98,3 +98,52 @@ PAGE=index_mind.html node render.mjs out/mind 0 64 30            # full render (
 - Facts must be researched. Keep the calculation in `tools/<name>_math.py`.
 - Never commit mp4, wav, frames, someone else's music, or API keys. The Lumean key lives only in `.lumean.key`, which is gitignored.
 - Topics that work: "what happens to your body if you quit or change a habit". Hero in a room on the first frame, 60–65 s.
+
+## 5. Overall quality — the whole video, not just the hero
+
+### Story and script
+- One clear question in the title ("What if…", "What happens to your body if…"). The video answers it as a CHAIN of consequences: morning → day → night → "1 year later". Every 3–5 s something new happens.
+- First frame: the hero big in a room plus the title. Don't open on a map, a planet or text alone.
+- Funny beats that people actually think and feel, from real life. Examples from the thoughts video: SKIBIDI, 67, "who farted", the friend saying "Love your haircut!" while thinking "…it's fine." One small joke per scene beats one big joke per video.
+- Each beat gets one real number in the HUD, from research with sources. The math goes in `tools/<name>_math.py`, and sources go in the chat, not on screen.
+- Before building, send her a second-by-second table (time · on screen · caption/HUD) and wait for "да".
+- End on a dark card: the title plus a 3–6 line plain answer.
+
+### Text on screen (same look in every video)
+- Fonts: Source Serif 4 for the title, big numbers and captions (italic); Inter for small labels.
+- Title at 400 px. HUD at `left:100px; top:900px`: red-dot status line, mono label, big serif number, sub-fact. Captions centered at `top:1250px`.
+- Respect the TikTok safe zones in `CLAUDE.md` §2. Faces stay ABOVE the caption band.
+- On bright sets, add a soft dark backing behind the caption: `body.bright #cap::before` in `index_rain.html` / `index_mind.html`.
+- Text arrives word by word (`kinetic()`). Numbers land with a small overshoot.
+- DOM overlays (thought bubbles, speech, phone cards) are allowed. Keep them off faces and out of the caption band, and never let them pile up. See `bubblesAt` in `parts_mind/m_main.js`.
+
+### Sound (half the quality)
+- Real sounds and music from Lumean (`tools/lumean.py`; the key goes in `.lumean.key`, never in git):
+  - SFX: `{'task_type':'sfx','task_data':{'text','duration_seconds'}}`
+  - Music: instrumental, ≤ 30 s, 2 variants. Stretch it with `atempo` or loop it to cover 64 s.
+  - Wrap `fetch` in retries, because downloads sometimes reset.
+- Mix in `audio_<name>.py`:
+  - a room or street bed per set;
+  - a pop or whoosh on cuts and on key moments, not on every cut;
+  - a riser before the finale.
+  - End with `loudnorm=I=-14:TP=-1.5:LRA=11`.
+- Never use synthetic voices, buzzing, laughs, repeating high clicks under counters, or constant noise. Avoid deep sub-bass: phones don't play it. See `CLAUDE.md` §6.
+- Always deliver two files: with music and without music, so she can pick a trending TikTok sound.
+
+### Review before sending (this is where quality is won)
+1. Render 10–15 test frames across ALL shots, tile them into a contact sheet, and LOOK. Fix and repeat. Things she caught before:
+   - the camera behind someone's head;
+   - a bubble or text cut at the edge;
+   - a shirt print sinking into the body;
+   - flickering surfaces;
+   - a crowd walking through the hero;
+   - a walker facing the wrong way;
+   - a flat, unlit shot.
+2. Full render, then check a contact sheet of the final mp4 plus frames at every cut. Listen to the audio levels.
+3. Only then send. In the same message include the mp4, the no-music mp4, an English TikTok description with hashtags plus 2 alternatives, and any known small flaw with an offer to fix it.
+
+### What works on her channel (Nov 2026 data)
+- Hits differ from flops by SHARES, which means by the TOPIC, not by length or the first frame.
+- Best formula: "what happens to your body if you quit or change a habit". Nicotine got 806K views; Tesla and sleep were also hits. Abstract, space and weather topics flopped.
+- Length 60–65 s.
+- Post at 7–9 pm US Eastern. Posting time decides which country TikTok tests the video on.
