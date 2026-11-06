@@ -21,7 +21,7 @@
 |---|---|---|---|---|
 | 01 | `01_keller/` | Wie ein Loch im Garten zum Keller wird (подвал: weiße Wanne, Fugenblech, Dämmung, Lichtschacht, Rückstauklappe) | 65.8 с | готов, `DE_01_keller.mp4` |
 | 02 | `02_burg/` | Wie ein Hügel zur Ritterburg wird (Holzhütte, Palisade, Mauer, Zinnen, Graben, Zugbrücke, Türme, Belagerung, Brunnen, Bergfried) | 60.3 с | готов, `DE_02_burg.mp4` |
-| 03 | `03_kuehlschrank/` | **Формат @oddtilt:** Wie du den Kühlschrank erfunden hast (пещерный человек: снег → ледник в яме → ящик с соломой и льдом → испарение → насос → AKW, но «du bist in Deutschland» → Windrad) | 49.9 с | `DE_03_kuehlschrank.mp4` |
+| 04 | `04_kuehlschrank/` | **Формат @oddtilt:** Wie du den Kühlschrank erfunden hast (пещерный человек: снег → ледник в яме → ящик с соломой и льдом → испарение → насос → AKW, но «du bist in Deutschland» → Windrad) | 49.9 с | готов, `DE_04_kuehlschrank.mp4` |
 
 ### Второй формат: @oddtilt («How you invented …», 1–9 млн просмотров)
 - Герой — пещерный человек «du» (у нас мультяшный риг `caveman()` в `kuehl_main.js`: суставы плеч, локтей, бёдер и коленей, брови, рот; позы задаются массивом `POSE`, ходьба через `walkP`).
@@ -66,7 +66,7 @@ youbuiltit_de/
     assets/          текстуры и HDRI с Poly Haven (CC0, без указания авторства)
     index_*.html     страница (importmap на node_modules/three), грузит собранный *.js
     render.js        Playwright + ffmpeg: стоп-кадры или видео без звука
-    kuehl_main.js    таймлайн ролика 03 (риг пещерного человека, сезоны, ящик-холодильник)
+    kuehl_main.js    таймлайн ролика 04 (риг пещерного человека, сезоны, ящик-холодильник)
     render_video.sh  ./render_video.sh <name> <NN_тема>: сборка, рендер кусками по 10 с (3 параллельно, с докачкой), склейка, звук
     render_burg.sh   старый вариант того же только для 02
 youbuiltit_frames/   первый разбор оригинала: кадры @youbuiltit, воссозданные в three.js

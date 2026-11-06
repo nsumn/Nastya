@@ -1,10 +1,10 @@
-// ===================== 03 Kühlschrank — oddtilt-style "Wie du X erfunden hast" =====================
+// ===================== 04 Kühlschrank — oddtilt-style "Wie du X erfunden hast" =====================
 // Built as: cat lib.js kuehl_main.js > kuehl.js
 
 await document.fonts.load('700 96px Fredoka');
 
 // ---------- words / timing ----------
-const WORDS = await (await fetch('../03_kuehlschrank/words.json')).json();
+const WORDS = await (await fetch('../04_kuehlschrank/words.json')).json();
 const clean = w => w.replace(/[.,!?:]/g, '');
 function T(word, n = 1) {
   let k = 0;
