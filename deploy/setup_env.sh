@@ -55,7 +55,7 @@ REVIEWS_LINK=
 ADMIN_LINK=
 CARD_DETAILS=Номер карты: $CARD_NUMBER\nБанк: $CARD_BANK
 
-SUPPORT_USERNAME=@shewmilka
+SUPPORT_USERNAME=@geolyth_
 PRIVACY_URL=https://telegra.ph/Politika-konfidencialnosti-04-01-26
 TERMS_URL=https://telegra.ph/Polzovatelskoe-soglashenie-04-01-19
 
