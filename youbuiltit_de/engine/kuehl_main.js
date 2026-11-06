@@ -78,7 +78,7 @@ const pitSnow = new THREE.Mesh(new THREE.PlaneGeometry(PIT.x1 - PIT.x0, ZC - PIT
 { const g = new THREE.SphereGeometry(1, 48, 28); const p = g.attributes.position;
   for (let k = 0; k < p.count; k++) { const x = p.getX(k), y = p.getY(k), z = p.getZ(k); const f = 1 + .07 * Math.sin(x * 7 + z * 3) * Math.cos(y * 6) + .05 * Math.sin(z * 11 + y * 4); p.setXYZ(k, x * f, y * f, z * f); }
   g.computeVertexNormals(); const m = new THREE.Mesh(g, rockMat); m.scale.set(10, 6.5, 6); m.position.set(-1, -.6, -11.5); m.castShadow = m.receiveShadow = true; scene.add(m);
-  const arch = new THREE.Mesh(new THREE.CircleGeometry(1.7, 32, 0, Math.PI), new THREE.MeshBasicMaterial({ color: '#0b0908' })); arch.position.set(.4, 0, -5.05); scene.add(arch);
+  const arch = new THREE.Mesh(new THREE.CircleGeometry(1.7, 32, 0, Math.PI), new THREE.MeshStandardMaterial({ color: '#0b0908', roughness: 1 })); arch.position.set(.4, 0, -5.05); arch.name = 'arch'; scene.add(arch);
   for (const [x, z, r] of [[-5.5, -3.8, .7], [4.6, -4.2, .9], [-4.3, -2.6, .45], [6.2, -2, .5]]) { const r_ = rock(r, '#8c8a85'); r_.position.set(x, r * .4, z); scene.add(r_); } }
 // pines with snow caps
 const pineCaps = [];
@@ -385,7 +385,7 @@ let lastSkin = -1;
 function update(t) {
   // seasons: snow in, summer, winter (ice), summer
   const snow = Math.max(ease(t, tw.also1 - .2, tw.vergr) * (1 - ease(t, tw.sommer, tw.schmilzt1 + .6)), ease(t, tw.winter - .3, tw.winter + .3) * (1 - ease(t, tw.das, tw.august + .3)));
-  snowMat.opacity = snow * .96; pineCaps.forEach(c => { c.visible = snow > .05; c.scale.setScalar(Math.max(snow, .001)); });
+  snowMat.opacity = snow * .96; snowSheets.forEach(m => m.visible = snow > .01); pineCaps.forEach(c => { c.visible = snow > .05; c.scale.setScalar(Math.max(snow, .001)); });
   // day/night cycles while hauling ice and while pumping all day
   const cyc = (a, b, n) => t > a && t < b ? (.5 - .5 * Math.cos((t - a) / (b - a) * Math.PI * 2 * n)) : 0;
   const night = Math.max(cyc(tw.jeden - .4, tw.dann - .1, 2), cyc(tw.ganzen - .4, tw.also5 + .1, 2));
@@ -425,7 +425,7 @@ function update(t) {
 
   // ice cellar
   const dig = ease(t, tw.grab, tw.erde + .6);
-  growTo(digFill, lerp(-.22, PIT.y, dig)); digGrass.visible = dig < .02; pitSnow.visible = dig < .02;
+  growTo(digFill, lerp(-.22, PIT.y, dig)); digGrass.visible = dig < .02; pitSnow.visible = dig < .02 && snow > .01;
   const melt1 = 1 - .25 * ease(t, tw.warme, tw.also3);
   pitIce.forEach((m, i) => { const k = pop(t, tw.eis - .1 + i * .08, .3); m.visible = k > .01 && t < tw.also3 + .4; m.scale.set(Math.max(k, .001), Math.max(k, .001) * (Math.floor(i / 4) === 2 ? melt1 : 1), Math.max(k, .001)); });
   const lidOn = ease(t, tw.das - .1, tw.das + .4), lidOpen = ease(t, tw.aber2 + .3, tw.runter - .1);
