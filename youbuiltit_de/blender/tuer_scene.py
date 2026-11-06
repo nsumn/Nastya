@@ -78,9 +78,9 @@ L.box(-40, 40, -24, 2, -3, 0, grass, 'ground_front', bevel=0)
 # GRASS=0 renders without the scatter: it costs about 2 s a frame, which is an extra hour
 # over a full video, and for checking camera and timing it is not needed.
 GRASS = os.environ.get('GRASS', '1') != '0'
-blade_mat = L.varied_material('blade', [(.10, .26, .05, 1), (.16, .36, .08, 1),
-                                       (.21, .42, .10, 1), (.28, .44, .13, 1)])
-blade = L.grass_blade(blade_mat, w=.022, h=.17)
+blade_mat = L.grass_material('blade', [(.09, .24, .05, 1), (.14, .33, .07, 1),
+                                      (.19, .39, .09, 1), (.26, .42, .12, 1)])
+blade = L.grass_tuft(blade_mat, blades=7, h=.24, w=.013, lean=.1, seed=2)
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -8.0, .01))
 lawn = bpy.context.object
 lawn.name = 'lawn'
@@ -88,7 +88,7 @@ lawn.scale = (38, 26, 1)
 bpy.ops.object.transform_apply(scale=True)
 lawn.data.materials.append(grass)
 if GRASS:
-    L.scatter(lawn, blade, count=200000, seed=4, size=1.0, size_random=.5)
+    L.scatter(lawn, blade, count=85000, seed=4, size=1.15, size_random=.45)
 
 # A grass mound over the cave, with the doorway cut out of it. Two earlier attempts are worth
 # remembering: plain boxes read as a brick wall, and jittered slabs read as scattered blocks.
@@ -119,7 +119,7 @@ for v in hill.data.vertices:
     front = co.y < 8.0 and co.z < 8.0
     vg.add([v.index], 0.0 if (near_mouth or not front) else 1.0, 'REPLACE')
 if GRASS:
-    hill_ps = L.scatter(hill, blade, count=220000, seed=9, size=1.0, size_random=.5, name='grass_hill')
+    hill_ps = L.scatter(hill, blade, count=95000, seed=9, size=1.0, size_random=.5, name='grass_hill')
     hill_ps.settings.use_modifier_stack = True
     hill_ps.vertex_group_density = 'grass_mask'
 

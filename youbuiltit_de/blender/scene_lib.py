@@ -1,6 +1,6 @@
 # Shared scene building blocks for the Blender videos: materials, primitives, people,
 # sky, camera rig and render settings. Mirrors engine/lib.js so the timelines read the same.
-import bpy, math, os
+import bpy, math, os, random
 from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -189,6 +189,65 @@ def varied_material(name, colors, rough=.85):
     nt.links.new(ramp.outputs['Color'], b.inputs['Base Color'])
     b.inputs['Roughness'].default_value = rough
     return m
+
+
+def grass_material(name, colors, translucency=.35):
+    """Grass shader: colour varies per instance, and light passes through the blade.
+
+    Translucency is most of why real grass reads as grass -- a blade with the sun behind it
+    glows, an opaque one just goes dark. A flat diffuse green is what made the first attempt
+    look like painted chips."""
+    m = varied_material(name, colors, rough=.6)
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    ramp = next(n for n in nt.nodes if n.type == 'VALTORGB')
+    out = nt.nodes['Material Output']
+    trans = nt.nodes.new('ShaderNodeBsdfTranslucent')
+    nt.links.new(ramp.outputs['Color'], trans.inputs['Color'])
+    mix = nt.nodes.new('ShaderNodeMixShader')
+    mix.inputs['Fac'].default_value = translucency
+    nt.links.new(b.outputs['BSDF'], mix.inputs[1])
+    nt.links.new(trans.outputs['BSDF'], mix.inputs[2])
+    nt.links.new(mix.outputs['Shader'], out.inputs['Surface'])
+    return m
+
+
+def grass_tuft(mat, blades=7, h=.26, w=.012, lean=.09, segments=4, spread=.05,
+               seed=1, name='tuft'):
+    """A clump of curved, tapering blades as one mesh.
+
+    Three-sided cones scattered one by one read as green confetti: they have no width to
+    catch light along, no curve, and they sit evenly spaced like a brush. A blade here is a
+    strip that narrows to a point and bends over, and they come in clumps, which is how
+    grass actually grows."""
+    rnd = random.Random(seed)
+    verts, faces = [], []
+    for b in range(blades):
+        yaw = rnd.uniform(0, 2 * math.pi)
+        bh = h * rnd.uniform(.55, 1.25)
+        bl = lean * rnd.uniform(.4, 1.8)
+        ox, oy = rnd.uniform(-spread, spread), rnd.uniform(-spread, spread)
+        base = len(verts)
+        for i in range(segments + 1):
+            t = i / segments
+            half = w * (1 - t) ** .7 / 2
+            fwd = bl * t * t                       # bends over as it rises
+            z = bh * t * (1 - .18 * t)
+            cx, cy = math.cos(yaw), math.sin(yaw)
+            px, py = ox + fwd * cx, oy + fwd * cy
+            verts.append((px - half * cy, py + half * cx, z))
+            verts.append((px + half * cy, py - half * cx, z))
+        for i in range(segments):
+            a = base + i * 2
+            faces.append((a, a + 1, a + 3, a + 2))
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    o = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(o)
+    o.data.materials.append(mat)
+    o.hide_render = o.hide_viewport = True         # only the instances are rendered
+    return o
 
 
 def grass_blade(mat, w=.035, h=.26, name='blade'):
