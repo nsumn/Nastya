@@ -1,6 +1,7 @@
 # President-for-a-day video (64 s) — cue sheet. Beats: wake 0, White House 3 (whip), hall 8, briefcase 10.4, keys 13 (taken 16.3), Beast 19 (door 21.6),
 # Air Force One 25 (whip), cabin 28, pay 31 (162 days 33.6), mail 37 (avalanche 37.5), dinner 43 (bill 46.6), bowling 49 (hit 52.6), sneak 55 (pops 56/57/58/59), end card 60.
-music march0 0.0 0.42 54.6
+music march0 0.0 0.42 28.6
+music march1 28.4 0.42 54.6
 music sneak0 55.0 0.5 63.5
 0.0 morning 0.5
 1.6 gasp 0.6

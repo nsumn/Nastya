@@ -634,6 +634,18 @@ const CAB = grp(2000, 0, 0, 0, SKY.sc);
   const tbl = grp(-0.9, 0, -0.35, 0, CAB); bx(0.9, 0.05, 0.6, WOOD, 0, 0.72, 0, tbl); bx(0.08, 0.7, 0.08, GOLD, 0, 0.36, 0, tbl);
   const can = mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.12, 16), M('#c8322a', { metalness: 0.7, roughness: 0.3 })); can.position.set(-0.75, 0.81, -0.25); CAB.add(can); const gl = mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.1, 14), new THREE.MeshPhysicalMaterial({ color: '#cfe0f0', transparent: true, opacity: 0.4, roughness: 0.05 })); gl.position.set(-0.6, 0.8, -0.35); CAB.add(gl);
   RL.cab = new THREE.PointLight(0xffe0b8, 6, 8, 1.4); RL.cab.position.set(0, 2.3, 0); CAB.add(RL.cab); const strip = bx(0.06, 0.03, 11, new THREE.MeshBasicMaterial({ color: new THREE.Color(2.0, 1.8, 1.5) }), 0, 3.6, 0, CAB); }
+// ======================= the hero's suit (her ask): navy jacket over the approved hero — top recoloured, long sleeves on the arm joints, shirt + red tie + lapels print; off in bed =======================
+const SUIT = (() => { const navy = new THREE.Color('#1f2a44'), cTop = new THREE.Color(hero.o.top), cTop2 = cTop.clone().multiplyScalar(0.82), mats = [];
+  hero.outer.traverse(o => { if (!o.isSkinnedMesh) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.color && (m.color.equals(cTop) || m.color.equals(cTop2))) mats.push([m, m.color.clone(), m.color.equals(cTop) ? navy.clone() : navy.clone().multiplyScalar(0.8)]); }); });
+  const jm = new THREE.MeshStandardMaterial({ color: '#1f2a44', roughness: 0.7 }), wm = M('#f6f6f2'), parts = [];
+  hero.arms.forEach(a => { const s = mesh(new THREE.CylinderGeometry(0.072, 0.064, 0.33, 14), jm); s.position.y = -0.14; a.add(s); parts.push(s); });
+  hero.elbows.forEach(e => { const s = mesh(new THREE.CylinderGeometry(0.06, 0.052, 0.235, 14), jm); s.position.y = -0.105; e.add(s); parts.push(s); const c = mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.03, 14), wm); c.position.y = -0.235; e.add(c); parts.push(c); });
+  const tx = canvasTex(256, 256, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = '#f6f6f2'; g.beginPath(); g.moveTo(w * 0.33, 0); g.lineTo(w * 0.67, 0); g.lineTo(w * 0.5, h * 0.78); g.fill();
+    g.fillStyle = '#b3202a'; g.beginPath(); g.moveTo(w * 0.465, h * 0.07); g.lineTo(w * 0.535, h * 0.07); g.lineTo(w * 0.56, h * 0.62); g.lineTo(w * 0.5, h * 0.72); g.lineTo(w * 0.44, h * 0.62); g.fill(); g.fillStyle = '#8a1820'; g.fillRect(w * 0.46, h * 0.04, w * 0.08, h * 0.05);
+    g.strokeStyle = '#141c30'; g.lineWidth = 7; g.beginPath(); g.moveTo(w * 0.3, 0); g.lineTo(w * 0.5, h * 0.8); g.lineTo(w * 0.7, 0); g.stroke(); g.fillStyle = '#0e1424'; for (const y of [0.86, 0.97]) { g.beginPath(); g.arc(w * 0.5, h * y, 6, 0, 7); g.fill(); }
+    g.fillStyle = '#c8a050'; g.beginPath(); g.arc(w * 0.3, h * 0.22, 7, 0, 7); g.fill(); });
+  const pr = mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.36, 24, 1, true, -0.26, 0.52), new THREE.MeshStandardMaterial({ map: tx, transparent: true, roughness: 0.8 }), false, false); pr.position.set(0, 1.25, 0.154 - 0.36); hero.torso.add(pr); parts.push(pr);
+  return { set(on) { mats.forEach(([m, c0, c1]) => m.color.copy(on ? c1 : c0)); parts.forEach(p => p.visible = on); } }; })();
 // =================== THE STORY: one day as President — poses, shots (moving cameras, DOF, motion blur, whips), captions/HUD, render ===================
 const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy - 0.12, fov);
 function framing(h, dir, dist, headY, fov = 40) { const d = dir.clone().normalize(), visH = 2 * dist * Math.tan(fov * Math.PI / 360); return { pos: h.clone().addScaledVector(d, dist), look: V3(h.x, h.y + (headY - 0.5) * visH, h.z), fov }; }
@@ -649,7 +661,7 @@ const CAST = [hero, ...AGENTS, aide, butler];
 function hideCast() { CAST.forEach(P => P.outer.visible = false); KEYRING.visible = false; BILL.visible = false; BALL.visible = false; }
 function stand(P, x, z, ry, t, face) { poseReset(P, t); place(P, x, z, ry); if (face) P.face(face, t); }
 // ---- poses per beat ----
-function pose(t, k) { hideCast(); BEASTG.door.rotation.y = 0;
+function pose(t, k) { hideCast(); BEASTG.door.rotation.y = 0; SUIT.set(t >= WHX);
   if (k === 'in' && t < WHX) { const P = hero; poseReset(P, t); place(P, -0.9, -1.75, 0, seatY(P, 0.72) - 0.95); poseSit(P); P.legs.forEach(l => l.rotation.x = -1.45); P.knees.forEach(q => q.rotation.x = 0.05);
     P.arms.forEach((a, i) => a.rotation.set(-0.35, 0, (i ? -1 : 1) * 0.15)); P.face(t < 1.0 ? 'sleep' : t < 1.6 ? 'sleepy' : 'surprised', t);
     stand(AGENTS[0], -1.52, 0.5, Math.PI * 0.95, t, 'neutral'); stand(AGENTS[1], -0.28, 0.5, -Math.PI * 0.95, t, t > 1.4 ? 'smirk' : 'neutral'); }

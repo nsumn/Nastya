@@ -13,7 +13,7 @@ const CAST = [hero, ...AGENTS, aide, butler];
 function hideCast() { CAST.forEach(P => P.outer.visible = false); KEYRING.visible = false; BILL.visible = false; BALL.visible = false; }
 function stand(P, x, z, ry, t, face) { poseReset(P, t); place(P, x, z, ry); if (face) P.face(face, t); }
 // ---- poses per beat ----
-function pose(t, k) { hideCast(); BEASTG.door.rotation.y = 0;
+function pose(t, k) { hideCast(); BEASTG.door.rotation.y = 0; SUIT.set(t >= WHX);
   if (k === 'in' && t < WHX) { const P = hero; poseReset(P, t); place(P, -0.9, -1.75, 0, seatY(P, 0.72) - 0.95); poseSit(P); P.legs.forEach(l => l.rotation.x = -1.45); P.knees.forEach(q => q.rotation.x = 0.05);
     P.arms.forEach((a, i) => a.rotation.set(-0.35, 0, (i ? -1 : 1) * 0.15)); P.face(t < 1.0 ? 'sleep' : t < 1.6 ? 'sleepy' : 'surprised', t);
     stand(AGENTS[0], -1.52, 0.5, Math.PI * 0.95, t, 'neutral'); stand(AGENTS[1], -0.28, 0.5, -Math.PI * 0.95, t, t > 1.4 ? 'smirk' : 'neutral'); }
