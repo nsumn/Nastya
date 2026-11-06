@@ -167,8 +167,34 @@ def ball(x, y, z, r, mat, name='ball', parent=None):
     return o
 
 
+def varied_material(name, colors, rough=.85):
+    """A material whose colour is picked per instance from a ramp by Object Info > Random.
+
+    One flat green over a hundred thousand blades reads as a painted surface; real grass is
+    never one colour. Same trick works for rubble or a crowd's clothes."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    info = nt.nodes.new('ShaderNodeObjectInfo')
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    nt.links.new(info.outputs['Random'], ramp.inputs['Fac'])
+    els = ramp.color_ramp.elements
+    while len(els) > 1:
+        els.remove(els[-1])
+    for i, c in enumerate(colors):
+        pos = i / max(len(colors) - 1, 1)
+        el = els[0] if i == 0 else els.new(pos)
+        el.position, el.color = pos, c
+    nt.links.new(ramp.outputs['Color'], b.inputs['Base Color'])
+    b.inputs['Roughness'].default_value = rough
+    return m
+
+
 def grass_blade(mat, w=.035, h=.26, name='blade'):
     """One blade: a narrow three-sided spike. Cheap enough to instance by the tens of thousands."""
+    # Tried pointing the blade along +X in case hair aligned the instance's X axis: the render
+    # was identical, so the orientation is not what makes the blades read as flat specks.
     bpy.ops.mesh.primitive_cone_add(vertices=3, radius1=w, radius2=0, depth=h, location=(0, 0, h / 2))
     o = bpy.context.object
     o.name = name

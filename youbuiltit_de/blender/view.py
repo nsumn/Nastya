@@ -54,7 +54,22 @@ def _wipe():
                 pass
 
 
+def _reload_local_modules():
+    """Reload scene_lib / words before each build. Python caches imports, so editing a
+    helper in scene_lib.py did nothing until Blender was restarted: the scene script's
+    `import scene_lib` handed back the copy loaded on the first build."""
+    import importlib
+    for name, mod in list(sys.modules.items()):
+        f = getattr(mod, '__file__', None)
+        if f and os.path.dirname(os.path.abspath(f)) == HERE and name != '__main__':
+            try:
+                importlib.reload(mod)
+            except Exception as e:
+                print('VIEW reload failed for', name, e, flush=True)
+
+
 def _build():
+    _reload_local_modules()
     src = open(SCENE, encoding='utf-8').read()
     cut = src.find('t0 = time.time()')
     if cut > 0:

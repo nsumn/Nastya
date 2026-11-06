@@ -78,7 +78,8 @@ L.box(-40, 40, -24, 2, -3, 0, grass, 'ground_front', bevel=0)
 # GRASS=0 renders without the scatter: it costs about 2 s a frame, which is an extra hour
 # over a full video, and for checking camera and timing it is not needed.
 GRASS = os.environ.get('GRASS', '1') != '0'
-blade_mat = L.flat('blade', (.14, .33, .07, 1), .85)
+blade_mat = L.varied_material('blade', [(.10, .26, .05, 1), (.16, .36, .08, 1),
+                                       (.21, .42, .10, 1), (.28, .44, .13, 1)])
 blade = L.grass_blade(blade_mat, w=.022, h=.17)
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -8.0, .01))
 lawn = bpy.context.object
@@ -111,10 +112,14 @@ dsp.texture, dsp.strength, dsp.mid_level = noise, 1.7, .5
 vg = hill.vertex_groups.new(name='grass_mask')
 for v in hill.data.vertices:
     co = v.co
-    near_mouth = abs(co.x) < 3.0 and co.y < 5.0 and co.z < 4.0
-    vg.add([v.index], 0.0 if near_mouth else 1.0, 'REPLACE')
+    # Keep the bare patch tight: at 3 m the whole slope above the door went bald.
+    near_mouth = abs(co.x) < 1.9 and co.y < 2.6 and co.z < 3.2
+    # Only the front of the mound is ever on camera. Spreading the blades over the whole
+    # 13 m sphere left the visible slope thin; this puts them where they are seen.
+    front = co.y < 8.0 and co.z < 8.0
+    vg.add([v.index], 0.0 if (near_mouth or not front) else 1.0, 'REPLACE')
 if GRASS:
-    hill_ps = L.scatter(hill, blade, count=120000, seed=9, size=1.0, size_random=.5, name='grass_hill')
+    hill_ps = L.scatter(hill, blade, count=220000, seed=9, size=1.0, size_random=.5, name='grass_hill')
     hill_ps.settings.use_modifier_stack = True
     hill_ps.vertex_group_density = 'grass_mask'
 
@@ -148,14 +153,14 @@ while z < OZ + .5:                                  # jambs: a stack of blocks u
     h = random.uniform(.2, .34)
     for sx in (-1, 1):
         w = random.uniform(.3, .46)
-        rock_block(sx * (OX + w - .13), z + h, w, h, random.uniform(.1, .26),
+        rock_block(sx * (OX + w - .13), z + h, w, h, random.uniform(.02, .16),
                    random.uniform(-.06, .06))
     z += h
 x = -OX - .42                                       # lintel: blocks across the top
 while x < OX + .42:
     w = random.uniform(.24, .4)
     hh = random.uniform(.2, .32)
-    rock_block(x + w, OZ + .24 + random.uniform(-.06, .1), w, hh, random.uniform(.1, .28),
+    rock_block(x + w, OZ + .24 + random.uniform(-.06, .1), w, hh, random.uniform(.02, .18),
                random.uniform(-.05, .05))
     x += 1.35 * w
 for bx, bz, br in ((-OX - .62, OZ + .5, .34), (OX + .66, OZ + .44, .3),
