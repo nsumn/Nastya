@@ -22,6 +22,7 @@
 | 01 | `01_keller/` | Wie ein Loch im Garten zum Keller wird (подвал: weiße Wanne, Fugenblech, Dämmung, Lichtschacht, Rückstauklappe) | 65.8 с | готов, `DE_01_keller.mp4` |
 | 02 | `02_burg/` | Wie ein Hügel zur Ritterburg wird (Holzhütte, Palisade, Mauer, Zinnen, Graben, Zugbrücke, Türme, Belagerung, Brunnen, Bergfried) | 60.3 с | готов, `DE_02_burg.mp4` |
 | 04 | `04_kuehlschrank/` | **Формат @oddtilt:** Wie du den Kühlschrank erfunden hast (пещерный человек: снег → ледник в яме → ящик с соломой и льдом → испарение → насос → AKW, но «du bist in Deutschland» → Windrad) | 49.9 с | готов, `DE_04_kuehlschrank.mp4` |
+| 05 | `05_tuer/` | **Формат @oddtilt:** Wie du die Tür erfunden hast (пещера → шкура → щит из досок → шип в каменной пятке → рама с притвором → засов → падающие штыри и ключ → глазок → двери наружу) | ~52 с | в работе, сцена в Blender (`blender/tuer_scene.py`), озвучки нет |
 
 ### Второй формат: @oddtilt («How you invented …», 1–9 млн просмотров)
 - Герой — пещерный человек «du» (у нас мультяшный риг `caveman()` в `kuehl_main.js`: суставы плеч, локтей, бёдер и коленей, брови, рот; позы задаются массивом `POSE`, ходьба через `walkP`).

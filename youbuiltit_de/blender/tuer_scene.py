@@ -22,7 +22,7 @@ TIMES = [float(x) for x in argv[4].split(',')] if len(argv) > 4 else [20.0]   # 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
 
-WD = Words('04_tuer')
+WD = Words('05_tuer')
 T = WD.T
 END = WD.end()
 
