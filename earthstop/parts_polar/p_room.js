@@ -1,3 +1,4 @@
+const _ghO = new THREE.Object3D();
 // ---- interiors: the mess hall on the upper floor of wing A (window to the north = the sea ice), a bunk room, the robot vacuum, gloves for POV ----
 const FL = STILT + 4.2;            // upper floor level (world y)
 const ROOM = new THREE.Group(); pw.add(ROOM);
@@ -15,7 +16,7 @@ for (let k = 0; k < 8; k++) bx(12, 0.18, 0.25, M('#d8d4cc'), 0, FL + 3.3, -21.5 
 { const sh = grp(RX - 0.2, FL, -38, -Math.PI / 2, ROOM); for (let r = 0; r < 4; r++) { bx(2.4, 0.04, 0.32, M('#6a4a34'), 0, 0.5 + r * 0.45, 0, sh); let x = -1.1; while (x < 1.1) { const w = R(0.03, 0.07), h = R(0.22, 0.34); bx(w, h, 0.22, M(pick(['#8a2a2a', '#2a4a7a', '#3a6a3a', '#c8a040', '#ddd'])), x + w / 2, 0.52 + r * 0.45 + h / 2, 0, sh); x += w + 0.005; } } }
 { const k = grp(0, FL, RZ0 + 0.6, 0, ROOM); bx(6, 0.9, 0.6, M('#e8e8e6'), 0, 0.45, 0, k); bx(6.05, 0.04, 0.65, M('#3a3a3a', { roughness: 0.3 }), 0, 0.92, 0, k); bx(6, 0.7, 0.35, M('#dcdcd8'), 0, 2.0, 0.12, k);
   for (let i = 0; i < 6; i++) { const pot = mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.14, 14), M('#a8acb0', { metalness: 0.7, roughness: 0.3 })); pot.position.set(-2.5 + i * 0.9, 1.0, 0); k.add(pot); } }
-const posterTex = canvasTex(400, 560, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0a1a3a'); gr.addColorStop(1, '#1a6a5a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '800 44px Pretendard'; g.textAlign = 'center'; g.fillText('제11차 월동대', w / 2, 460); g.font = '500 26px Pretendard'; g.fillText('JANG BOGO WINTER-OVER', w / 2, 505); for (let i = 0; i < 60; i++) { g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(rnd() * w, rnd() * 360, 2, 2); } });
+const posterTex = canvasTex(400, 560, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0a1a3a'); gr.addColorStop(1, '#1a6a5a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '700 46px Inter'; g.textAlign = 'center'; g.fillText('WINTER CREW', w / 2, 460); g.font = '500 26px Inter'; g.fillText('90° SOUTH · 2026', w / 2, 505); for (let i = 0; i < 60; i++) { g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(rnd() * w, rnd() * 360, 2, 2); } });
 bx(0.7, 1.0, 0.02, new THREE.MeshStandardMaterial({ map: posterTex, roughness: 0.6 }), -RX + 0.05, FL + 1.9, -31, ROOM).rotation.y = Math.PI / 2;
 // north wall: a wide window (sill 0.9 m, head 2.9 m) with mullions and a faint glass
 bx(12, 0.9, 0.2, wallM, 0, FL + 0.45, RZ1, ROOM); bx(12, 0.5, 0.2, wallM, 0, FL + 3.15, RZ1, ROOM);
@@ -40,20 +41,20 @@ const CHAIRS = [];
   const n = ti ? 11 : 12; for (let k = 0; k < n; k++) { const side = k % 2 ? 1 : -1, j = Math.floor(k / 2); CHAIRS.push(chair(tx + side * 0.85, -29 - j * 1.8 - (ti && side > 0 ? 0.9 : 0), side > 0 ? -Math.PI / 2 : Math.PI / 2)); } });
 for (let k = 0; k < 9; k++) { const m = mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.1, 12), M(pick(['#f2f2f0', '#c84a3a', '#3a6aa0', '#e8c040']))); m.position.set(pick([-2.4, -2.0, 2.0, 2.4]), FL + 0.83, -28.5 - k * 1.3); ROOM.add(m); }
 { const d = grp(-5.5, FL, -22, Math.PI / 2, ROOM); bx(0.4, 1.3, 0.4, M('#e8eaec'), 0, 0.65, 0, d); const bt = mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.45, 14), new THREE.MeshPhysicalMaterial({ color: '#8ac8f0', transparent: true, opacity: 0.5, roughness: 0.05 })); bt.position.y = 1.55; d.add(bt); }
-const tvTex = canvasTex(512, 288, (g, w, h) => { g.fillStyle = '#06080c'; g.fillRect(0, 0, w, h); g.fillStyle = '#16304a'; g.fillRect(16, 16, w - 32, h - 32); g.fillStyle = '#cfe4ff'; g.font = '600 34px Pretendard'; g.textAlign = 'center'; g.fillText('NO SIGNAL', w / 2, h / 2 + 12); });
+const tvTex = canvasTex(512, 288, (g, w, h) => { g.fillStyle = '#06080c'; g.fillRect(0, 0, w, h); g.fillStyle = '#16304a'; g.fillRect(16, 16, w - 32, h - 32); g.fillStyle = '#cfe4ff'; g.font = '600 34px Inter'; g.textAlign = 'center'; g.fillText('NO SIGNAL', w / 2, h / 2 + 12); });
 bx(1.6, 0.92, 0.06, new THREE.MeshBasicMaterial({ map: tvTex }), RX - 0.06, FL + 2.1, -27, ROOM).rotation.y = -Math.PI / 2;
 // the weather screen on the side wall: −34.0 °C / 41 m/s
 const wxTex = canvasTex(640, 400, (g, w, h) => { g.fillStyle = '#071018'; g.fillRect(0, 0, w, h); g.strokeStyle = '#1e3a52'; g.lineWidth = 4; g.strokeRect(8, 8, w - 16, h - 16);
-  g.fillStyle = '#6fa8d8'; g.font = '600 30px Pretendard'; g.fillText('외부 기상 · JANG BOGO', 34, 62); g.fillStyle = '#eaf4ff'; g.font = '200 150px Pretendard'; g.fillText('−34.0°', 30, 230);
-  g.fillStyle = '#9fd0ff'; g.font = '500 34px Pretendard'; g.fillText('풍속 41 m/s · 체감 −62°C', 34, 300); g.fillStyle = '#ff6a50'; g.fillText('● 외출 금지', 34, 352); });
+  g.fillStyle = '#6fa8d8'; g.font = '600 28px Inter'; g.fillText('OUTSIDE · SOUTH POLE', 34, 62); g.fillStyle = '#eaf4ff'; g.font = '300 140px Inter'; g.fillText('−104°F', 26, 222);
+  g.fillStyle = '#9fd0ff'; g.font = '500 32px Inter'; g.fillText('WIND 12 mph · FEELS LIKE −148°F', 34, 296); g.fillStyle = '#ff6a50'; g.fillText('● STAY INSIDE', 34, 350); });
 const wx = bx(1.1, 0.69, 0.04, new THREE.MeshBasicMaterial({ map: wxTex, color: new THREE.Color(1.4, 1.4, 1.4) }), -RX + 0.05, FL + 1.75, -45, ROOM); wx.rotation.y = Math.PI / 2;
 // calendar with crossed days
-const calTex = canvasTex(400, 520, (g, w, h) => { g.fillStyle = '#f6f3ec'; g.fillRect(0, 0, w, h); g.fillStyle = '#c8322a'; g.fillRect(0, 0, w, 90); g.fillStyle = '#fff'; g.font = '700 54px Pretendard'; g.textAlign = 'center'; g.fillText('5월', w / 2, 66);
-  g.fillStyle = '#333'; g.font = '500 30px Pretendard'; for (let d = 1; d <= 31; d++) { const c = (d + 3) % 7, r = Math.floor((d + 3) / 7); const x = 30 + c * 52, y = 150 + r * 70; g.fillText(d, x + 6, y); if (d < 5) { g.strokeStyle = '#c8322a'; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 14, y - 26); g.lineTo(x + 26, y + 8); g.stroke(); } } });
+const calTex = canvasTex(400, 520, (g, w, h) => { g.fillStyle = '#f6f3ec'; g.fillRect(0, 0, w, h); g.fillStyle = '#c8322a'; g.fillRect(0, 0, w, 90); g.fillStyle = '#fff'; g.font = '700 54px Inter'; g.textAlign = 'center'; g.fillText('MARCH', w / 2, 66);
+  g.fillStyle = '#333'; g.font = '500 30px Inter'; for (let d = 1; d <= 31; d++) { const c = (d + 3) % 7, r = Math.floor((d + 3) / 7); const x = 30 + c * 52, y = 150 + r * 70; g.fillText(d, x + 6, y); if (d < 5) { g.strokeStyle = '#c8322a'; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 14, y - 26); g.lineTo(x + 26, y + 8); g.stroke(); } } });
 bx(0.5, 0.65, 0.02, new THREE.MeshBasicMaterial({ map: calTex }), -RX + 0.05, FL + 1.8, -24.5, ROOM).rotation.y = Math.PI / 2;
 // the note on the table
 const noteTex = canvasTex(512, 380, (g, w, h) => { g.fillStyle = '#fbf7ea'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c9d6e8'; g.lineWidth = 2; for (let y = 70; y < h; y += 46) { g.beginPath(); g.moveTo(20, y); g.lineTo(w - 20, y); g.stroke(); }
-  g.fillStyle = '#20232a'; g.font = '500 44px "Noto Serif KR"'; g.fillText('다들 먼저 갑니다.', 40, 110); g.fillText('봄에 봐요.', 40, 200); g.font = '500 34px "Noto Serif KR"'; g.fillText('— 월동대 22명', 220, 300); });
+  g.fillStyle = '#20232a'; g.font = 'italic 500 46px "Source Serif 4"'; g.fillText('We all flew out.', 40, 110); g.fillText('See you in November!', 40, 200); g.font = 'italic 500 36px "Source Serif 4"'; g.fillText('— the crew', 250, 300); });
 const note = mesh(new THREE.PlaneGeometry(0.3, 0.22), new THREE.MeshStandardMaterial({ map: noteTex, roughness: 0.9 })); note.rotation.x = -Math.PI / 2; note.rotation.z = 0.25; note.position.set(-2.1, FL + 0.785, -44.5); ROOM.add(note);
 const pen = mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.14, 8).rotateZ(Math.PI / 2), M('#1a3a8a')); pen.position.set(-1.92, FL + 0.79, -44.38); pen.rotation.y = 0.4; ROOM.add(pen);
 // the bunk room (a separate box far away; its window shows the polar night)
@@ -65,7 +66,7 @@ const nightWin = mesh(new THREE.PlaneGeometry(1.6, 1.2), new THREE.ShaderMateria
     void main(){ vec3 c=mix(vec3(0.01,0.015,0.035), vec3(0.03,0.05,0.1), 1.0-vU.y); vec2 q=floor(vU*vec2(160.0,120.0)); float s=step(0.993,h(q)); c+=vec3(1.0)*s*(0.6+0.4*sin(uT*2.0+h(q)*30.0));
       c=mix(c, vec3(0.18,0.2,0.26), smoothstep(0.25,0.0,vU.y)*0.6); gl_FragColor=vec4(c*1.0,1.0); }` }), false, false); nightWin.position.set(0, 1.35, -2.02); BED.add(nightWin);
 { const b = grp(-0.9, 0, 0.6, 0, BED); bx(1.0, 0.45, 2.1, M('#6a5a4a'), 0, 0.22, 0, b); bx(0.95, 0.18, 2.0, M('#f0f0ec'), 0, 0.54, 0, b); bx(0.98, 0.12, 1.4, M('#2f5a40', { roughness: 0.95 }), 0, 0.66, 0.25, b); bx(0.6, 0.12, 0.35, M('#f4f4f0'), 0, 0.68, -0.75, b); }
-const clockTex = canvasTex(512, 200, (g, w, h) => { g.fillStyle = '#050505'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff3a2a'; g.font = '300 150px Pretendard'; g.textAlign = 'center'; g.fillText('03:12', w / 2, 152); });
+const clockTex = canvasTex(512, 200, (g, w, h) => { g.fillStyle = '#050505'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff3a2a'; g.font = '300 150px Inter'; g.textAlign = 'center'; g.fillText('03:12', w / 2, 152); });
 { const ns = grp(0.3, 0, -0.2, 0, BED); bx(0.45, 0.5, 0.4, M('#8a7058'), 0, 0.25, 0, ns); bx(0.22, 0.09, 0.08, M('#1a1a1a'), 0, 0.55, 0, ns); const cf = mesh(new THREE.PlaneGeometry(0.2, 0.075), new THREE.MeshBasicMaterial({ map: clockTex, color: new THREE.Color(2.5, 2.5, 2.5) }), false, false); cf.position.set(0, 0.55, 0.042); ns.add(cf);
   const cl = new THREE.PointLight(0xff3020, 1.5, 2.5, 2); cl.position.set(0, 0.6, 0.2); ns.add(cl); }
 const bedLight = new THREE.PointLight(0x7a9cff, 4, 6, 1.4); bedLight.position.set(0, 1.4, -1.3); BED.add(bedLight);
@@ -86,3 +87,18 @@ function glove(side) { const g = new THREE.Group(), gm = M('#23262c', { roughnes
   const wr = new THREE.Group(); g.add(wr); g.userData.wrist = wr; const cf = mesh(new THREE.CylinderGeometry(0.05, 0.058, 0.14, 16), cuff); cf.position.y = -0.06; wr.add(cf); const sl = mesh(new THREE.CylinderGeometry(0.06, 0.085, 0.42, 16), M('#c8322a', { roughness: 0.85 })); sl.position.y = -0.29; wr.add(sl);
   pw.add(g); return g; }
 const GL = glove(-1), GR = glove(1);
+// ---- the greenhouse (hydroponic food growth chamber): pink-white grow lights, racks of lettuce, tomato vines, herbs ----
+const GH = new THREE.Group(); GH.position.set(6000, 0, 0); pw.add(GH);
+bx(3.4, 0.1, 8, M('#d8dce0', { roughness: 0.4 }), 0, -0.05, 0, GH); bx(3.4, 0.1, 8, M('#e8eaec'), 0, 2.6, 0, GH); for (const sx of [-1, 1]) bx(0.1, 2.6, 8, M('#eef0f2', { roughness: 0.3, metalness: 0.2 }), sx * 1.7, 1.3, 0, GH); bx(3.4, 2.6, 0.1, M('#eef0f2'), 0, 1.3, -4, GH); bx(3.4, 2.6, 0.1, M('#eef0f2'), 0, 1.3, 4, GH);
+const growM = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.6, 2.1) }), leafM = new THREE.MeshStandardMaterial({ color: '#5aa83a', roughness: 0.6, flatShading: true }), leafM2 = new THREE.MeshStandardMaterial({ color: '#8ac84a', roughness: 0.6, flatShading: true }), tomM = M('#d8321e', { roughness: 0.3 });
+{ const lettuce = new THREE.IcosahedronGeometry(0.11, 1); const n = 2 * 4 * 22, im = new THREE.InstancedMesh(lettuce, leafM, n), im2 = new THREE.InstancedMesh(lettuce, leafM2, n); let k = 0;
+  for (const sx of [-1, 1]) for (let r = 0; r < 4; r++) { bx(0.8, 0.04, 7.2, M('#b8bcc2', { metalness: 0.6, roughness: 0.4 }), sx * 1.2, 0.35 + r * 0.55, 0, GH); bx(0.7, 0.03, 7.0, growM, sx * 1.2, 0.35 + r * 0.55 + 0.48, 0, GH);
+    for (const z of [-0.12, 0.12]) bx(0.02, 0.02, 7.2, M('#e0e4e8'), sx * 1.2 + z, 0.37 + r * 0.55, 0, GH);
+    for (let j = 0; j < 22; j++) { const z = -3.4 + j * 0.32, y = 0.42 + r * 0.55; _ghO.position.set(6000 + sx * 1.2 + (hash(k) - 0.5) * 0.2, y, z); _ghO.rotation.set(hash(k * 3), hash(k * 5) * 3, 0); _ghO.scale.set(1, 0.7 + 0.3 * hash(k * 7), 1); _ghO.updateMatrix(); im.setMatrixAt(k, _ghO.matrix);
+      _ghO.scale.multiplyScalar(0.7); _ghO.position.y += 0.04; _ghO.updateMatrix(); im2.setMatrixAt(k, _ghO.matrix); k++; } }
+  im.castShadow = im2.castShadow = true; pw.add(im, im2);
+  for (let v = 0; v < 6; v++) { const vx = -0.55 + (v % 3) * 0.55, vz = v < 3 ? 3.6 : -3.6; const st = mesh(new THREE.CylinderGeometry(0.012, 0.012, 2.3, 5), M('#4a7a2a')); st.position.set(vx, 1.15, vz); GH.add(st);
+    for (let l = 0; l < 14; l++) { const lf = mesh(new THREE.IcosahedronGeometry(0.09, 0), leafM); lf.scale.set(1.4, 0.4, 1); lf.position.set(vx + Math.cos(l * 2.4) * 0.15, 0.3 + l * 0.15, vz + Math.sin(l * 2.4) * 0.15); GH.add(lf); }
+    for (let f = 0; f < 6; f++) { const tm = mesh(new THREE.SphereGeometry(0.045, 12, 8), tomM); tm.position.set(vx + Math.cos(f * 1.9) * 0.12, 0.6 + f * 0.25, vz + Math.sin(f * 1.9) * 0.12); GH.add(tm); } }
+  for (let k2 = 0; k2 < 3; k2++) bx(2.8, 0.03, 0.25, growM, 0, 2.55, -2.5 + k2 * 2.5, GH); }
+const ghL = new THREE.PointLight(0xffc8ec, 7, 8, 1.3); ghL.position.set(0, 2.2, 0); GH.add(ghL); const ghL2 = new THREE.PointLight(0xffd0f0, 8, 8, 1.3); ghL2.position.set(0, 2.2, -2.8); GH.add(ghL2);

@@ -1,4 +1,4 @@
-"""Order the Jang Bogo polar-night video SFX + music from Lumean into out/poaudio/ (skips existing files; resumes paid orders from out/poaudio/orders.json).
+"""Order the South Pole winter video (first built as the Jang Bogo one) SFX + music from Lumean into out/poaudio/ (skips existing files; resumes paid orders from out/poaudio/orders.json).
 Run from earthstop/: python3 tools/polar_audio.py   (key: earthstop/.lumean.key, git-ignored)."""
 import os, sys, json, time
 sys.path.insert(0, os.path.dirname(__file__)); from lumean import call, wait, fetch
@@ -19,6 +19,8 @@ SFX = {
   'breath':    ('slow tired exhale in a silent cold room, soft', 2),
   'beepwx':    ('soft warning chime on a digital weather display, two notes', 1),
   'aurora':    ('ethereal shimmering high airy pad, magical aurora sound, soft glassy tones', 8),
+  'plane':     ('four-engine turboprop airplane taking off on snow, roaring past then fading into the distance', 8),
+  'greenhouse':('quiet hydroponic greenhouse, soft fans and trickling water, gentle hum', 6),
   'sunrise':   ('warm swelling choir-like pad rising to a bright resolve, hopeful sunrise', 5),
 }
 MUSIC = {'lonely': 'slow lonely cinematic piano and soft strings, cold and intimate, Antarctic night, minimal, 70 bpm',

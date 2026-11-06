@@ -1,57 +1,50 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="node_modules/@fontsource/noto-serif-kr/400.css">
-<link rel="stylesheet" href="node_modules/@fontsource/noto-serif-kr/500.css">
-<link rel="stylesheet" href="node_modules/pretendard/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/400-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/source-serif-4/500-italic.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/700.css">
+<link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
 <style>
   html,body{margin:0;padding:0;background:#000;overflow:hidden}
   #wrap{position:relative;width:1080px;height:1920px;overflow:hidden}
   canvas{display:block}
   .ov{position:absolute;left:0;right:0;pointer-events:none}
-  /* title (serif, word by word), countdown HUD (Man_ia_c-style timer, our own layout), captions at the series height 1250 px */
-  #title{top:560px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:500;color:#fff;font-size:70px;line-height:1.36;padding:0 100px;letter-spacing:-.01em;
-    text-shadow:0 1px 3px rgba(0,0,0,.45),0 2px 26px rgba(10,15,30,.65)}
-  #title .hl{color:#ffcf7a}
-  #title span.w{display:inline-block}
-  #hud{left:92px;top:330px;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.6),0 1px 14px rgba(0,0,0,.55)}
-  #lab{font-family:'Pretendard',sans-serif;font-weight:600;font-size:25px;letter-spacing:.12em;opacity:.92}
-  #lab b{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff4a3d;margin-right:12px;vertical-align:2px}
-  #val{font-family:'Pretendard',sans-serif;font-weight:300;font-size:92px;line-height:1.05;margin-top:4px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
-  #sub{font-family:'Pretendard',sans-serif;font-weight:500;font-size:22px;letter-spacing:.1em;opacity:.8;margin-top:8px}
-  #big{top:360px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:200;font-size:210px;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.01em;opacity:0;
-    text-shadow:0 0 6px rgba(0,0,0,.5),0 2px 40px rgba(0,0,0,.55)}
-  #cap{top:1250px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:600;color:#fff;font-size:50px;line-height:1.42;padding:0 170px;
-    text-shadow:0 0 3px rgba(0,0,0,.85),0 1px 10px rgba(0,0,0,.8),0 2px 26px rgba(0,0,0,.6),0 0 60px rgba(0,0,0,.35)}
-  #cap span.w{display:inline-block}
-  #cap .hl{color:#ffcf7a}
-  #cap .m{font-size:26px;letter-spacing:.14em;font-weight:700;color:#9fd0ff;display:block;margin-bottom:6px}
-  #mark{top:392px;right:96px;left:auto;text-align:right;font-family:'Pretendard',sans-serif;font-weight:800;font-size:40px;letter-spacing:.02em;color:rgba(255,255,255,.8);text-shadow:0 1px 8px rgba(0,0,0,.4)}
-  #mark small{display:block;font-weight:500;font-size:20px;letter-spacing:.06em;opacity:.85;margin-top:2px}
-  #flash{top:0;bottom:0;background:#eef3ff;opacity:0}
-  #end{top:0;bottom:0;background:#0e0f13;opacity:0}
-  #endT{top:600px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:500;color:#f2f0ea;font-size:64px;line-height:1.4;opacity:0;padding:0 110px}
-  #endT .hl{color:#ffcf7a}
-  #endS{top:900px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:500;color:#c9c6be;font-size:36px;line-height:1.75;opacity:0;padding:0 140px}
-  #endS b{color:#f2f0ea;font-weight:700}
+  .hl{color:#ffb048;text-shadow:0 2px 16px rgba(40,15,0,.85),0 0 4px rgba(40,15,0,.8)}
+  .lb{position:absolute;transform:translate(-50%,-100%);font-family:'Inter';font-weight:600;font-size:28px;letter-spacing:.16em;color:#ffd9a0;white-space:nowrap;text-shadow:0 1px 10px rgba(0,0,0,.9)}
+  /* TikTok safe zones: top < 320, right column x > 900 (y 950-1670), bottom > 1650, ~57px side crop */
+  #title{top:400px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#fff;font-size:76px;line-height:1.12;padding:0 90px;text-shadow:0 2px 18px rgba(0,0,0,.75),0 0 4px rgba(0,0,0,.6)}
+  #hud{top:360px;text-align:center;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.9),0 1px 12px rgba(0,0,0,.85),0 0 28px rgba(0,0,0,.5);opacity:0}
+  #stat{font-family:'Inter';font-weight:600;font-size:24px;letter-spacing:.18em;opacity:.95;height:34px}
+  #stat b{display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff7a1a;margin-right:12px;vertical-align:1px}
+  #val{font-family:'Source Serif 4';font-weight:400;font-size:96px;line-height:1.02;margin-top:2px}
+  #sub{font-family:'Inter';font-weight:500;font-size:22px;letter-spacing:.14em;opacity:.85;margin-top:12px}
+  #cap{top:1250px;text-align:center;font-family:'Source Serif 4';font-style:italic;color:#fff;font-size:56px;font-weight:500;line-height:1.2;padding:0 170px;transform-origin:50% 30%;
+    text-shadow:0 0 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.9),0 2px 24px rgba(0,0,0,.85),0 0 40px rgba(0,0,0,.6)}
+  #cap b{font-weight:500;color:#ffb048}
+  #end{top:0;bottom:0;background:#120e16;opacity:0}
+  #endT{top:560px;text-align:center;font-family:'Source Serif 4';font-weight:400;color:#f2f0ea;font-size:68px;line-height:1.14;opacity:0;padding:0 110px}
+  #endS{top:1010px;text-align:center;font-family:'Inter';font-weight:600;color:#e8dcc8;font-size:34px;letter-spacing:.06em;line-height:1.75;opacity:0;padding:0 150px}
+  #endS i{font-style:normal;color:#ffb048}
   .pass-scene .txt{visibility:hidden!important}
   .pass-text canvas,.pass-text .gfx{visibility:hidden!important}
-  html.pass-text,html.pass-text body{background:transparent!important}
+  html.pass-text,html.pass-text body,html.pass-text #wrap{background:transparent!important}
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c" width="1080" height="1920"></canvas>
-  <div id="flash" class="ov gfx"></div>
-  <div id="hud" class="ov txt"><div id="lab"></div><div id="val"></div><div id="sub"></div></div>
-  <div id="big" class="ov txt"></div>
-  <div id="title" class="ov txt"></div>
+  <div id="title" class="ov txt">What if you were left <span class="hl">ALONE</span> at the <span class="hl">South Pole</span> all winter?</div>
+  <div id="hud" class="ov txt"><div id="stat"></div><div id="val"></div><div id="sub"></div></div>
+  <div id="labels" class="ov txt" style="top:0;bottom:0"></div>
   <div id="cap" class="ov txt"></div>
-  <div id="mark" class="ov txt">뚝딱<small>@ttukttak3d</small></div>
+  <div id="flash" class="ov gfx" style="top:0;bottom:0;background:#fff;opacity:0"></div>
   <div id="end" class="ov gfx"></div>
-  <div id="endT" class="ov txt">만약 남극 <span class="hl">장보고기지</span>에<br><span class="hl">극야</span> 동안 혼자 남는다면?</div>
-  <div id="endS" class="ov txt"><b>94일</b> 동안 해가 뜨지 않고<br>바람은 <b>시속 148km</b>, 기온은 <b>−34°C</b>.<br>잠도 마음도 흔들리지만<br>하늘엔 <b>오로라</b>가 있고,<br>해는 <b>반드시</b> 다시 뜹니다.<br><br>당신이라면 버틸 수 있나요? 댓글로 👇<br><br><b>@ttukttak3d</b></div>
+  <div id="endT" class="ov txt">What if you were left <span class="hl">ALONE</span> at the <span class="hl">South Pole</span> all winter?</div>
+  <div id="endS" class="ov txt">NO PLANES FOR 8 MONTHS.<br>NO SUN FOR <i>6</i>. BELOW <i>−100°F</i>.<br>YOUR SLEEP FALLS APART.<br>BUT YOU GET THE AURORA —<br>AND THE SUN ALWAYS COMES BACK.</div></div>
 </div>
 <script>window.PASS=new URLSearchParams(location.search).get("pass")||"all"; document.documentElement.classList.add("pass-"+window.PASS);</script>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>

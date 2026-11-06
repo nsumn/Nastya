@@ -1,27 +1,32 @@
-# Jang Bogo polar-night video — cue sheet (window 0, exterior 3.5, hall 7.5, robot 11 (bump 12.9), blizzard 15 (window 17.5), rope 20 (POV 22.5),
-# bunk 25, weather screen 29, aurora 33, first sun 38, end card 43). Music: lonely piano 0–33, hopeful 33–end. No room-tone bed under whole scenes.
-music lonely0 0.0 0.42 29.6
-music hope0 29.0 0.5 46.0
-0.0 wind_soft 0.5
+# South Pole winter video (62.5 s) — cue sheet. Shots: plane POV 0, plane away 3.5, sunset 8, hall 11.5, robot 15.5 (bump 17.5), blizzard 19.5 (window 22),
+# rope 24.5 (POV 27), greenhouse 29.5, bunk 34, weather screen 38.5, aurora 42.5, D-0 window 48.5, sun outside 55, end card 58.
+music lonely0 0.0 0.4 29.3
+music lonely1 29.4 0.34 42.3
+music hope0 42.5 0.5 62.0
+0.0 plane 0.9 0.2
+0.0 wind_soft 0.35
 3.4 whoosh 0.35
-3.6 wind_soft 0.45
-7.6 boom 0.45
-7.5 room 0.22
-11.0 robot 0.55 0.15
-12.9 bump 0.7
-13.3 chirp 0.75
-14.4 chirp 0.5
-15.0 boom 0.8
-15.0 blizzard 0.75
-17.5 rattle 0.8 -0.2
-20.0 steps 0.55
-22.5 steps 0.6
-25.0 clock 0.7
-25.7 breath 0.6
-27.4 chirp 0.3 0.3
-29.1 beepwx 0.6
-29.0 wind_soft 0.3
-33.0 aurora 0.85
-38.0 sunrise 0.85
-38.2 chirp 0.45
-43.0 boom 0.4
+5.0 wind_soft 0.4
+8.0 wind_soft 0.45 -0.2
+11.6 boom 0.45
+11.5 room 0.2
+15.5 robot 0.55 0.15
+17.4 bump 0.7
+17.8 chirp 0.75
+18.9 chirp 0.5
+19.5 boom 0.75
+19.5 blizzard 0.75
+22.0 rattle 0.8 -0.2
+24.5 steps 0.3
+27.0 steps 0.32
+29.5 greenhouse 0.3
+34.0 clock 0.7
+34.7 breath 0.6
+36.4 chirp 0.3 0.3
+38.6 beepwx 0.6
+38.5 wind_soft 0.3
+42.5 aurora 0.85
+48.5 sunrise 0.6
+48.7 chirp 0.45
+55.0 wind_soft 0.3
+58.0 boom 0.4

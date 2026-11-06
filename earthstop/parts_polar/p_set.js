@@ -1,4 +1,5 @@
-// =================== "만약 남극 장보고기지에 극야 동안 혼자 남는다면?" — Korean channel, ~46 s ===================
+// =================== "What if you were left ALONE at the South Pole all winter?" — US channel, 62.5 s ===================
+// (first built as a Korean Jang Bogo video; switched to the US South Pole station — flat ice plateau: no mountains, no sea)
 // The set: a coastal Antarctic station in the style of Jang Bogo (Terra Nova Bay, 74.6°S): a three-wing main building on stilts, outbuildings,
 // fuel tanks, wind turbines, a radome, the sea ice to the north (−z), mountains around. Meters. Interior rooms live INSIDE wing A (north wing).
 const pw = new THREE.Scene();
@@ -34,6 +35,7 @@ const pSky = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
       c=mix(c, mix(vec3(0.03,0.035,0.05), vec3(0.55,0.6,0.7), day), uWhite);
       gl_FragColor=vec4(c,1.0); }` });
 const pDome = new THREE.Mesh(new THREE.SphereGeometry(50000, 64, 32), pSky); pDome.frustumCulled = false; pDome.renderOrder = -10; pw.add(pDome);
+{ const envScene = new THREE.Scene(); skyU.uSun.value.set(-0.2, 0.08, -0.97).normalize(); envScene.add(new THREE.Mesh(new THREE.SphereGeometry(100, 32, 16), pSky)); pw.environment = new THREE.PMREMGenerator(renderer).fromScene(envScene, 0.02, 1, 400).texture; pw.environmentIntensity = 0.35; }
 const pSun = new THREE.DirectionalLight(0xffa060, 2.0); pSun.castShadow = true; pSun.shadow.mapSize.set(4096, 4096);
 Object.assign(pSun.shadow.camera, { left: -120, right: 120, top: 120, bottom: -120, near: 1, far: 800 }); pSun.shadow.bias = -0.0005; pSun.shadow.normalBias = 0.05; pw.add(pSun, pSun.target);
 const pHemi = new THREE.HemisphereLight(0x9fb4e0, 0x6a7088, 0.6); pw.add(pHemi);
@@ -48,13 +50,13 @@ snowMat.onBeforeCompile = sh => { sh.uniforms.uT = snowU.uT;
     float nn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(hh(i),hh(i+vec2(1,0)),f.x),mix(hh(i+vec2(0,1)),hh(i+vec2(1,1)),f.x),f.y); }`)
     .replace('#include <color_fragment>', `#include <color_fragment>
     { vec2 p=vWP.xz; float sa=sin(p.x*0.9+p.y*0.25+nn(p*0.08)*6.0)*0.5+0.5; float rk=smoothstep(0.62,0.72,nn(p*0.035)+0.25*nn(p*0.2))*smoothstep(-160.0,-60.0,p.y)*(1.0-smoothstep(160.0,400.0,length(p)));
-      vec3 sn=vec3(0.9,0.94,1.0)*(0.9+0.1*sa)*(0.93+0.07*nn(p*1.7)); vec3 ice=vec3(0.78,0.86,0.96)*(0.92+0.08*nn(p*0.05)); float sea=1.0-smoothstep(-200.0,-150.0,p.y);
-      vec3 rock=mix(vec3(0.16,0.14,0.13), vec3(0.3,0.27,0.25), nn(p*0.9)); diffuseColor.rgb=mix(mix(sn,ice,sea), rock, rk*(1.0-sea)*0.92); }`)
+      vec3 sn=vec3(0.9,0.94,1.0)*(0.9+0.1*sa)*(0.93+0.07*nn(p*1.7)); vec3 ice=vec3(0.78,0.86,0.96)*(0.92+0.08*nn(p*0.05)); float sea=0.0;
+      vec3 rock=mix(vec3(0.16,0.14,0.13), vec3(0.3,0.27,0.25), nn(p*0.9)); diffuseColor.rgb=mix(sn,ice,0.25*nn(p*0.01)); }`)
     .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
     { float sp=step(0.9985, hh(floor(vWP.xz*9.0))); totalEmissiveRadiance+=vec3(1.2,1.25,1.4)*sp*0.6; }`); };
 { const g = new THREE.PlaneGeometry(9000, 9000, 220, 220); g.rotateX(-Math.PI / 2); const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i); const land = smooth(-180, -60, z); const r = Math.hypot(x, z);
-    p.setY(i, land * (2.5 * Math.sin(x * 0.02) * Math.cos(z * 0.017) + 4 * smooth(80, 600, r) * (0.5 + 0.5 * Math.sin(x * 0.006 + 1.3) * Math.sin(z * 0.008))) * (r < 70 ? r / 70 : 1)); }
+    p.setY(i, (0.35) * (2.5 * Math.sin(x * 0.02) * Math.cos(z * 0.017) + 4 * smooth(80, 600, r) * (0.5 + 0.5 * Math.sin(x * 0.006 + 1.3) * Math.sin(z * 0.008))) * (r < 70 ? r / 70 : 1)); }
   g.computeVertexNormals(); const gm = mesh(g, snowMat, false, true); pw.add(gm); }
 // ---- mountains: a ring of jagged ridges 3–12 km out, snow on top/flat faces, dark rock on steep faces; a big volcano cone to the NW ----
 const mtnMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true });
@@ -70,7 +72,7 @@ const mtnMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0
   const vol = new THREE.ConeGeometry(9000, 2700, 48, 10, true); { const p = vol.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setY(i, y + 60 * (hash(i) - 0.5)); } }
   vol.translate(-9000, 1350, -22000); vol.computeVertexNormals(); const vc = []; const vp = vol.attributes.position; for (let i = 0; i < vp.count; i++) { const s = vp.getY(i) > 600 || hash(i) < 0.4; vc.push(...(s ? [0.88, 0.92, 0.98] : [0.25, 0.22, 0.2])); }
   vol.setAttribute('color', new THREE.Float32BufferAttribute(vc, 3)); gs.push(vol.toNonIndexed());
-  const mm = mesh(mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })), mtnMat, false, false); pw.add(mm); }
+  }
 // ---- the station ----
 const ST = new THREE.Group(); pw.add(ST);
 const clad = M('#d9dde2', { roughness: 0.45, metalness: 0.35 }), cladD = M('#2e3640', { roughness: 0.4, metalness: 0.5 }), steel = M('#8a9098', { roughness: 0.5, metalness: 0.6 }), redP = M('#b8322a', { roughness: 0.55 }), blueP = M('#2a4f8a', { roughness: 0.55 });
@@ -118,10 +120,39 @@ function snowAt(t, cam, wind, amt, ctr) { snowLines.visible = amt > 0.01; if (!s
     const x = wrapR(ox + vx * sp * t - c.x, 0, B * 2) - B + c.x, y = wrapR(oy + vy * sp * t - c.y + B * 0.5, 0, B) - B * 0.5 + c.y, z = wrapR(oz + vz * sp * t - c.z, 0, B * 2) - B + c.z;
     const tu = 0.4 * Math.sin(t * 3 + i); a[i * 6] = x; a[i * 6 + 1] = y; a[i * 6 + 2] = z; a[i * 6 + 3] = x - vx * sp * sl; a[i * 6 + 4] = y - (vy + tu) * sp * sl; a[i * 6 + 5] = z - vz * sp * sl; }
   snowGeo.attributes.position.needsUpdate = true; }
-// ---- the far figure in a red parka (wide exterior shots; POV = you) ----
-const fig = makePerson(rnd, { skin: '#e8c0a0', top: '#c8322a', bottom: '#2a2e38', hair: '#151215' }); pw.add(fig.outer);
-{ const hood = mesh(new THREE.SphereGeometry(0.155, 14, 12), M('#a8281f', { roughness: 0.85 })); hood.scale.set(1, 1.1, 1.08); hood.position.set(0, 1.65, -0.02); fig.torso.add(hood);
-  const fur = mesh(new THREE.TorusGeometry(0.12, 0.035, 6, 14), M('#d8cdb8', { roughness: 1 })); fur.position.set(0, 1.64, 0.1); fig.torso.add(fur);
-  }
+// ---- our hero — EXACTLY the approved line from HERO.md (tee). Outside (−100°F) the same hero in the approved hoodie outfit, same charcoal colour.
+const HERO_O = { head: 'human', body: 'human', skin: '#e9b98f', hair: '#4a3020', top: '#4b4f57', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'short', headS: 0.88 };
+const heroIn = makeBlock(HERO_O), heroOut = heroIn; pw.add(heroIn.outer); heroIn.outer.visible = false;   // the hoodie mesh tears — always the approved tee hero (HERO.md)
+for (const H of [heroIn]) for (const n of Object.keys(FACE)) for (const bl of [false, true]) renderer.initTexture(faceTex(H.o, n, bl));
+let hero = heroOut;
+function heroBase(x, z, ry, inside = false) { heroIn.outer.visible = heroOut.outer.visible = false; hero = inside ? heroIn : heroOut; const P = hero; P.outer.visible = true; P.outer.rotation.order = 'YXZ'; P.outer.rotation.set(0, ry, 0); P.torso.rotation.set(0, 0, 0); P.head.rotation.set(0, 0, 0);
+  for (const l of P.legs) l.rotation.set(0, 0, 0); for (const k of P.knees) k.rotation.x = 0.02; P.arms[0].rotation.set(0, 0, -0.1); P.arms[1].rotation.set(0, 0, 0.1); P.elbows[0].rotation.x = P.elbows[1].rotation.x = -0.25; P.outer.position.set(x, 0.95 + 0.35, z); }
+// ---- the ceremonial South Pole: a striped pole with a chrome ball ----
+const POLE = V3(-6, 0.35, -120);
+{ const st = canvasTex(64, 512, (g, w, h) => { for (let k = 0; k < 16; k++) { g.fillStyle = k % 2 ? '#c8322a' : '#f4f2ee'; g.save(); g.translate(0, k * 32); g.transform(1, 0.5, 0, 1, 0, 0); g.fillRect(0, -32, w, 32); g.restore(); } });
+  const pl = mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.3, 20), new THREE.MeshStandardMaterial({ map: st, roughness: 0.4 })); pl.position.set(POLE.x, POLE.y + 0.65, POLE.z); pw.add(pl);
+  const ball = mesh(new THREE.SphereGeometry(0.2, 32, 20), new THREE.MeshStandardMaterial({ color: '#e8ecf2', metalness: 1, roughness: 0.05, envMapIntensity: 1.4 })); ball.position.set(POLE.x, POLE.y + 1.5, POLE.z); pw.add(ball);
+  const base = mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.12, 16), M('#3a3c42')); base.position.set(POLE.x, POLE.y + 0.06, POLE.z); pw.add(base);
+  // a ring of plain colored pennants on bamboo poles around it (no national flags)
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, x = POLE.x + Math.cos(a) * 3.2, z = POLE.z + Math.sin(a) * 3.2; const bp = mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.6, 6), M('#c8b080')); bp.position.set(x, POLE.y + 0.8, z); pw.add(bp);
+    const f = mesh(new THREE.PlaneGeometry(0.34, 0.22), new THREE.MeshStandardMaterial({ color: pick(['#2a4f9a', '#e8e4dc', '#c8322a', '#2f7a4a', '#e8b030']), side: THREE.DoubleSide, roughness: 0.8 })); f.position.set(x + 0.17, POLE.y + 1.49, z); f.rotation.y = 0.3; pw.add(f); } }
+// the station env map was made before; refresh it so the chrome ball reflects the plateau sky
+// ---- the last plane: a ski-equipped four-engine turboprop (grey, orange tail band; no markings) ----
+const PLANE = new THREE.Group(); pw.add(PLANE);
+{ const gr = M('#9aa0a8', { roughness: 0.5, metalness: 0.3 }), dk = M('#30343a', { roughness: 0.5 });
+  const fus = mesh(new THREE.CylinderGeometry(2.1, 2.1, 26, 20).rotateX(Math.PI / 2), gr); fus.position.set(0, 3.2, 0); PLANE.add(fus);
+  const nose = mesh(new THREE.SphereGeometry(2.1, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), gr); nose.scale.set(1, 0.9, 1.4); nose.position.set(0, 3.1, 13); PLANE.add(nose);
+  bx(2.4, 0.7, 1.6, dk, 0, 4.6, 12.6, PLANE);
+  const tail = mesh(new THREE.CylinderGeometry(2.1, 0.6, 10, 16).rotateX(-Math.PI / 2), gr); tail.position.set(0, 3.9, -17.8); PLANE.add(tail);
+  bx(0.4, 8, 5, M('#d8642a'), 0, 8.5, -21.5, PLANE); bx(13, 0.3, 3.4, gr, 0, 4.6, -21.5, PLANE);
+  bx(40, 0.5, 4.2, gr, 0, 5.4, 2, PLANE);
+  for (const x of [-12, -6, 6, 12]) { const en = mesh(new THREE.CylinderGeometry(0.75, 0.9, 4.5, 14).rotateX(Math.PI / 2), gr); en.position.set(x, 4.9, 3.4); PLANE.add(en);
+    const pr = mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.05, 28).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#202428', transparent: true, opacity: 0.35, depthWrite: false })); pr.position.set(x, 4.9, 5.75); PLANE.add(pr); }
+  for (const x of [-2.4, 2.4]) { bx(0.9, 0.3, 7, M('#2a2a2e'), x, 0.25, 0, PLANE); } bx(0.9, 0.3, 4, M('#2a2a2e'), 0, 0.25, 10, PLANE);
+  for (let k = 0; k < 6; k++) for (const sx of [-1, 1]) bx(0.05, 0.5, 0.5, dk, sx * 2.08, 4.0, 7 - k * 1.6, PLANE); }
+const planeCloud = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(1500 * 3), 3)), new THREE.PointsMaterial({ color: '#f4f6fa', size: 2.2, transparent: true, opacity: 0.5, depthWrite: false })); planeCloud.frustumCulled = false; pw.add(planeCloud);
+function planeAt(t, t0) { const u = t - t0; const z = -260, x = 60 - 30 * u - 3 * u * u; const y = Math.max(0, 1.8 * (u - 2.2) * (u - 2.2) * (u > 2.2 ? 1 : 0)); PLANE.position.set(x, 0.35 + y, z); PLANE.rotation.set(0, -Math.PI / 2, 0); PLANE.rotateX(-Math.min(0.2, y * 0.02));
+  const a = planeCloud.geometry.attributes.position.array; for (let i = 0; i < 1500; i++) { const age = hash(i) * 3, uu = u - age, px = 60 - 30 * uu - 3 * uu * uu + 6; const sp = age * 4; a[i * 3] = px + (hash(i * 3) - 0.5) * sp + 10 * age; a[i * 3 + 1] = 0.5 + hash(i * 5) * sp * 0.6 + (uu > 2.2 ? 1.8 * (uu - 2.2) ** 2 * 0.6 : 0); a[i * 3 + 2] = z + (hash(i * 7) - 0.5) * (sp + 6); }
+  planeCloud.geometry.attributes.position.needsUpdate = true; }
 const FLOOD = []; [[0, 13, 20, 0.0], [-20, 11, -60, 0.0], [40, 11, 50, 0.0]].forEach(([x, y, z]) => { const L = new THREE.SpotLight(0xffd6a0, 0, 160, 0.9, 0.6, 1.2); L.position.set(x, y, z); L.target.position.set(x * 1.6, 0, z * 1.6 + 10); pw.add(L, L.target); FLOOD.push(L); });
 const auroraFill = new THREE.PointLight(0xffc890, 0, 60, 1.2); auroraFill.position.set(-14, 6, -72); pw.add(auroraFill);
