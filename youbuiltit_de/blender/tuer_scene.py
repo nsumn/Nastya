@@ -55,7 +55,8 @@ wood = L.pbr('wood', 'wood_planks_diff_1k.jpg', 'wood_planks_nor_gl_1k.jpg', 1.3
 wood_dark = L.pbr('wood_dark', 'wood_planks_diff_1k.jpg', 'wood_planks_nor_gl_1k.jpg', 1.3, (.34, .22, .12, 1), .85)
 grass = L.pbr('grass', 'leafy_grass_detail_1k.jpg', 'leafy_grass_nor_gl_1k.jpg', .8, (.22, .42, .13, 1), .95, .8)
 hide = L.flat('hide', (.46, .33, .2, 1), .9)
-dark = L.flat('dark', (.02, .018, .015, 1), 1)
+# Not pure black: an unlit tunnel reads as a hole punched in the render rather than a room.
+dark = L.flat('dark', (.085, .07, .055, 1), 1)
 stone_grey = L.flat('stone_grey', (.42, .4, .38, 1), .9)
 iron = L.flat('iron', (.32, .33, .35, 1), .45, 1)
 brass = L.flat('brass', (.72, .55, .22, 1), .3, 1)
@@ -219,7 +220,7 @@ cave_light = L.empty(0, 2.2, 1.2, 'cave_light_grp')
 bpy.ops.object.light_add(type='POINT', location=(0, 2.2, 1.3))
 cl_obj = bpy.context.object
 cl_obj.name = 'cave_light'
-cl_obj.data.energy = 14
+cl_obj.data.energy = 40
 cl_obj.data.color = (1, .72, .42)
 cl_obj.data.shadow_soft_size = .6
 cl_obj.parent = cave_light
