@@ -22,7 +22,7 @@ TIMES = [float(x) for x in argv[4].split(',')] if len(argv) > 4 else [20.0]   # 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
 
-WD = Words('03_tuer')
+WD = Words('04_tuer')
 T = WD.T
 END = WD.end()
 
@@ -191,6 +191,23 @@ door.matrix_parent_inverse = hinge.matrix_world.inverted()
 for i in range(4):                                  # cross battens, so it reads as planks nailed together
     L.box(.04, 2 * OX - .2, -.08, -.06, .25 + i * .5, .38 + i * .5, wood_dark,
           'batten_%d' % i, bevel=.02, parent=door)
+# The real door: a CC0 Poly Haven model, used once the doorway gets a frame. The rough
+# plank slab above stays for the earlier beats -- the story is a slab becoming a door.
+door_real = L.character('../models/large_castle_door/large_castle_door_2k.gltf',
+                        0, 0, 0, 0, None, 'door_real')
+if L.has_rig(door_real) or 'head' not in door_real.keys():
+    bpy.context.view_layer.update()
+    from mathutils import Vector as _V
+    _zs = [(o.matrix_world @ _V(b)).z for o in [door_real] + door_real.children_recursive
+           if o.type == 'MESH' for b in o.bound_box]
+    _h = (max(_zs) - min(_zs)) if _zs else 1.0
+    _s = (OZ - .05) / _h
+    door_real.scale = (_s, _s, _s)
+    door_real['base_scale'] = _s
+    door_real.parent = hinge
+    door_real.matrix_parent_inverse = hinge.matrix_world.inverted()
+    door_real.location = (.06, .02, 0)
+
 pivot_stone = L.cyl(-OX + .08, .12, .04, .22, .1, stone_grey, 'pivot_stone', verts=20)
 pivot_top = L.cyl(-OX + .08, .12, OZ - .02, .09, .08, stone_grey, 'pivot_top', verts=16)
 pin_bot = L.cyl(0, 0, -.02, .06, .14, wood_dark, 'pin_bot', parent=door, verts=12)
@@ -298,8 +315,11 @@ cl_obj.data.shadow_soft_size = .6
 cl_obj.parent = cave_light
 
 # ---------- world, camera, render ----------
-world, sun = L.sky_sun(sc)
-cam, tgt = L.camera(sc, lens=34)
+# Photographic setup, not the cartoon one: HDRI fills the shadows, a 35 mm lens sits
+# close to the subject and depth of field follows the look-at point.
+world, sun = L.hdri_world(sc)
+cam, tgt = L.camera(sc, lens=35, dof=6.0, fstop=3.5)
+L.focus_on(cam, tgt)
 
 # Camera. In a 1080x1920 frame the doorway needs room above it, so the wide keys sit further
 # back and higher than they would in a landscape shot.
@@ -329,10 +349,10 @@ def update(t):
     # Night has to be pushed hard: AgX lifts the shadows, and at sun 0.25 the frame still
     # looked like an overcast afternoon. Exposure comes down with it.
     night = L.win(t, tw['wind_rein'] - .5, tw['fell'] + .6, .5)
-    sun.data.energy = L.lerp(1.1, .05, night)
+    sun.data.energy = L.lerp(2.0, .05, night)
     sun.data.color = L.vlerp((1, .96, .9), (.5, .64, 1), night)[:3]
-    world.node_tree.nodes['Background'].inputs['Strength'].default_value = L.lerp(.16, .012, night)
-    sc.view_settings.exposure = L.lerp(-0.5, -2.0, night)
+    world.node_tree.nodes['Background'].inputs['Strength'].default_value = L.lerp(.85, .02, night)
+    sc.view_settings.exposure = L.lerp(-0.1, -2.2, night)
 
     # the hide: hangs from the lintel, flaps in the wind, then is blown away
     k_fell = L.win(t, tw['fell'], tw['fell_weg'] + .5, .25)
@@ -365,6 +385,9 @@ def update(t):
     for o, a, b in ((pivot_stone, tw['zapfen'] - .2, END), (pivot_top, tw['zapfen'] - .2, END)):
         L.show(o, L.ramp(t, a, a + .4))
     L.show(frame, L.ramp(t, tw['rahmen'], tw['rahmen'] + .5))
+    swap = L.ramp(t, tw['rahmen'] - .2, tw['rahmen'] + .4)   # slab becomes a real door
+    L.show(door, 1 - swap)
+    L.show(door_real, swap)
     L.show(riegel, L.ramp(t, tw['riegel'], tw['riegel'] + .4))
     L.show(pins, L.ramp(t, tw['stifte'], tw['stifte'] + .4))
     L.show(key, L.win(t, tw['schluessel'], tw['klopft'], .35))
@@ -405,6 +428,8 @@ def update(t):
 
 
 L.render_setup(sc, ENGINE, SAMPLES, DEVICE, OUT)
+L.photographic(sc)
+L.lens_look(sc)
 update(TIMES[0])
 print('SCENE ready, timings estimated:', WD.estimated(), '| end', round(END, 1), 's')
 

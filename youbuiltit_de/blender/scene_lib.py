@@ -397,15 +397,99 @@ def sky_sun(sc, elevation=38, rotation=140, strength=.22, sun_energy=2.0,
     return w, sun
 
 
-def camera(sc, lens=32):
+def hdri_world(sc, hdri='kloofendal_48d_partly_cloudy_puresky_2k.hdr', strength=1.35,
+               rotation=150, sun_energy=2.4, sun_rot=(46, 0, -55), sun_color=(1, .95, .86)):
+    """HDRI as the light source and the background, plus one sun for crisp shadows.
+
+    This is the single biggest difference between the cartoon look and a photographic one:
+    a bare sun over a painted sky gives flat, plastic surfaces, because nothing fills the
+    shadows. Returns (world, sun) like sky_sun()."""
+    w = bpy.data.worlds.new('w')
+    sc.world = w
+    w.use_nodes = True
+    nt = w.node_tree
+    env = nt.nodes.new('ShaderNodeTexEnvironment')
+    env.image = bpy.data.images.load(os.path.join(A, hdri), check_existing=True)
+    texco = nt.nodes.new('ShaderNodeTexCoord')
+    mp = nt.nodes.new('ShaderNodeMapping')
+    mp.inputs['Rotation'].default_value[2] = math.radians(rotation)
+    nt.links.new(texco.outputs['Generated'], mp.inputs['Vector'])
+    nt.links.new(mp.outputs['Vector'], env.inputs['Vector'])
+    nt.links.new(env.outputs['Color'], nt.nodes['Background'].inputs['Color'])
+    nt.nodes['Background'].inputs['Strength'].default_value = strength
+    bpy.ops.object.light_add(type='SUN', rotation=tuple(math.radians(a) for a in sun_rot))
+    sun = bpy.context.object
+    sun.data.energy = sun_energy
+    sun.data.angle = math.radians(2.5)
+    sun.data.color = sun_color
+    return w, sun
+
+
+def lens_look(sc, bloom=.3, distortion=-.012, dispersion=.006):
+    """Compositor pass: bloom around highlights and a touch of barrel distortion.
+    Cheap, and it is a lot of what separates a render from a frame of video."""
+    ng = bpy.data.node_groups.new('Lens Look', 'CompositorNodeTree')
+    ng.interface.new_socket('Image', in_out='OUTPUT', socket_type='NodeSocketColor')
+    n, lk = ng.nodes, ng.links
+    rl = n.new('CompositorNodeRLayers'); rl.scene = sc; rl.location = (-600, 0)
+    gl = n.new('CompositorNodeGlare'); gl.location = (-300, 0)
+    for key, val in (('Type', 'Bloom'), ('Quality', 'High'), ('Threshold', 1.2),
+                     ('Smoothness', .4), ('Strength', bloom), ('Size', .55)):
+        try:
+            gl.inputs[key].default_value = val
+        except (KeyError, TypeError):
+            pass
+    ld = n.new('CompositorNodeLensdist'); ld.location = (0, 0)
+    for key, val in (('Distortion', distortion), ('Dispersion', dispersion), ('Fit', True)):
+        try:
+            ld.inputs[key].default_value = val
+        except (KeyError, TypeError):
+            pass
+    out = n.new('NodeGroupOutput'); out.location = (300, 0)
+    lk.new(rl.outputs['Image'], gl.inputs['Image'])
+    lk.new(gl.outputs['Image'], ld.inputs['Image'])
+    lk.new(ld.outputs['Image'], out.inputs[0])
+    try:
+        sc.compositing_node_group = ng                # Blender 5.x
+        sc.render.use_compositing = True
+    except AttributeError:
+        print('lens_look: compositor node group API not on this build')
+    return ng
+
+
+def photographic(sc, exposure=1.2, look='AgX - Medium Contrast', bounces=8):
+    """AgX and more light bounces. The cartoon scenes use Standard on purpose; realistic
+    materials need AgX or the highlights clip and everything looks like painted plastic."""
+    sc.view_settings.view_transform = 'AgX'
+    try:
+        sc.view_settings.look = look
+    except TypeError:
+        pass
+    sc.view_settings.exposure = exposure
+    if sc.render.engine == 'CYCLES':
+        sc.cycles.max_bounces = bounces
+
+
+def camera(sc, lens=32, dof=None, fstop=3.2):
+    """dof: focus distance in metres, or None for everything in focus."""
     bpy.ops.object.camera_add(location=(0, 20, 6))
     cam = bpy.context.object
     sc.camera = cam
     cam.data.lens = lens
+    if dof:
+        cam.data.dof.use_dof = True
+        cam.data.dof.focus_distance = dof
+        cam.data.dof.aperture_fstop = fstop
     tgt = empty(0, 0, 2, 'cam_target')
     c = cam.constraints.new('TRACK_TO')
     c.target = tgt
     return cam, tgt
+
+
+def focus_on(cam, target_obj):
+    """Keeps depth of field on a moving subject: without this the focus plane stays where it
+    was set and the subject drifts out of it as the camera moves."""
+    cam.data.dof.focus_object = target_obj
 
 
 def cam_at(cam, tgt, keys, t):
