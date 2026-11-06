@@ -23,5 +23,5 @@ done
 for p in "${pids[@]}"; do wait $p; done
 (cd chunks && ls ${NAME}_[0-9]*.mp4) | grep -v tmp | sed "s/^/file '/;s/$/'/" > chunks/${NAME}_list.txt
 ffmpeg -y -v error -f concat -safe 0 -i chunks/${NAME}_list.txt -c copy chunks/${NAME}_noaudio.mp4
-ffmpeg -y -v error -i chunks/${NAME}_noaudio.mp4 -i ../$DIR/voice/voice_fast.mp3 -map 0:v -map 1:a -c:v libx264 -crf 21 -preset slow -pix_fmt yuv420p -movflags +faststart -af apad -c:a aac -b:a 192k -shortest ../$DIR/DE_$DIR.mp4
+ffmpeg -y -v error -i chunks/${NAME}_noaudio.mp4 -i ../$DIR/voice/voice_fast.mp3 -map 0:v -map 1:a -c:v libx264 -crf 19 -preset slow -pix_fmt yuv420p -movflags +faststart -af apad -c:a aac -b:a 192k -shortest ../$DIR/DE_$DIR.mp4
 ffprobe -v error -show_entries format=duration -of csv=p=0 ../$DIR/DE_$DIR.mp4; echo DONE

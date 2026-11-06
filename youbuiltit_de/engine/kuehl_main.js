@@ -40,9 +40,11 @@ const tw = {
   dann: T('Dann'), schweiss: T('Schweiß'), haut: T('Haut'), verd: T('verdunstet'), kalt: T('kalt'),
   also4: T('Also', 4), fl: T('Flüssigkeit'), rohr: T('Rohr'), sie: T('Sie'), saugt: T('saugt'), fleisch: T('Fleisch'),
   hinten: T('Hinten'), pumpe: T('Pumpe'), flussig: T('flüssig'), warme2: T('Wärme', 2), draussen: T('draußen'),
-  aber4: T('Aber', 4), pumpst: T('pumpst'), ganzen: T('ganzen'),
-  also5: T('Also', 5), akw: T('Atomkraftwerk'), motor: T('Motor'),
-  aber5: T('Aber', 5), dtl: T('Deutschland'), schalt: T('schaltest'), windrad: T('Windrad'),
+  ab4k: T('Aber', 4), aufm: T('aufmachst'), kalte: T('kalte'), also5d: T('Also', 5), tuer: T('Tür'), gummi: T('Gummidichtung'), magnet: T('Magnet'), zuzieht: T('zuzieht'),
+  und: T('Und'), nachts: T('nachts'), bier: T('Bier'), licht: T('Licht'), aufgeht: T('aufgeht'),
+  aber4: T('Aber', 5), pumpst: T('pumpst'), ganzen: T('ganzen'),
+  also5: T('Also', 6), akw: T('Atomkraftwerk'), motor: T('Motor'),
+  aber5: T('Aber', 6), dtl: T('Deutschland'), schalt: T('schaltest'), windrad: T('Windrad'),
   gluck: T('Glückwunsch'), kuehl: T('Kühlschrank'), erf: T('erfunden') };
 
 // ---------- materials ----------
@@ -240,6 +242,21 @@ const heatWaves = []; for (let i = 0; i < 4; i++) { const pts = []; for (let k =
 const drops = []; for (let i = 0; i < 5; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), new THREE.MeshStandardMaterial({ color: '#9fd8ff', roughness: .05 })); d.scale.y = 1.4; scene.add(d); drops.push(d); }
 const vapour = []; for (let i = 0; i < 8; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false })); scene.add(d); vapour.push(d); }
 
+// ---------- wooden door with rubber seal, cold air, bulb ----------
+const wDoor = new THREE.Group(); wDoor.position.set(BX.x0, 0, BX.z1 + .02); scene.add(wDoor);
+{ const d = new THREE.Mesh(new THREE.BoxGeometry(BX.x1 - BX.x0, BX.h, .1), woodMat); d.position.set((BX.x1 - BX.x0) / 2, BX.h / 2, .05); d.castShadow = true; wDoor.add(d);
+  const hnd = new THREE.Mesh(new THREE.BoxGeometry(.08, .5, .1), M('#5a3a22')); hnd.position.set(BX.x1 - BX.x0 - .18, 1.0, .14); wDoor.add(hnd);
+  const g = new THREE.Group(); wDoor.add(g); wDoor.userData.gasket = g; const gm = M('#1c1c1c', { roughness: .6 }), w = BX.x1 - BX.x0;
+  for (const [x, y, sx, sy] of [[w / 2, .06, w - .1, .06], [w / 2, BX.h - .06, w - .1, .06], [.06, BX.h / 2, .06, BX.h - .1], [w - .06, BX.h / 2, .06, BX.h - .1]]) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, .05), gm); m.position.set(x, y, -.02); g.add(m); }
+  const mag = new THREE.Mesh(new THREE.BoxGeometry(.1, .3, .08), M('#8b939b', { metalness: .8, roughness: .3 })); mag.position.set(w - .08, 1.0, -.05); g.add(mag); }
+const coldAir = [];
+for (let i = 0; i < 4; i++) { const pts = []; for (let k = 0; k <= 20; k++) pts.push(V(Math.sin(k / 20 * Math.PI * 2 + i) * .06, 0, k / 20 * 1.3));
+  const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, .045, 6), new THREE.MeshBasicMaterial({ color: '#7fd0ff', transparent: true, opacity: .9 })); scene.add(m); coldAir.push(m); }
+const bulb = new THREE.Mesh(new THREE.SphereGeometry(.09, 14, 10), new THREE.MeshBasicMaterial({ color: '#fff3b0' })); bulb.position.set((BX.x0 + BX.x1) / 2, BX.h - BX.t - .1, 0); scene.add(bulb);
+const bulbLight = new THREE.PointLight('#ffe7a0', 0, 3.5, 1.5); bulbLight.position.copy(bulb.position); scene.add(bulbLight);
+const lblKlack = label('KLACK!', 2.6);
+
 // ---------- modern fridge (finale) ----------
 const fridge = boxShell(fridgeMat, null);
 const fridgeLight = new THREE.Mesh(new THREE.BoxGeometry(BX.x1 - BX.x0 - .6, .04, .2), new THREE.MeshBasicMaterial({ color: '#fff7d6' })); fridgeLight.position.set((BX.x0 + BX.x1) / 2, BX.h - BX.t - .03, 0); scene.add(fridgeLight);
@@ -322,7 +339,12 @@ const KEYS = [
   [tw.also4 + .7, V(-2.4, 1.3, 4.9), V(-2.6, .95, -.1)],
   [tw.hinten - .1, V(-2.4, 1.25, 4.6), V(-2.6, .95, -.1)],
   [tw.hinten + .8, V(-6.6, 1.9, 5.0), V(-3.7, .9, -.1)],
-  [tw.aber4 - .1, V(-6.6, 1.9, 4.8), V(-3.9, .9, -.1)],
+  [tw.ab4k - .1, V(-6.6, 1.9, 4.8), V(-3.9, .9, -.1)],
+  [tw.ab4k + .7, V(-1.2, 1.5, 5.6), V(-2.4, .75, .2)],
+  [tw.zuzieht - .3, V(-1.3, 1.45, 5.2), V(-2.5, .8, .2)],
+  [tw.und + .6, V(-1.0, 1.7, 5.0), V(-2.5, 1.05, 0)],
+  [tw.aber4 - .1, V(-1.0, 1.7, 4.7), V(-2.5, 1.05, 0)],
+  [tw.aber4 + .6, V(-6.6, 1.9, 4.8), V(-3.9, .9, -.1)],
   [tw.aber4 + .5, V(-6.9, 2.2, 5.8), V(-4.4, 1.0, 0)],
   [tw.also5 - .1, V(-6.9, 2.2, 5.6), V(-4.4, 1.0, 0)],
   [tw.also5 + 1.0, V(1.5, 3.6, 15), V(-8.5, 5.2, -14)],
@@ -371,7 +393,9 @@ function caveAt(t) {
   } else if (t < tw.also4) {
     x = -.55; z = .8; face = 0;
     pose = t < tw.kalt - .2 ? mixP(POSE.idle, POSE.wipe, win(t, tw.dann + .1, tw.verd + .3, .25)) : mixP(POSE.idle, POSE.hug, ease(t, tw.kalt - .3, tw.kalt + .1));
-  } else if (t < tw.aber4) { x = -.6; z = 1.3; face = -.3; pose = mixP(POSE.idle, POSE.shrug, win(t, tw.saugt, tw.fleisch + .8, .3) * .5); }
+  } else if (t < tw.ab4k) { x = -.6; z = 1.3; face = -.3; pose = mixP(POSE.idle, POSE.shrug, win(t, tw.saugt, tw.fleisch + .8, .3) * .5); }
+  else if (t < tw.aber4) { x = -.75; z = 1.45; face = -.75;
+    pose = t < tw.also5d ? mixP(POSE.idle, POSE.wipe, win(t, tw.aufm - .3, tw.aufm + .5, .2)) : t < tw.und ? mixP(POSE.idle, POSE.shrug, pop(t, tw.zuzieht, .3) * .6) : mixP(POSE.idle, POSE.cheer, pop(t, tw.licht, .35) * .55); }
   else if (t < tw.also5 + .6) {
     x = BX.x0 - 1.95; z = BX.z1 + .05; face = Math.PI / 2;
     const ph = (t - tw.aber4) * 11; pose = mixP(POSE.idle, POSE.pump, ease(t, tw.aber4, tw.aber4 + .3)); pose = pose.slice(); pose[0] += .3 * Math.sin(ph); pose[2] += .3 * Math.sin(ph); pose[10] += .1 * Math.sin(ph);
@@ -388,7 +412,7 @@ function update(t) {
   snowMat.opacity = snow * .96; snowSheets.forEach(m => m.visible = snow > .01); pineCaps.forEach(c => { c.visible = snow > .05; c.scale.setScalar(Math.max(snow, .001)); });
   // day/night cycles while hauling ice and while pumping all day
   const cyc = (a, b, n) => t > a && t < b ? (.5 - .5 * Math.cos((t - a) / (b - a) * Math.PI * 2 * n)) : 0;
-  const night = Math.max(cyc(tw.jeden - .4, tw.dann - .1, 2), cyc(tw.ganzen - .4, tw.also5 + .1, 2));
+  const night = Math.max(cyc(tw.jeden - .4, tw.dann - .1, 2), cyc(tw.ganzen - .4, tw.also5 + .1, 2), win(t, tw.nachts - .3, tw.aber4 - .1, .3));
   scene.background = night > .5 ? nightSky : daySky;
   hemi.intensity = lerp(1.15, .3, night); sun.intensity = lerp(2.7, .35, night); fill.intensity = lerp(.55, .12, night);
   renderer.toneMappingExposure = lerp(1.05, .8, night); scene.fog.color.copy(dayFog).lerp(nightFog, night);
@@ -480,6 +504,17 @@ function update(t) {
   setLabel(lblAus, win(t, tw.schalt + .1, tw.windrad + .3, .25), -15, 11.5, -19);
   const fk = win(t, tw.dtl - .1, tw.windrad, .2); flag.visible = fk > .01; flag.position.set(-15, 14.5, -19); flag.scale.set(5 * fk, 3 * fk, 1);
 
+  // wooden door: opens (cold air falls out), gets a seal + magnet, shuts itself; at night it opens and the light comes on
+  const dk = pop(t, tw.ab4k - .1, .3) * (t < tw.gluck - .05 ? 1 : 0);
+  wDoor.visible = dk > .01; wDoor.scale.setScalar(Math.max(dk, .001));
+  const dOpen = Math.max(ease(t, tw.aufm - .2, tw.aufm + .4) * (1 - back(ramp(t, tw.zuzieht, tw.zuzieht + .35))), ease(t, tw.licht - .3, tw.licht + .2) * (1 - ease(t, tw.aber4 - .4, tw.aber4)));
+  wDoor.rotation.y = -dOpen * 1.75;
+  wDoor.userData.gasket.visible = t > tw.gummi - .1; wDoor.userData.gasket.scale.setScalar(pop(t, tw.gummi - .1, .3));
+  const ca = win(t, tw.kalte - .2, tw.also5d + .3, .3) * dOpen;
+  coldAir.forEach((c, i) => { c.visible = ca > .02; const ph = (t * 1.1 + i * .25) % 1; c.position.set(BX.x0 + .35 + i * .42, .1 + (1 - ph) * .15, BX.z1 + ph * 1.2); c.scale.setScalar(ca); c.material.opacity = .9 * Math.sin(ph * Math.PI) * ca; });
+  setLabel(lblKlack, win(t, tw.zuzieht + .25, tw.und - .1, .15), -2.6, 2.4, 1.0);
+  const li = t > tw.licht - .1 && t < tw.gluck ? dOpen : 0; bulb.visible = t > tw.licht - .2 && t < tw.gluck; bulb.material.color.set(li > .3 ? '#fff3b0' : '#8a8670'); bulbLight.intensity = li * 4;
+
   // finale: the box turns into a fridge
   const pf = ramp(t, tw.gluck - .1, tw.gluck + .5); puff.visible = pf > 0 && pf < 1; puff.scale.setScalar(.5 + pf * 1.6); puff.material.opacity = .9 * (1 - pf);
   const fr = pop(t, tw.gluck + .05, .3);
@@ -487,7 +522,7 @@ function update(t) {
   fDoor.visible = fr > .01; fDoor.scale.setScalar(Math.max(fr, .001));
   const open = ease(t, tw.kuehl - .2, tw.kuehl + .5); fDoor.rotation.y = -open * 1.9;
   fridgeLight.visible = fr > .5; fLight.intensity = open * 3;
-  beer.visible = fr > .5; setLabel(lblMinus, win(t, tw.kuehl + .4, END + 1, .25), -2.6, 2.45, .6);
+  beer.visible = fr > .5 || (t > tw.bier - .2 && t < tw.gluck); setLabel(lblMinus, win(t, tw.kuehl + .4, END + 1, .25), -2.6, 2.45, .6);
 
   placeCamera(t);
 }
