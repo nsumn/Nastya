@@ -165,25 +165,33 @@ L.cyl(.25, -.1, 1.55, .055, .01, brass, 'spion_ring', rot=(math.radians(90), 0, 
 # Rigged characters when they are in blender/assets/people, primitive stand-ins otherwise.
 # The placeholders are the weakest part of the picture -- @oddtilt and @kerozni carry their
 # shots on real animated people, and here people are on screen almost the whole time.
-def actor(filename, x, y, rot, h, cloth, name):
+def actor(filename, x, y, rot, h, cloth, name, phase=0.0):
     root = L.character(filename, x, y, 0, rot, h, name)
     if 'head' in root.keys():                       # a placeholder: colour it by hand
         for key, mat in (('body', cloth), ('hip', cloth), ('leg_l', cloth), ('leg_r', cloth)):
             m = L.limb(root, key).data.materials
             m.clear()
             m.append(cloth)
+    else:
+        L.character_loop(root, phase, END + 2)      # its own phase, so the crowd is not in lockstep
     return root
 
 
 def pose(root, t, speed, swing):
-    if not L.character_at(root, t):                 # rigged: play its own action
-        L.walk(root, t, speed, swing)               # placeholder: swing the limbs
+    if not L.has_rig(root):                         # placeholder: swing the limbs by hand
+        L.walk(root, t, speed, swing)               # rigged ones are driven by advance_time(t)
 
 
 you = actor('you.fbx', -.35, -1.5, math.radians(180), 1.75, tunic_you, 'you')
-nachbar = actor('nachbar.fbx', .45, -3.2, math.radians(180), 1.78, tunic_nb, 'nachbar')
-crowd = [actor('crowd.fbx', -1.6 + i * .8, -2.4 - (i % 2) * .5, math.radians(180 + (i - 2) * 12),
-               1.7 + (i % 3) * .05, tunic_crowd, 'crowd_%d' % i) for i in range(5)]
+nachbar = actor('nachbar.fbx', .45, -3.2, math.radians(180), 1.78, tunic_nb, 'nachbar', .4)
+# Five people at the door: staggered in depth and phase, turned a little towards the middle,
+# and close enough that their hands are on the planks rather than on thin air beside them.
+# Four, not five: the pushing animation leans a long way forward, and five across a two-metre
+# door put shoulders through each other.
+CROWD = [(-1.3, -1.25, -16), (-.45, -1.05, -6), (.45, -1.05, 6), (1.3, -1.25, 16)]
+crowd = [actor('crowd.fbx', cx, cy, math.radians(180 + a), 1.68 + (i % 3) * .05,
+               tunic_crowd, 'crowd_%d' % i, i * .43)
+         for i, (cx, cy, a) in enumerate(CROWD)]
 
 # ---------- the wolf ----------
 wolf = L.empty(2.6, -4.0, 0, 'wolf')
@@ -250,6 +258,7 @@ KEYS = [
 
 
 def update(t):
+    L.advance_time(t)                                     # drives every rig's NLA strip at once
     L.cam_at(cam, tgt, KEYS, t)
 
     # night for the wolf beat, day again once the hide is up
@@ -317,11 +326,11 @@ def update(t):
     pose(nachbar, t, 2.4, .5)
 
     push = L.win(t, tw['theater'], END, .5)
+    arrive = L.ease(t, tw['theater'], tw['druecken'] + .4)
     for i, p in enumerate(crowd):
         L.show(p, push)
-        p.location = (-1.6 + i * .8,
-                      L.lerp(-5.0 - i * .4, -1.5 - (i % 2) * .35,
-                             L.ease(t, tw['theater'], tw['druecken'] + .4)), 0)
+        cx, cy, _a = CROWD[i]
+        p.location = (cx, L.lerp(cy - 3.4 - i * .35, cy, arrive), 0)
         pose(p, t + i * .3, 3.0, .55)
 
     # the wolf trots up to the cave, then leaves when the hide goes up

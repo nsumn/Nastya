@@ -258,25 +258,44 @@ def character(filename, x, y, z=0, rot=0, height=None, name='char'):
     return root
 
 
-def character_at(root, t, action=None, loop=True):
-    """Poses an imported character at time t by moving its action's playhead. Does nothing
-    for a placeholder person(), which is posed with walk() instead."""
-    arm = next((o for o in [root] + root.children_recursive if o.type == 'ARMATURE'), None)
-    if arm is None:
+def armature_of(root):
+    return next((o for o in [root] + root.children_recursive if o.type == 'ARMATURE'), None)
+
+
+def has_rig(root):
+    return armature_of(root) is not None
+
+
+def character_loop(root, phase=0.0, length=70.0):
+    """Puts the character's action on an NLA strip that loops for the whole video, started
+    `phase` seconds late.
+
+    This is why it is not simply a playhead per character: posing a rig means setting the
+    scene frame, and the scene frame is global, so the last character posed decided the pose
+    of all of them -- five people pushing a door in exactly the same position. On NLA strips
+    one global frame gives every character its own phase."""
+    arm = armature_of(root)
+    if arm is None or arm.animation_data is None or arm.animation_data.action is None:
         return False
     ad = arm.animation_data
-    if ad is None or ad.action is None:
-        if action and action in bpy.data.actions:
-            arm.animation_data_create().action = bpy.data.actions[action]
-            ad = arm.animation_data
-        else:
-            return False
-    a = ad.action
-    f0, f1 = a.frame_range
-    span = max(f1 - f0, 1)
-    f = f0 + ((t * FPS) % span if loop else min(t * FPS, span))
-    bpy.context.scene.frame_set(int(f))
+    act = ad.action
+    f0, f1 = act.frame_range
+    span = max(f1 - f0, 1.0)
+    ad.action = None                                 # the strip drives the rig from here on
+    track = ad.nla_tracks.new()
+    track.name = 'loop'
+    strip = track.strips.new(act.name, int(round(phase * FPS)), act)
+    strip.action_frame_start, strip.action_frame_end = f0, f1
+    strip.repeat = max(1.0, (length * FPS) / span)   # cover the whole video
+    strip.extrapolation = 'HOLD'
+    strip.blend_type = 'REPLACE'
     return True
+
+
+def advance_time(t):
+    """Moves the scene frame, which is what every NLA strip is evaluated against. Called once
+    per frame, not once per character."""
+    bpy.context.scene.frame_set(int(round(t * FPS)))
 
 
 def walk(root, t, speed=2.2, swing=.5):
