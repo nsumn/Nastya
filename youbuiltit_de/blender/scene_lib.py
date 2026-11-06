@@ -167,6 +167,40 @@ def ball(x, y, z, r, mat, name='ball', parent=None):
     return o
 
 
+def grass_blade(mat, w=.035, h=.26, name='blade'):
+    """One blade: a narrow three-sided spike. Cheap enough to instance by the tens of thousands."""
+    bpy.ops.mesh.primitive_cone_add(vertices=3, radius1=w, radius2=0, depth=h, location=(0, 0, h / 2))
+    o = bpy.context.object
+    o.name = name
+    o.data.materials.append(mat)
+    o.hide_render = o.hide_viewport = True           # only the instances are rendered
+    return o
+
+
+def scatter(surface, blade, count=40000, seed=1, size=1.0, size_random=.6, name='grass'):
+    """Scatters `blade` over `surface` with a hair particle system.
+
+    A photo texture on a flat plane reads as a flat colour at any distance; the ground only
+    starts to look like grass once there is real geometry catching the light."""
+    ps = surface.modifiers.new(name, 'PARTICLE_SYSTEM').particle_system
+    s = ps.settings
+    s.type = 'HAIR'
+    s.count = count
+    s.hair_length = 1.0
+    s.use_advanced_hair = True
+    s.render_type = 'OBJECT'
+    s.instance_object = blade
+    s.particle_size = size
+    s.size_random = size_random
+    s.use_rotations = True
+    s.rotation_mode = 'NOR'
+    s.phase_factor_random = 2.0
+    s.rotation_factor_random = .12                   # a little lean, not a lawn of pins
+    s.child_type = 'NONE'
+    ps.seed = seed
+    return ps
+
+
 def empty(x=0, y=0, z=0, name='grp'):
     bpy.ops.object.empty_add(location=(x, y, z))
     o = bpy.context.object

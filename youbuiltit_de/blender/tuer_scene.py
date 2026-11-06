@@ -73,6 +73,22 @@ smoke_mat = L.volume('smoke', (.6, .6, .62, 1), .45)
 OX, OZ = 1.0, 2.2                                  # half width, height of the opening
 L.box(-40, 40, -24, 2, -3, 0, grass, 'ground_front', bevel=0)
 
+# Real blades on the ground the camera actually sees. The photo texture alone averaged out to
+# a flat green at any distance; geometry is what makes it read as grass.
+# GRASS=0 renders without the scatter: it costs about 2 s a frame, which is an extra hour
+# over a full video, and for checking camera and timing it is not needed.
+GRASS = os.environ.get('GRASS', '1') != '0'
+blade_mat = L.flat('blade', (.14, .33, .07, 1), .85)
+blade = L.grass_blade(blade_mat, w=.022, h=.17)
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -8.0, .01))
+lawn = bpy.context.object
+lawn.name = 'lawn'
+lawn.scale = (38, 26, 1)
+bpy.ops.object.transform_apply(scale=True)
+lawn.data.materials.append(grass)
+if GRASS:
+    L.scatter(lawn, blade, count=200000, seed=4, size=1.0, size_random=.5)
+
 # A grass mound over the cave, with the doorway cut out of it. Two earlier attempts are worth
 # remembering: plain boxes read as a brick wall, and jittered slabs read as scattered blocks.
 # A displaced sphere with a boolean hole is what finally reads as a hill with a cave in it.
@@ -88,6 +104,20 @@ noise.noise_scale = 5.0
 dsp = hill.modifiers.new('disp', 'DISPLACE')
 dsp.texture, dsp.strength, dsp.mid_level = noise, 1.7, .5
 
+# The hill gets blades too, otherwise the lawn ends in a visible line where the slope starts.
+# use_modifier_stack makes the particles follow the displaced, boolean-cut surface -- which
+# also means the tunnel walls are emitting surface, and grass grew inside the cave. This
+# vertex group zeroes the density around the mouth; the boolean's new faces inherit it.
+vg = hill.vertex_groups.new(name='grass_mask')
+for v in hill.data.vertices:
+    co = v.co
+    near_mouth = abs(co.x) < 3.0 and co.y < 5.0 and co.z < 4.0
+    vg.add([v.index], 0.0 if near_mouth else 1.0, 'REPLACE')
+if GRASS:
+    hill_ps = L.scatter(hill, blade, count=120000, seed=9, size=1.0, size_random=.5, name='grass_hill')
+    hill_ps.settings.use_modifier_stack = True
+    hill_ps.vertex_group_density = 'grass_mask'
+
 cutter = L.box(-OX, OX, -1.5, 9.0, 0, OZ, dark, 'cutter', bevel=0)
 cutter.hide_render = cutter.hide_viewport = True
 bl = hill.modifiers.new('cut', 'BOOLEAN')
@@ -99,10 +129,39 @@ for solver in ('FLOAT', 'FAST', 'EXACT'):          # 4.x calls it FAST, 5.x FLOA
     except TypeError:
         pass
 
-# a rock collar around the mouth, so the cut edge is stone and not grass
-L.box(-OX - .95, -OX + .06, -.3, .4, -.2, OZ + .95, rock, 'collar_l', bevel=.14)
-L.box(OX - .06, OX + .95, -.3, .4, -.2, OZ + .95, rock, 'collar_r', bevel=.14)
-L.box(-OX - .95, OX + .95, -.3, .4, OZ - .06, OZ + .95, rock, 'collar_top', bevel=.14)
+# A rock surround, so the cut edge is stone and not grass. Three neat boxes read as a picture
+# frame stuck on the hill, so it is built from blocks of different depth, size and tilt, with
+# the arch following the opening and a couple of boulders breaking the top corners.
+random.seed(23)
+
+
+def rock_block(cx, cz, w, h, out, tilt):
+    b = L.box(cx - w, cx + w, -out, .45, cz - h, cz + h, rock, 'rock_%.2f_%.2f' % (cx, cz), bevel=.09)
+    b.rotation_euler = (random.uniform(-.06, .06), tilt, random.uniform(-.05, .05))
+    return b
+
+
+# The blocks overlap: stepping by a full block height left green gaps between them and the
+# surround looked like loaves of bread stacked beside the hole.
+z = -.2
+while z < OZ + .5:                                  # jambs: a stack of blocks up each side
+    h = random.uniform(.2, .34)
+    for sx in (-1, 1):
+        w = random.uniform(.3, .46)
+        rock_block(sx * (OX + w - .13), z + h, w, h, random.uniform(.1, .26),
+                   random.uniform(-.06, .06))
+    z += h
+x = -OX - .42                                       # lintel: blocks across the top
+while x < OX + .42:
+    w = random.uniform(.24, .4)
+    hh = random.uniform(.2, .32)
+    rock_block(x + w, OZ + .24 + random.uniform(-.06, .1), w, hh, random.uniform(.1, .28),
+               random.uniform(-.05, .05))
+    x += 1.35 * w
+for bx, bz, br in ((-OX - .62, OZ + .5, .34), (OX + .66, OZ + .44, .3),
+                   (-OX - .72, .3, .3), (OX + .76, .22, .27)):
+    b = L.ball(bx, .12, bz, br, rock, 'rock_corner')
+    b.scale = (1.0, .7, .8)
 random.seed(5)
 for i in range(9):                                 # loose rocks at the foot of the mound
     bx = math.copysign(random.uniform(1.5, 7.0), random.choice((-1, 1)))

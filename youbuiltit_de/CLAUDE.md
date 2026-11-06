@@ -138,6 +138,10 @@ cd youbuiltit_de/blender
 - Windows: `setup.sh` рассчитан на bash и `python3`. Вручную это `npm install` и `npm install playwright` в `engine/`,
   `npx playwright install chromium`, `python -m pip install numpy pillow`. Git, Node LTS, Python 3 и ffmpeg ставятся через winget.
   Файл-сервер: `cd youbuiltit_de && python -m http.server 8766 &` — он должен работать во время рендера.
+- Трава: фото-текстура на плоскости на любом расстоянии усредняется в заливку. Настоящие травинки — `L.scatter()`
+  (волосяные частицы с объектом-инстансом). Стоит около 2 с на кадр, то есть +1 час на ролик, поэтому есть `GRASS=0`.
+- Частицы на холме с `use_modifier_stack` сеются и по стенкам тоннеля, который вырезан булевой операцией:
+  трава росла внутри пещеры. Лечится группой вершин с нулевым весом вокруг входа (`vertex_group_density`).
 - Mixamo отдаёт FBX в сантиметрах, и `obj.dimensions` у мешей, привязанных к арматуре, мерит в единицах файла.
   Человек ростом 1.75 м получался девятиметровым и уходил из кадра, оставляя в нём только свою тень.
   Рост подгоняем по мировому bounding box (`matrix_world @ bound_box`) после `view_layer.update()`.
