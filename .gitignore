@@ -11,3 +11,6 @@ env/
 *.db
 *.sqlite3
 *.log
+
+# local MCP config: blenderwright talks to the Blender on this machine
+.mcp.json
