@@ -35,7 +35,7 @@ Anastasia runs a TikTok channel of low-poly 3D "What if…" videos for a US audi
 ## 5. Delivery (always in the same message)
 - Send the mp4 (SendUserFile).
 - Write the TikTok description immediately, without being asked: English caption (hook + 1–2 real facts + CTA like "Comment your state 👇"), 6–8 hashtags (#whatif #science #fyp + topic/US tags), plus 2 short alternatives.
-- Mention any known small flaws and offer a quick fix. Posting tip: schedule for 7–9 pm US Eastern (2–4 am Moscow).
+- Mention any known small flaws and offer a quick fix. Posting tip: schedule for 7–9 pm US Eastern = 3–5 am Moscow from November to mid-March (2–4 am in US summer time); posting time decides which country TikTok tests the video on.
 
 ## 6. Pitfalls seen before
 - Audio: NO synthetic "voices" — the `voice()` helper (square-wave buzz through formants) and voiced `breath(..., voice, f0)` read as a constant BUZZING on a phone; she hates it (mom birthday video, Oct 2026). No laughs/giggles/singing/chatter via synthesis; carry a song on an instrument (e.g. `pluck`) instead. Also no constant room-tone noise beds under whole scenes.
