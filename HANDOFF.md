@@ -150,7 +150,7 @@ Lumean API (см. ветку festive-lovelace: `tiktok_de/lumean/lumean.py`, `ti
 | 03 | `03_reiter` | 4 «всадника» Готтмана | Gottman | готов |
 | 04 | `04_bindung` | 4 стиля привязанности | Bowlby/Ainsworth | готов, пользователю показалось «не цепляет» |
 | 05 | `05_kaffee` | Liebeslandkarte (кофе) | Gottman | **выложен** |
-| 06 | `06_vogel` | «Тест с птицей» (bids for connection) | Gottman: 86/87 % vs 33 % | готов |
+| 06 | `06_vogel` | «Тест с птицей» (bids for connection) | Gottman: 87 % vs 33 % | готов |
 | 07 | `07_stille` | Никто не пишет первым | Liu et al. 2022 (reaching out), Boothby 2018 (liking gap) | выложен, коммент «ich schwöre 🤣» |
 | 08 | `08_entzug` | Почему ты не можешь его забыть | Fisher et al. 2010 (fMRI), Marshall 2012 (слежка за профилем бывшего) | **тестовый**: на «du» |
 
