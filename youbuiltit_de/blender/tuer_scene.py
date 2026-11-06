@@ -58,7 +58,7 @@ hide = L.flat('hide', (.46, .33, .2, 1), .9)
 # Not pure black: an unlit tunnel reads as a hole punched in the render rather than a room.
 dark = L.flat('dark', (.085, .07, .055, 1), 1)
 stone_grey = L.flat('stone_grey', (.42, .4, .38, 1), .9)
-iron = L.flat('iron', (.32, .33, .35, 1), .45, 1)
+iron = L.flat('iron', (.055, .058, .065, 1), .38, 1)
 brass = L.flat('brass', (.72, .55, .22, 1), .3, 1)
 glasslens = L.flat('lens', (.8, .9, 1, 1), .05)
 fur = L.flat('fur', (.3, .29, .3, 1), .9)
@@ -81,10 +81,10 @@ GRASS = os.environ.get('GRASS', '1') != '0'
 blade_mat = L.grass_material('blade', [(.09, .24, .05, 1), (.14, .33, .07, 1),
                                       (.19, .39, .09, 1), (.26, .42, .12, 1)])
 blade = L.grass_tuft(blade_mat, blades=7, h=.24, w=.013, lean=.1, seed=2)
-bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -8.0, .01))
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -12.5, .01))
 lawn = bpy.context.object
 lawn.name = 'lawn'
-lawn.scale = (38, 26, 1)
+lawn.scale = (38, 24, 1)   # ends before the doorway, or it grows indoors
 bpy.ops.object.transform_apply(scale=True)
 lawn.data.materials.append(grass)
 if GRASS:
@@ -173,8 +173,15 @@ for i in range(9):                                 # loose rocks at the foot of 
     b = L.ball(bx, random.uniform(-1.2, .6), random.uniform(.0, .5), random.uniform(.3, .8),
                rock, 'boulder_%d' % i)
     b.scale = (1.1, .9, .7)
-L.box(-OX, OX, .3, 8.8, -.02, .06, dark, 'cave_floor', bevel=0)
-cave = L.box(-OX - .05, OX + .05, 1.2, 8.9, 0, OZ + .05, dark, 'cave_dark', bevel=0)
+# The cave is a real room, not a dark block. It used to be a solid box: fine while every
+# shot was from outside, but the camera now goes in for the bolt beats and rendered pure
+# black because it was standing inside geometry.
+ROOM_Y = 6.0
+L.box(-OX, OX, .3, ROOM_Y + .3, -.02, .06, dark, 'cave_floor', bevel=0)
+L.box(-OX - .35, -OX, .3, ROOM_Y + .35, -.05, OZ + .35, rock, 'cave_wall_l', bevel=.05)
+L.box(OX, OX + .35, .3, ROOM_Y + .35, -.05, OZ + .35, rock, 'cave_wall_r', bevel=.05)
+L.box(-OX - .35, OX + .35, .3, ROOM_Y + .35, OZ + .05, OZ + .35, rock, 'cave_ceil', bevel=.05)
+L.box(-OX - .35, OX + .35, ROOM_Y, ROOM_Y + .35, -.05, OZ + .35, rock, 'cave_back', bevel=.05)
 
 # ---------- the hide over the entrance ----------
 fell = L.box(-OX + .05, OX - .05, -.06, -.02, .05, OZ - .05, hide, 'fell', bevel=.02)
@@ -201,8 +208,12 @@ if L.has_rig(door_real) or 'head' not in door_real.keys():
     _zs = [(o.matrix_world @ _V(b)).z for o in [door_real] + door_real.children_recursive
            if o.type == 'MESH' for b in o.bound_box]
     _h = (max(_zs) - min(_zs)) if _zs else 1.0
+    _xs = [(o.matrix_world @ _V(b)).x for o in [door_real] + door_real.children_recursive
+           if o.type == 'MESH' for b in o.bound_box]
+    _w = (max(_xs) - min(_xs)) or 1.0
     _s = (OZ - .05) / _h
-    door_real.scale = (_s, _s, _s)
+    # Scaled uniformly the model left daylight down both sides, so the width is fitted too.
+    door_real.scale = ((2 * OX - .07) / _w, _s, _s)
     door_real['base_scale'] = _s
     door_real.parent = hinge
     door_real.matrix_parent_inverse = hinge.matrix_world.inverted()
@@ -221,23 +232,26 @@ L.box(-OX - .02, OX + .02, .0, .18, OZ, OZ + .14, wood_dark, 'frame_top', bevel=
 L.box(-OX + .12, OX - .12, .12, .17, .02, OZ, wood_dark, 'stop', bevel=.015, parent=frame)   # Anschlag
 
 # ---------- bolt, lock pins, key ----------
-riegel = L.empty(0, 0, 0, 'riegel_grp')
+# The real door model is thicker than the plank slab was, and it swallowed the hardware:
+# from inside the room the bolt and pins were behind the door instead of on it.
+HW_Y = .24                                       # how far the ironwork sits into the room
+riegel = L.empty(0, HW_Y, 0, 'riegel_grp')
 bolt = L.box(-.3, .3, .11, .145, 1.02, 1.09, iron, 'bolt', bevel=.012, parent=riegel)
 L.box(-.46, -.38, .10, .155, .97, 1.14, iron, 'bolt_keep_l', bevel=.012, parent=riegel)
 L.box(.38, .46, .10, .155, .97, 1.14, iron, 'bolt_keep_r', bevel=.012, parent=riegel)
-pins = L.empty(0, 0, 0, 'pins_grp')
+pins = L.empty(0, HW_Y, 0, 'pins_grp')
 for i in range(3):
     p = L.cyl(-.16 + i * .16, .13, 1.26, .022, .22, iron, 'pin_%d' % i, verts=10, parent=pins)
     p.location = (-.16 + i * .16, .13, 1.26)
 pin_house = L.box(-.26, .26, .08, .18, 1.14, 1.4, wood_dark, 'pin_house', bevel=.02, parent=pins)
-key = L.empty(0, 0, 0, 'key_grp')
+key = L.empty(0, HW_Y, 0, 'key_grp')
 L.box(-.2, .2, .11, .15, .98, 1.04, wood_dark, 'key_shaft', bevel=.015, parent=key)
 for i in range(3):
     L.box(-.18 + i * .16, -.14 + i * .16, .115, .145, 1.04, 1.14, iron,
           'key_tooth_%d' % i, bevel=.01, parent=key)
 
 # ---------- peephole ----------
-spion = L.empty(0, 0, 0, 'spion_grp')
+spion = L.empty(0, HW_Y + .1, 0, 'spion_grp')
 L.cyl(.25, -.04, 1.55, .035, .12, dark, 'spion_hole', rot=(math.radians(90), 0, 0), verts=16, parent=spion)
 L.cyl(.25, -.09, 1.55, .045, .02, glasslens, 'spion_lens', rot=(math.radians(90), 0, 0), verts=16, parent=spion)
 L.cyl(.25, -.1, 1.55, .055, .01, brass, 'spion_ring', rot=(math.radians(90), 0, 0), verts=16, parent=spion)
@@ -264,6 +278,9 @@ def pose(root, t, speed, swing):
 
 
 you = actor('you.fbx', -.35, -1.5, math.radians(180), 1.75, tunic_you, 'you')
+# The FBX import carries its own X/Y rotation (Y-up to Z-up). Overwriting the whole
+# euler when turning him laid him flat on his back, feet in the air.
+YOU_RX, YOU_RY = you.rotation_euler.x, you.rotation_euler.y
 nachbar = actor('nachbar.fbx', .45, -3.2, math.radians(180), 1.78, tunic_nb, 'nachbar', .4)
 # Five people at the door: staggered in depth and phase, turned a little towards the middle,
 # and close enough that their hands are on the planks rather than on thin air beside them.
@@ -305,14 +322,19 @@ for i in range(14):                                # a puff hugging the rock, no
     s.location = (px, py, pz)
 
 # A dim bounce inside the cave: a pure black hole reads as a hole in the render, not as a room.
-cave_light = L.empty(0, 2.2, 1.2, 'cave_light_grp')
-bpy.ops.object.light_add(type='POINT', location=(0, 2.2, 1.3))
+# Behind the camera for the interior beats, not between it and the door, or it blows out
+# the planks and lights nothing we are looking at.
+cave_light = L.empty(0, 4.6, 1.9, 'cave_light_grp')
+bpy.ops.object.light_add(type='POINT', location=(0, 4.6, 1.9))
 cl_obj = bpy.context.object
 cl_obj.name = 'cave_light'
-cl_obj.data.energy = 40
+cl_obj.data.energy = 90
 cl_obj.data.color = (1, .72, .42)
 cl_obj.data.shadow_soft_size = .6
 cl_obj.parent = cave_light
+# Parenting adds the parent's offset to the child's own location, so the lamp ended up
+# at (0, 9.2, 3.8), buried in the hill, and every interior shot rendered black.
+cl_obj.matrix_parent_inverse = cave_light.matrix_world.inverted()
 
 # ---------- world, camera, render ----------
 # Photographic setup, not the cartoon one: HDRI fills the shadows, a 35 mm lens sits
@@ -328,14 +350,22 @@ KEYS = [
     (tw['wolf'],        (3.4, -13.0, 3.6), (.6, .2, 1.8)),    # night, the wolf trots up
     (tw['fell'],        (0.0, -11.0, 4.0), (0, .2, 2.0)),     # the hide goes up
     (tw['bretter'],     (-2.2, -9.5, 3.4), (0, .2, 1.8)),     # planks nailed together
-    (tw['zapfen'],      (-2.6, -4.6, 1.3), (-.8, .2, .5)),    # down to the pivot stone
+    # The pivot beat used to put the camera at (-2.6, -4.6) looking across the opening, which
+    # ran it straight through the left jamb: three seconds of stone mush. It now sits wide of
+    # the wall and looks along it, so the pivot stone is seen past the jamb, not through it.
+    (tw['zapfen'],      (-5.2, -6.8, 1.15), (-1.0, .15, .5)),
     (tw['rahmen'],      (0.4, -8.0, 3.2), (0, .2, 1.8)),      # back to the whole doorway
     (tw['nachbar'],     (2.6, -8.6, 3.0), (.3, -.8, 1.8)),    # the neighbour walks in
-    (tw['riegel'],      (1.3, -3.0, 1.7), (.1, .1, 1.1)),     # close on the bolt
-    (tw['stifte'],      (0.6, -2.0, 1.5), (0, .1, 1.22)),     # closer still: the pins
-    (tw['klopft'],      (-1.4, -6.0, 2.4), (0, 0, 1.7)),      # someone knocks
-    (tw['loch'],        (1.0, -1.9, 1.68), (.25, 0, 1.56)),   # the peephole
-    (tw['theater'],     (1.0, -14.0, 5.0), (0, .3, 2.2)),     # pull back, the crowd presses
+    # Bolt, pins, key and peephole are all on the INSIDE of the door, so these four beats are
+    # shot from inside the cave. Moving there would fly the camera through the door, so each
+    # change of side is a cut: two keys 0.05 s apart.
+    (tw['riegel'] - .35, (1.9, -6.0, 2.2), (.1, -.2, 1.5)),   # last look from outside
+    (tw['riegel'] - .30, (.35, 3.15, 1.52), (0, .35, 1.15)),  # cut: now inside, door shut
+    (tw['stifte'],      (.12, 2.15, 1.42), (0, .3, 1.22)),    # in on the falling pins
+    (tw['klopft'],      (.75, 3.6, 1.62), (0, .35, 1.35)),    # someone knocks, we are inside
+    (tw['loch'],        (.52, 1.55, 1.60), (.25, .15, 1.55)), # the peephole, from the inside
+    (tw['theater'] - .35, (.52, 1.5, 1.58), (.25, .15, 1.55)),
+    (tw['theater'] - .30, (1.0, -14.0, 5.0), (0, .3, 2.2)),   # cut: back outside, crowd arrives
     (tw['umdrehen'],    (-4.0, -12.0, 4.0), (0, .2, 2.0)),    # the door turns the other way
     (END,               (1.2, -16.0, 5.2), (0, .4, 2.3)),
 ]
@@ -353,6 +383,13 @@ def update(t):
     sun.data.color = L.vlerp((1, .96, .9), (.5, .64, 1), night)[:3]
     world.node_tree.nodes['Background'].inputs['Strength'].default_value = L.lerp(.85, .02, night)
     sc.view_settings.exposure = L.lerp(-0.1, -2.2, night)
+
+    # Interior beats: one small lamp in a closed stone room is several stops darker than the
+    # field outside, and the first attempt came back at a mean of 7/255. The lamp comes up
+    # and the exposure with it, the way a camera would be re-set for an inside shot.
+    inside_cam = L.win(t, tw['riegel'] - .3, tw['theater'] - .3, .25)
+    cl_obj.data.energy = L.lerp(60, 900, inside_cam)
+    sc.view_settings.exposure += 3.1 * inside_cam
 
     # the hide: hangs from the lintel, flaps in the wind, then is blown away
     k_fell = L.win(t, tw['fell'], tw['fell_weg'] + .5, .25)
@@ -395,16 +432,22 @@ def update(t):
     L.show(smoke, L.win(t, tw['theater'], END, .6))
 
     # the bolt slides shut, the key lifts the pins
-    riegel.location = (L.lerp(-.42, 0, L.ease(t, tw['riegel'], tw['riegel'] + .7)), 0, 0)
+    riegel.location = (L.lerp(-.42, 0, L.ease(t, tw['riegel'], tw['riegel'] + .7)), HW_Y, 0)
     lift = math.sin(max(0.0, t - tw['schluessel']) * 3) * .5 + .5
     lift *= L.win(t, tw['schluessel'], tw['klopft'], .3)
     for i in range(3):
         bpy.data.objects['pin_%d' % i].location.z = 1.26 + lift * .1
-    key.location = (L.lerp(-.9, 0, L.ease(t, tw['schluessel'], tw['schluessel'] + .6)), 0, 0)
+    key.location = (L.lerp(-.9, 0, L.ease(t, tw['schluessel'], tw['schluessel'] + .6)), HW_Y, 0)
 
     # people
     L.show(you, L.win(t, 0, tw['theater'], .4))
-    you.location = (-.35, L.lerp(-1.5, -2.4, L.ease(t, tw['bretter'], tw['zapfen'])), 0)
+    # He steps inside for the bolt beats, so the interior shots have someone in them, and
+    # back out before the crowd arrives.
+    inside = L.win(t, tw['riegel'] - .3, tw['theater'] - .3, .35)
+    out_x = -.35
+    out_y = L.lerp(-1.5, -2.4, L.ease(t, tw['bretter'], tw['zapfen']))
+    you.location = (L.lerp(out_x, .85, inside), L.lerp(out_y, 1.75, inside), 0)
+    you.rotation_euler = (YOU_RX, YOU_RY, math.radians(L.lerp(180, 8, inside)))
     pose(you, t, 1.2, .18)
 
     nb_in = L.win(t, tw['nachbar'] - .3, tw['raus'], .4)
