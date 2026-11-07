@@ -352,7 +352,7 @@ function button(k, t, y) { if (k <= .01) return; const w = 600, h = 150, x = W /
   og.save(); og.translate(W / 2, y + h / 2); og.scale(k * p, k * p); og.translate(-W / 2, -(y + h / 2)); og.shadowColor = 'rgba(0,0,0,.45)'; og.shadowBlur = 26; rrect(x, y, w, h, 75); og.fillStyle = '#ff2d55'; og.fill(); og.shadowColor = 'transparent';
   txt('+ Folgen', W / 2, y + h / 2 + 2, 78, '#fff', null, 0); og.restore(); }
 function wordAt(t) { let w = null; for (const x of WORDS) { if (x[1] <= t + .02) w = x; else break; } return w && t < w[2] + .5 ? clean(w[0]) : ''; }
-function drawCaption(t, cy = 990) {   // channel style: one word at a time, centre of the frame, cyan for the key words
+function drawCaption(t, cy = 1450) {   // channel style: one word at a time, centre of the frame, cyan for the key words
   const w = wordAt(t); if (!w) return; let fs = 96; og.font = `700 ${fs}px Fredoka`; while (og.measureText(w).width > W - 120) { fs -= 4; og.font = `700 ${fs}px Fredoka`; }
   const key = /^(Momo|Momos|Insel|Sturm|Brücke|Leuchtturm|Lagerfeuer|Hütte|Großes|allein|Kätzchen)$/.test(w);
   og.textAlign = 'center'; og.textBaseline = 'middle'; og.lineJoin = 'round'; og.lineWidth = 16; og.strokeStyle = '#000'; og.strokeText(w, W / 2, cy); og.fillStyle = key ? '#5ff0ff' : '#ffffff'; og.fillText(w, W / 2, cy); }
@@ -381,5 +381,5 @@ function drawUI(t) {
   const flash = Math.max(0, 1 - Math.abs(t - tw.sturm - .05) / .12) + Math.max(0, 1 - Math.abs(t - tw.getrieben - .6) / .12); if (flash > 0) { og.fillStyle = `rgba(255,255,255,${.55 * cl(flash)})`; og.fillRect(0, 0, W, H); }
 }
 window.END = END; window.TW = tw;
-window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); if (ramp(t, tw.folg - .2, tw.folg + .3) < .3) drawCaption(t, win(t, tw.cta - .1, tw.zusammen + .1, .3) > .3 ? 1400 : 990); return out.toDataURL('image/jpeg', q); };
+window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); if (ramp(t, tw.folg - .2, tw.folg + .3) < .3) drawCaption(t, 1450); return out.toDataURL('image/jpeg', q); };
 window.__done = true;
