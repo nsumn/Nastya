@@ -407,3 +407,12 @@ function frame(t) {
 window.END = END; window.TW = tw;
 window.renderAt = (t, q = .92) => { frame(t); return out.toDataURL('image/jpeg', q); };
 window.__done = true;
+// avatar for the TikTok profile (square, round-safe): window.renderAvatar(variant)
+window.renderAvatar = (v = 0) => {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  const bg = g.createRadialGradient(540, 540, 80, 540, 540, 760); bg.addColorStop(0, v === 1 ? '#ffe3b0' : '#ffd6e2'); bg.addColorStop(1, v === 1 ? '#ff9f5a' : '#ff8fb1'); g.fillStyle = bg; g.fillRect(0, 0, 1080, 1080);
+  g.fillStyle = 'rgba(255,255,255,.28)'; for (let i = 0; i < 14; i++) { g.save(); g.translate(540, 600); g.rotate(i / 14 * Math.PI * 2); g.beginPath(); g.moveTo(0, 0); g.lineTo(-70, -900); g.lineTo(70, -900); g.fill(); g.restore(); }
+  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2 + .3; star(540 + Math.cos(a) * 430, 560 + Math.sin(a) * 400, 20); }
+  cat(540, 1020, 2.35, { mood: 'happy', open: true, crown: 1, blink: 0 }, 1.0);
+  return out.toDataURL('image/png');
+};
