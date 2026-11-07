@@ -50,7 +50,9 @@ function drawFace(g, w, h, e, o, blink) {
         g.save(); g.translate(cx, cy); g.rotate(-sx * 0.12); g.beginPath(); g.ellipse(0, 0, ax, ay, 0, 0, 7); g.restore(); g.fill();
         g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - ax * 0.3, py - ay * 0.35, ax * 0.24, 0, 7); g.fill();
         g.strokeStyle = ink; g.lineWidth = U(0.016); g.beginPath(); g.moveTo(cx - U(0.072), cy - ay * 0.2 + sx * U(0.006)); g.quadraticCurveTo(cx, cy - ay * 1.55, cx + U(0.072), cy - ay * 0.2 - sx * U(0.006)); g.stroke(); }
-      else { const px = cx + look[0] * rx, py = cy + look[1] * ry; g.beginPath(); g.ellipse(px, py, rx, ry, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - rx * 0.35, py - ry * 0.4, rx * 0.36, 0, 7); g.fill(); }
+      else { const px = cx + look[0] * rx, py = cy + look[1] * ry; g.beginPath(); g.ellipse(px, py, rx, ry, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - rx * 0.35, py - ry * 0.4, rx * 0.36, 0, 7); g.fill(); 
+        if (o.lash) { const sx = x < 0.5 ? -1 : 1; g.strokeStyle = ink; g.lineCap = 'round'; g.lineWidth = U(0.014); g.beginPath(); g.ellipse(cx, cy, rx * 1.18, ry * 1.12, 0, Math.PI * 1.08, Math.PI * 1.92); g.stroke();   // optional (lash:true): upper lid line + three lashes at the outer corner
+          g.lineWidth = U(0.011); for (let k = 0; k < 3; k++) { const a0 = (sx > 0 ? 1.62 + k * 0.13 : 1.38 - k * 0.13) * Math.PI, bx0 = cx + Math.cos(a0) * rx * 1.18, by0 = cy + Math.sin(a0) * ry * 1.12; g.beginPath(); g.moveTo(bx0, by0); g.lineTo(bx0 + sx * U(0.022) * (0.6 + 0.3 * k), by0 - U(0.026)); g.stroke(); } } }
     } else if (eye === 'happy') { g.beginPath(); g.arc(cx, cy + U(0.03), U(0.055), Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
     else if (eye === 'closed') { g.beginPath(); g.arc(cx, cy - U(0.02), U(0.055), Math.PI * 0.15, Math.PI * 0.85); g.stroke(); }
     else if (eye === 'squint') { g.beginPath(); g.moveTo(cx - U(0.055), cy); g.lineTo(cx + U(0.055), cy - U(0.008)); g.stroke(); }

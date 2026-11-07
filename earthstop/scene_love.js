@@ -125,7 +125,9 @@ function drawFace(g, w, h, e, o, blink) {
         g.save(); g.translate(cx, cy); g.rotate(-sx * 0.12); g.beginPath(); g.ellipse(0, 0, ax, ay, 0, 0, 7); g.restore(); g.fill();
         g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - ax * 0.3, py - ay * 0.35, ax * 0.24, 0, 7); g.fill();
         g.strokeStyle = ink; g.lineWidth = U(0.016); g.beginPath(); g.moveTo(cx - U(0.072), cy - ay * 0.2 + sx * U(0.006)); g.quadraticCurveTo(cx, cy - ay * 1.55, cx + U(0.072), cy - ay * 0.2 - sx * U(0.006)); g.stroke(); }
-      else { const px = cx + look[0] * rx, py = cy + look[1] * ry; g.beginPath(); g.ellipse(px, py, rx, ry, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - rx * 0.35, py - ry * 0.4, rx * 0.36, 0, 7); g.fill(); }
+      else { const px = cx + look[0] * rx, py = cy + look[1] * ry; g.beginPath(); g.ellipse(px, py, rx, ry, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px - rx * 0.35, py - ry * 0.4, rx * 0.36, 0, 7); g.fill(); 
+        if (o.lash) { const sx = x < 0.5 ? -1 : 1; g.strokeStyle = ink; g.lineCap = 'round'; g.lineWidth = U(0.014); g.beginPath(); g.ellipse(cx, cy, rx * 1.18, ry * 1.12, 0, Math.PI * 1.08, Math.PI * 1.92); g.stroke();   // optional (lash:true): upper lid line + three lashes at the outer corner
+          g.lineWidth = U(0.011); for (let k = 0; k < 3; k++) { const a0 = (sx > 0 ? 1.62 + k * 0.13 : 1.38 - k * 0.13) * Math.PI, bx0 = cx + Math.cos(a0) * rx * 1.18, by0 = cy + Math.sin(a0) * ry * 1.12; g.beginPath(); g.moveTo(bx0, by0); g.lineTo(bx0 + sx * U(0.022) * (0.6 + 0.3 * k), by0 - U(0.026)); g.stroke(); } } }
     } else if (eye === 'happy') { g.beginPath(); g.arc(cx, cy + U(0.03), U(0.055), Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
     else if (eye === 'closed') { g.beginPath(); g.arc(cx, cy - U(0.02), U(0.055), Math.PI * 0.15, Math.PI * 0.85); g.stroke(); }
     else if (eye === 'squint') { g.beginPath(); g.moveTo(cx - U(0.055), cy); g.lineTo(cx + U(0.055), cy - U(0.008)); g.stroke(); }
@@ -597,7 +599,7 @@ const PL = {};
 function petalsAt(t, on) { PL.petals.visible = on; if (!on) return; for (let i = 0; i < 300; i++) { const y = wrapR(4 - (t * 0.6 + hash(i) * 4), 0, 4); _o.position.set((hash(i * 3) - 0.5) * 6 + 0.3 * Math.sin(t + i), y, -6 + (hash(i * 5) - 0.5) * 5); _o.rotation.set(t * 2 + i, t + i * 2, 0); _o.scale.setScalar(1); _o.updateMatrix(); PL.petals.setMatrixAt(i, _o.matrix); } PL.petals.instanceMatrix.needsUpdate = true; }
 // ======================= the cast =======================
 const HERO_O = hero.o;
-const HER_O = { head: 'human', body: 'human', headMesh: 'head_f', eyeS: 1.12, browCol: '#a07a4a', skin: '#f4d2b8', hair: '#e8c878', top: '#b8463a', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'long', headS: 0.86, h: 0.95, lip: '#c4505a', blush: 0.55 };
+const HER_O = { head: 'human', body: 'human', headMesh: 'head_f', eyeS: 1.12, lash: true, browCol: '#a07a4a', skin: '#f4d2b8', hair: '#e8c878', top: '#b8463a', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'long', headS: 0.86, h: 0.95, lip: '#c4505a', blush: 0.55 };
 const her = makeBlock(HER_O), herWed = makeBlock({ ...HER_O, top: '#fbfaf6', jeans: false, bottom: '#fbfaf6', shoe: '#fbfaf6' }), heroOld = makeBlock({ ...HERO_O, hair: '#d8d8d4', glasses: '#3a3a3a' }), herOld = makeBlock({ ...HER_O, hair: '#e4e2de', browCol: '#b8b4ae', top: '#8a6a9a', glasses: '#5a4a3a' });
 const kidA = makeBlock({ ...HERO_O, hair: '#5a3018', top: '#3a8ad8', h: 0.62, hairStyle: 'mop' }), kidB = makeBlock({ ...HER_O, headMesh: undefined, top: '#f2c42a', h: 0.56, hairStyle: 'bangs' });
 const gkA = makeBlock({ ...HERO_O, hair: '#c8a060', top: '#e8432a', h: 0.52, hairStyle: 'curly' }), gkB = makeBlock({ ...HER_O, headMesh: undefined, hair: '#3a2a1e', top: '#5aa070', h: 0.5, hairStyle: 'long' });
@@ -817,3 +819,8 @@ window.DBG = { THREE, hero, her, SETS, SHOTS, H_ };
 window.sceneReady = (async () => { await document.fonts.ready;
   for (const P of [...CAST, xHim, xHer]) for (const n of Object.keys(FACE)) for (const b of [false, true]) renderer.initTexture(faceTex(P.o, n, b));
   for (let i = 0; i < SHOTS.length; i++) shoot(i, SHOTS[i][0] + 0.3, RTA); window.renderAt(0); return true; })();
+// face lab for the heroine: index_love.html?debug=face&i=N renders variant N (portrait close-up)
+if (DEBUG === 'face') { const V = [{ headMesh: 'head_f' }, { headMesh: 'head_kr', hairStyle: 'bangs' }, { headMesh: undefined, eyeS: 1.15 }, { headMesh: 'head_chubby', eyeS: 1.1 }, { headMesh: 'head_kr', eyeS: 1.25 }];
+  const i = +(new URLSearchParams(location.search).get('i') || 0); const P = makeBlock({ ...HER_O, ...V[i] }); STR.sc.add(P.outer);
+  window.renderAt = () => { hideCast(); setState(20, 'str', {}); poseReset(P, 1); place(P, HX + 0.1, 4, Math.PI / 2 - 0.35, SW); P.face('happy', 1); const h = H_(P); const c = STR.cam; c.position.set(h.x + 2.0, h.y + 0.02, h.z + 0.25); c.lookAt(h.x, h.y - 0.12, h.z); c.fov = 26; c.updateProjectionMatrix();
+    document.querySelectorAll('.txt').forEach(e => e.style.opacity = 0); shootTo(RTA, STR.sc, c); compMat.uniforms.tA.value = RTA.texture; compMat.uniforms.uLook.value = 0.12; composite(0, 1, 1); return true; }; }
