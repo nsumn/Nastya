@@ -118,6 +118,8 @@ def s_poof():     d = .5; return norm(lp(noise(d), 900) * env(int(d * SR), .01, 
 def bed_rustle(d):
     n = noise(d); t = t_(d); x = bp(n, 1500, 6000) * (.3 + .7 * np.abs(np.sin(2 * np.pi * 3.3 * t)) ** 3)
     return norm(x, .45)
+def s_hiss():
+    d = .6; return norm(hp(noise(d), 2500) * env(int(d * SR), .03, r=.2), .45)
 def bed_wind(d):
     n = noise(d); x = lp(n, 500) * .6 + bp(n, 700, 1400) * .25
     t = t_(d); m = .55 + .45 * np.sin(2 * np.pi * .23 * t) * np.sin(2 * np.pi * .07 * t + 1)
