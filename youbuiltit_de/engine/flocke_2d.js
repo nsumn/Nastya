@@ -17,13 +17,13 @@ const win = (t, a, b, f = .3) => ramp(t, a, a + f) * (1 - ramp(t, b - f, b));
 let seed = 21; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; const rr = (a, b) => a + (b - a) * rnd();
 
 const tw = {
-  wartet: T('sitzt'), gartentor: T('Gartentor'), aber1: T('Aber'), niemand: T('niemand'),
+  wartet: T('gezogen'), gartentor: T('Riesig'), aber1: T('Aber'), niemand: T('niemand'),
   das1: T('Das'), keks1: T('Flocke'), buerger: T('Königin'), naja: T('na'), von2: T('Von'), leeren: T('leeren'), hundepark: T('Katzengarten'),
   komm: T('Komm'), hier1: T('Hier'), park: T('Garten', 2), teich: T('Teich'), zaun: T('Zaun'),
   aber2: T('Aber', 2), hund: T('Katze', 2), spielen: T('Spielen'), toben: T('Kuscheln'), schnueff: T('Anfauchen'),
   und1: T('Und'), spiel: T('Spiel'),
   folgst: T('Folgst'), likest: T('Likest'), komment: T('Kommentierst'), teilst: T('Teilst'), marke: T('Glöckchen'),
-  und2: T('Und', 2), rutsche: T('Burg'), knochen: T('Kartons'), plansch: T('Achterbahn'), tennis: T('Wollknäueln'),
+  und2: T('Und', 3), miauL: T('Und', 2), schon: T('schon'), miau: T('Miau'), erstes: T('Erstes'), rutsche: T('Burg'), knochen: T('Kartons'), plansch: T('Achterbahn'), tennis: T('Wollknäueln'),
   brunnen: T('Brunnen'), wuerst: T('Fische', 2), kuschel: T('Sonnenliege'), kissen: T('kalt'), oder: T('Oder'),
   jeder: T('Jeder'), huette: T('Körbchen'), namen: T('Namen'),
   stell: T('Stell'), hundert: T('Hundert'), wedeln: T('schnurren'),
@@ -42,7 +42,7 @@ e(tw.komm - .05, 'whoosh', .9); e(tw.park, 'pop', .7); e(tw.teich, 'splash', .7)
 e(tw.hund, 'buzz', .5); e(tw.spielen, 'pop', .5); e(tw.toben, 'pop', .5); e(tw.schnueff, 'hiss', .8);
 e(tw.und1, 'whoosh', .6);
 for (const k of ['folgst', 'likest', 'komment', 'teilst']) e(tw[k] - .05, 'pop', .9);
-e(tw.folgst + .5, 'meow_happy', .5); e(tw.likest + .4, 'heart', .6); e(tw.marke, 'sparkle', .9);
+e(tw.folgst + .5, 'meow_happy', .5); e(tw.likest + .4, 'heart', .6); e(tw.marke, 'sparkle', .9); e(tw.miauL, 'whoosh', .6); e(tw.miau - .05, 'pop', .9); e(tw.miau + .1, 'meow_happy', .9); e(tw.erstes, 'ding', .9);
 e(tw.und2, 'whoosh', .6); e(tw.rutsche, 'swoosh_up', .7); e(tw.knochen, 'boing', .7);
 e(tw.plansch, 'swoosh_up', .8); for (let i = 0; i < 8; i++) e(tw.tennis + i * .08, 'tick', .45);
 e(tw.brunnen, 'pop', .8); for (let i = 0; i < 4; i++) e(tw.wuerst + i * .2, 'splash', .35); e(tw.kuschel, 'pop', .8); e(tw.kissen, 'sparkle', .6); e(tw.oder, 'sparkle', .8);
@@ -301,20 +301,21 @@ function frame(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); gRef = g;
   // S1: waiting at the garden gate, days pass
   if (t < tw.das1) {
-    const day = (t * .9) % 1, nightK = Math.max(0, Math.sin(day * Math.PI * 2 - .5));
+    const day = .12, nightK = Math.max(0, Math.sin(day * Math.PI * 2 - .5));
     const gr = g.createLinearGradient(0, 0, 0, 1300); gr.addColorStop(0, `rgb(${lerp(201, 45, nightK)},${lerp(184, 42, nightK)},${lerp(255, 110, nightK)})`); gr.addColorStop(1, `rgb(${lerp(255, 124, nightK)},${lerp(217, 106, nightK)},${lerp(199, 184, nightK)})`);
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
     const a = day * Math.PI * 2; soft(() => { ell(540 + Math.cos(a - Math.PI / 2) * 520, 900 + Math.sin(a - Math.PI / 2) * 520, 70, 70); g.fillStyle = nightK > .5 ? '#fff6cf' : PAL.sun; g.fill(); }, 30, 0, .2);
     g.fillStyle = PAL.hill; g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W; x += 40) g.lineTo(x, 1150 - 60 * Math.sin(x * .005)); g.lineTo(W, H); g.fill();
     g.fillStyle = PAL.grass; g.fillRect(0, 1250, W, H); g.fillStyle = PAL.path; g.beginPath(); g.moveTo(480, 1250); g.lineTo(600, 1250); g.lineTo(900, H); g.lineTo(180, H); g.fill();
     const z = 1 + ease(t, 0, tw.das1) * .1; g.save(); g.translate(W / 2, 1500); g.scale(z, z); g.translate(-W / 2, -1500);
+    for (const [bx, by, w, h, r] of [[230, 1640, 200, 170, -.05], [260, 1480, 150, 130, .08], [850, 1650, 190, 160, .04]]) { g.save(); g.translate(bx, by); g.rotate(r); soft(() => { rrect(-w / 2, -h, w, h, 12); g.fillStyle = shade(0, -h / 2, w * .6, '#f7dcb0', '#d9a86a'); g.fill(); }, 14, 8, .22); g.fillStyle = 'rgba(150,100,50,.4)'; g.fillRect(-w / 2 + 8, -h * .55, w - 16, 10); text('UMZUG', 0, -h * .3, 30, 'rgba(110,70,40,.8)'); g.restore(); }
     dog(540, 1560, 1.25, { mood: 'sad', tear: ramp(t, tw.niemand - .4, tw.niemand), look: Math.sin(t * .8) * .6, wag: 1.5 }, t);
     // gate in front
     soft(() => { g.fillStyle = '#ffe9cf'; for (let i = 0; i < 9; i++) { const x = 70 + i * 110; g.beginPath(); g.moveTo(x - 32, 1800); g.lineTo(x - 32, 1560); g.lineTo(x, 1520); g.lineTo(x + 32, 1560); g.lineTo(x + 32, 1800); g.fill(); } g.fillRect(0, 1600, W, 26); g.fillRect(0, 1710, W, 26); }, 14, 8, .2);
     g.restore();
     // a lonely leaf on "niemand kommt"
     const lf = ramp(t, tw.aber1, tw.das1); if (lf > 0) leaf(lerp(-40, 1120, lf), 1350 - Math.sin(lf * 9) * 40, lf * 12);
-    pill(W / 2, 1830, `Tag ${1 + Math.floor(t * .9)}`, 1, '#fff', INK, 44);
+    pill(W / 2, 1830, 'Neu hier', pop(t, .2, .35), '#fff', INK, 44);
     caption(t, 300); return;
   }
   // S2: mayor of nothing
@@ -382,14 +383,25 @@ function frame(t) {
   }
 
   // ---- overlays ----
-  const cta = win(t, tw.und1 - .1, tw.und2 + .1, .3);
+  const cta = win(t, tw.und1 - .1, tw.miauL + .1, .3);
   if (cta > .01) {
     g.fillStyle = `rgba(201,184,255,${.82 * cta})`; g.fillRect(0, 0, W, H);
     pill(W / 2, 440, 'So machst du mit', cta, '#fff', INK, 64);
     const rows = [['folgst', 'follow', 'FOLGEN', 'Du wirst ein Kätzchen', -.03], ['likest', 'like', 'LIKEN', 'Du stimmst ab', .025], ['komment', 'comment', 'KOMMENTIEREN', 'Deine Idee wird gebaut', -.02], ['teilst', 'share', 'TEILEN', 'Goldenes Glöckchen', .03]];
-    const nxt = ['likest', 'komment', 'teilst', 'und2'];
+    const nxt = ['likest', 'komment', 'teilst', 'miauL'];
     rows.forEach(([k, kind, ti, su, rot], i) => card(back(ramp(t, tw[k] - .1, tw[k] + .3)) * cta, 560 + i * 205, kind, ti, su, t > tw[k] && t < tw[nxt[i]], t, rot));
     dog(540, 1800 - Math.abs(Math.sin(t * 5)) * 18, .75, { mood: 'happy', tag: t > tw.marke - .1, wag: 14 }, t);
+  }
+  const mp = win(t, tw.miauL - .1, tw.und2 + .1, .3);
+  if (mp > .01) {
+    g.fillStyle = `rgba(255,217,230,${.88 * mp})`; g.fillRect(0, 0, W, H);
+    pill(W / 2, 470, 'Du folgst mir schon?', pop(t, tw.miauL, .3) * mp, '#fff', INK, 62);
+    const bk = pop(t, tw.miau - .1, .35) * mp; if (bk > .01) { g.save(); g.translate(W / 2, 800); g.scale(bk, bk); g.rotate(-.03);
+      soft(() => { rrect(-360, -110, 720, 220, 60); g.fillStyle = '#fff'; g.fill(); g.beginPath(); g.moveTo(-200, 100); g.lineTo(-260, 190); g.lineTo(-120, 100); g.fill(); }, 24, 12, .25);
+      ell(-250, 0, 54, 54); g.fillStyle = '#efe9ff'; g.fill(); text('@du', -250, 2, 34, PAL.lav); text('Miau', 70, 4, 110, INK); g.restore(); }
+    const ek = pop(t, tw.erstes - .1, .35) * mp; if (ek > .01) { g.save(); g.translate(W / 2, 1100); g.scale(ek, ek); soft(() => { ell(0, 0, 90, 90); g.fillStyle = shade(0, 0, 90, '#fff3b0', '#ffc933'); g.fill(); }, 20, 10, .25); text('1.', 0, 4, 90, '#9a6e10'); g.restore();
+      pill(W / 2, 1260, 'Du ziehst als Erstes ein', ek, PAL.coral, '#fff', 50); }
+    dog(540, 1800 - Math.abs(Math.sin(t * 5)) * 18, .75, { mood: 'happy', tag: true, bark: win(t, tw.miau, tw.miau + .5, .1) }, t);
   }
   meter(win(t, tw.jeder - .1, tw.stell, .3), 2, 100, 'Kätzchen', 1180);
   meter(win(t, tw.stell, tw.aber3 - .1, .3), crowdK * 100, 100, 'Kätzchen', 1180);
@@ -420,7 +432,7 @@ function frame(t) {
   // paw-print wipe on "Komm mal mit"
   const wp = ramp(t, tw.komm - .15, tw.komm + .3); if (wp > 0 && wp < 1) { const r = (1 - Math.abs(wp * 2 - 1)) * 1500; g.fillStyle = PAL.lav; g.save(); g.translate(W / 2, H / 2);
     ell(0, r * .15, r * .55, r * .45); g.fill(); for (const [dx, dy] of [[-.5, -.4], [-.18, -.62], [.18, -.62], [.5, -.4]]) { ell(dx * r, dy * r, r * .17, r * .2); g.fill(); } g.restore(); }
-  const capY = cta > .3 ? 300 : endK > .3 ? -1 : 300;
+  const capY = cta > .3 || mp > .3 ? 300 : endK > .3 ? -1 : 300;
   if (capY > 0) caption(t, capY);
 }
 window.END = END; window.TW = tw;
