@@ -499,6 +499,12 @@ window.renderAvatar = (v = 0) => {
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   const gr = g.createRadialGradient(540, 540, 60, 540, 540, 760); gr.addColorStop(0, v ? '#d9f7e8' : '#ffe3ef'); gr.addColorStop(1, v ? '#7fd1b0' : '#ff9ac4'); g.fillStyle = gr; g.fillRect(0, 0, 1080, 1080);
   for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + .2; spark(540 + Math.cos(a) * 440, 540 + Math.sin(a) * 430, 20); }
+  if (v === 2) { // Katzenstadt skyline behind Flocke
+    const cols = [['#ffd3e2', '#ff8fb1'], ['#d9ccff', '#a98bff'], ['#c9f0dc', '#5fd3a8'], ['#ffe9b8', '#ffb648']];
+    [[110, 820, .9], [300, 760, 1.1], [780, 760, 1.1], [970, 820, .9], [200, 900, .7], [880, 900, .7]].forEach(([hx, hy, k], i) => { g.save(); g.translate(hx, hy); g.scale(k, k);
+      soft(() => { rrect(-90, -170, 180, 170, 14); g.fillStyle = cols[i % 4][0]; g.fill(); g.beginPath(); g.moveTo(-112, -160); g.lineTo(0, -270); g.lineTo(112, -160); g.closePath(); g.fillStyle = cols[i % 4][1]; g.fill();
+        rrect(-26, -80, 52, 80, 20); g.fillStyle = '#7a5aa0'; g.fill(); rrect(-70, -140, 40, 40, 8); g.fillStyle = '#fff6b0'; g.fill(); }); g.restore(); });
+    g.fillStyle = '#b8ecc9'; g.fillRect(0, 900, 1080, 180); }
   dog(540, 1020, 2.1, { mood: 'happy', tag: true, hat: 1, blink: 0 }, .7);
   return out.toDataURL('image/png');
 };
