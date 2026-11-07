@@ -35,7 +35,7 @@ const SHOTS = [
   [WAKE, 'bed', t => { const u = esin(span(t, WAKE, MAP)); return LOOK(1.1 - 0.5 * u, 1.45 - 0.05 * u, 2.6 - 0.9 * u, -0.85, 1.05, -0.6, 44); }, { dof: () => H_(hero) }],
   [MAP, 'map', t => { const u = span(t, MAP, MORN); return LOOK(-60 * u, 2500 - 500 * esin(u), 1400 - 250 * u, -20 * u, 0, 40, 30); }, { whip: 1 }],
   [MORN, 'man', t => { const u = esin(span(t, MORN, STREETM)); return LOOK(0.9 - 0.5 * u, 1.55, -1.8 - 0.7 * u, -0.85, 1.7, -7.0, 48); }, { dof: () => H_(NBR), whip: -1 }],
-  [STREETM, 'st', t => { const u = esin(span(t, STREETM, STORE)); return LOOK(3.6 - 1.4 * u, 1.55, 7.8 - 1.2 * u, -4.5, 1.65, -1.5, 46); }, { dof: () => H_(hero) }],
+  [STREETM, 'st', t => { const u = esin(span(t, STREETM, STORE)); return LOOK(3.6 - 1.4 * u, 1.55, 7.8 - 1.2 * u, -3.2, 1.65, -1.5, 46); }, { dof: () => H_(hero) }],
   [STORE, 'mkt', t => { const u = esin(span(t, STORE, 18.5)); return LOOK(0.4, 2.6 - 0.6 * u, 12.5 - 4.5 * u, 0, 1.0, -8, 50); }, { mb: true, whip: 1 }],
   [18.5, 'mkt', t => { const u = esin(span(t, 18.5, STOCK)); return LOOK(1.25 - 0.2 * u, 1.6, 8.9 - 0.8 * u, 0.55, 1.25, 4.6, 48); }, { dof: () => STO.bat.position.clone() }],
   [STOCK, 'off', t => { const u = esin(span(t, STOCK, 25.2)); return LOOK(0.3, 1.85 - 0.1 * u, 3.0 - 1.6 * u, 0, 1.6, -3.1, 44); }, { whip: -1 }],

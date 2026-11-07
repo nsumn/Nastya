@@ -149,7 +149,7 @@ const CG = {}; { const sc = CON.sc, wood = F_('#7a4a2a', { roughness: 0.55 }), w
   seed = r0; }
 function updateCongress(t) { CG.people.forEach(w => { const p = w.p; p.outer.position.set(w.x, w.y + 0.95 + (w.yell ? 0.04 * Math.max(0, Math.sin(t * 8 + w.ph)) : 0), w.z); p.outer.rotation.set(0, w.ry + 0.3 * Math.sin(t * 1.3 + w.ph), 0);
     if (w.yell) { poseFlail(p, t * 0.6, w.ph); p.legs.forEach(l => l.rotation.x = 0); p.knees.forEach(k => k.rotation.x = 0); } else poseIdle(p, t, w.ph); });
-  const S = CG.spk; poseReset(S, t); place(S, 0, -3.4, 0, 0.7); const bang = Math.pow(Math.abs(Math.sin(t * 6)), 0.5); S.arms[1].rotation.set(-1.0 - 1.1 * bang, 0, -0.1); S.elbows[1].rotation.x = -0.6 - 0.3 * bang; holdIn(S, 1, CG.gavel, V3(0, -0.28, 0.04));
+  const S = CG.spk; poseReset(S, t); place(S, 0, -3.4, 0, 0.7); const bang = Math.pow(Math.abs(Math.sin(t * 6)), 0.5); S.arms[1].rotation.set(-0.85 - 0.75 * bang, 0, -0.5); S.elbows[1].rotation.x = -0.5 - 0.3 * bang; holdIn(S, 1, CG.gavel, V3(0, -0.28, 0.04));
   S.arms[0].rotation.set(-0.9, 0, 0.3); S.elbows[0].rotation.x = -0.8; S.face(t < CONG + 4.2 ? 'angry' : 'dumb', t); }
 
 // ---------- 7) THE FBI ROOM: dark, a case board (cork, photos of empty safes, the US map, red strings), three agents, a desk lamp ----------
