@@ -14,7 +14,7 @@ def caption(im, words):
     parts = [(w.strip("*"), w.startswith("*")) for w in words.split()]
     widths = [d.textlength(w + " ", font=f) for w, _ in parts]; x = (G.W - sum(widths)) / 2; y = 1330
     for (w, key), ww in zip(parts, widths):
-        d.text((x, y), w, font=f, fill=(255, 228, 60) if key else (255, 255, 255), stroke_width=6, stroke_fill=(0, 0, 0)); x += ww
+        d.text((x, y), w, font=f, fill=G.KEY_RGB if key else (255, 255, 255), stroke_width=6, stroke_fill=(0, 0, 0)); x += ww
 
 
 def f_hook(t=1.0):
@@ -55,4 +55,4 @@ def f_apart(t=20.0):
 
 
 for name, fn in (("hook", f_hook), ("flood", f_flood), ("apart", f_apart)):
-    fn().save(os.path.join(OUT, name + ".png")); print("ok", name)
+    fn().save(os.path.join(OUT, f"{name}_{G.PAL}.png")); print("ok", name, G.PAL)

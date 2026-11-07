@@ -8,10 +8,17 @@ import cairocffi as cairo
 from PIL import Image, ImageFilter
 
 W, H = 1080, 1920
-GOLD = (1.0, 0.78, 0.32)
-GOLD_L = (1.0, 0.92, 0.62)
+import os
+# glow palettes: (main light, bright core, rim on the silhouettes, caption key colour)
+PALETTES = {
+    "gold": ((1.0, 0.78, 0.32), (1.0, 0.92, 0.62), (0.55, 0.42, 0.18), (255, 228, 60)),
+    "rose": ((1.0, 0.42, 0.62), (1.0, 0.78, 0.86), (0.55, 0.22, 0.33), (255, 120, 170)),
+    "teal": ((0.25, 0.92, 0.88), (0.75, 1.0, 0.98), (0.12, 0.45, 0.44), (90, 240, 225)),
+    "violet": ((0.68, 0.48, 1.0), (0.88, 0.80, 1.0), (0.34, 0.24, 0.55), (190, 150, 255)),
+}
+PAL = os.environ.get("GLOW_PAL", "gold")
+GOLD, GOLD_L, RIM, KEY_RGB = PALETTES[PAL]
 INK = (0.02, 0.02, 0.025)
-RIM = (0.55, 0.42, 0.18)
 
 
 def surfaces():
@@ -83,7 +90,7 @@ def figure(c, g, x, y, s, her=False, mood="neutral", arms=((0.15, 0.1), (-0.15, 
 
 def face(c, g, hc, r, mood, look=0.0, blink=False):
     x, y = hc[0] + look * r * 0.25, hc[1]
-    c.set_source_rgb(0.62, 0.48, 0.24); c.set_line_width(max(2.5, r * 0.06)); c.set_line_cap(cairo.LINE_CAP_ROUND)
+    c.set_source_rgb(*(v * 0.7 for v in GOLD)); c.set_line_width(max(2.5, r * 0.06)); c.set_line_cap(cairo.LINE_CAP_ROUND)
     for s in (-1, 1):
         ex = x + s * r * 0.33
         if blink: c.move_to(ex - r * 0.1, y - r * 0.05); c.line_to(ex + r * 0.1, y - r * 0.05); c.stroke()
