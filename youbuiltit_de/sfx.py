@@ -94,6 +94,30 @@ def bed_rain(d):
     n = noise(d); x = hp(n, 900) * .5 + lp(n, 400) * .3
     for _ in range(int(d * 30)): i = R.integers(0, len(x) - 300); x[i:i + 200] += hp(noise(200 / SR), 3000) * np.exp(-np.arange(200) / 30) * R.uniform(.2, .8)
     return norm(x, .5)
+def s_bark(pitch=1.0):    # small cartoon "wuff": two short formant bursts
+    out = np.zeros(int(.45 * SR))
+    for o, f0 in ((0, 620), (.17, 560)):
+        d = .12; t = t_(d); f = pitch * f0 * (1.25 - .5 * t / d); ph = 2 * np.pi * np.cumsum(f) / SR
+        src = sum(np.sin(k * ph) / k for k in range(1, 12)) + .3 * noise(d)
+        y = bp(src, 500, 1400) + .5 * bp(src, 1800, 3200)
+        x = y * env(len(t), .004, d=.05); i = int(o * SR); out[i:i + len(x)] += x
+    return norm(out, .8)
+def s_whine():
+    d = 1.0; t = t_(d); f = 900 + 250 * np.sin(np.pi * t / d) - 200 * t
+    x = np.sin(2 * np.pi * np.cumsum(f) / SR) + .3 * np.sin(4 * np.pi * np.cumsum(f) / SR)
+    return norm(lp(x, 3000) * np.sin(np.pi * t / d) ** .8 * (1 + .1 * np.sin(2 * np.pi * 7 * t)), .5)
+def s_splash():
+    d = .7; n = noise(d); x = hp(n, 800) * env(int(d * SR), .005, d=.18) + .5 * bp(n, 300, 900) * env(int(d * SR), .01, d=.1)
+    for _ in range(12): i = R.integers(int(.05 * SR), int(.6 * SR)); b = sweep(R.uniform(900, 1800), R.uniform(2500, 4000), .03) * env(int(.03 * SR), .001, d=.01); x[i:i + len(b)] += .4 * b
+    return norm(x, .6)
+def s_sniff():
+    out = np.zeros(int(.8 * SR))
+    for o in (0, .2, .4): x = bp(noise(.12), 1500, 5000) * np.sin(np.pi * t_(.12) / .12); i = int(o * SR); out[i:i + len(x)] += x
+    return norm(out, .55)
+def s_poof():     d = .5; return norm(lp(noise(d), 900) * env(int(d * SR), .01, d=.12), .6)
+def bed_rustle(d):
+    n = noise(d); t = t_(d); x = bp(n, 1500, 6000) * (.3 + .7 * np.abs(np.sin(2 * np.pi * 3.3 * t)) ** 3)
+    return norm(x, .45)
 def bed_wind(d):
     n = noise(d); x = lp(n, 500) * .6 + bp(n, 700, 1400) * .25
     t = t_(d); m = .55 + .45 * np.sin(2 * np.pi * .23 * t) * np.sin(2 * np.pi * .07 * t + 1)
