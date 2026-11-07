@@ -83,6 +83,17 @@ def s_swoosh_up():
     d = .4; return norm(hp(noise(d), 1500) * np.linspace(0, 1, int(d * SR)) ** 2 * env(int(d * SR), .01, r=.05), .5)
 def s_stamp():    return norm(s_clack() * 1.0 + .5 * np.concatenate([sweep(90, 45, .3) * np.exp(-t_(.3) / .1), np.zeros(max(0, int(.16 * SR) - int(.3 * SR)))])[:int(.16 * SR)] if False else s_clack(), .9)
 
+def s_buzz():     # "wrong" buzzer for crossed-out items
+    d = .35; t = t_(d); x = np.sign(np.sin(2 * np.pi * 140 * t)) * .5 + np.sign(np.sin(2 * np.pi * 147 * t)) * .5
+    return norm(lp(x, 2500) * env(len(t), .005, r=.08), .5)
+def s_tweet():
+    out = np.zeros(int(.7 * SR))
+    for i in range(3): x = sweep(2600, 4200, .09) * env(int(.09 * SR), .003, r=.03); o = int(i * .16 * SR); out[o:o + len(x)] += x
+    return norm(out, .55)
+def bed_rain(d):
+    n = noise(d); x = hp(n, 900) * .5 + lp(n, 400) * .3
+    for _ in range(int(d * 30)): i = R.integers(0, len(x) - 300); x[i:i + 200] += hp(noise(200 / SR), 3000) * np.exp(-np.arange(200) / 30) * R.uniform(.2, .8)
+    return norm(x, .5)
 def bed_wind(d):
     n = noise(d); x = lp(n, 500) * .6 + bp(n, 700, 1400) * .25
     t = t_(d); m = .55 + .45 * np.sin(2 * np.pi * .23 * t) * np.sin(2 * np.pi * .07 * t + 1)

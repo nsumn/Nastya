@@ -6,7 +6,8 @@
 set -e
 cd "$(dirname "$0")"
 NAME=$1; DIR=$2; [ -n "$NAME" ] && [ -n "$DIR" ] || { sed -n 2,5p "$0"; exit 1; }
-cat lib.js ${NAME}_main.js $( [ -f ${NAME}_hq.js ] && echo ${NAME}_hq.js ) > ${NAME}.js   # optional HQ layer
+if [ -f ${NAME}_2d.js ]; then cp ${NAME}_2d.js ${NAME}.js   # 2D canvas scene (no three.js)
+else cat lib.js ${NAME}_main.js $( [ -f ${NAME}_hq.js ] && echo ${NAME}_hq.js ) > ${NAME}.js; fi   # optional HQ layer
 [ -f index_${NAME}.html ] || sed "s/keller.js/${NAME}.js/" index_keller.html > index_${NAME}.html
 pgrep -f "http.server 8766" >/dev/null || { (cd .. && setsid nohup python3 -m http.server 8766 >/dev/null 2>&1 < /dev/null &); sleep 1; }
 END=$(python3 -c "import json;w=json.load(open('../$DIR/words.json'));print(round(w[-1][2]+.7,3))")
