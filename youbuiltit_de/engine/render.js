@@ -19,7 +19,9 @@ const PORT = process.env.PORT || 8766;
     for (const t of a1.split(',').map(Number)) { const t0 = Date.now(); fs.writeFileSync(`frames/still_${t}.jpg`, await grab(t)); console.log('still', t, Date.now() - t0, 'ms'); }
   } else {
     const fps = +(a2 || 30), end = await p.evaluate(() => window.END), from = +(a3 || 0), to = +(a4 || end);
-    const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', a1], { stdio: ['pipe', 'inherit', 'inherit'] });
+    // ALPHA=1: the page returns transparent PNGs (caption layer) -> lossless qtrle .mov with alpha
+    const enc = process.env.ALPHA === '1' ? ['-c:v', 'png', '-i', '-', '-c:v', 'qtrle', '-pix_fmt', 'argb'] : ['-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium'];
+    const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), ...enc, a1], { stdio: ['pipe', 'inherit', 'inherit'] });
     const n = Math.round((to - from) * fps), t0 = Date.now();
     for (let i = 0; i < n; i++) {
       const buf = await grab(from + i / fps);

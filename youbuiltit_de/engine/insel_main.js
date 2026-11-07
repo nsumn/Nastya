@@ -381,5 +381,5 @@ function drawUI(t) {
   const flash = Math.max(0, 1 - Math.abs(t - tw.sturm - .05) / .12) + Math.max(0, 1 - Math.abs(t - tw.getrieben - .6) / .12); if (flash > 0) { og.fillStyle = `rgba(255,255,255,${.55 * cl(flash)})`; og.fillRect(0, 0, W, H); }
 }
 window.END = END; window.TW = tw;
-window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); if (ramp(t, tw.folg - .2, tw.folg + .3) < .3) drawCaption(t, 1450); return out.toDataURL('image/jpeg', q); };
+window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); if (!Q.get('nocap') && ramp(t, tw.folg - .2, tw.folg + .3) < .3) drawCaption(t, 1450);   // ?nocap=1: captions come from the separate layer return out.toDataURL('image/jpeg', q); };
 window.__done = true;
