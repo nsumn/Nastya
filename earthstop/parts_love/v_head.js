@@ -8,7 +8,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 // bass drops out at 34.0 (the "it's her" moment), near silence 41.0–42.0, the beat returns at 42.1 (the life montage). Facts: reward system / dopamine (Ortigue 2010 meta-analysis),
 // heart-rate + skin-conductance synchrony predicts attraction on blind dates (Prochazkova et al. 2022), cortisol higher when newly in love (Marazziti & Canale 2004).
 // =================== timeline (s) ===================
-const BEAT = 0.50847, bt = n => 1.93 + n * BEAT; const WAKE = 0, STREET = bt(8), CAFE = bt(20), OUT = bt(32), MEET = bt(48), BUMP = bt(56), MAGIC = bt(63), BRAIN = bt(65), HEART = bt(69), BUTTER = bt(73), HI = bt(77), LIFE = bt(79), ENDC = 59.0, T_END = 62.0;
+const BEAT = 0.50847, bt = n => 1.93 + n * BEAT; const WAKE = 0, STREET = bt(8), CAFE = bt(20), OUT = bt(32), MEET = bt(48), BUMP = bt(56), MAGIC = bt(63), BRAIN = bt(67), HEART = bt(71), BUTTER = bt(75), HI = bt(77), LIFE = bt(79), ENDC = 59.0, T_END = 62.0;
 const HOMES = 999, PRES = 999;   // (constants read by the reused gone-video sets; not used here)
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================

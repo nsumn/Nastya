@@ -8,7 +8,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 // bass drops out at 34.0 (the "it's her" moment), near silence 41.0–42.0, the beat returns at 42.1 (the life montage). Facts: reward system / dopamine (Ortigue 2010 meta-analysis),
 // heart-rate + skin-conductance synchrony predicts attraction on blind dates (Prochazkova et al. 2022), cortisol higher when newly in love (Marazziti & Canale 2004).
 // =================== timeline (s) ===================
-const BEAT = 0.50847, bt = n => 1.93 + n * BEAT; const WAKE = 0, STREET = bt(8), CAFE = bt(20), OUT = bt(32), MEET = bt(48), BUMP = bt(56), MAGIC = bt(63), BRAIN = bt(65), HEART = bt(69), BUTTER = bt(73), HI = bt(77), LIFE = bt(79), ENDC = 59.0, T_END = 62.0;
+const BEAT = 0.50847, bt = n => 1.93 + n * BEAT; const WAKE = 0, STREET = bt(8), CAFE = bt(20), OUT = bt(32), MEET = bt(48), BUMP = bt(56), MAGIC = bt(63), BRAIN = bt(67), HEART = bt(71), BUTTER = bt(75), HI = bt(77), LIFE = bt(79), ENDC = 59.0, T_END = 62.0;
 const HOMES = 999, PRES = 999;   // (constants read by the reused gone-video sets; not used here)
 const DEBUG = new URLSearchParams(location.search).get('debug');
 // =================== helpers ===================
@@ -544,8 +544,8 @@ const SL = {};
 const PEDS = []; for (let i = 0; i < 14; i++) { const P = makePerson(rnd, { skin: pick(['#f0c8a8', '#c89068', '#8a5a3a', '#e9b98f']), top: pick(['#3a4a6a', '#8a3a3a', '#d8c8a8', '#2f5a46', '#5a5a62', '#c8a040']), bottom: pick(['#2a2e38', '#3d5f8f', '#5a4a3a']), hair: pick(['#1a1410', '#5a3a1e', '#c8a060']) }); STR.sc.add(P.outer); PEDS.push({ P, x: (hash(i) < 0.5 ? -1 : 1) * (5.2 + 1.4 * hash(i * 3)), z0: -60 + 120 * hash(i * 5), dir: hash(i * 7) < 0.5 ? -1 : 1, sp: 1.1 + 0.3 * hash(i * 9) }); }
 function pedsAt(t, avoid) { for (const w of PEDS) { const z = wrapR(w.z0 + w.dir * w.sp * t, -60, 60); w.P.outer.position.set(w.x, 0.16, z); w.P.outer.rotation.y = w.dir > 0 ? 0 : Math.PI; poseWalk(w.P, t * 6 * w.sp + w.z0, 1); w.P.outer.visible = !avoid || avoid.every(a => Math.hypot(a.x - w.x, a.z - z) > 1.6); } }
 // the collision props: his coffee cup, her books
-const CUP = new THREE.Group(); { const c = mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.14, 16), M('#f4efe6', { roughness: 0.7 })); CUP.add(c); const sl = mesh(new THREE.CylinderGeometry(0.047, 0.042, 0.05, 16, 1, true), M('#8a5a34')); sl.position.y = -0.01; CUP.add(sl); const lid = mesh(new THREE.CylinderGeometry(0.049, 0.049, 0.015, 16), M('#f8f8f6')); lid.position.y = 0.075; CUP.add(lid); STR.sc.add(CUP); }
-const BOOKS = [0, 1, 2].map(i => { const b = rb(0.16, 0.035, 0.23, M(['#8a2a2a', '#2a4a7a', '#c8a040'][i], { roughness: 0.7 }), 0, 0, 0, STR.sc, 0.006); return b; });
+const CUP = new THREE.Group(); CUP.scale.setScalar(1.35); { const c = mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.14, 16), M('#f4efe6', { roughness: 0.7 })); CUP.add(c); const sl = mesh(new THREE.CylinderGeometry(0.047, 0.042, 0.05, 16, 1, true), M('#8a5a34')); sl.position.y = -0.01; CUP.add(sl); const lid = mesh(new THREE.CylinderGeometry(0.049, 0.049, 0.015, 16), M('#f8f8f6')); lid.position.y = 0.075; CUP.add(lid); STR.sc.add(CUP); }
+const BOOKS = [0, 1].map(i => { const b = rb(0.16, 0.035, 0.23, M(['#8a2a2a', '#2a4a7a', '#c8a040'][i], { roughness: 0.7 }), 0, 0, 0, STR.sc, 0.006); return b; });
 const SPLASH = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(160 * 3), 3)), new THREE.PointsMaterial({ color: '#6a3e1e', size: 0.025, transparent: true, opacity: 0.9, depthWrite: false })); SPLASH.frustumCulled = false; STR.sc.add(SPLASH);
 // ======================= 3) THE CAFE inside (also the first date at night) =======================
 const CAFS = mkSet({ top: '#d8c8b0', bot: '#f4e4c8', fog: 0xf0e0c8, near: 40, far: 200, hemi: [0xfff0e0, 0x6a5040, 0.35], sun: [0xffd0a0, 2.0, V3(-6, 8, 6)], shadow: 8, env: 0.35 });
@@ -597,10 +597,10 @@ const PL = {};
 function petalsAt(t, on) { PL.petals.visible = on; if (!on) return; for (let i = 0; i < 300; i++) { const y = wrapR(4 - (t * 0.6 + hash(i) * 4), 0, 4); _o.position.set((hash(i * 3) - 0.5) * 6 + 0.3 * Math.sin(t + i), y, -6 + (hash(i * 5) - 0.5) * 5); _o.rotation.set(t * 2 + i, t + i * 2, 0); _o.scale.setScalar(1); _o.updateMatrix(); PL.petals.setMatrixAt(i, _o.matrix); } PL.petals.instanceMatrix.needsUpdate = true; }
 // ======================= the cast =======================
 const HERO_O = hero.o;
-const HER_O = { head: 'human', body: 'human', skin: '#f2cdb0', hair: '#5a3018', top: '#b8463a', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'long', headS: 0.86, h: 0.95, lip: '#c4505a', blush: 0.55 };
-const her = makeBlock(HER_O), herWed = makeBlock({ ...HER_O, top: '#fbfaf6', jeans: false, bottom: '#fbfaf6', shoe: '#fbfaf6' }), heroOld = makeBlock({ ...HERO_O, hair: '#d8d8d4', glasses: '#3a3a3a' }), herOld = makeBlock({ ...HER_O, hair: '#e4e2de', top: '#8a6a9a', glasses: '#5a4a3a' });
-const kidA = makeBlock({ ...HERO_O, hair: '#5a3018', top: '#3a8ad8', h: 0.62, hairStyle: 'mop' }), kidB = makeBlock({ ...HER_O, top: '#f2c42a', h: 0.56, hairStyle: 'bangs' });
-const gkA = makeBlock({ ...HERO_O, hair: '#c8a060', top: '#e8432a', h: 0.52, hairStyle: 'curly' }), gkB = makeBlock({ ...HER_O, hair: '#3a2a1e', top: '#5aa070', h: 0.5, hairStyle: 'long' });
+const HER_O = { head: 'human', body: 'human', headMesh: 'head_f', eyeS: 1.12, browCol: '#a07a4a', skin: '#f4d2b8', hair: '#e8c878', top: '#b8463a', jeans: true, bottom: '#3d5f8f', shoe: '#f4f4f4', hairStyle: 'long', headS: 0.86, h: 0.95, lip: '#c4505a', blush: 0.55 };
+const her = makeBlock(HER_O), herWed = makeBlock({ ...HER_O, top: '#fbfaf6', jeans: false, bottom: '#fbfaf6', shoe: '#fbfaf6' }), heroOld = makeBlock({ ...HERO_O, hair: '#d8d8d4', glasses: '#3a3a3a' }), herOld = makeBlock({ ...HER_O, hair: '#e4e2de', browCol: '#b8b4ae', top: '#8a6a9a', glasses: '#5a4a3a' });
+const kidA = makeBlock({ ...HERO_O, hair: '#5a3018', top: '#3a8ad8', h: 0.62, hairStyle: 'mop' }), kidB = makeBlock({ ...HER_O, headMesh: undefined, top: '#f2c42a', h: 0.56, hairStyle: 'bangs' });
+const gkA = makeBlock({ ...HERO_O, hair: '#c8a060', top: '#e8432a', h: 0.52, hairStyle: 'curly' }), gkB = makeBlock({ ...HER_O, headMesh: undefined, hair: '#3a2a1e', top: '#5aa070', h: 0.5, hairStyle: 'long' });
 const barista = makeBlock({ head: 'human', body: 'human', skin: '#c89068', hair: '#1a1410', top: '#2f5a46', jeans: false, bottom: '#2a2e38', shoe: '#1a1a1c', hairStyle: 'short', headS: 0.88, mustache: '#1a1410' });
 const xHim = xrayBody(makeBlock(HERO_O), XRM), xHer = xrayBody(makeBlock(HER_O), XRM2);
 // the groom's suit (wedding beat): same method as the President video
@@ -614,6 +614,18 @@ function suitFor(P, col = '#1f2a44') { const navy = new THREE.Color(col), cTop =
   const pr = mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.36, 24, 1, true, -0.26, 0.52), new THREE.MeshStandardMaterial({ map: tx, transparent: true, roughness: 0.8 }), false, false); pr.position.set(0, 1.25, 0.154 - 0.36); P.torso.add(pr); parts.push(pr);
   const api = { set(on) { mats.forEach(([m, c0, c1]) => m.color.copy(on ? c1 : c0)); parts.forEach(p => p.visible = on); } }; api.set(false); return api; }
 const GROOM = suitFor(hero);
+// his phone
+const PHONE = new THREE.Group(); { rb(0.075, 0.15, 0.009, M('#16181c', { roughness: 0.3, metalness: 0.5 }), 0, 0, 0, PHONE, 0.008); const scr = mesh(new THREE.PlaneGeometry(0.066, 0.138), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.5, 1.9) }), false, false); scr.position.z = 0.0052; PHONE.add(scr); STR.sc.add(PHONE); }
+// the WOW at 34 s: a burst of golden sparks from between them, little hearts floating up, a soft glow behind them
+const WOW = new THREE.Group(); STR.sc.add(WOW);
+const BURST = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(900 * 3), 3)), new THREE.PointsMaterial({ color: new THREE.Color(1.8, 1.4, 0.8), size: 0.018, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending })); BURST.frustumCulled = false; WOW.add(BURST);
+const WHEARTS = Array.from({ length: 26 }, (_, i) => { const m = mesh(heartShape, new THREE.MeshBasicMaterial({ color: new THREE.Color(...(i % 3 ? [2.6, 0.5, 0.8] : [2.8, 1.6, 1.8])), transparent: true, depthWrite: false }), false, false); m.scale.setScalar(0.5 + 0.6 * hash(i * 3)); WOW.add(m); return m; });
+const GLOW = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 256, (g, w, h) => { const rg = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); rg.addColorStop(0, 'rgba(255,230,190,1)'); rg.addColorStop(0.35, 'rgba(255,180,140,.45)'); rg.addColorStop(1, 'rgba(255,160,120,0)'); g.fillStyle = rg; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: new THREE.Color(1.6, 1.3, 1.1) })); WOW.add(GLOW);
+function wowAt(t, c, cam) { const a = t - MAGIC; WOW.visible = a >= 0 && a < BRAIN - MAGIC; if (!WOW.visible) return; const P = BURST.geometry.attributes.position.array;
+  for (let i = 0; i < 900; i++) { const d = V3(hash(i) - 0.5, hash(i * 3) - 0.35, hash(i * 5) - 0.5).normalize(), sp = 0.8 + 2.2 * hash(i * 7), r = sp * (1 - Math.exp(-a * 2.2)); P[i * 3] = c.x + d.x * r; P[i * 3 + 1] = c.y + d.y * r + 0.15 * a; P[i * 3 + 2] = c.z + d.z * r; }
+  BURST.geometry.attributes.position.needsUpdate = true; BURST.material.opacity = 1 - smooth(1.2, 2.0, a); BURST.material.size = 0.02 * (1 + 0.3 * Math.sin(a * 20));
+  WHEARTS.forEach((m, i) => { const ph = hash(i * 9) * 0.6, u = Math.max(0, a - ph); m.position.set(c.x + (hash(i) - 0.5) * 1.6 + 0.1 * Math.sin(u * 3 + i), c.y - 0.3 + u * (0.5 + 0.4 * hash(i * 2)), c.z + (hash(i * 4) - 0.5) * 1.6); m.lookAt(cam.position); m.material.opacity = smooth(0, 0.25, u) * (1 - smooth(1.4, 2.0, a)); });
+  GLOW.position.copy(c).add(c.clone().sub(cam.position).setY(0).normalize().multiplyScalar(1.2)); GLOW.scale.setScalar(2.2 + 0.8 * smooth(0, 0.6, a)); GLOW.material.opacity = 0.4 * smooth(0, 0.3, a) * (1 - 0.4 * smooth(1.5, 2.0, a)); }
 // =================== THE STORY: the day you meet her — poses, shots on the beat grid, x-ray, the life montage, captions/HUD/bubbles, render ===================
 const fr = (h, dir, dist, hy, fov = 40) => framing(h, dir, dist, hy - 0.12, fov);
 function framing(h, dir, dist, headY, fov = 40) { const d = dir.clone().normalize(), visH = 2 * dist * Math.tan(fov * Math.PI / 360); return { pos: h.clone().addScaledVector(d, dist), look: V3(h.x, h.y + (headY - 0.5) * visH, h.z), fov }; }
@@ -627,7 +639,7 @@ const orbit = (h, dir, a0, a1, d0, d1, hy, u, fov = 40) => fr(h, dir.clone().app
 const span = (t, a, b) => (t - a) / (b - a);
 const CAST = [hero, her, herWed, heroOld, herOld, kidA, kidB, gkA, gkB, barista];
 const SW = 0.16;   // sidewalk top
-function hideCast() { CAST.forEach(P => P.outer.visible = false); CUP.visible = false; BOOKS.forEach(b => b.visible = false); SPLASH.visible = false; BABY.visible = false; HL.brush.visible = false; GROOM.set(false); DATECUPS.forEach(c => c.visible = false); PL.ball.visible = false; PL.kite.visible = false; }
+function hideCast() { PHONE.visible = false; CAST.forEach(P => P.outer.visible = false); CUP.visible = false; BOOKS.forEach(b => b.visible = false); SPLASH.visible = false; BABY.visible = false; HL.brush.visible = false; GROOM.set(false); DATECUPS.forEach(c => c.visible = false); PL.ball.visible = false; PL.kite.visible = false; }
 function stand(P, x, z, ry, t, face, y = 0) { poseReset(P, t); place(P, x, z, ry, y); if (face) P.face(face, t); }
 const handW = (P, s) => (P.outer.updateMatrixWorld(true), P.elbows[s].localToWorld(V3(0, -0.3, 0.03)));
 function squat(P, k, lean = 0.3) { P.legs.forEach(l => l.rotation.x = -1.25 * k); P.knees.forEach(q => q.rotation.x = 1.95 * k); P.outer.position.y -= 0.5 * k; P.outer.rotation.order = 'YXZ'; P.outer.rotation.x = lean * k; }
@@ -643,14 +655,14 @@ function pose(t, k) { hideCast();
   else if (k === 'home' && t < bt(4)) { stand(hero, 0.7, 0.7, Math.PI / 2 + 0.3, t, 'proud'); hero.arms.forEach((a, i) => a.rotation.set(-0.5, 0, (i ? -1 : 1) * 0.35)); hero.elbows.forEach(e => e.rotation.x = -1.8); }
   else if (k === 'home' && t < STREET) { const u = span(t, bt(4), STREET); stand(hero, 20 + lerp(1.2, -2.6, u), 0.8, -Math.PI / 2, t, 'happy'); poseWalk(hero, t * 7, 1); }
   else if (k === 'str' && t < CAFE) { const z = 9 - 1.35 * (t - STREET); stand(hero, HX, z, Math.PI, t, 'happy', SW); poseWalk(hero, t * 6.6, 1); }
-  else if (k === 'caf' && t < OUT) { stand(hero, 0.2, -1.1, Math.PI, t, t < bt(28) ? 'happy' : 'love'); stand(barista, -0.4, -2.75, 0, t, 'happy'); const give = smooth(bt(26), bt(27.5), t);
+  else if (k === 'caf' && t < OUT) { stand(hero, 0.2, -1.1, Math.PI, t, t < bt(28) ? 'neutral' : 'happy'); stand(barista, -0.4, -2.75, 0, t, 'happy'); const give = smooth(bt(26), bt(27.5), t);
     barista.arms[1].rotation.set(-0.6 * give, 0, -0.1); barista.elbows[1].rotation.x = -0.7 * give; hero.arms[1].rotation.set(-0.55 * smooth(bt(27), bt(28), t), 0, 0.1); hero.elbows[1].rotation.x = -0.8 * smooth(bt(27), bt(28), t);
     CUP.visible = true; CAFS.sc.add(CUP); CUP.position.copy(t < bt(27.6) ? handW(barista, 1) : handW(hero, 1)); CUP.rotation.set(0, 0, 0); }
   else if (k === 'str' && t >= OUT && t < BRAIN || k === 'str' && t >= HI && t < LIFE) { STR.sc.add(CUP); const hz = hisZ(t), sz = herZ(t);
     // him: phone in the left hand, cup in the right, eyes down; the bump; squat to pick up the books; stand up for "hi"
     stand(hero, HX, hz, 0, t, 'neutral', SW); const walking = t < BUMP; if (walking) poseWalk(hero, t * 6.2, 0.9);
-    hero.arms[0].rotation.set(-0.55, 0, 0.1); hero.elbows[0].rotation.x = -1.3; hero.head.rotation.x = walking ? 0.25 : 0; hero.arms[1].rotation.set(walking ? -0.3 : -0.1, 0, 0.1); hero.elbows[1].rotation.x = walking ? -1.0 : -0.3;
-    if (t >= MEET) { stand(her, HX + 0.1, sz, Math.PI, t, 'happy', SW); if (walking) poseWalk(her, t * 6.4 + 1, 0.9); her.arms.forEach((a, i) => a.rotation.set(-0.5, 0, (i ? -1 : 1) * 0.15)); her.elbows.forEach(e => e.rotation.x = -1.5); her.head.rotation.x = walking ? 0.2 : 0; }
+    hero.arms[0].rotation.set(-0.55, 0, 0.1); hero.elbows[0].rotation.x = -1.3; hero.head.rotation.x = walking ? 0.25 : 0; if (walking) { PHONE.visible = true; STR.sc.add(PHONE); hero.outer.updateMatrixWorld(true); PHONE.position.copy(hero.elbows[0].localToWorld(V3(0, -0.3, 0.07))); PHONE.quaternion.copy(hero.elbows[0].getWorldQuaternion(new THREE.Quaternion())); PHONE.rotateX(-1.2); } hero.arms[1].rotation.set(walking ? -0.3 : -0.1, 0, 0.1); hero.elbows[1].rotation.x = walking ? -1.0 : -0.3;
+    if (t >= MEET) { stand(her, HX + 0.1, sz, Math.PI, t, 'happy', SW); if (walking) poseWalk(her, t * 6.4 + 1, 0.9); her.arms.forEach((a, i) => a.rotation.set(-0.25, 0, (i ? -1 : 1) * 0.12)); her.elbows.forEach(e => e.rotation.x = -1.55); her.head.rotation.x = walking ? 0.2 : 0; }
     const sq = smooth(bt(60), bt(61.5), t) * (1 - smooth(HI, HI + 0.5, t)); if (sq > 0) { squat(hero, sq, 0.35); squat(her, sq, 0.35); const reach = smooth(bt(61), bt(62.6), t); hero.arms[1].rotation.set(-0.62 * reach, 0, -0.05); hero.elbows[1].rotation.x = -0.2; her.arms[0].rotation.set(-0.62 * reach, 0, 0.05); her.elbows[0].rotation.x = -0.2; hero.head.rotation.x = -0.15 * smooth(MAGIC - 0.3, MAGIC, t); her.head.rotation.x = -0.15 * smooth(MAGIC - 0.3, MAGIC, t); }
     if (t > BUMP) { hero.face(t < bt(60) ? 'surprised' : t < MAGIC ? 'worried' : 'love', t); her.face(t < bt(60) ? 'surprised' : t < MAGIC ? 'happy' : 'love', t); }
     if (t >= HI) { her.face('happy', t); hero.face('love', t); }
@@ -659,8 +671,8 @@ function pose(t, k) { hideCast();
     if (a < 0) { CUP.position.copy(handW(hero, 1)); CUP.rotation.set(0, 0, 0); } else { const tl = 0.62, u = Math.min(a, tl); CUP.position.set(h0.x + 0.9 * u, Math.max(SW + 0.05, h0.y + 2.2 * u - 4.9 * u * u * 1.6), h0.z + 0.5 * u); CUP.rotation.set(9 * u, 0, a < tl ? 7 * u : Math.PI / 2); }
     SPLASH.visible = a > 0 && a < 1.6; if (SPLASH.visible) { const P = SPLASH.geometry.attributes.position.array; for (let i = 0; i < 160; i++) { const v = V3(hash(i) - 0.3, 0.6 + hash(i * 3), hash(i * 5) - 0.5).multiplyScalar(2.2), u = Math.min(a, 0.55); P[i * 3] = h0.x + v.x * u; P[i * 3 + 1] = Math.max(SW + 0.01, h0.y + v.y * u - 4.9 * u * u); P[i * 3 + 2] = h0.z + v.z * u; } SPLASH.geometry.attributes.position.needsUpdate = true; }
     // the books: in her arms → fly → scattered; the red one lies between them (both reach for it)
-    if (t >= MEET) BOOKS.forEach((b, i) => { b.visible = true; const rest = [V3(HX - 0.05, SW + 0.02, MZ), V3(HX + 0.45, SW + 0.02, MZ + 0.35), V3(HX - 0.4, SW + 0.02, MZ + 0.55)][i];
-      if (a < 0) { b.position.copy(her.outer.position).add(V3(0.02, 0.18 + i * 0.04 - 0.95 + 1.12, -0.2)); b.rotation.set(0.2, 0, 0); } else { const u = clamp(a / 0.7, 0, 1); const st = her.outer.position.clone().add(V3(0, 0.2, -0.2)); b.position.lerpVectors(st, rest, u); b.position.y += 0.6 * Math.sin(Math.PI * u); b.rotation.set(0, 2 * i + 4 * u, (1 - u) * 6 * u); } }); }
+    if (t >= MEET) BOOKS.forEach((b, i) => { b.visible = true; const rest = [V3(HX - 0.05, SW + 0.02, MZ), V3(HX + 0.45, SW + 0.02, MZ + 0.35)][i];
+      if (a < 0) { her.outer.updateMatrixWorld(true); b.position.copy(her.torso.localToWorld(V3(0.02 - i * 0.03, 1.12 + i * 0.02, 0.2 + i * 0.04))); b.quaternion.copy(her.outer.quaternion); b.rotateX(Math.PI / 2 - 0.12); b.rotateZ(0.08 * (i ? 1 : -1)); } else { const u = clamp(a / 0.7, 0, 1); const st = her.outer.position.clone().add(V3(0, 0.2, -0.2)); b.position.lerpVectors(st, rest, u); b.position.y += 0.6 * Math.sin(Math.PI * u); b.rotation.set((1 - u) * (Math.PI / 2), 2 * i + 4 * u, (1 - u) * 6 * u); } }); }
   else if (k === 'xr') { [xHim, xHer].forEach((P, i) => { poseReset(P, t); place(P, i ? 0.3 : -0.3, 0, i ? -Math.PI / 2 : Math.PI / 2); P.face('love', t); P.head.rotation.x = -0.05; });
     const beatK = t => Math.pow(Math.max(0, Math.sin(Math.PI * ((t - 1.93) / BEAT))), 8);
     [xHim, xHer].forEach((P, i) => { P.outer.updateMatrixWorld(true); const hd = H_(P); BRAINS[i].position.copy(hd).add(V3(0, 0.07, 0)); const glow = smooth(BRAIN, BRAIN + 0.6, t); BRAINS[i].scale.setScalar(0.4 + 0.7 * glow + 0.15 * glow * beatK(t)); BRAINS[i].rotation.y = t * 0.6;
@@ -688,15 +700,22 @@ function pose(t, k) { hideCast();
 // ---- shots: [start, set, camera(t), opts{mb, dof, whip, far, noao, frozen}] ----
 const SETS = { home: HOME, str: STR, caf: CAFS, xr: XR, park: PARK };
 const SHOTS = [
-  [WAKE, 'home', t => { const u = esin(span(t, 0, bt(0))); return LOOK(1.15 - 0.15 * u, 0.95 + 0.15 * u, -0.95 + 0.1 * u, lerp(0.6, -0.6, smooth(0.3, 1.0, u)), lerp(0.6, 1.2, smooth(0.3, 1.0, u)), lerp(-1.9, -1.7, u), 42); }, { dof: () => t0F() }],
+  [WAKE, 'home', t => { const u = esin(span(t, 0, bt(-2))); return LOOK(0.95 - 0.08 * u, 0.62, -1.45 + 0.05 * u, 0.6, 0.55, -1.9, 32); }, { dof: () => V3(0.6, 0.55, -1.9) }],
+  [bt(-2), 'home', t => { const u = esin(span(t, bt(-2), bt(0))); return LOOK(1.15 - 0.2 * u, 1.05 + 0.1 * u, -0.9, -0.6, 1.25, -1.7, 42); }, { dof: () => H_(hero) }],
   [bt(0), 'home', t => { const hd = H_(hero); return LOOK(hd.x + 0.35, hd.y + 0.05, 1.25 + 0.04 * Math.sin(t * 2), hd.x - 0.25, hd.y - 0.12, hd.z, 46); }, { dof: () => H_(hero) }],
   [bt(2), 'home', t => { const u = esin(span(t, bt(2), bt(4))); const hd = H_(hero); return LOOK(hd.x + 1.5 - 0.2 * u, hd.y - 0.1, hd.z + 1.2 - 0.3 * u, hd.x, hd.y - 0.2, hd.z, 44); }, { dof: () => H_(hero) }],
-  [bt(4), 'home', t => { const u = esin(span(t, bt(4), STREET)); return LOOK(20 - 3.2, 1.35, 2.4 - 0.4 * u, 20 + lerp(1.0, -2.0, u), 1.1, 0.8, 46); }, { mb: true, whip: 1 }],
+  [bt(4), 'home', t => { const u = esin(span(t, bt(4), bt(6))); return LOOK(20 - 0.2, 0.35, 1.6, 20 + lerp(0.8, -0.4, u), 0.25, 0.8, 40); }, { mb: true }],
+  [bt(6), 'home', t => { const u = esin(span(t, bt(6), STREET)); return LOOK(20 - 3.2, 1.35, 2.4 - 0.4 * u, 20 + lerp(-0.6, -2.4, u), 1.1, 0.8, 46); }, { mb: true }],
   [STREET, 'str', t => { const hd = H_(hero); return LOOK(HX + 0.3 + 0.2 * Math.sin(t * 0.8), 0.75, hd.z - 2.6, hd.x, hd.y - 0.15, hd.z, 44); }, { mb: true, whip: -1 }],
-  [bt(14), 'str', t => { const hd = H_(hero); const u = esin(span(t, bt(14), CAFE)); return LOOK(hd.x + 1.2, hd.y - 0.3, hd.z - lerp(2.6, 2.0, u), hd.x, hd.y - 0.2, hd.z, 42); }, { dof: () => H_(hero) }],
-  [CAFE, 'caf', t => { const u = esin(span(t, CAFE, bt(24))); return LOOK(lerp(2.6, 1.9, u), 1.5, lerp(1.2, 0.4, u), -0.2, 1.3, -1.9, 44); }],
-  [bt(24), 'caf', t => { const u = esin(span(t, bt(24), bt(26))); return LOOK(-1.2 + 0.35, 1.48, -2.2 + 0.85 - 0.1 * u, -1.2, 1.32, -2.3, 36); }, { dof: () => V3(-1.2, 1.35, -2.25) }],
-  [bt(26), 'caf', t => orbit(H_(hero), V3(0.7, 0.05, -1), -0.25, 0.2, 1.5, 1.2, 0.6, span(t, bt(26), OUT), 40), { dof: () => H_(hero) }],
+  [bt(10), 'str', t => { const hd = H_(hero); return LOOK(hd.x + 0.5, 0.45, hd.z - 1.4, hd.x, 0.3, hd.z, 38); }, { mb: true }],
+  [bt(12), 'str', t => { const hd = H_(hero); return LOOK(hd.x + 1.2, hd.y - 0.3, hd.z - 2.3, hd.x, hd.y - 0.2, hd.z, 42); }, { dof: () => H_(hero) }],
+  [bt(14), 'str', t => { const hd = H_(hero); const u = esin(span(t, bt(14), bt(17))); return LOOK(lerp(0.4, 0.0, u), lerp(6.5, 5.0, u), hd.z - 6.5, HX, 1.4, hd.z + 1, 44); }, { far: true }],
+  [bt(17), 'str', t => { const hd = H_(hero); return LOOK(hd.x - 0.3, hd.y + 0.1, hd.z + 1.6, hd.x + 0.2, hd.y - 0.4, hd.z - 3, 44); }, { mb: true }],
+  [CAFE, 'caf', t => { const u = esin(span(t, CAFE, bt(22))); return LOOK(lerp(2.6, 2.2, u), 1.5, lerp(1.2, 0.8, u), -0.2, 1.3, -1.9, 44); }, { whip: 1 }],
+  [bt(22), 'caf', t => { const u = esin(span(t, bt(22), bt(24))); return LOOK(-0.4 + 0.6, 1.75, -2.75 + 0.6, 0.2, 1.65, -1.1, 40); }, { dof: () => H_(hero) }],
+  [bt(24), 'caf', t => { const u = esin(span(t, bt(24), bt(26))); return LOOK(0.1 - 0.2 * u, 1.6, -0.75 - 0.15 * u, -0.4, 1.62, -2.75, 44); }, { dof: () => H_(barista) }],
+  [bt(26), 'caf', t => { const u = esin(span(t, bt(26), bt(29))); return LOOK(lerp(2.1, 1.8, u), 1.65, lerp(-0.7, -0.95, u), -0.15, 1.45, -1.95, 54); }, { dof: () => CUP.position.clone() }],
+  [bt(29), 'caf', t => orbit(H_(hero), V3(0.7, 0.05, -1), -0.2, 0.2, 1.4, 1.15, 0.62, span(t, bt(29), OUT), 42), { dof: () => H_(hero) }],
   [OUT, 'str', t => { const hd = H_(hero); return LOOK(HX - 0.2 + 0.3 * Math.sin(t * 0.7), hd.y - 0.05, hd.z + 2.3, hd.x, hd.y - 0.25, hd.z, 42); }, { dof: () => H_(hero) }],
   [bt(40), 'str', t => { const u = esin(span(t, bt(40), MEET)); const hd = H_(hero); return LOOK(lerp(-0.6, -1.0, u), lerp(6.5, 4.5, u), hd.z - lerp(4.5, 3.5, u), HX, 1.5, hd.z + 3.5, 44); }, { far: true }],
   [MEET, 'str', t => { const hd = H_(her); const u = esin(span(t, MEET, bt(52))); return LOOK(HX + 0.2 - 0.3 * u, hd.y - 0.05, hd.z - 2.2 + 0.3 * u, hd.x, hd.y - 0.2, hd.z, 38); }, { dof: () => H_(her) }],
@@ -704,7 +723,7 @@ const SHOTS = [
   [BUMP, 'str', t => { const u = esin(span(t, BUMP, bt(60))); return LOOK(HX + 2.2 - 0.4 * u, lerp(1.4, 0.9, u), MZ + 1.7, HX + 0.2, lerp(1.3, 0.7, u), MZ - 0.1, 46); }, { mb: true, whip: 1 }],
   [bt(60), 'str', t => { const u = esin(span(t, bt(60), bt(62.4))); return LOOK(HX + 1.6 - 0.5 * u, 0.85, MZ + 0.1, HX, 0.45, MZ, 40); }, { dof: () => V3(HX, 0.45, MZ) }],
   [bt(62.4), 'str', t => LOOK(HX + 0.55, 0.42, MZ + 0.05, HX - 0.02, SW + 0.15, MZ, 34), { dof: () => V3(HX - 0.02, SW + 0.15, MZ) }],
-  [MAGIC, 'str', t => { const c = V3(HX + 0.05, 1.33, MZ); const a = lerp(-0.45, 0.45, esin(span(t, MAGIC, BRAIN))); return LOOK(c.x + Math.cos(a) * 2.7, 1.42, c.z + Math.sin(a) * 2.7, c.x, 1.32, c.z, 40); }, { dof: () => H_(her), frozen: true }],
+  [MAGIC, 'str', t => { const c = V3(HX + 0.05, 1.33, MZ); const u = span(t, MAGIC, BRAIN), a = lerp(-0.7, 0.7, esin(u)), r = lerp(2.9, 2.2, esin(u)); return LOOK(c.x + Math.cos(a) * r, lerp(1.2, 1.5, u), c.z + Math.sin(a) * r, c.x, 1.32, c.z, lerp(44, 38, u)); }, { dof: () => H_(her), frozen: true }],
   [BRAIN, 'xr', t => { const u = esin(span(t, BRAIN, HEART)); return LOOK(lerp(0.6, 0.3, u), 1.62, lerp(2.9, 1.7, u), 0, 1.55, 0, 44); }, { noao: true }],
   [HEART, 'xr', t => { const u = esin(span(t, HEART, BUTTER)); return LOOK(lerp(-0.2, 0.15, u), 1.3, lerp(2.2, 1.6, u), 0, 1.25, 0, 44); }, { noao: true }],
   [BUTTER, 'xr', t => { const u = esin(span(t, BUTTER, HI)); return LOOK(lerp(0.5, 0.3, u), 1.1, lerp(2.0, 1.6, u), 0, 1.05, 0, 44); }, { noao: true }],
@@ -720,8 +739,8 @@ const SHOTS = [
 function t0F() { return V3(0.6, 0.55, -1.9).lerp(H_(hero), smooth(0.5, 1.2, curT)); }
 let curT = 0;
 // per-set state: lights by time of day, steam, the clock, frozen world in the "it's her" beat
-function setState(t, k, o) { const tw = o.frozen ? MAGIC : t;
-  if (k === 'str') { pedsAt(tw > HI && tw < LIFE ? MAGIC : tw, [V3(HX, 0, hisZ(t)), V3(HX, 0, herZ(t))]); }
+function setState(t, k, o) { const tw = o.frozen ? MAGIC : t; WOW.visible = false;
+  if (k === 'str') { if (t >= MAGIC && t < BRAIN) wowAt(t, V3(HX + 0.05, 1.3, MZ), STR.cam); pedsAt(tw > HI && tw < LIFE ? MAGIC : tw, [V3(HX, 0, hisZ(t)), V3(HX, 0, herZ(t))]); }
   if (k === 'caf') { const night = t >= LIFE; CL.pend.forEach(L => L.intensity = night ? 1.2 : 3.5); CL.candle.intensity = night ? 1.6 + 0.2 * Math.sin(t * 13) : 0; CAFS.sc.userData.sun.intensity = night ? 0 : 2.0; CAFS.sc.userData.hemi.intensity = night ? 0.08 : 0.35;
     CL.win.material.color.setRGB(...(night ? [0.04, 0.06, 0.14] : [1.8, 1.7, 1.5])); const P = CL.steam.geometry.attributes.position.array; for (let i = 0; i < P.length / 3; i++) P[i * 3 + 1] = 0.5 + wrapR(hash(i) * 0.6 + t * 0.25, 0, 0.6); CL.steam.geometry.attributes.position.needsUpdate = true; }
   if (k === 'home') { const eve = t >= bt(99); HOME.sc.userData.sun.intensity = eve ? 0.6 : 3.2; HOME.sc.userData.sun.color.set(eve ? '#ff9a5a' : '#ffd8a8'); HL.livL.intensity = eve ? 6 : 2; const s = HOME.sc.userData.sun, rx = t < bt(0) || (t >= bt(2) && t < bt(4)) ? 0 : t < bt(2) ? 10 : 20; s.target.position.set(rx, 0, 0); s.position.set(rx + 9, 6, 2); }
@@ -736,7 +755,7 @@ function lerpF(A, B, k) { return { pos: A.pos.clone().lerp(B.pos, k), look: A.lo
 function applyF(cam, F) { cam.position.copy(F.pos); cam.lookAt(F.look); cam.fov = F.fov; }
 let lastDepth = null;
 function shoot(i, t, rt) { const [, k, cf, o = {}] = SHOTS[i], S = SETS[k]; curT = t; puffsReset(); if (k !== 'xr') CAST.forEach(P => S.sc.add(P.outer)); S.sc.add(rim, rim2);
-  setState(t, k, o); pose(t, k); const F = cf(t); applyF(S.cam, F); S.cam.near = o.far ? 0.3 : 0.05; S.cam.far = o.far ? 2000 : 1700; S.cam.updateProjectionMatrix(); S.cam.updateMatrixWorld();
+  setState(t, k, o); pose(t, k); const F = cf(t); applyF(S.cam, F); if (t < MAGIC) { const ph = ((t - 1.93) / BEAT) % 1, kk = ph < 0 ? ph + 1 : ph; S.cam.fov *= 1 - 0.035 * Math.exp(-kk * 9); } S.cam.near = o.far ? 0.3 : 0.05; S.cam.far = o.far ? 2000 : 1700; S.cam.updateProjectionMatrix(); S.cam.updateMatrixWorld();
   const lit = [hero, her, herWed, heroOld, herOld].filter(P => P.outer.visible); [rim, rim2].forEach((L, j) => { const P = lit[j]; if (!P || k === 'xr') { L.intensity = 0; return; } const h = H_(P), back = h.clone().sub(S.cam.position).setY(0).normalize(); L.position.copy(h).add(back.multiplyScalar(0.9)).add(V3(0, 0.4, 0)); L.intensity = k === 'str' ? 9 : 6; });
   if (o.far || o.noao) { shootTo(RTD, S.sc, S.cam); lastDepth = RTD.depthTexture; renderer.setRenderTarget(rt); accMat.uniforms.tSrc.value = RTD.texture; accMat.uniforms.uW.value = 1; renderer.setClearColor(0, 1); renderer.clear(); renderer.render(accSc, compCam); return; }
   shootTo(RTS, S.sc, S.cam); const hid = []; S.sc.traverse(q => { if ((q.isSprite || q.isPoints) && q.visible) { hid.push(q); q.visible = false; } }); aoFor(k).render(renderer, rt, RTS); hid.forEach(q => { q.visible = true; }); lastDepth = aoFor(k).depthTexture;
@@ -745,19 +764,20 @@ function shoot(i, t, rt) { const [, k, cf, o = {}] = SHOTS[i], S = SETS[k]; curT
 // ---- DOM: title fades, captions pop, HUD (clock / years), speech bubbles, the ECG, end card ----
 const $ = id => document.getElementById(id);
 const el = Object.fromEntries(['title', 'cap', 'hud', 'stat', 'val', 'sub', 'labels', 'end', 'endT', 'endS', 'ecg'].map(k => [k, $(k)]));
-const CAPS = [[0.25, bt(0), 'Just a <b>normal</b> day.'], [MAGIC, BRAIN, '<b>Yes. It’s her.</b>'], [BRAIN, HEART, 'Your brain’s reward system lights up — <b>dopamine</b>.'],
+const CAPS = [[0.15, bt(0), 'Just a <b>normal</b> day.'], [bt(0), bt(2), 'You brush your teeth.'], [bt(2), bt(4), 'Get dressed.'], [bt(4), CAFE, 'Head to work.'], [CAFE, OUT, 'Grab a coffee.'],
+  [OUT, MEET, 'Check your phone.'], [bt(52), BUMP, 'And then—'], [MAGIC, BRAIN, '<b>Yes. It’s her.</b>'], [BRAIN, HEART, 'Your brain’s reward system lights up — <b>dopamine</b>.'],
   [HEART, BUTTER, 'Your heart rate rises… and starts to <b>sync</b> with hers.'], [BUTTER, HI, 'Stress hormone up. Those are the <b>butterflies</b>.']];
 const clockAt = t => { const m = 7 * 60 + clamp(t / BUMP, 0, 1) * 102; return `${Math.floor(m / 60)}:${String(Math.floor(m % 60)).padStart(2, '0')} AM`; };
 const YEARS = [[LIFE, 'DAY 1', 'FIRST DATE'], [bt(83), 'YEAR 1', 'MOVING IN'], [bt(87), 'YEAR 3', 'THE WEDDING'], [bt(91), 'YEAR 5', 'BABY'], [bt(95), 'YEAR 12', 'THE KIDS'], [bt(99), 'YEAR 35', 'STILL LAUGHING'], [bt(103), 'YEAR 50', 'THE GRANDKIDS']];
-function hudAt(t) { if (t >= bt(0) && t < MAGIC) return ['TODAY', clockAt(t), 'A NORMAL WEEKDAY · NEW YORK'];
+function hudAt(t) { if (t >= bt(2) + 0.35 && t < MAGIC) return ['TODAY', clockAt(t), 'A NORMAL WEEKDAY · NEW YORK'];
   if (t >= HEART && t < BUTTER) return ['HEART RATES', t < HEART + 1.2 ? 'RISING' : 'IN SYNC', 'HIS · HERS'];
   if (t >= LIFE && t < ENDC) { let y = YEARS[0]; for (const q of YEARS) if (t >= q[0]) y = q; return ['TOGETHER', y[1], y[2]]; } return null; }
 function bubbles(t) { if (t < HI || t >= LIFE) return ''; const S = STR, out = []; const add = (P, txt, a) => { if (t < a) return; const v = H_(P).add(V3(0, 0.32, 0)).project(S.cam); if (v.z > 1) return; const x = clamp((v.x + 1) / 2 * W, 180, 900), y = (1 - v.y) / 2 * H;
     out.push(`<div class="bub" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;transform:translate(-50%,-100%) scale(${pop(t, a, 0.25).toFixed(3)})">${txt}</div>`); }; add(her, 'Hi.', HI + 0.15); add(hero, '…hi.', HI + 0.55); return out.join(''); }
 function ecgPath(t, ph, y0) { let d = ''; for (let i = 0; i <= 120; i++) { const x = 140 + i * 6.7, tt = t - (120 - i) * 0.012 + ph; const k = ((tt - 1.93) / BEAT) % 1, kk = k < 0 ? k + 1 : k; const sp = kk < 0.06 ? -kk * 900 : kk < 0.12 ? -54 + (kk - 0.06) * 2200 : kk < 0.18 ? 78 - (kk - 0.12) * 1300 : 0; d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + (y0 + sp).toFixed(1); } return d; }
 function updateDOM(t) {
-  el.title.style.opacity = fadeWin(t, 0.2, bt(2), 0.3);
-  const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? 1 : 0; el.cap.style.transform = cp ? `scale(${pop(t, cp[0], 0.22).toFixed(3)})` : ''; el.cap.classList.toggle('big', !!cp && cp[0] === MAGIC);
+  el.title.style.opacity = fadeWin(t, 0.1, bt(2) + 0.3, 0.3);
+  const cp = CAPS.find(([a, b]) => t >= a && t < b); el.cap.innerHTML = cp ? cp[2] : ''; el.cap.style.opacity = cp ? 1 : 0; el.cap.style.transform = cp ? `scale(${pop(t, cp[0], 0.22).toFixed(3)})` : ''; el.cap.classList.toggle('big', !!cp && cp[0] === MAGIC); const fl = document.getElementById('flash'); if (fl) { fl.style.opacity = (t >= MAGIC ? 0.7 * Math.exp(-(t - MAGIC) * 7) : 0).toFixed(3); fl.style.background = '#fff4e8'; }
   const h = hudAt(t); el.hud.style.opacity = h ? 1 : 0; if (h) { el.stat.innerHTML = '<b></b>' + h[0]; el.val.textContent = h[1]; el.sub.textContent = h[2]; const yp = YEARS.some(q => Math.abs(t - q[0]) < 0.25) ? pop(t, YEARS.reduce((a, q) => t >= q[0] ? q[0] : a, 0), 0.25) : 1; el.val.style.transform = `scale(${yp.toFixed(3)})`; }
   el.labels.innerHTML = bubbles(t);
   const ecgOn = t >= HEART && t < BUTTER; el.ecg.style.opacity = ecgOn ? 1 : 0; if (ecgOn) { const sync = smooth(HEART + 0.4, BUTTER - 0.3, t); el.ecg.innerHTML = `<path d="${ecgPath(t, 0, 70)}" stroke="#9fd0ff" stroke-width="5" fill="none"/><path d="${ecgPath(t, 0.37 * BEAT * (1 - sync), 70 + 70 * (1 - sync))}" stroke="#ff9ac0" stroke-width="5" fill="none"/>`; }
@@ -791,7 +811,7 @@ window.renderAt = (t) => {
   if (o.dof && !o.mb) { const f = o.dof(); dofMat.uniforms.tSrc.value = RTA.texture; dofMat.uniforms.tDepth.value = lastDepth; dofMat.uniforms.uNear.value = S.cam.near; dofMat.uniforms.uFar.value = S.cam.far;
     dofMat.uniforms.uFocus.value = S.cam.position.distanceTo(f); dofMat.uniforms.uAmt.value = o.frozen ? 40 : 26; renderer.setRenderTarget(RTDOF); renderer.render(dofSc, compCam); src = RTDOF; }
   const u = compMat.uniforms; u.tA.value = src.texture; u.uWhip.value = whipAt(t); u.uPixOn.value = 0; u.uRed.value = 0; u.uT.value = t; u.uSepia.value = 0; u.uLook.value = 0.12; u.uTilt.value = 0;
-  const flash = Math.max(0, 1 - Math.abs(t - MAGIC) / 0.25), exp = SHOTS[i][1] === 'xr' ? 1.0 : 1.0;
+  const flash = (t >= MAGIC - 0.05 ? Math.exp(-Math.max(0, t - MAGIC) * 6) * 0.8 : 0) + Math.max(0, 1 - Math.abs(t - BUMP) / 0.12) * 0.6, exp = SHOTS[i][1] === 'xr' ? 1.0 : 1.0;
   composite(0, exp * (1 + 0.8 * flash) * (1 - 0.8 * Math.max(0, 1 - Math.abs(t - LIFE) / 0.12)), 1.0); u.tA.value = RTA.texture; return true; };
 window.DBG = { THREE, hero, her, SETS, SHOTS, H_ };
 window.sceneReady = (async () => { await document.fonts.ready;
