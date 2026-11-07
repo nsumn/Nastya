@@ -323,7 +323,7 @@ function update(t) {
   placeCamera(t);
 }
 
-// ---------- 2D overlay ----------
+// ---------- 2D overlay ---------- (?nocap=1: captions come from the separate caption layer)
 const out = document.createElement('canvas'); out.width = W; out.height = H; const og = out.getContext('2d');
 function rrect(x, y, w, h, r) { og.beginPath(); og.moveTo(x + r, y); og.arcTo(x + w, y, x + w, y + h, r); og.arcTo(x + w, y + h, x, y + h, r); og.arcTo(x, y + h, x, y, r); og.arcTo(x, y, x + w, y, r); og.closePath(); }
 function txt(s, x, y, size, fill = '#fff', stroke = '#000', lw = 14, align = 'center') { og.font = `700 ${size}px Fredoka`; og.textAlign = align; og.textBaseline = 'middle'; og.lineJoin = 'round'; if (lw) { og.lineWidth = lw; og.strokeStyle = stroke; og.strokeText(s, x, y); } og.fillStyle = fill; og.fillText(s, x, y); }
@@ -381,5 +381,5 @@ function drawUI(t) {
   const flash = Math.max(0, 1 - Math.abs(t - tw.sturm - .05) / .12) + Math.max(0, 1 - Math.abs(t - tw.getrieben - .6) / .12); if (flash > 0) { og.fillStyle = `rgba(255,255,255,${.55 * cl(flash)})`; og.fillRect(0, 0, W, H); }
 }
 window.END = END; window.TW = tw;
-window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); if (!Q.get('nocap') && ramp(t, tw.folg - .2, tw.folg + .3) < .3) drawCaption(t, 1450);   // ?nocap=1: captions come from the separate layer return out.toDataURL('image/jpeg', q); };
+window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); if (!Q.get('nocap') && ramp(t, tw.folg - .2, tw.folg + .3) < .3) drawCaption(t, 1450); return out.toDataURL('image/jpeg', q); };
 window.__done = true;
