@@ -12,6 +12,9 @@ else cat lib.js ${NAME}_main.js $( [ -f ${NAME}_hq.js ] && echo ${NAME}_hq.js ) 
 pgrep -f "http.server 8766" >/dev/null || { (cd .. && setsid nohup python3 -m http.server 8766 >/dev/null 2>&1 < /dev/null &); sleep 1; }
 END=$(python3 -c "import json;w=json.load(open('../$DIR/words.json'));print(round(w[-1][2]+.7,3))")
 mkdir -p chunks
+# finished chunks are reused only while the scene and the voice timing are unchanged
+HASH=$(cat ${NAME}.js ../$DIR/words.json | md5sum | cut -c1-16)
+[ "$(cat chunks/${NAME}.hash 2>/dev/null)" = "$HASH" ] || { rm -f chunks/${NAME}_[0-9]*.mp4; echo "$HASH" > chunks/${NAME}.hash; }
 pids=()
 for a in $(seq 0 10 $(python3 -c "print(int($END))")); do
   b=$((a+10)); python3 -c "import sys;sys.exit(0 if $b<$END else 1)" || b=$END

@@ -27,7 +27,7 @@ const tw = {
   und2: T('Und', 2), rutsche: T('Burg'), knochen: T('Kartons'), plansch: T('Achterbahn'), tennis: T('Wollknäueln'),
   brunnen: T('Brunnen'), wuerst: T('Fische', 2), kuschel: T('Sonnenliege'), kissen: T('kalt'), oder: T('Oder'),
   jeder: T('Jeder'), huette: T('Körbchen'), namen: T('Namen'),
-  stell: T('Stell'), hundert: T('Hundert'), wedeln: T('schnurren'),
+  stell: T('Stell'), hundert: T('Fünftausend'), wedeln: T('schnurren'), stadt: T('Katzenstadt'),
   aber3: T('Aber', 3), nur: T('nur'), fangen: T('Fangen'),
   was: T('Was'), zuerst: T('zuerst'), schreib: T('Schreib'), likes: T('Likes', 2), gewinnen: T('gewinnen'),
   psst: T('psst'), zaun2: T('Zaun', 2), raschelt: T('raschelt'),
@@ -48,7 +48,7 @@ e(tw.und2, 'whoosh', .6); e(tw.rutsche, 'swoosh_up', .7); e(tw.knochen, 'boing',
 e(tw.plansch, 'swoosh_up', .8); for (let i = 0; i < 8; i++) e(tw.tennis + i * .08, 'tick', .45);
 e(tw.brunnen, 'pop', .8); for (let i = 0; i < 4; i++) e(tw.wuerst + i * .2, 'splash', .35); e(tw.kuschel, 'pop', .8); e(tw.kissen, 'sparkle', .6); e(tw.oder, 'sparkle', .8);
 e(tw.jeder, 'pop', 1); e(tw.huette, 'poof', .8); e(tw.namen, 'ding', .7); e(tw.namen + .3, 'meow_happy', .6);
-e(tw.stell, 'whoosh', .7); for (let i = 0; i < 24; i++) e(tw.hundert + i * .08, i % 4 ? 'pop' : 'meow_happy', .3); e(tw.wedeln, 'tada', .8); SFX.beds.push([tw.wedeln - .3, tw.aber3, 'purr', .6]);
+e(tw.stell, 'whoosh', .7); for (let i = 0; i < 24; i++) e(tw.hundert + i * .08, i % 4 ? 'pop' : 'meow_happy', .3); e(tw.wedeln, 'tada', .8); e(tw.stadt - .1, 'sparkle', .9); for (let i = 0; i < 10; i++) e(tw.stadt - .3 + i * .05, 'pop', .25); SFX.beds.push([tw.wedeln - .3, tw.aber3, 'purr', .6]);
 e(tw.aber3 - .1, 'whoosh', .8); e(tw.nur, 'boom', .5); e(tw.fangen - .2, 'boing', .5); e(tw.fangen + .2, 'boing', .5); e(tw.fangen + .6, 'meow_sad', .6);
 e(tw.was, 'ding', .7); e(tw.schreib, 'pop', .8); e(tw.schreib + .3, 'pop', .7); e(tw.likes, 'heart', .7);
 e(tw.psst - .1, 'tick', .6); e(tw.raschelt + .2, 'boom', .6);
@@ -333,7 +333,7 @@ function card(k, y, kind, title, sub, active, t, rot) {
 function meter(k, n, total, label, y) {
   if (k <= .01) return; g.save(); g.globalAlpha = cl(k * 1.4); const yy = y + (1 - k) * 200, x = 120, w = W - 240;
   soft(() => { rrect(x - 30, yy - 80, w + 60, 170, 56); g.fillStyle = '#fff'; g.fill(); }, 24, 12, .22);
-  text(`${Math.round(n)} / ${total} ${label}`, W / 2, yy - 32, 46, INK);
+  text(`${Math.round(n).toLocaleString('de-DE')} / ${total.toLocaleString('de-DE')} ${label}`, W / 2, yy - 32, 46, INK);
   rrect(x, yy, w, 52, 26); g.fillStyle = '#efe9ff'; g.fill(); const f = cl(n / total);
   if (f > 0) { rrect(x, yy, Math.max(52, w * f), 52, 26); const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, f > .99 ? '#5fd3a8' : '#ff9aa8'); gr.addColorStop(1, f > .99 ? '#a6f0c8' : '#ffc38a'); g.fillStyle = gr; g.fill();
     for (let i = 0; i < 6; i++) { const px = x + 30 + i * (w - 60) / 5; if (px < x + w * f) { g.fillStyle = 'rgba(255,255,255,.7)'; ell(px, yy + 26, 9, 7); g.fill(); } } }
@@ -346,7 +346,7 @@ function button(k, t, y) { if (k <= .01) return; const w = 620, h = 156; const p
 
 // ---------- captions: phrase in a white pill, current word in a coral pill ----------
 const PHR = []; { let cur = []; WORDS.forEach((w, i) => { cur.push(i); if (/[.,!?]$/.test(w[0]) || cur.length >= 3) { PHR.push(cur); cur = []; } }); if (cur.length) PHR.push(cur); }
-const SHOW = { Hundert: '100', tausend: '1000', zwei: '2' };
+const SHOW = { Fünftausend: '5.000', tausend: '1000', zwei: '2' };
 function caption(t, y) {
   let wi = -1; for (let i = 0; i < WORDS.length; i++) if (WORDS[i][1] <= t + .02) wi = i; if (wi < 0 || t > WORDS[wi][2] + .6) return;
   const ph = PHR.find(p => p.includes(wi)); if (!ph) return;
@@ -359,7 +359,7 @@ function caption(t, y) {
     g.save(); g.translate(x + mw / 2, y); g.scale(sc, sc); g.rotate(on ? -.04 : 0); text(w, 0, 0, fs, on ? '#ff7ab6' : '#ffffff', OUT, 16); g.restore(); x += mw + space; });
 }
 // ---------- crowd ----------
-seed = 9; const CROWD = []; for (let i = 0; i < 100; i++) CROWD.push({ x: rr(70, W - 70), y: rr(1400, 1890), s: rr(.34, .46), d: DOGS[i % DOGS.length], ph: rr(0, 6) });
+seed = 9; const CROWD = []; for (let i = 0; i < 170; i++) CROWD.push({ x: rr(70, W - 70), y: rr(1400, 1890), s: rr(.34, .46), d: DOGS[i % DOGS.length], ph: rr(0, 6) });
 CROWD.sort((a, b) => a.y - b.y);
 
 // ---------- frame ----------
@@ -434,9 +434,13 @@ function frame(t) {
   // 100 puppies wagging
   const crowdK = ramp(t, tw.hundert - .1, tw.wedeln + .2);
   if (t > tw.stell - .1 && t < tw.aber3 - .1) {
-    const n = Math.round(100 * crowdK);
-    for (let i = 0; i < n; i++) { const c = CROWD[i]; g.save(); g.translate(c.x, c.y - Math.abs(Math.sin(t * 6 + c.ph)) * 14); const s = c.s * pop(t, tw.hundert - .1 + i * .018, .25); g.scale(s, s); gRef = g;
+    const n = Math.round(170 * crowdK);
+    for (let i = 0; i < n; i++) { const c = CROWD[i]; g.save(); g.translate(c.x, c.y - Math.abs(Math.sin(t * 6 + c.ph)) * 14); const s = c.s * pop(t, tw.hundert - .1 + i * .011, .25); g.scale(s, s); gRef = g;
       catM(0, 0, 1.15, { c: c.d[0], c2: c.d[1], mood: i % 3 ? 'happy' : 'wow' }, t + c.ph); g.restore(); }
+    const ck = ease(t, tw.stadt - .3, tw.stadt + .4);
+    if (ck > 0) { for (let i = 0; i < 26; i++) { const hx = (i * 97) % W + 20, hy = 1150 + (i % 4) * 34, k = pop(t, tw.stadt - .3 + i * .02, .3); if (k <= .01) continue; g.save(); g.translate(hx, hy); g.scale(.32 * k, .32 * k);
+        soft(() => { rrect(-90, -150, 180, 150, 14); g.fillStyle = ['#ffd3e2', '#d9ccff', '#c9f0dc', '#ffe9b8'][i % 4]; g.fill(); g.beginPath(); g.moveTo(-110, -140); g.lineTo(0, -240); g.lineTo(110, -140); g.closePath(); g.fillStyle = ['#ff8fb1', '#a98bff', '#5fd3a8', '#ffb648'][i % 4]; g.fill(); }); g.restore(); }
+      pill(W / 2, 1000, 'Katzenstadt', pop(t, tw.stadt - .1, .35), '#ff7ab6', '#fff', 64); }
     if (crowdK > .4) dog(540, 1640, .8, { mood: 'happy', hat: 1, sash: true, wag: 20 }, t);
   }
   // "...rustles behind the fence"
@@ -457,9 +461,9 @@ function frame(t) {
     rows.forEach(([k, kind, ti, su, rot], i) => card(back(ramp(t, tw[k] - .1, tw[k] + .3)) * cta, 560 + i * 205, kind, ti, su, t > tw[k] && t < tw[nxt[i]], t, rot));
     dog(540, 1800 - Math.abs(Math.sin(t * 5)) * 18, .75, { mood: 'happy', tag: t > tw.marke - .1, wag: 14 }, t);
   }
-  meter(win(t, tw.jeder - .1, tw.stell, .3), 2, 100, 'Kätzchen', 1180);
-  meter(win(t, tw.stell, tw.aber3 - .1, .3), Math.max(2, crowdK * 100), 100, 'Kätzchen', 1180);
-  meter(win(t, tw.aber3 - .1, tw.was, .3), 1, 100, 'Kätzchen', 1180);
+  meter(win(t, tw.jeder - .1, tw.stell, .3), 2, 5000, 'Kätzchen', 1180);
+  meter(win(t, tw.stell, tw.stadt - .1, .3), Math.max(2, crowdK * 5000), 5000, 'Kätzchen', 1180);
+  meter(win(t, tw.aber3 - .1, tw.was, .3), 1, 5000, 'Kätzchen', 1180);
   const site = win(t, tw.was - .1, tw.psst - .1, .3);
   if (site > .01) {
     g.save(); g.translate(780, 1560); g.scale(site, site); soft(() => { g.fillStyle = '#c79a7a'; rrect(-14, -20, 28, 300, 12); g.fill(); rrect(-200, -150, 400, 150, 36); g.fillStyle = '#fff1d9'; g.fill(); }, 16, 8, .22);
@@ -480,7 +484,7 @@ function frame(t) {
       dog(540, 1330 - Math.abs(Math.sin(t * 6)) * 22, .95, { mood: 'happy', wag: 16, tag: true }, t);
       for (let i = 0; i < 4; i++) { const k = pop(t, tw.neue + i * .1, .3); g.save(); g.globalAlpha = .7; doghouse(170 + i * 247, 1640, .5 * k, '?', '#e6e0f0'); g.restore(); }
       pill(W / 2, 1720, 'TEIL 2', pop(t, tw.teil - .05, .3), '#ffe08a', INK, 52);
-      meter(1, 1, 100, 'Kätzchen', 1840);
+      meter(1, 1, 5000, 'Kätzchen', 1840);
     }
   }
   // paw-print wipe on "Komm mal mit"
