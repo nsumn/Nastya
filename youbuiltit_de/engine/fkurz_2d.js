@@ -19,7 +19,7 @@ const win = (t, a, b, f = .3) => ramp(t, a, a + f) * (1 - ramp(t, b - f, b));
 let seed = 21; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; const rr = (a, b) => a + (b - a) * rnd();
 
 
-const tw = { flocke: T('Flocke'), tagen: T('Tagen'), gartentor: T('Gartentor'), aber1: T('Aber'), niemand: T('niemand'),
+const tw = { flocke: T('Flocke'), tagen: T('Tag'), gartentor: T('Gartentor'), aber1: T('Aber'), niemand: T('niemand'),
   dabei: T('Dabei'), garten: T('Garten', 2), riesig: T('riesig'), leer: T('leer'),
   folgst: T('Folgst'), ein1: T('ein'), schreib: T('Schreib'), farbe: T('Farbe'), name: T('Name'), alles: T('alles'),
   dann: T('Dann'), malen: T('malen'), teil: T('Teil'), fuenf: T('Fünftausend'), stadt: T('Katzenstadt'),
@@ -27,7 +27,7 @@ const tw = { flocke: T('Flocke'), tagen: T('Tagen'), gartentor: T('Gartentor'), 
 const SFX = { end: END, music_gain: .15, events: [], beds: [] };
 const e = (t, n, g = 1) => SFX.events.push([+t.toFixed(3), n, g]);
 SFX.beds.push([tw.dabei - .1, tw.folgst, 'wind', .35]);
-e(.15, 'meow_sad', .8); for (let i = 0; i < 12; i++) e(tw.flocke + .3 + i * .1, 'tick', .4); e(tw.tagen, 'ding', .6); e(tw.niemand, 'boom', .5);
+e(.15, 'meow_sad', .8);  e(tw.niemand, 'boom', .5);
 e(tw.dabei - .1, 'whoosh', .8); e(tw.riesig, 'swoosh_up', .5); e(tw.leer, 'tick', .6);
 e(tw.folgst - .05, 'pop', 1); e(tw.ein1 - .3, 'boing', .7); e(tw.ein1, 'meow_happy', .8);
 e(tw.schreib, 'pop', .8); for (const k of ['farbe', 'name', 'alles']) { e(tw[k] - .05, 'pop', .7); e(tw[k] + .25, 'meow_happy', .45); }
@@ -347,7 +347,7 @@ CROWD.sort((a, b) => a.y - b.y);
 // ---------- frame ----------
 function gate(t, z) {
   const gr = g.createLinearGradient(0, 0, 0, 1300); gr.addColorStop(0, '#6f63c9'); gr.addColorStop(1, '#f2a7b7'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  soft(() => { ell(800, 820, 70, 70); g.fillStyle = PAL.sun; g.fill(); });
+  const a = (t * 1.1) % 1 * Math.PI; soft(() => { ell(540 - Math.cos(a) * 520, 1150 - Math.sin(a) * 520, 70, 70); g.fillStyle = PAL.sun; g.fill(); });
   g.fillStyle = PAL.hill; g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W; x += 40) g.lineTo(x, 1150 - 60 * Math.sin(x * .005)); g.lineTo(W, H); g.fill();
   g.fillStyle = PAL.grass; g.fillRect(0, 1250, W, H); g.fillStyle = PAL.path; g.beginPath(); g.moveTo(480, 1250); g.lineTo(600, 1250); g.lineTo(900, H); g.lineTo(180, H); g.fill();
   g.save(); g.translate(W / 2, 1500); g.scale(z, z); g.translate(-W / 2, -1500);
@@ -363,8 +363,6 @@ function frame(t) {
   if (t < tw.dabei - .1) {   // waiting at the gate, day counter ticks up to 37
     gate(t, 1 + ease(t, 0, tw.dabei) * .12);
     const lf = ramp(t, tw.aber1, tw.dabei); if (lf > 0) leaf(lerp(-40, 1120, lf), 1350 - Math.sin(lf * 9) * 40, lf * 12);
-    const d = Math.max(1, Math.round(37 * ease(t, tw.flocke + .2, tw.tagen)));
-    pill(W / 2, 960, `Tag ${d}`, pop(t, .1, .3), d === 37 ? '#ff7ab6' : '#fff', d === 37 ? '#fff' : INK, 70);
     return;
   }
   // the big empty garden; camera pans, then follows the action
