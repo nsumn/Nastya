@@ -10,7 +10,7 @@ SFX = {
   'rise':    ('rising bar graph swell, digital, short', 1.5),
   'thud':    ('deep soft impact hit for a big number on screen', 1.2),
   'stamp':   ('rubber stamp slam on paper', 0.8),
-  'tick':    ('soft single counter tick, low, wooden', 0.3),
+  'tick':    ('soft single counter tick, low, wooden', 0.5),
 }
 MUSIC = {'news': 'modern news explainer background music, pulsing synth bass, tense but upbeat, documentary, 100 bpm, no vocals'}
 jobs = json.load(open(OJ)) if os.path.exists(OJ) else {}

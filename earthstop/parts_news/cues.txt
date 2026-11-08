@@ -1,0 +1,25 @@
+# 2026 midterms news-map video — cue sheet generated from parts_news/n_times.js (voice is mixed separately: out/news/voice.wav)
+music news0 0.0 0.32 30.0
+music news1 29.8 0.32 62.12
+0.0 whoosh 0.5
+2.60 flip 0.8
+3.88 thud 0.6
+10.57 pop 0.7
+11.07 pop 0.7
+11.57 pop 0.7
+12.70 pop 0.7
+13.14 pop 0.7
+13.71 pop 0.7
+14.30 pop 0.7
+15.60 thud 0.6
+18.60 whoosh 0.4
+22.72 rise 0.7
+26.09 thud 0.6
+34.84 whoosh 0.4
+35.04 rise 0.6
+40.87 whoosh 0.4
+46.18 whoosh 0.5
+46.28 rise 0.5
+54.47 stamp 1.0
+55.33 whoosh 0.4
+58.07 thud 0.5
