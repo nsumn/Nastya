@@ -11,7 +11,9 @@ for w in W:
     cur.append(w)
     if re.search(r'[.?!]$', w['word'].strip()): sents.append(cur); cur = []
 if cur: sents.append(cur)
-subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', D + 'voice.mp3', '-ac', '1', '-ar', '44100', D + 'voice_raw.wav'], check=True)
+ATEMPO = float(os.environ.get('ATEMPO', '1'))   # speed the read up without changing pitch (ffmpeg atempo); word times scale with it
+subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', D + 'voice.mp3', '-ac', '1', '-ar', '44100'] + (['-af', f'atempo={ATEMPO}'] if ATEMPO != 1 else []) + [D + 'voice_raw.wav'], check=True)
+for w in W: w['start'] /= ATEMPO; w['end'] /= ATEMPO
 sr, a = wavfile.read(D + 'voice_raw.wav'); a = a.astype(np.float32)
 MAXGAP = float(os.environ.get('MAXGAP', '0'))
 if MAXGAP > 0:   # cut long silences: keep MAXGAP/2 after the word and MAXGAP/2 before the next (short crossfade)
@@ -25,6 +27,10 @@ if MAXGAP > 0:   # cut long silences: keep MAXGAP/2 after the word and MAXGAP/2 
     a = np.concatenate(keep)
     for w in W: w['start'], w['end'] = sq(w['start']), sq(w['end'])
     print('cut', len(cuts), 'silences')
+if os.environ.get('TRIMHEAD'):   # drop the TTS file's own leading silence: the first word starts 0.03 s into the clip (+ LEAD)
+    h0 = max(0.0, W[0]['start'] - 0.03); a = a[int(h0 * sr):]
+    for w in W: w['start'] -= h0; w['end'] -= h0
+    print('trimmed head', round(h0, 3))
 ins = []   # (orig time, extra seconds) inserted in the middle of the gap after sentence i
 for i, s in enumerate(sents):
     if i in PA and i + 1 < len(sents): ins.append(((s[-1]['end'] + sents[i + 1][0]['start']) / 2, PA[i]))
