@@ -89,17 +89,20 @@ const STATES = [];   // { id, name, fips, lon, lat }  index+1 = id in the id tex
 const ST_COL = Array.from({ length: 64 }, () => new THREE.Vector4(0, 0, 0, 0)), ST_LIFT = new Float32Array(64);
 const mapU = { tDem: { value: null }, tId: { value: null }, uCol: { value: ST_COL }, uLift: { value: ST_LIFT }, uH: { value: 11 }, uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uT: { value: 0 }, uGlobal: { value: 0 } };
 const mapMat = new THREE.ShaderMaterial({ uniforms: mapU, fog: false,
-  vertexShader: `uniform sampler2D tDem, tId; uniform float uH, uLift[64]; varying vec2 vUv; varying vec3 vN; varying float vId; varying vec3 vW;
+  vertexShader: `uniform sampler2D tDem, tId; uniform float uH, uLift[64]; varying vec2 vUv; varying vec3 vN; varying float vId; varying vec3 vW; varying float vHt;
     float hh(vec2 uv){ float v = texture2D(tDem, uv).r; return v * v * uH; }
     void main(){ vUv = uv; vec2 tuv = vec2(uv.x, uv.y); float id = floor(texture2D(tId, tuv).r * 255.0 + 0.5); vId = id;
       float e = 1.0 / 1600.0, f = 1.0 / 750.0; float h = hh(tuv), hx = hh(tuv + vec2(e, 0.0)) - hh(tuv - vec2(e, 0.0)), hz = hh(tuv + vec2(0.0, f)) - hh(tuv - vec2(0.0, f));
       vN = normalize(vec3(-hx / (2.0 * ${(64 * 0.788 * 6 / 1600).toFixed(5)}), 1.0, hz / (2.0 * ${(30 * 6 / 750).toFixed(5)})));
       float lift = 0.0; if (id > 0.5 && id < 63.5) lift = uLift[int(id)];
-      vec3 p = position; p.y += h + lift; vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-  fragmentShader: `uniform sampler2D tId; uniform vec4 uCol[64]; uniform vec3 uSun; uniform float uT, uGlobal; varying vec2 vUv; varying vec3 vN; varying float vId; varying vec3 vW;
+      vHt = texture2D(tDem, tuv).r; vec3 p = position; p.y += h + lift; vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+  fragmentShader: `uniform sampler2D tId; uniform vec4 uCol[64]; uniform vec3 uSun; uniform float uT, uGlobal; varying vec2 vUv; varying vec3 vN; varying float vId; varying vec3 vW; varying float vHt;
     float idAt(vec2 o){ return floor(texture2D(tId, vUv + o).r * 255.0 + 0.5); }
     void main(){ float id = idAt(vec2(0.0)); vec3 n = normalize(vN); float dif = max(dot(n, uSun), 0.0), sh = 0.25 + 1.1 * dif;
-      vec3 base = id < 0.5 ? vec3(0.03, 0.05, 0.08) : id > 254.5 ? vec3(0.13, 0.14, 0.16) : vec3(0.22, 0.24, 0.28);
+      // natural hypsometric tint (muted): green lowlands → olive plains → tan uplands → brown mountains → pale peaks
+      float e = vHt; vec3 land = mix(vec3(0.20, 0.27, 0.16), vec3(0.33, 0.33, 0.20), smoothstep(0.08, 0.35, e)); land = mix(land, vec3(0.42, 0.34, 0.24), smoothstep(0.35, 0.6, e)); land = mix(land, vec3(0.36, 0.28, 0.22), smoothstep(0.6, 0.8, e)); land = mix(land, vec3(0.62, 0.6, 0.58), smoothstep(0.82, 0.95, e));
+      land = mix(vec3(dot(land, vec3(0.3, 0.59, 0.11))), land, 0.75);
+      vec3 base = id < 0.5 ? vec3(0.03, 0.05, 0.08) : id > 254.5 ? land * 0.55 : land;
       vec3 col = base * sh;
       if (id > 0.5 && id < 63.5) { vec4 c = uCol[int(id)]; col = mix(col, c.rgb * (0.55 + 0.75 * dif), c.a); col += c.rgb * c.a * 0.12; }
       // borders: state lines (thin, light), the coast (brighter)
