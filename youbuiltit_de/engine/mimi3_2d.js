@@ -333,25 +333,62 @@ function dream(t, k) {   // Mimi's dream: a home for every kitten, in a big flow
 function bar(k, v, y) { if (k <= .01) return; const x = 110, w = W - 220, h = 56; g.save(); g.globalAlpha = cl(k * 1.4);
   rrect(x - 26, y - 84, w + 52, h + 130, 36); fillStroke('#ffffff', 6); text(`${Math.round(v).toLocaleString('de-DE')} / ${GOALN.toLocaleString('de-DE')} Kätzchen`, W / 2, y - 36, 46, OUT, null, 0);
   rrect(x, y, w, h, 28); fillStroke('#eadccb', 4); const f = cl(v / GOALN); rrect(x, y, Math.max(h, w * f), h, 28); fillStroke('#ff8a5a', 4); g.restore(); }
-// ---------- the city map: 100 x 100 = 10.000 houses, filled from the centre outwards ----------
-const MAPN = 100, ORDER = (() => { const c = []; for (let y = 0; y < MAPN; y++) for (let x = 0; x < MAPN; x++) { const dx = x - 49.5, dy = y - 49.5; c.push([x, y, Math.hypot(dx, dy * 1.1) + ((x * 7 + y * 13) % 10) * .35]); } c.sort((a, b) => a[2] - b[2]); return c; })();
-const RANK = new Int32Array(MAPN * MAPN); ORDER.forEach(([x, y], i) => { RANK[y * MAPN + x] = i; });
-const HCOL = ['#ff8fb1', '#a98bff', '#5fd3a8', '#ffb648', '#7fc8ff', '#f3a35b'];
-const DUCELL = ORDER[FOLLOWERS][0] + ORDER[FOLLOWERS][1] * MAPN;
-function drawMap(t, lit, zoom, fx, fy, k) {
-  if (k <= .01) return; g.save(); g.globalAlpha = cl(k * 1.4);
-  g.fillStyle = '#e9f5e1'; g.fillRect(0, 0, W, H);
-  const S = 9.6 * zoom, ox = W / 2 - fx * S, oy = 980 - fy * S;
-  g.fillStyle = '#d7e8cf'; for (let i = 0; i <= MAPN; i += 10) { g.fillRect(ox + i * S - S * .15, oy, S * .3, MAPN * S); g.fillRect(ox, oy + i * S - S * .15, MAPN * S, S * .3); }
-  const x0 = Math.max(0, Math.floor(-ox / S)), x1 = Math.min(MAPN, Math.ceil((W - ox) / S)), y0 = Math.max(0, Math.floor(-oy / S)), y1 = Math.min(MAPN, Math.ceil((H - oy) / S));
-  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const r = RANK[y * MAPN + x], X = ox + x * S + S * .12, Y = oy + y * S + S * .12, sz = S * .76;
-    const on = r < lit, du = y * MAPN + x === DUCELL && t > tw.haus2 - .1;
-    g.fillStyle = du ? '#ffd23f' : on ? HCOL[(x * 3 + y * 5) % 6] : '#dfe2e7'; if (S > 20) g.fillRect(X, Y + sz * .35, sz, sz * .65); else g.fillRect(X - S * .06, Y - S * .06, sz + S * .12, sz + S * .12);
-    if (S > 20) { g.beginPath(); g.moveTo(X - sz * .08, Y + sz * .4); g.lineTo(X + sz / 2, Y); g.lineTo(X + sz * 1.08, Y + sz * .4); g.closePath(); g.fillStyle = du ? '#e0a000' : on ? '#8a5230' : '#a9adb5'; g.fill();
-      if (on && S > 60) { const ci = r % CATS.length; let nm = '@' + CATS[ci].uid; g.font = `700 ${Math.round(S * .14)}px Fredoka`; while (g.measureText(nm).width > S * .95) nm = nm.slice(0, -2) + '…'; text(nm, X + sz / 2, Y + sz * 1.08, Math.round(S * .14), OUT, null, 0);
-        const c = COLORS[ci % COLORS.length]; cat(X + sz / 2, Y + sz * .9, S * .0016, { c: c[0], c2: c[1], mood: 'happy' }, t + r);
-        if (t > tw.napf - .1) { g.fillStyle = '#7fb4e6'; g.beginPath(); g.ellipse(X + sz * .88, Y + sz * .95, S * .09, S * .035, 0, 0, 7); g.fill(); } } } }
-  // Mimi's house in the middle
+// ---------- Mimistadt: a real city map (streets, river, bridges, parks, plaza, districts), pre-rendered once ----------
+const WS = 3000, BLK = 200, ROAD = 34, NB = WS / BLK, CEN = WS / 2;
+const riverY = x => 1880 + 230 * Math.sin(x / 420) + 60 * Math.sin(x / 150);
+const PLOTS = [], PARKS = [], SPECIAL = {};
+for (let bj = 0; bj < NB; bj++) for (let bi = 0; bi < NB; bi++) {
+  const x0 = bi * BLK + ROAD / 2, y0 = bj * BLK + ROAD / 2, w = BLK - ROAD, cx = x0 + w / 2, cy = y0 + w / 2;
+  if (Math.abs(riverY(cx) - cy) < 150) continue;                                   // the river runs here
+  if (bi === 7 && bj === 7) { SPECIAL.plaza = [x0, y0, w]; continue; }            // Mimiplatz in the centre
+  if ((bi === 6 && bj === 7) || (bi === 8 && bj === 7)) continue;                 // around the plaza: lawns
+  if ((bi * 7 + bj * 3) % 11 === 0 || (bi === 3 && bj === 4)) { PARKS.push([x0, y0, w]); continue; }
+  for (let py = 0; py < 3; py++) for (let px = 0; px < 3; px++) { if (px === 1 && py === 1) continue; PLOTS.push({ x: x0 + 18 + px * 52, y: y0 + 18 + py * 52, d: Math.hypot(x0 + px * 52 - CEN, y0 + py * 52 - CEN) }); }
+}
+PLOTS.sort((a, b) => a.d - b.d); PLOTS.forEach((p, i) => { p.i = i; });
+const NLIT = Math.round(PLOTS.length * FOLLOWERS / GOALN), RLIT = PLOTS[NLIT].d - 4, DUP = PLOTS[NLIT];
+function mkCanvas() { const c = document.createElement('canvas'); c.width = WS; c.height = WS; return [c, c.getContext('2d')]; }
+function paintBase(q) {
+  q.fillStyle = '#cdeab0'; q.fillRect(0, 0, WS, WS);
+  q.fillStyle = '#f2e9d8'; for (let i = 0; i <= NB; i++) { const w = i % 5 === 0 ? ROAD * 1.6 : ROAD; q.fillRect(i * BLK - w / 2, 0, w, WS); q.fillRect(0, i * BLK - w / 2, WS, w); }
+  q.strokeStyle = '#ffffff'; q.lineWidth = 3; q.setLineDash([16, 14]); for (let i = 0; i <= NB; i += 5) { q.beginPath(); q.moveTo(i * BLK, 0); q.lineTo(i * BLK, WS); q.moveTo(0, i * BLK); q.lineTo(WS, i * BLK); q.stroke(); } q.setLineDash([]);
+  // river + bridges
+  q.beginPath(); for (let x = 0; x <= WS; x += 20) q.lineTo(x, riverY(x) - 70); for (let x = WS; x >= 0; x -= 20) q.lineTo(x, riverY(x) + 70); q.closePath(); q.fillStyle = '#8fd0ff'; q.fill(); q.lineWidth = 8; q.strokeStyle = '#6ab8ef'; q.stroke();
+  for (let i = 0; i <= NB; i++) { const x = i * BLK, y = riverY(x); q.fillStyle = '#c9a07a'; q.fillRect(x - 26, y - 90, 52, 180); q.strokeStyle = '#8a5a3a'; q.lineWidth = 4; q.strokeRect(x - 26, y - 90, 52, 180); }
+  // parks
+  PARKS.forEach(([x0, y0, w]) => { q.fillStyle = '#9fdc8a'; q.fillRect(x0, y0, w, w); for (let k = 0; k < 7; k++) { const tx = x0 + 22 + (k * 53) % (w - 40), ty = y0 + 22 + (k * 37) % (w - 40); q.fillStyle = '#5fbf6a'; q.beginPath(); q.arc(tx, ty, 17, 0, 7); q.fill(); q.fillStyle = '#4aa858'; q.beginPath(); q.arc(tx + 4, ty + 4, 9, 0, 7); q.fill(); } });
+  // plaza with Mimi's house and a fountain
+  const [px0, py0, pw] = SPECIAL.plaza; q.fillStyle = '#fff3d6'; q.fillRect(px0 - 60, py0 - 10, pw + 120, pw + 20); q.strokeStyle = '#e2c79a'; q.lineWidth = 6; q.strokeRect(px0 - 60, py0 - 10, pw + 120, pw + 20);
+  q.fillStyle = '#bfe6ff'; q.beginPath(); q.arc(px0 + pw / 2, py0 + pw / 2 + 50, 34, 0, 7); q.fill(); q.strokeStyle = '#7fb4e6'; q.stroke();
+  houseG(q, px0 + pw / 2, py0 + 70, 90, '#ff8a5a', '#c4384f', true);
+  q.font = '700 34px Fredoka'; q.textAlign = 'center'; q.fillStyle = OUT; q.fillText('Mimiplatz', px0 + pw / 2, py0 + pw + 44);
+  // street + district names
+  q.font = '700 30px Fredoka'; q.fillStyle = '#8a7a6a'; q.save(); q.translate(5 * BLK + 8, 640); q.rotate(Math.PI / 2); q.fillText('Miau-Allee', 0, 0); q.restore(); q.fillText('Pfotenweg', 2280, 5 * BLK + 10); q.fillText('Schnurrstraße', 760, 10 * BLK + 10);
+  q.font = '700 54px Fredoka'; q.fillStyle = 'rgba(58,35,80,.5)'; q.fillText('Schnurrviertel', 900, 980); q.fillText('Pfotenhausen', 2150, 1080); q.fillText('Am Fluss', 1500, 2380);
+}
+function houseG(q, x, y, s, wall, roof, flag) { q.fillStyle = wall; q.fillRect(x - s / 2, y - s * .45, s, s * .55); q.lineWidth = Math.max(2, s * .05); q.strokeStyle = OUT; q.strokeRect(x - s / 2, y - s * .45, s, s * .55);
+  q.beginPath(); q.moveTo(x - s * .62, y - s * .4); q.lineTo(x, y - s * .9); q.lineTo(x + s * .62, y - s * .4); q.closePath(); q.fillStyle = roof; q.fill(); q.stroke();
+  q.fillStyle = '#fff3c4'; q.fillRect(x - s * .15, y - s * .3, s * .3, s * .22); if (flag) { q.fillStyle = OUT; q.fillRect(x + s * .3, y - s * 1.3, 4, s * .5); q.fillStyle = '#ffd23f'; q.fillRect(x + s * .3 + 4, y - s * 1.3, s * .3, s * .18); } }
+const HC = [['#ffd3e2', '#ff6f91'], ['#d9ccff', '#8f74e8'], ['#c9f0dc', '#3fbf8a'], ['#ffe9b8', '#f0a030'], ['#cde9ff', '#4a9be0'], ['#ffd9c2', '#e0702a']];
+const [mapA, qa] = mkCanvas(), [mapB, qb] = mkCanvas();
+paintBase(qa); paintBase(qb);
+PLOTS.forEach(p => { qa.setLineDash([6, 6]); qa.strokeStyle = '#b8b0a4'; qa.lineWidth = 3; qa.strokeRect(p.x - 16, p.y - 16, 32, 32); qa.setLineDash([]);
+  const [w, r] = HC[p.i % 6]; houseG(qb, p.x, p.y + 12, 34, w, r, false); });
+qa.font = '700 22px Fredoka'; qa.textAlign = 'center'; qa.fillStyle = '#a0968a';
+for (let k = 0; k < PLOTS.length; k += 37) if (PLOTS[k].d > RLIT + 200) qa.fillText('Bauplatz', PLOTS[k].x, PLOTS[k].y - 22);
+function drawCity(t, r, z, fx, fy, k) {
+  if (k <= .01) return; g.save(); g.globalAlpha = cl(k * 1.4); g.fillStyle = '#cdeab0'; g.fillRect(0, 0, W, H);
+  const S = W / WS * z; g.translate(W / 2, 980); g.scale(S, S); g.translate(-fx, -fy);
+  g.drawImage(mapA, 0, 0);
+  if (r > 0) { g.save(); g.beginPath(); g.arc(CEN, CEN, r, 0, 7); g.clip(); g.drawImage(mapB, 0, 0); g.restore(); }
+  // street level: kittens with names in front of the lit houses
+  if (z > 4) { const vx0 = fx - W / 2 / S, vx1 = fx + W / 2 / S, vy0 = fy - 980 / S, vy1 = fy + (H - 980) / S;
+    PLOTS.forEach(p => { if (p.d > r || p.x < vx0 - 40 || p.x > vx1 + 40 || p.y < vy0 - 40 || p.y > vy1 + 40) return; const ci = p.i % CATS.length, c = COLORS[ci % COLORS.length];
+      cat(p.x + 12, p.y + 30, .075, { c: c[0], c2: c[1], mood: 'happy' }, t + p.i); let nm = '@' + CATS[ci].uid; g.font = '700 8px Fredoka'; while (g.measureText(nm).width > 46) nm = nm.slice(0, -2) + '…';
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(p.x - 25, p.y + 33, 50, 11); text(nm, p.x, p.y + 39, 8, OUT, null, 0);
+      if (t > tw.napf - .1) { g.fillStyle = '#7fb4e6'; g.beginPath(); g.ellipse(p.x + 20, p.y + 40, 5, 2, 0, 0, 7); g.fill(); } }); }
+  // your plot
+  if (t > tw.haus2 - .1) { houseG(g, DUP.x, DUP.y + 12, 34 * pop(t, tw.haus2 - .1, .4), '#ffe27a', '#e0a000', false); }
   g.restore(); }
 function ortsschild(k, v) { if (k <= .01) return; g.save(); g.translate(W / 2, 520); g.scale(k, k);
   rrect(-380, -120, 760, 240, 26); g.fillStyle = '#ffd200'; g.fill(); g.lineWidth = 14; g.strokeStyle = '#111'; g.stroke(); rrect(-354, -94, 708, 188, 16); g.lineWidth = 6; g.stroke();
@@ -378,24 +415,24 @@ function frame(t) {
     g.save(); ell(W / 2, 640, 230, 230); fillStroke('#c98a52', 14); g.clip(); g.fillStyle = '#f7e2c4'; g.fillRect(W / 2 - 240, 400, 480, 480); cat(W / 2, 880, 1.0, { mood: 'sad', look: .2 }, t); g.restore();
     chip(W / 2, 1000, 'kein Zuhause', pop(t, tw.zuhause - .1, .3), '#ffffff');
     return; }
-  // C/D/E: the map
-  const lit = Math.round(FOLLOWERS * ease(t, tw.karte - .1, tw.karte + 1.2)) + (t > tw.haus2 - .1 ? 1 : 0);
+  // C/D/E: the city map
+  const r = RLIT * ease(t, tw.karte - .1, tw.karte + 1.3) + (t > tw.haus2 - .1 ? 30 : 0);
+  const lit = Math.round(FOLLOWERS * ease(t, tw.karte - .1, tw.karte + 1.3)) + (t > tw.haus2 - .1 ? 1 : 0);
   const zin = ease(t, tw.jedes - .2, tw.jedes + .6) * (1 - ease(t, tw.zehn - .4, tw.zehn + .2));
-  const zdu = ease(t, tw.haus2 - .4, tw.haus2 + .2) * (1 - ease(t, tw.schreib + .2, tw.schreib + .8));
-  const fx0 = 50, fy0 = 50, [dx, dy] = [ORDER[FOLLOWERS][0] + .5, ORDER[FOLLOWERS][1] + .5];
-  const zoom = lerp(1.05, 14, zin) * (1 - zdu) + lerp(1.05, 6, zdu) * zdu, fx = lerp(fx0, 44, zin) * (1 - zdu) + dx * zdu, fy = lerp(fy0, 47, zin) * (1 - zdu) + dy * zdu;
+  const zdu = ease(t, tw.haus2 - .5, tw.haus2 + .1) * (1 - ease(t, tw.schreib + .2, tw.schreib + .8));
+  const z = 1.75 + 9 * zin + 6 * zdu, fx = lerp(CEN, CEN - 260, zin) * (1 - zdu) + DUP.x * zdu, fy = lerp(CEN, CEN - 120, zin) * (1 - zdu) + DUP.y * zdu;
   // intro: Mimi decides to build a city
   const ci = win(t, tw.stadt - .15, tw.karte + .1, .2);
-  drawMap(t, lit, Math.max(1, zoom), fx, fy, ramp(t, tw.karte - .3, tw.karte + .1));
+  drawCity(t, r, z, fx, fy, ramp(t, tw.karte - .3, tw.karte + .1));
   if (ci > .01) { g.save(); g.globalAlpha = ci; room(t, 0); scratchTree(150, 1440, 1, t); ropes(1, t); cat(W / 2, 1600, 1.3, { mood: 'happy', crown: 1 }, t); text('Mimi baut', W / 2, 360, 100, '#ffffff', OUT, 16); text('eine Stadt!', W / 2, 480, 110, '#ffd23f', OUT, 18); g.restore(); }
-  if (t > tw.karte) { chip(W / 2, 1640, '1 Häuschen = 1 Kätzchen', win(t, tw.jedes - .1, tw.mimistadt - .1, .2), '#ffffff');
+  if (t > tw.karte) { chip(W / 2, 1640, 'Jedes Häuschen = 1 Kätzchen', win(t, tw.jedes - .1, tw.mimistadt - .1, .2), '#ffffff');
     ortsschild(back(ramp(t, tw.mimistadt - .15, tw.mimistadt + .25)) * win(t, tw.mimistadt - .15, tw.jeder, .2), lit);
     if (t > tw.offiz - .1 && t < tw.jeder) { g.save(); g.translate(W / 2, 1600); g.rotate(-.12); const k = pop(t, tw.offiz - .1, .3); g.scale(k, k); rrect(-330, -70, 660, 140, 20); g.lineWidth = 10; g.strokeStyle = '#d23a3a'; g.stroke(); text('OFFIZIELL ab 10.000', 0, 6, 64, '#d23a3a', null, 0); g.restore(); } }
   // follow = your house lights up
   const nk = win(t, tw.jeder - .1, tw.schreib, .25);
   if (nk > .01) { card(back(ramp(t, tw.jeder - .1, tw.jeder + .3)) * nk, 400, 'follow', 'FOLGEN', 'Du bekommst ein Haus auf der Karte', true, t);
-    const pk = pop(t, tw.haus2 - .1, .4); if (pk > .01) { g.save(); g.translate(W / 2, 880); g.scale(pk, pk); g.beginPath(); g.moveTo(0, 60); g.lineTo(-40, 0); g.arc(0, -10, 42, Math.PI * .85, Math.PI * .15); g.closePath(); fillStroke('#ff2d55', 6); text('@du', 0, -12, 34, '#ffffff', null, 0); g.restore();
-      for (let j = 0; j < 8; j++) { const a = j / 8 * 7 + t * 2; star(W / 2 + Math.cos(a) * 120, 980 + Math.sin(a) * 80, 16); } } }
+    const pk = pop(t, tw.haus2 - .1, .4); if (pk > .01) { g.save(); g.translate(W / 2, 850); g.scale(pk, pk); g.beginPath(); g.moveTo(0, 60); g.lineTo(-40, 0); g.arc(0, -10, 42, Math.PI * .85, Math.PI * .15); g.closePath(); fillStroke('#ff2d55', 6); text('@du', 0, -12, 34, '#ffffff', null, 0); g.restore();
+      for (let j = 0; j < 8; j++) { const a = j / 8 * 7 + t * 2; star(W / 2 + Math.cos(a) * 140, 980 + Math.sin(a) * 100, 16); } } }
   const cm = win(t, tw.schreib - .1, tw.folg + .1, .25);
   if (cm > .01) { card(back(ramp(t, tw.schreib - .1, tw.schreib + .3)) * cm, 400, 'comment', 'KOMMENTIEREN', 'Wie soll dein Kätzchen aussehen?', true, t);
     bubble(W / 2 - 60, 720, 46, 'grau mit weißen Pfoten', pop(t, tw.schreib + .3, .3) * cm); bubble(W / 2 + 60, 860, 46, 'orange, heißt Kiwi', pop(t, tw.schreib + .7, .3) * cm); }
