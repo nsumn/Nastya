@@ -143,12 +143,12 @@ def music_box(d, bpm=96):
         ch = prog[b % 4]
         for i in range(8):     # eighth-note arpeggio
             m = ch[[0, 1, 2, 3, 2, 1, 2, 3][i]] + 12; x = bell(hz(m), .9) * .22
-            o = int((b * 4 + i * .5) * beat * SR); out[o:o + len(x)] += x[:len(out) - o]
+            o = int((b * 4 + i * .5) * beat * SR); out[o:o + len(x)] += x[:max(0, len(out) - o)] if o < len(out) else 0
         for i in range(2):
             m = mel[(b * 2 + i) % len(mel)] + 12; x = bell(hz(m), 1.4) * .32
-            o = int((b * 4 + i * 2) * beat * SR); out[o:o + len(x)] += x[:len(out) - o]
+            o = int((b * 4 + i * 2) * beat * SR); out[o:o + len(x)] += x[:max(0, len(out) - o)] if o < len(out) else 0
         t = t_(4 * beat); pad = sum(np.sin(2 * np.pi * hz(m - 12) * t) for m in ch[:3]) * .05 * np.sin(np.pi * t / (4 * beat))
-        o = int(b * 4 * beat * SR); out[o:o + len(pad)] += lp(pad, 900)[:len(out) - o]
+        o = int(b * 4 * beat * SR); out[o:o + len(pad)] += lp(pad, 900)[:max(0, len(out) - o)] if o < len(out) else 0
         x = sweep(hz(ch[0] - 24), hz(ch[0] - 24), .5) * np.exp(-t_(.5) / .25) * .18; out[o:o + len(x)] += x
     return out[:int(d * SR)]
 
