@@ -299,4 +299,12 @@ function drawUI(t) {
 }
 window.END = END; window.TW = tw;
 window.renderAt = (t, q = .92) => { update(t); renderer.render(scene, camera); og.drawImage(renderer.domElement, 0, 0); drawUI(t); return out.toDataURL('image/jpeg', q); };
+// profile avatar: happy Momo on his island, square crop (round-safe)
+window.renderAvatar = () => {
+  update(tw.aber1 + 1.0); newKits.forEach(({ k, l }) => { k.visible = false; l.visible = false; }); lblMomo.visible = false;
+  poseKitten(momo, 2.0, { x: .6, z: 1.0, y: TOP + .08, face: .45, happy: 1, open: true }); momo.scale.setScalar(1.5);
+  camera.position.set(3.1, TOP + 1.7, 5.8); camera.lookAt(.4, TOP + .75, .8); camera.fov = 34; camera.updateProjectionMatrix();
+  renderer.render(scene, camera); camera.fov = 50; camera.updateProjectionMatrix();
+  const c = document.createElement('canvas'); c.width = c.height = 1080; c.getContext('2d').drawImage(renderer.domElement, 0, 420, 1080, 1080, 0, 0, 1080, 1080); return c.toDataURL('image/png');
+};
 window.__done = true;
