@@ -132,6 +132,10 @@ def bed_purr(d):
     t = t_(d); x = lp(noise(d), 300) * (.5 + .5 * np.sin(2 * np.pi * 26 * t)) * (.6 + .4 * np.sin(2 * np.pi * .5 * t) ** 2)
     return norm(x, .5)
 
+def bed_heli(d):   # rotor chop: low noise pulsed at ~18 Hz, slowly rising
+    t = t_(d); x = lp(noise(d), 260) * (.35 + .65 * np.abs(np.sin(np.pi * 18 * t)) ** 4) + .25 * np.sin(2 * np.pi * 72 * t) * .3
+    return norm(x * np.minimum(1, .3 + t / 1.2), .55)
+
 def music_box(d, bpm=96):
     """Cozy music-box loop: F - Dm - Bb - C, arpeggios + soft pad."""
     beat = 60 / bpm; out = np.zeros(int((d + 2) * SR))
