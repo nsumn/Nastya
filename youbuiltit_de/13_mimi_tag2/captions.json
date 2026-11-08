@@ -1,0 +1,2 @@
+{ "style": "phrase", "y": 300, "size": 92, "color": "#ffffff", "hi": "#ffd23f", "outline": "#1a0f08",
+  "show": {"viertausend": "4.000", "tausend": "1.000", "hundert": "100", "hundertsechzig": "160", "drei": "3"} }

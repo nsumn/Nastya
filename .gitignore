@@ -14,3 +14,6 @@ env/
 
 # local MCP config: blenderwright talks to the Blender on this machine
 .mcp.json
+youbuiltit_de/13_mimi_tag2/photos/
+youbuiltit_de/13_mimi_tag2/cats.json
+youbuiltit_de/13_mimi_tag2/comments_show.json
