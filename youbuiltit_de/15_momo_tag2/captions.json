@@ -1,0 +1,3 @@
+{ "style": "word", "y": 1450, "size": 96, "color": "#ffffff", "hi": "#5ff0ff", "outline": "#000000",
+  "keys": ["Momo", "Momos", "Insel", "Kätzchen", "Hund", "Beschützer-Hund", "Fotos", "Katzen"], "show": {"dreihundert": "300", "siebzig": "70"}, "hide": [["Schreib", 1]],
+  "moves": [[["Nummer", 1], ["Dann", 1], 1250]] }
