@@ -208,6 +208,9 @@ const TOP = tiny.userData.top;
 const NK = Math.min(70, CATS.length), kits = [];
 for (let i = 0; i < NK; i++) { const [c, c2] = LOOKS[CATS[i].look] || LOOKS.tabby; const k = kitten({ c, c2 }); const ring = i < 14 ? 2.2 : i < 34 ? 3.6 : 5.0, per = i < 14 ? 14 : i < 34 ? 20 : 36, j = i < 14 ? i : i < 34 ? i - 14 : i - 34;
   const a = j / per * Math.PI * 2 + ring; k.userData.p = V(Math.cos(a) * ring, 0, Math.sin(a) * ring + .4); k.userData.ph = i * .37; kits.push(k); }
+// extra kittens so the island is really full (random coats from the comment cats)
+for (let i = 0; i < 80; i++) { const cat0 = CATS[(i * 7) % CATS.length]; const [c, c2] = LOOKS[cat0.look] || LOOKS.tabby; const k = kitten({ c, c2 });
+  const ring = 1.4 + (i % 5) * 1.25 + (i % 2) * .5, a = i * 2.39996; k.userData.p = V(Math.cos(a) * ring, 0, Math.sin(a) * ring * .9 + .6); k.userData.ph = i * .53; kits.push(k); }
 const dog = kitten({ c: '#c98a52', c2: '#f7e3cc' }); dog.userData.ears.forEach(e_ => { e_.children.forEach(m => { m.scale.set(1.3, 1.6, 1.3); }); });
 const lblNr1 = label('Kätzchen Nr. 1', 2.4, '#ffd21f'), lblDog = label('@marlondoner', 2.2, '#ffffff'), lblBesch = label('Beschützer-Hund', 2.4, '#5ff0ff');
 const helmet = new THREE.Mesh(new THREE.SphereGeometry(.26, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), M('#3a6fd8', { roughness: .4 })); dog.userData.head.add(helmet); helmet.position.set(0, .12, 0);
@@ -244,8 +247,8 @@ function update(t) {
   const happy = ease(t, tw.was - .2, tw.was + .3);
   poseKitten(momo, t, { x: .6, z: 1.0, y: TOP + .08, face: .3, sad: 1 - happy, happy, tear: 1 - happy, lookUp: happy * .3, meow: win(t, .1, .9, .1), hop: t > tw.folg ? Math.sin(((t * 1.4) % 1) * Math.PI) * .2 : 0 }); momo.scale.setScalar(1.5);
   lblMomo.visible = false;
-  kits.forEach((k, i) => { const p = k.userData.p; k.visible = i < 40 && t > tw.nichts - .1;
-    const bored = t < tw.was; poseKitten(k, t + k.userData.ph, { x: p.x, z: p.z, y: TOP, face: Math.atan2(camera.position.x - p.x, camera.position.z - p.z), sad: bored ? .6 : 0, curl: bored && i % 2 ? .9 : 0, closed: bored && i % 3 === 0, happy: bored ? 0 : 1, hop: !bored ? Math.abs(Math.sin(t * 5 + k.userData.ph)) * .12 : 0 }); k.scale.setScalar(1.15); });
+  kits.forEach((k, i) => { const p = k.userData.p; k.visible = t > tw.nichts - .1 && Math.hypot(p.x - .6, p.z - 1.0) > 1.1;
+    const bored = t < tw.was; poseKitten(k, t + k.userData.ph, { x: p.x, z: p.z, y: TOP, face: Math.atan2(camera.position.x - p.x, camera.position.z - p.z), sad: bored ? .6 : 0, curl: bored && i % 2 ? .9 : 0, closed: bored && i % 3 === 0, happy: bored ? 0 : 1, hop: !bored ? Math.abs(Math.sin(t * 5 + k.userData.ph)) * .12 : 0 }); k.scale.setScalar(1.0); });
   dog.visible = false;
   ghosts.forEach((gh, i) => { const k = pop(t, GHOST_AT()[i] - .1, .4); gh.visible = k > .01; gh.scale.setScalar(Math.max(.001, k) * 1.3); gh.rotation.y = Math.sin(t * .8 + i) * .1; });
   ghostMat.opacity = .6 + .15 * Math.sin(t * 4);
