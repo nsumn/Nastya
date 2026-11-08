@@ -1,4 +1,4 @@
-// ===================== 18 Mimi Traum — ~23 s for NEW viewers: Mimi dreams of a cat skyscraper, needs 10.000 kittens, follow = new kitten =====================
+// ===================== 18 Mimi Stadt — ~24 s: Mimi's house is full, she builds a city; the map has 10.000 houses (100x100), each follower lights one =====================
 // Reuses mimi2_2d.js helpers; coats from ../13_mimi_tag2/cats.json (local data).
 // Data: ../13_mimi_tag2/cats.json (uid + look per photo), comments_show.json. render_video.sh copies mimi2_2d.js -> mimi2.js; captions: captions.json
 // Pure canvas 2D (no three.js). render_video.sh copies mimi_2d.js -> mimi.js.  Page: index_mimi.html
@@ -21,13 +21,15 @@ const CATS = await (await fetch('../13_mimi_tag2/cats.json')).json();
 const PHOTO = await Promise.all(CATS.map(c => new Promise(res => { if (!c.photo) return res(null); const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = '../13_mimi_tag2/' + c.photo; })));
 const SHOWC = await (await fetch('../13_mimi_tag2/comments_show.json')).json();
 const FOLLOWERS = 4258, GOALN = 10000;
-const tw = { vergessen: T('vergessen'), allein: T('allein'), deshalb: T('Deshalb'), traum: T('Traum'), kein: T('Kein'), zuhause: T('Zuhause'), zehn: T('zehntausend'),
-  garten: T('Garten'), blumen: T('Blumen'), vier: T('viertausend'), sechs: T('sechstausend'), jeder: T('Jeder'), neues: T('neues'), namen: T('Namen'), schreib: T('Schreib'), hilf: T('Hilf'), folg: T('Folg') };
-const SFX = { end: END, music_gain: .16, events: [], beds: [[0, T('Deshalb'), 'rain', .8]] };
+const tw = { voll: T('voll'), vier: T('viertausend'), platz: T('Platz'), draussen: T('Draußen'), zuhause: T('Zuhause'), stadt: T('Stadt'), karte: T('Karte'),
+  jedes: T('Jedes'), namen: T('Namen'), napf: T('Napf'), zehn: T('zehntausend'), mimistadt: T('Mimistadt'), offiz: T('offizielle'), jeder: T('Jeder'), haus2: T('Haus', 2),
+  schreib: T('Schreib'), folg: T('Folg') };
+const SFX = { end: END, music_gain: .16, events: [], beds: [[T('Draußen') - .2, T('Stadt'), 'rain', .9]] };
 const e = (t, n, g = 1) => SFX.events.push([+t.toFixed(3), n, g]);
-e(.1, 'meow_sad', .8); e(tw.deshalb - .1, 'whoosh', .7); e(tw.traum, 'sparkle', .8); e(tw.zuhause, 'pop', .7); for (let i = 0; i < 10; i++) e(tw.zuhause + .2 + i * .12, i % 3 ? 'pop' : 'meow_happy', .3);
-e(tw.blumen, 'sparkle', .7); e(tw.zehn, 'ding', .8); for (let i = 0; i < 16; i++) e(tw.vier + i * .06, i % 4 ? 'pop' : 'meow_happy', .3); e(tw.sechs, 'meow_sad', .6);
-e(tw.neues - .1, 'pop', 1); e(tw.neues + .1, 'meow_happy', .8); e(tw.namen, 'ding', .7); e(tw.schreib, 'pop', .7); e(tw.schreib + .4, 'pop', .6); e(tw.hilf, 'sparkle', .7); e(tw.folg - .05, 'pop', 1); e(tw.folg + .5, 'ding', .8);
+e(.1, 'meow_sad', .8); e(tw.vier, 'tick', .5); e(tw.platz, 'boing', .5); e(tw.draussen - .1, 'whoosh', .6); e(tw.zuhause, 'meow_sad', .6);
+e(tw.stadt - .1, 'swoosh_up', .7); e(tw.stadt + .2, 'tada', .7); e(tw.karte - .1, 'whoosh', .7); for (let i = 0; i < 20; i++) e(tw.karte + .1 + i * .05, 'tick', .25);
+e(tw.jedes, 'pop', .7); e(tw.namen, 'pop', .6); e(tw.napf, 'pop', .6); e(tw.mimistadt - .1, 'stamp', 1); e(tw.offiz, 'ding', .8);
+e(tw.jeder, 'pop', .8); e(tw.haus2, 'sparkle', .9); e(tw.haus2 + .1, 'meow_happy', .7); e(tw.schreib, 'pop', .7); e(tw.folg - .05, 'pop', 1); e(tw.folg + .5, 'ding', .8);
 window.SFX = SFX;
 
 // ---------- canvas helpers ----------
@@ -331,37 +333,75 @@ function dream(t, k) {   // Mimi's dream: a home for every kitten, in a big flow
 function bar(k, v, y) { if (k <= .01) return; const x = 110, w = W - 220, h = 56; g.save(); g.globalAlpha = cl(k * 1.4);
   rrect(x - 26, y - 84, w + 52, h + 130, 36); fillStroke('#ffffff', 6); text(`${Math.round(v).toLocaleString('de-DE')} / ${GOALN.toLocaleString('de-DE')} Kätzchen`, W / 2, y - 36, 46, OUT, null, 0);
   rrect(x, y, w, h, 28); fillStroke('#eadccb', 4); const f = cl(v / GOALN); rrect(x, y, Math.max(h, w * f), h, 28); fillStroke('#ff8a5a', 4); g.restore(); }
+// ---------- the city map: 100 x 100 = 10.000 houses, filled from the centre outwards ----------
+const MAPN = 100, ORDER = (() => { const c = []; for (let y = 0; y < MAPN; y++) for (let x = 0; x < MAPN; x++) { const dx = x - 49.5, dy = y - 49.5; c.push([x, y, Math.hypot(dx, dy * 1.1) + ((x * 7 + y * 13) % 10) * .35]); } c.sort((a, b) => a[2] - b[2]); return c; })();
+const RANK = new Int32Array(MAPN * MAPN); ORDER.forEach(([x, y], i) => { RANK[y * MAPN + x] = i; });
+const HCOL = ['#ff8fb1', '#a98bff', '#5fd3a8', '#ffb648', '#7fc8ff', '#f3a35b'];
+const DUCELL = ORDER[FOLLOWERS][0] + ORDER[FOLLOWERS][1] * MAPN;
+function drawMap(t, lit, zoom, fx, fy, k) {
+  if (k <= .01) return; g.save(); g.globalAlpha = cl(k * 1.4);
+  g.fillStyle = '#e9f5e1'; g.fillRect(0, 0, W, H);
+  const S = 9.6 * zoom, ox = W / 2 - fx * S, oy = 980 - fy * S;
+  g.fillStyle = '#d7e8cf'; for (let i = 0; i <= MAPN; i += 10) { g.fillRect(ox + i * S - S * .15, oy, S * .3, MAPN * S); g.fillRect(ox, oy + i * S - S * .15, MAPN * S, S * .3); }
+  const x0 = Math.max(0, Math.floor(-ox / S)), x1 = Math.min(MAPN, Math.ceil((W - ox) / S)), y0 = Math.max(0, Math.floor(-oy / S)), y1 = Math.min(MAPN, Math.ceil((H - oy) / S));
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const r = RANK[y * MAPN + x], X = ox + x * S + S * .12, Y = oy + y * S + S * .12, sz = S * .76;
+    const on = r < lit, du = y * MAPN + x === DUCELL && t > tw.haus2 - .1;
+    g.fillStyle = du ? '#ffd23f' : on ? HCOL[(x * 3 + y * 5) % 6] : '#dfe2e7'; if (S > 20) g.fillRect(X, Y + sz * .35, sz, sz * .65); else g.fillRect(X - S * .06, Y - S * .06, sz + S * .12, sz + S * .12);
+    if (S > 20) { g.beginPath(); g.moveTo(X - sz * .08, Y + sz * .4); g.lineTo(X + sz / 2, Y); g.lineTo(X + sz * 1.08, Y + sz * .4); g.closePath(); g.fillStyle = du ? '#e0a000' : on ? '#8a5230' : '#a9adb5'; g.fill();
+      if (on && S > 60) { const ci = r % CATS.length; let nm = '@' + CATS[ci].uid; g.font = `700 ${Math.round(S * .14)}px Fredoka`; while (g.measureText(nm).width > S * .95) nm = nm.slice(0, -2) + '…'; text(nm, X + sz / 2, Y + sz * 1.08, Math.round(S * .14), OUT, null, 0);
+        const c = COLORS[ci % COLORS.length]; cat(X + sz / 2, Y + sz * .9, S * .0016, { c: c[0], c2: c[1], mood: 'happy' }, t + r);
+        if (t > tw.napf - .1) { g.fillStyle = '#7fb4e6'; g.beginPath(); g.ellipse(X + sz * .88, Y + sz * .95, S * .09, S * .035, 0, 0, 7); g.fill(); } } } }
+  // Mimi's house in the middle
+  g.restore(); }
+function ortsschild(k, v) { if (k <= .01) return; g.save(); g.translate(W / 2, 520); g.scale(k, k);
+  rrect(-380, -120, 760, 240, 26); g.fillStyle = '#ffd200'; g.fill(); g.lineWidth = 14; g.strokeStyle = '#111'; g.stroke(); rrect(-354, -94, 708, 188, 16); g.lineWidth = 6; g.stroke();
+  text('MIMISTADT', 0, -18, 112, '#111', null, 0); text(`Einwohner: ${Math.round(v).toLocaleString('de-DE')} / 10.000`, 0, 62, 44, '#111', null, 0); g.restore(); }
 function frame(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.globalAlpha = 1;
-  const flash = t < tw.deshalb - .05;
-  room(t, flash ? .9 : 0);
-  // what was built in Tag 2 stays in the room: climbing ropes + the scratching tree up to the ceiling
-  if (!flash) { scratchTree(150, 1440, 1, t); ropes(1, t); }
-  const ck = ramp(t, tw.vier - .1, tw.vier + 1.1), n = Math.round(CROWD.length * ck);
-  for (let i = 0; i < n; i++) { const c = CROWD[i]; const o = lookOf(CATS[c.k], c.k); o.mood = 'happy'; cat(c.x, c.y - Math.abs(Math.sin(t * 6 + c.ph)) * 14, c.s * pop(t, tw.vier + i * .008, .25), o, t + c.ph); }
-  const gk = win(t, tw.sechs - .1, tw.jeder + .2, .25);
-  if (gk > .01) for (let i = 0; i < 18; i++) { const x = 80 + (i % 9) * 115, y = 1180 + Math.floor(i / 9) * 120; g.save(); g.globalAlpha = .7 * gk; g.setLineDash([12, 10]); g.lineWidth = 5; g.strokeStyle = '#8a5230'; g.beginPath(); g.ellipse(x, y, 42, 40, 0, 0, 7); g.stroke(); g.restore(); if (gk > .5) text('?', x, y + 2, 44, '#ffffff', OUT, 6); }
-  const big = 1 - ease(t, tw.vier - .4, tw.vier + .2);
-  if (!(t > tw.vier && t < tw.jeder)) cat(W / 2, lerp(1640, 1560, big), lerp(1.0, 1.6, big), { tear: flash ? 1 : 0, mood: flash || (t > tw.sechs && t < tw.neues) ? 'sad' : 'happy', look: big > .5 ? -.4 : 0, tilt: big > .5 ? .12 : 0, crown: 0 }, t);
-  if (flash) { g.strokeStyle = 'rgba(180,200,255,.45)'; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 160; i++) { const x = (i * 97.3 + t * 140) % (W + 200) - 100, y = (i * 211.7 + t * 1500) % (H + 200) - 100; g.moveTo(x, y); g.lineTo(x - 14, y + 46); } g.stroke(); }
-  dream(t, back(ramp(t, tw.traum - .2, tw.traum + .3)) * (1 - ease(t, tw.vier - .4, tw.vier)));
-  const hk = 1 - ramp(t, tw.deshalb - .2, tw.deshalb + .1);
-  if (hk > 0) { g.save(); g.globalAlpha = hk; text('Mimi wurde', W / 2, 330, 100, '#ffffff', OUT, 16); text('vergessen 😿', W / 2, 450, 110, '#ffd23f', OUT, 18); g.restore(); }
-  if (flash) chip(W / 2, 1830, 'früher', 1, '#ffffff');
-  let v = 0; if (t > tw.vier - .1) v = FOLLOWERS * ease(t, tw.vier - .1, tw.vier + 1); if (t > tw.neues) v = FOLLOWERS + 1;
-  bar(win(t, tw.vier - .3, END + 1, .3), v, 1760);
-  { const z = win(t, tw.zehn - .1, tw.vier - .3, .2); if (z > .01) { g.save(); g.globalAlpha = z; g.translate(W / 2, 1040); g.scale(back(ramp(t, tw.zehn - .1, tw.zehn + .25)), back(ramp(t, tw.zehn - .1, tw.zehn + .25))); rrect(-330, -70, 660, 140, 40); fillStroke('#ffffff', 6); text('10.000 Kätzchen', 0, 4, 84, '#e0702a', null, 0); g.restore(); } }
-  { const a6 = back(ramp(t, tw.sechs - .1, tw.sechs + .3)) * win(t, tw.sechs - .1, tw.jeder, .2); if (a6 > .01) { g.save(); g.translate(W / 2, 640); g.scale(a6, a6); text(`${(GOALN - FOLLOWERS).toLocaleString('de-DE')}`, 0, 0, 170, '#ffd23f', OUT, 20); text('fehlen noch', 0, 130, 80, '#ffffff', OUT, 14); g.restore(); } }
+  // A: the house is full, Mimi is sad
+  if (t < tw.draussen - .05) {
+    room(t, 0); scratchTree(150, 1440, 1, t); ropes(1, t);
+    for (let i = 0; i < CROWD.length; i++) { const c = CROWD[i]; const o = lookOf(CATS[c.k], c.k); o.mood = i % 4 ? 'neutral' : 'tired'; cat(c.x, c.y - 60 * (i % 3), c.s * 1.1, o, t + c.ph); }
+    const sq = 1 + .04 * Math.sin(t * 20) * ramp(t, tw.platz - .2, tw.platz + .2);
+    cat(W / 2, 1650, 1.35 * sq, { mood: 'sad', tear: 1, meow: win(t, .1, .8, .1) }, t);
+    text('Mimis Haus', W / 2, 330, 100, '#ffffff', OUT, 16); text('ist voll 😿', W / 2, 450, 110, '#ffd23f', OUT, 18);
+    chip(W / 2, 580, `${FOLLOWERS.toLocaleString('de-DE')} Kätzchen`, pop(t, tw.vier - .1, .3), '#ffffff');
+    if (t > tw.platz - .1) { g.save(); g.translate(W / 2, 760); g.rotate(-.06); g.scale(pop(t, tw.platz - .1, .3), pop(t, tw.platz - .1, .3)); text('KEIN PLATZ', 0, 0, 96, '#ff5a5a', OUT, 16); g.restore(); }
+    return; }
+  // B: outside in the rain, kittens without a home
+  if (t < tw.stadt - .1) {
+    const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1b2350'); sky.addColorStop(1, '#3a4673'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#2b3a33'; g.fillRect(0, 1400, W, H - 1400);
+    for (let i = 0; i < 6; i++) { const c = COLORS[(i * 3) % COLORS.length]; cat(150 + i * 160, 1520 + (i % 2) * 60, .55, { c: c[0], c2: c[1], mood: 'sad', tear: i % 2 }, t + i); }
+    g.strokeStyle = 'rgba(180,200,255,.45)'; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 200; i++) { const x = (i * 97.3 + t * 140) % (W + 200) - 100, y = (i * 211.7 + t * 1500) % (H + 200) - 100; g.moveTo(x, y); g.lineTo(x - 14, y + 46); } g.stroke();
+    // Mimi watching from the window
+    g.save(); ell(W / 2, 640, 230, 230); fillStroke('#c98a52', 14); g.clip(); g.fillStyle = '#f7e2c4'; g.fillRect(W / 2 - 240, 400, 480, 480); cat(W / 2, 880, 1.0, { mood: 'sad', look: .2 }, t); g.restore();
+    chip(W / 2, 1000, 'kein Zuhause', pop(t, tw.zuhause - .1, .3), '#ffffff');
+    return; }
+  // C/D/E: the map
+  const lit = Math.round(FOLLOWERS * ease(t, tw.karte - .1, tw.karte + 1.2)) + (t > tw.haus2 - .1 ? 1 : 0);
+  const zin = ease(t, tw.jedes - .2, tw.jedes + .6) * (1 - ease(t, tw.zehn - .4, tw.zehn + .2));
+  const zdu = ease(t, tw.haus2 - .4, tw.haus2 + .2) * (1 - ease(t, tw.schreib + .2, tw.schreib + .8));
+  const fx0 = 50, fy0 = 50, [dx, dy] = [ORDER[FOLLOWERS][0] + .5, ORDER[FOLLOWERS][1] + .5];
+  const zoom = lerp(1.05, 14, zin) * (1 - zdu) + lerp(1.05, 6, zdu) * zdu, fx = lerp(fx0, 44, zin) * (1 - zdu) + dx * zdu, fy = lerp(fy0, 47, zin) * (1 - zdu) + dy * zdu;
+  // intro: Mimi decides to build a city
+  const ci = win(t, tw.stadt - .15, tw.karte + .1, .2);
+  drawMap(t, lit, Math.max(1, zoom), fx, fy, ramp(t, tw.karte - .3, tw.karte + .1));
+  if (ci > .01) { g.save(); g.globalAlpha = ci; room(t, 0); scratchTree(150, 1440, 1, t); ropes(1, t); cat(W / 2, 1600, 1.3, { mood: 'happy', crown: 1 }, t); text('Mimi baut', W / 2, 360, 100, '#ffffff', OUT, 16); text('eine Stadt!', W / 2, 480, 110, '#ffd23f', OUT, 18); g.restore(); }
+  if (t > tw.karte) { chip(W / 2, 1640, '1 Häuschen = 1 Kätzchen', win(t, tw.jedes - .1, tw.mimistadt - .1, .2), '#ffffff');
+    ortsschild(back(ramp(t, tw.mimistadt - .15, tw.mimistadt + .25)) * win(t, tw.mimistadt - .15, tw.jeder, .2), lit);
+    if (t > tw.offiz - .1 && t < tw.jeder) { g.save(); g.translate(W / 2, 1600); g.rotate(-.12); const k = pop(t, tw.offiz - .1, .3); g.scale(k, k); rrect(-330, -70, 660, 140, 20); g.lineWidth = 10; g.strokeStyle = '#d23a3a'; g.stroke(); text('OFFIZIELL ab 10.000', 0, 6, 64, '#d23a3a', null, 0); g.restore(); } }
+  // follow = your house lights up
   const nk = win(t, tw.jeder - .1, tw.schreib, .25);
-  if (nk > .01) { card(back(ramp(t, tw.jeder - .1, tw.jeder + .3)) * nk, 430, 'follow', 'FOLGEN', 'Du wirst ein neues Kätzchen', true, t);
-    const dk = pop(t, tw.neues - .2, .45); if (dk > .01) { const yy = 1320 - (1 - ramp(t, tw.neues - .3, tw.neues + .1)) * 600; cat(W / 2 + 170, Math.min(1320, yy), 1.0 * dk, { c: '#9aa3ad', c2: '#f1f3f5', mood: 'happy', label: ramp(t, tw.neues, tw.neues + .2) > .5 ? ['DU', '#ffd23f'] : null }, t + 1);
-      text('+1', W / 2 + 330, 1000 - ramp(t, tw.neues, tw.neues + 1) * 60, 90 * dk, '#ffd23f', OUT, 14); }
-    chip(W / 2 + 170, 1460, 'mit deinem Namen', pop(t, tw.namen - .1, .3) * nk, '#ffffff'); }
-  const cm = win(t, tw.schreib - .1, tw.hilf, .25);
-  if (cm > .01) { card(back(ramp(t, tw.schreib - .1, tw.schreib + .3)) * cm, 430, 'comment', 'KOMMENTIEREN', 'Wie soll dein Kätzchen aussehen?', true, t);
-    bubble(W / 2 - 60, 760, 46, 'grau mit weißen Pfoten', pop(t, tw.schreib + .3, .3) * cm); bubble(W / 2 + 60, 900, 46, 'orange, heißt Kiwi', pop(t, tw.schreib + .7, .3) * cm); bubble(W / 2 - 20, 1040, 46, 'mit Krone bitte 👑', pop(t, tw.schreib + 1.1, .3) * cm); }
-  const ek = ramp(t, tw.hilf - .15, tw.hilf + .3);
-  if (ek > 0) { chip(W / 2, 520, 'Hilf Mimi 🧡', back(ek), '#ffd23f'); button(pop(t, tw.folg - .1, .35), t, 640); }
+  if (nk > .01) { card(back(ramp(t, tw.jeder - .1, tw.jeder + .3)) * nk, 400, 'follow', 'FOLGEN', 'Du bekommst ein Haus auf der Karte', true, t);
+    const pk = pop(t, tw.haus2 - .1, .4); if (pk > .01) { g.save(); g.translate(W / 2, 880); g.scale(pk, pk); g.beginPath(); g.moveTo(0, 60); g.lineTo(-40, 0); g.arc(0, -10, 42, Math.PI * .85, Math.PI * .15); g.closePath(); fillStroke('#ff2d55', 6); text('@du', 0, -12, 34, '#ffffff', null, 0); g.restore();
+      for (let j = 0; j < 8; j++) { const a = j / 8 * 7 + t * 2; star(W / 2 + Math.cos(a) * 120, 980 + Math.sin(a) * 80, 16); } } }
+  const cm = win(t, tw.schreib - .1, tw.folg + .1, .25);
+  if (cm > .01) { card(back(ramp(t, tw.schreib - .1, tw.schreib + .3)) * cm, 400, 'comment', 'KOMMENTIEREN', 'Wie soll dein Kätzchen aussehen?', true, t);
+    bubble(W / 2 - 60, 720, 46, 'grau mit weißen Pfoten', pop(t, tw.schreib + .3, .3) * cm); bubble(W / 2 + 60, 860, 46, 'orange, heißt Kiwi', pop(t, tw.schreib + .7, .3) * cm); }
+  const ek = ramp(t, tw.folg - .15, tw.folg + .3);
+  if (ek > 0) button(pop(t, tw.folg - .1, .35), t, 1250);
+  chip(W / 2, 1820, `${Math.round(lit).toLocaleString('de-DE')} / 10.000 Häuser`, ramp(t, tw.karte, tw.karte + .3), '#ffd23f');
 }
 window.END = END; window.TW = tw;
 window.renderAt = (t, q = .92) => { frame(t); return out.toDataURL('image/jpeg', q); };
