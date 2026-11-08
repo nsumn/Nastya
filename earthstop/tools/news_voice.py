@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__)); from lumean import template, orde
 name, txtf = sys.argv[1], sys.argv[2]; D = f'out/{name}'; os.makedirs(D, exist_ok=True); text = open(txtf).read().strip()
 SPEED = float(os.environ.get('SPEED', '1.04'))
 # VOICE=brad → "Hey Its Brad - Clear Narrator for Documentary" (ElevenLabs library, her pick Nov 8 2026: expressive); default = Andrew
-VOICES = {'andrew': ('Andrew', 'gUABw7pXQjhjt0kNFBTF', None, 0.45, 0.15), 'brad': ('Brad', 'Dslrhjl3ZpzrctukrQSN', '675db5c1a341e2f820aefb00825680aa042d958a4a3aef3200735c799210dcb4', 0.3, 0.45)}
+VOICES = {'andrew': ('Andrew', 'gUABw7pXQjhjt0kNFBTF', None, 0.45, 0.15), 'drew': ('Drew', 'q0IMILNRPxOgtBTS4taI', '675db5c1a341e2f820aefb00825680aa042d958a4a3aef3200735c799210dcb4', 0.35, 0.4), 'brad': ('Brad', 'Dslrhjl3ZpzrctukrQSN', '675db5c1a341e2f820aefb00825680aa042d958a4a3aef3200735c799210dcb4', 0.3, 0.45)}
 VK = os.environ.get('VOICE', 'andrew'); vn, vid, vo, stab, sty = VOICES[VK]
 tj = 'out/news_template.json' if (SPEED == 1.04 and VK == 'andrew') else f'out/news_template_{VK}_{SPEED}.json'
 tid = json.load(open(tj))['id'] if os.path.exists(tj) else None
