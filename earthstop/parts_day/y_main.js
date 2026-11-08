@@ -125,8 +125,8 @@ function hudAt(t) {
   return null; }
 function introHTML(t) { if (t > T.wash + 0.5) return ''; const k = pop(t, T.intro, 0.35), a = 1 - smooth(T.wash + 0.1, T.wash + 0.5, t), bar = easeOut(span(t, T.intro + 0.2, T.intro + 0.8));
   const hh = Math.max(0, 24 - span(t, T.intro + 0.3, T.wash) * 24), clock = `${String(Math.floor(hh)).padStart(2, '0')}:${String(Math.floor((hh % 1) * 60)).padStart(2, '0')}:${String(Math.floor((hh * 3600) % 60)).padStart(2, '0')}`;
-  return `<div id="intro" style="opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)})"><div class="idate">SUNDAY · NOVEMBER 8, 2026</div><div class="ititle">The last <span class="hl">24 hours</span></div>
-    <div class="ibar" style="width:${(bar * 640).toFixed(0)}px"></div><div class="isub" style="opacity:${smooth(T.intro + 0.5, T.intro + 0.8, t)}">IN AMERICA <i>&</i> AROUND THE WORLD</div><div class="iclock">${clock}</div></div>`; }
+  return `<div id="intro" style="opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)})"><div class="idate"><b>●</b> SUNDAY · NOV 8, 2026</div><div class="ititle">The last</div><div class="iplate" style="transform:skewX(-8deg) scale(${(0.6 + 0.4 * easeOut(span(t, T.intro + 0.15, T.intro + 0.45))).toFixed(3)})"><span>24 HOURS</span></div>
+    <div><div class="isub" style="opacity:${smooth(T.intro + 0.5, T.intro + 0.8, t)}">IN AMERICA <i>&</i> AROUND THE WORLD</div></div><div class="iclock">${clock}</div></div>`; }
 function domAt(t) { const P = PROPS; let h = introHTML(t);
   // cards (left x 100 / right x 640, y ≈ 640: between the HUD and the captions)
   h += card('wiles', T.wiles - 0.6, T.press, 110, 650, t, { small: true, dim: t >= T.replaces, tag: t >= T.replaces ? 'OUT' : '', tagc: 'r', tagT: T.replaces });
@@ -154,8 +154,8 @@ function domAt(t) { const P = PROPS; let h = introHTML(t);
   if (t >= T.no && t < T.abu) h += `<div class="stamp" style="transform:translate(-50%,-50%) rotate(-10deg) scale(${(1 + 1.5 * (1 - easeOut(span(t, T.no, T.no + 0.18)))).toFixed(3)})">NO</div>`;
   if (t >= T.follow - 0.2 && t < ENDC) h += `<div class="cta" style="opacity:${smooth(T.follow - 0.2, T.follow + 0.1, t)};transform:scale(${pop(t, T.follow - 0.2, 0.35).toFixed(3)})">Follow for <span class="hl">tomorrow’s</span><br>24 hours</div>`;
   $('labels').innerHTML = h;
-  const hd = hudAt(t); $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 14 ? 76 : 96) + 'px'; $('sub').textContent = hd[2]; }
-  const kv = [T.wash + 0.6, T.press, T.doj, T.extortion, T.mid, T.alaska, T.ms, T.votes, T.house, T.texas, T.robo, T.over, T.n67, T.europe, T.no, T.abu, T.close, T.zel]; let pp = 1; for (const k of kv) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `scale(${pp.toFixed(3)})`;
+  const hd = hudAt(t); $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 14 ? 84 : 104) + 'px'; $('sub').textContent = hd[2]; }
+  const kv = [T.wash + 0.6, T.press, T.doj, T.extortion, T.mid, T.alaska, T.ms, T.votes, T.house, T.texas, T.robo, T.over, T.n67, T.europe, T.no, T.abu, T.close, T.zel]; let pp = 1; for (const k of kv) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `skewX(-6deg) scale(${pp.toFixed(3)})`;
   $('cap').innerHTML = capHTML(t); $('cap').style.opacity = t < ENDC ? 1 : 0;
   $('end').style.opacity = smooth(ENDC, ENDC + 0.35, t) * 0.96; $('endT').style.opacity = smooth(ENDC + 0.1, ENDC + 0.45, t); $('endS').style.opacity = smooth(ENDC + 0.8, ENDC + 1.2, t); }
 // ---- render: motion blur during flights (4 sub-frames over a 180° shutter, accumulated in linear HDR) ----
