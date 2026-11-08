@@ -1,2 +1,2 @@
-{ "style": "phrase", "y": 1350, "size": 84, "color": "#ffffff", "hi": "#ffd23f", "outline": "#1a0f08",
+{ "style": "phrase", "y": 1150, "size": 84, "color": "#ffffff", "hi": "#ffd23f", "outline": "#1a0f08",
   "show": {"viertausend": "4.000", "zehntausend": "10.000"}, "hide": [["Folg", 1]] }
