@@ -332,7 +332,7 @@ function hudAt(t) {
   if (t < T.r1) return ['2024 → 2026', t < T.later ? 'TRUMP +14' : t < T.gina ? 'TALARICO +12' : 'HINOJOSA WINS', t < T.later ? 'PRESIDENT · 2024' : t < T.gina ? 'U.S. SENATE · A 26-POINT SWING' : 'GOVERNOR · BEAT GREG ABBOTT'];
   if (t < T.r2) return ['REASON 1', 'THE OPPONENT', t < T.impeached ? 'PAXTON BEAT SEN. CORNYN IN THE PRIMARY' : t < T.bush ? 'IMPEACHED BY THE TEXAS HOUSE · 2023' : 'TWO BUSH FAMILY MEMBERS BACKED TALARICO'];
   if (t < T.r3) return ['REASON 2', 'THE SUBURBS', t < T.austin ? `${[T.collin, T.denton, T.tarrant, T.kaufman].filter(a => t >= a).length} DALLAS-AREA COUNTIES FLIPPED` : 'WILLIAMSON · BLUE BY ~20 POINTS'];
-  if (t < T.r4) return ['REASON 3', t < T.thistime ? 'LATINO VOTERS' : `+${cnt(t, T.jumped - 0.3, T.jumped + 0.9, 38)}% TURNOUT`, t < T.thistime ? 'TRUMP WON ALL 4 VALLEY COUNTIES IN 2024' : `${fmt(233000 + cnt(t, T.jumped - 0.3, T.jumped + 0.9, 89000))} BALLOTS · RIO GRANDE VALLEY`];
+  if (t < T.r4) return ['REASON 3', t < T.jumped - 0.3 ? 'LATINO VOTERS' : `+${cnt(t, T.jumped - 0.3, T.jumped + 0.9, 38)}% TURNOUT`, t < T.thistime ? 'TRUMP WON ALL 4 VALLEY COUNTIES IN 2024' : `${fmt(233000 + cnt(t, T.jumped - 0.3, T.jumped + 0.9, 89000))} BALLOTS · RIO GRANDE VALLEY`];
   if (t < T.rural) return ['REASON 4', 'TIMING', t < T.midterms ? 'TWO YEARS INTO TRUMP’S SECOND TERM' : 'MIDTERMS PUNISH THE PRESIDENT’S PARTY'];
   if (t < T.q) return ['RURAL VS. METRO', t < T.forty - 0.2 ? 'RURAL: RED' : `${cnt(t, T.forty - 0.2, T.forty + 0.8, 40)} / 254`, t < T.forty - 0.2 ? 'PAXTON WON MOST COUNTIES' : t < T.cities ? 'COUNTIES WON BY TALARICO' : 'BUT THAT’S WHERE THE PEOPLE ARE'];
   return null; }
