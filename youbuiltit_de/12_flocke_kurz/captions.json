@@ -1,0 +1,2 @@
+{ "style": "phrase", "y": 300, "size": 92, "color": "#ffffff", "hi": "#ff7ab6", "outline": "#3a2350",
+  "show": {"siebenunddreißig": "37", "Fünftausend": "5.000"}, "hide": [["Folg", 2]] }
