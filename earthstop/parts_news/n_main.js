@@ -6,16 +6,16 @@ function look(p, l, fov) { mCam.position.copy(p); mCam.lookAt(l); mCam.fov = fov
 const BLUE = '#3d7dff', RED = '#ff4a4a';
 window.renderAt = (t) => { clearPaint(); mapU.uT.value = t; let html = '';
   const d = +(DESIGN || 1);
-  if (d === 1) { paint('Texas', BLUE, 0.95, 1.2); const tx = stPos('Texas', 2); look(tx.clone().add(V3(-28, 62, 92)), tx.clone().add(V3(0, 0, -6)), 34);
+  if (d === 1) { paint('Texas', BLUE, 0.95, 1.2); const tx = stPos('Texas', 2); look(tx.clone().add(V3(-6, 150, 48)), tx.clone().add(V3(0, 0, 4)), 34);
     html = sticker('TEXAS · FLIPPED', stPos('Texas', 14), 'b') + card('talarico', 'James Talarico', 'SENATOR-ELECT · TEXAS (D)', 170, 1380 - 600);
     $('stat').innerHTML = '<b></b>MIDTERMS 2026 · SENATE'; $('val').textContent = 'FIRST SINCE 1988'; $('sub').textContent = 'TEXAS ELECTS A DEMOCRAT';
     $('cap').innerHTML = 'Texas just elected a <span class="y">Democrat</span> to the Senate.'; }
   if (d === 2) { ['Texas', 'Ohio', 'North Carolina', 'Iowa', 'Kansas', 'Maine', 'South Carolina'].forEach(n => paint(n, BLUE, 0.95, 1.0)); ['Alaska', 'Mississippi'].forEach(n => paint(n, '#c8c8d0', 0.55, 0.6));
-    const c = V3(MCX + 20, 0, MCZ + 6); look(c.clone().add(V3(0, 210, 150)), c, 40);
+    const c = V3(MCX + 20, 0, MCZ + 6); look(c.clone().add(V3(0, 330, 95)), c.clone().add(V3(0, 0, 8)), 40);
     html = ['Texas', 'Ohio', 'North Carolina', 'Iowa', 'Kansas', 'Maine', 'South Carolina'].map(n => sticker(n.toUpperCase(), stPos(n, 10), 'b sm')).join('') + sticker('TOO CLOSE', stPos('Mississippi', 10), 'g sm') + card('schumer', 'Chuck Schumer', 'SENATE DEMOCRATIC LEADER', 640, 1380 - 600);
     $('stat').innerHTML = '<b></b>U.S. SENATE · CONTROL'; $('val').innerHTML = '<span style="color:#7aa8ff">54</span> · <span style="color:#ff7a7a">44</span>'; $('sub').textContent = 'ALASKA & MISSISSIPPI STILL COUNTING';
     $('cap').innerHTML = 'Democrats flipped <span class="y">seven</span> Senate seats.'; }
-  if (d === 3) { STATES.forEach(s => paint(s.name, '#2a3550', 0.5)); const c = V3(MCX, 0, MCZ); look(c.clone().add(V3(-40, 120, 230)), c.clone().add(V3(0, 0, -20)), 38);
+  if (d === 3) { STATES.forEach(s => paint(s.name, '#2a3550', 0.5)); const c = V3(MCX, 0, MCZ); look(c.clone().add(V3(0, 300, 120)), c.clone().add(V3(0, 0, 18)), 40);
     html = card('jeffries', 'Hakeem Jeffries', 'EXPECTED HOUSE SPEAKER', 170, 1380 - 600) + `<div id="hemi" style="top:520px">${hemiSVG(250, 435)}</div>`;
     $('stat').innerHTML = '<b></b>U.S. HOUSE · 435 SEATS'; $('val').innerHTML = '<span style="color:#7aa8ff">250+</span>'; $('sub').textContent = '218 NEEDED FOR A MAJORITY';
     $('cap').innerHTML = 'Democrats are projected to win <span class="y">more than 250</span>.'; }

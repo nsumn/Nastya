@@ -8,7 +8,7 @@ const hemiM = new THREE.HemisphereLight(0x9ab0d8, 0x101418, 0.5); MAPSC.add(hemi
 const sunM = new THREE.DirectionalLight(0xfff0dc, 2.2); sunM.position.set(-120, 140, -90); MAPSC.add(sunM);
 const STATES = [];   // { id, name, fips, lon, lat }  index+1 = id in the id texture
 const ST_COL = Array.from({ length: 64 }, () => new THREE.Vector4(0, 0, 0, 0)), ST_LIFT = new Float32Array(64);
-const mapU = { tDem: { value: null }, tId: { value: null }, uCol: { value: ST_COL }, uLift: { value: ST_LIFT }, uH: { value: 7.5 }, uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uT: { value: 0 }, uGlobal: { value: 0 } };
+const mapU = { tDem: { value: null }, tId: { value: null }, uCol: { value: ST_COL }, uLift: { value: ST_LIFT }, uH: { value: 11 }, uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uT: { value: 0 }, uGlobal: { value: 0 } };
 const mapMat = new THREE.ShaderMaterial({ uniforms: mapU, fog: false,
   vertexShader: `uniform sampler2D tDem, tId; uniform float uH, uLift[64]; varying vec2 vUv; varying vec3 vN; varying float vId; varying vec3 vW;
     float hh(vec2 uv){ float v = texture2D(tDem, uv).r; return v * v * uH; }
@@ -19,7 +19,7 @@ const mapMat = new THREE.ShaderMaterial({ uniforms: mapU, fog: false,
       vec3 p = position; p.y += h + lift; vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
   fragmentShader: `uniform sampler2D tId; uniform vec4 uCol[64]; uniform vec3 uSun; uniform float uT, uGlobal; varying vec2 vUv; varying vec3 vN; varying float vId; varying vec3 vW;
     float idAt(vec2 o){ return floor(texture2D(tId, vUv + o).r * 255.0 + 0.5); }
-    void main(){ float id = idAt(vec2(0.0)); vec3 n = normalize(vN); float dif = max(dot(n, uSun), 0.0), sh = 0.35 + 0.9 * dif;
+    void main(){ float id = idAt(vec2(0.0)); vec3 n = normalize(vN); float dif = max(dot(n, uSun), 0.0), sh = 0.25 + 1.1 * dif;
       vec3 base = id < 0.5 ? vec3(0.03, 0.05, 0.08) : id > 254.5 ? vec3(0.13, 0.14, 0.16) : vec3(0.22, 0.24, 0.28);
       vec3 col = base * sh;
       if (id > 0.5 && id < 63.5) { vec4 c = uCol[int(id)]; col = mix(col, c.rgb * (0.55 + 0.75 * dif), c.a); col += c.rgb * c.a * 0.12; }
