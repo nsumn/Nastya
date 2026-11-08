@@ -214,6 +214,28 @@ const helmet = new THREE.Mesh(new THREE.SphereGeometry(.26, 16, 10, 0, Math.PI *
 [hut, fire, light, bridgeG, whale].forEach(o => o.visible = false); fireLight.intensity = 0; spout.forEach(s => s.visible = false); hearts.forEach(h => h.visible = false);
 [lblBig, lblGoal, lblFish, lblQ, ...lblNo].forEach(l => l.visible = false); fireworks.forEach(f => f.visible = false);
 crowd.forEach((k, i) => { const h = k.userData.home; poseKitten(k, 0, { x: h.x, z: h.z, y: h.y, happy: 1 }); k.scale.setScalar(1.7); });
+
+// ---------- light-weight crowd: many simple kittens in one InstancedMesh per body part ----------
+function simpleCrowd(n, coats, avoid = []) {
+  const parts = [[new THREE.SphereGeometry(.2, 10, 8), [0, .2, 0], [1, .9, 1.2], 0], [new THREE.SphereGeometry(.21, 12, 10), [0, .46, .12], [1.1, .95, 1], 0],
+    [new THREE.SphereGeometry(.13, 8, 6), [0, .2, .1], [1, .9, 1], 1], [new THREE.ConeGeometry(.075, .16, 4), [-.12, .64, .12], [1, 1, 1], 0], [new THREE.ConeGeometry(.075, .16, 4), [.12, .64, .12], [1, 1, 1], 0],
+    [new THREE.SphereGeometry(.045, 8, 6), [-.085, .5, .325], [1, 1.25, .6], 2], [new THREE.SphereGeometry(.045, 8, 6), [.085, .5, .325], [1, 1.25, .6], 2],
+    [new THREE.SphereGeometry(.09, 8, 6), [0, .41, .3], [1.3, .8, .7], 1]];
+  const meshes = parts.map(([geo, , , ci]) => { const m = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: .8, color: ci === 2 ? '#141414' : '#ffffff' }), n); m.castShadow = ci < 2; scene.add(m); return m; });
+  const P = []; let s_ = 77; const r_ = () => { s_ = (s_ * 16807) % 2147483647; return (s_ - 1) / 2147483646; };
+  while (P.length < n) { const a = r_() * Math.PI * 2, d = 1.2 + Math.sqrt(r_()) * 5.6; const x = Math.cos(a) * d, z = Math.sin(a) * d * .95 + .3;
+    if (avoid.some(([ax, az, ar]) => Math.hypot(x - ax, z - az) < ar)) continue; P.push({ x, z, ph: r_() * 6, k: P.length, face: r_() * .8 - .4 }); }
+  const col = new THREE.Color(), dummy = new THREE.Object3D(), part = new THREE.Object3D();
+  P.forEach((p, i) => { const [c, c2] = coats(i); meshes.forEach((m, j) => { const ci = parts[j][3]; if (ci < 2) { col.set(ci === 1 ? c2 : c); m.setColorAt(i, col); } }); });
+  meshes.forEach(m => { if (m.instanceColor) m.instanceColor.needsUpdate = true; });
+  return { P, update(t, appear, opts = {}) {   // appear(i) -> 0..1 landing progress
+    P.forEach((p, i) => { const f = appear(i); const vis = f > 0; const y = TOP + (1 - f) * 6 + (f >= 1 && opts.bounce ? Math.abs(Math.sin(t * 5 + p.ph)) * .1 : 0);
+      dummy.position.set(p.x, vis ? y : -50, p.z); dummy.rotation.set(0, Math.atan2(camera.position.x - p.x, camera.position.z - p.z) + p.face * (opts.lazy ? 1 : .3), opts.lazy && i % 2 ? Math.PI / 2 * .9 : 0); dummy.scale.setScalar(opts.scale || 1.15); dummy.updateMatrix();
+      parts.forEach(([, pos, sc], j) => { part.position.set(...pos); part.scale.set(...sc); part.rotation.set(j >= 3 && j <= 4 ? (opts.lazy ? .4 : 0) : 0, 0, 0); part.updateMatrix(); part.matrix.premultiply(dummy.matrix); meshes[j].setMatrixAt(i, part.matrix); }); });
+    meshes.forEach(m => m.instanceMatrix.needsUpdate = true); } };
+}
+
+const EXTRA = simpleCrowd(230, i => LOOKS[CATS[(i * 7) % CATS.length].look] || LOOKS.tabby, [[.6, 1.0, 1.2], [0, 4.4, 1.0]]);
 // ---------- camera ----------
 const camera = new THREE.PerspectiveCamera(50, W / H, .05, 400);
 const KEYS = [
@@ -228,6 +250,7 @@ function placeCamera(t) {
   camera.position.lerpVectors(p0, p1, k); camera.lookAt(new THREE.Vector3().lerpVectors(l0, l1, k)); }
 const landAt = i => i < NK ? (i < 14 ? tw.heute + .2 + i * .1 : tw.fotos + (i - 14) * .06) : 1e9;
 function update(t) {
+  placeCamera(t);   // camera first, so every kitten can turn towards it in this frame
   scene.background = SKY.day; hemi.intensity = 1.1; sun.intensity = 2.4; renderer.toneMappingExposure = 1.05; scene.fog.color.set('#bfe6ff'); seaMat.color.set('#2f9fd8'); rain.visible = false;
   waves(t, .25);
   const grow = 1 + 1.3 * ease(t, tw.heute, tw.gelandet + .4); tiny.scale.set(grow, 1, grow);
@@ -239,6 +262,7 @@ function update(t) {
   kits.forEach((k, i) => { const a = landAt(i), f = ramp(t, a - .1, a + .4); k.visible = t > a - .1; if (!k.visible) return; const p = k.userData.p;
     const y = TOP + (1 - f) * 7 + (t > a + .5 ? Math.abs(Math.sin(t * 5 + k.userData.ph)) * .12 : 0);
     poseKitten(k, t + k.userData.ph, { x: p.x, z: p.z, y, face: Math.atan2(camera.position.x - p.x, camera.position.z - p.z), happy: 1, squash: f > .9 && f < 1 ? 1 : 0 }); k.scale.setScalar(1.15); });
+  EXTRA.update(t, i => ramp(t, tw.heute + .3 + i * .009, tw.heute + .3 + i * .009 + .4), { bounce: true });
   // kitten no. 1 — the guard dog
   const dk = pop(t, tw.nr1 - .2, .4); dog.visible = t > tw.nr1 - .3;
   poseKitten(dog, t, { x: 0, z: 4.4, y: TOP + (1 - ramp(t, tw.nr1 - .3, tw.nr1 + .1)) * 5, face: .3, happy: 1, hop: t > tw.willk ? Math.sin(((t * 1.6) % 1) * Math.PI) * .25 : 0 }); dog.scale.setScalar(1.6 * Math.max(.001, dk));
@@ -290,7 +314,7 @@ function drawUI(t) {
   const lk = win(t, tw.nr1 - .1, tw.fotos - .1, .2);
   if (lk > .01) { og.save(); og.globalAlpha = lk; const k = back(ramp(t, tw.nr1 - .1, tw.nr1 + .3)); og.translate(W / 2, 480); og.scale(k, k); txt('Kätzchen Nr. 1', 0, 0, 100, '#ffd21f', '#000', 16); txt('@marlondoner', 0, 110, 64, '#ffffff', '#000', 12); og.restore();
     const bk = back(ramp(t, tw.besch - .1, tw.besch + .3)) * lk; if (bk > .01) { og.save(); og.translate(W / 2, 1520); og.rotate(-.05); og.scale(bk, bk); rrect(-330, -70, 660, 140, 40); og.fillStyle = 'rgba(12,28,52,.9)'; og.fill(); og.lineWidth = 5; og.strokeStyle = '#5ff0ff'; og.stroke(); txt('🛡️ Beschützer-Hund', 0, 4, 64, '#5ff0ff', null, 0); og.restore(); } }
-  const ck = win(t, tw.heute, tw.nr1 - .1, .3); if (ck > .01) { const v = Math.round(300 * ease(t, tw.heute + .1, tw.gelandet + .3)); og.save(); og.globalAlpha = ck; txt(`+${v} Kätzchen`, W / 2, 560, 96, '#ffd21f', '#000', 16); og.restore(); }
+  const ck = win(t, tw.heute, tw.nr1 - .1, .3); if (ck > .01) { const v = Math.round(300 * ease(t, tw.heute + .1, tw.heute + .3 + 230 * .009 + .4)); og.save(); og.globalAlpha = ck; txt(`+${v} Kätzchen`, W / 2, 560, 96, '#ffd21f', '#000', 16); og.restore(); }
   // photos fly in and land as kittens
   const pf = win(t, tw.fotos - .1, tw.jede - .05, .25);
   if (pf > .01) for (let i = 0; i < 14; i++) { const a = tw.fotos + i * .12, idx = 14 + i * 3; if (idx >= NK) break; const f = ramp(t, a, a + .7);
