@@ -377,7 +377,7 @@ function domAt(t) { const P = PROPS; let h = introHTML(t);
     if (t >= T.wash + 1.4 && t < T.dc) h += sticker('NVIDIA HQ · SANTA CLARA', off('sc', 0, 0).setY(9), t, T.wash + 1.4, 'sm w');
     if (t >= T.spy && t < T.dc) h += sticker('SUSPECTED CHINESE SPY', off('sc', 0, 3).setY(4), t, T.spy + 0.1, 'r');
     if (t >= T.dc + 0.9 && t < T.wh) h += sticker('THE PENTAGON', off('pent', -1, 0).setY(5), t, T.dc + 0.9, 'sm w');
-    if (t >= T.wh + 0.6 && t < T.count) h += sticker('WHITE HOUSE', off('dc', -3, 0.5).setY(9), t, T.wh + 0.6, 'sm w');
+    if (t >= T.wh + 0.6 && t < T.miller + 0.2) h += sticker('WHITE HOUSE', off('dc', -3, 4).setY(3), t, T.wh + 0.6, 'sm w');
     if (t >= T.count + 0.8 && t < T.abu) { h += sticker('ALASKA · COUNTING', P3('ak', 6), t, T.count + 0.8, 'g'); h += sticker('MISSISSIPPI · COUNTING', P3('ms', 6), t, T.count + 1.0, 'g'); }
     if (t >= T.abu + 1.0 && t < T.il) { h += sticker('ABU DHABI · TUESDAY', P3('abu', 30), t, T.abu + 1.0, 'w'); if (t >= T.europe + 0.3) h += sticker('EUROPE', P3('paris', 4), t, T.europe + 0.3, 'b sm'); if (t >= T.russia) h += sticker('RUSSIA', P3('moscow', 4), t, T.russia, 'r sm'); h += sticker('KYIV', P3('kyiv', 3), t, T.abu + 1.3, 'sm'); }
     if (t >= T.il + 0.8 && t < T.jp) h += sticker('ISRAEL', P3('jer', 6), t, T.il + 0.8, 'b');
