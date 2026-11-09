@@ -1,6 +1,6 @@
 // ===================== 21 Mimi Tag 3 — serial episode (vyral-style, same format as flocke4_2d.js): live follower counter,
-// Mimi becomes mayor, town hall / bridge / cat food shop, commenters get roles (Hanna, Lou, King), next goal 10.000,
-// "Schreib Schlüssel" -> Hausschlüssel, cliffhanger: an excavator at the edge of town, "Hier kommt ein Parkplatz hin". =====================
+// Katzenpalast (house name from the Tag 2 comments), Mimi becomes mayor, commenters get roles (Hanna, Lou, King), parkour + trampoline promised in Tag 2,
+// next goal 10.000 = official city, "Schreib Schlüssel" -> Hausschlüssel, cliffhanger: the two eyes on the attic from video 07 are back. =====================
 // Assembled from flocke4_2d.js helpers + the Mimistadt map from mimi3_2d.js. render_video.sh copies mimi4_2d.js -> mimi4.js; captions: caption layer.
 // Numbers on screen only (FOLLOWERS / YESTERDAY / GOAL), so they can be updated without a new voice.
 
@@ -25,31 +25,33 @@ const PHOTO = CATS.map(() => null);
 // commenter handles for the roles: local only (21_mimi_tag3/roles.json is gitignored), e.g. {"hanna": "@...", "lou": "@...", "king": "@..."}
 const ROLES = await fetch('../21_mimi_tag3/roles.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
 const FOLLOWERS = 6006, YESTERDAY = 4258, GOAL = 10000, GOALN = GOAL, NWALL = 0;
-const LADDER = [['Haus', '1.000', 1], ['Rathaus', '5.000', 1], ['Stadt', '10.000', 0]];
+const LADDER = [['Palast', '4.000', 1], ['Rathaus', '6.000', 1], ['Stadt', '10.000', 0]];
 const tw = {
-  tag: T('Tag'), gestern: T('Gestern'), heute: T('Heute'), sechs: T('sechstausend'), und1: T('Und'), offiz: T('offiziell'), buerg: T('Bürgermeisterin'),
-  bekommen: T('bekommen'), rathaus: T('Rathaus'), bruecke: T('Brücke'), laden1: T('Laden'), futter: T('Katzenfutter'),
-  im: T('Im'), hanna: T('Hanna'), gelb: T('gelbgrüne'), lou: T('Lou'), dino: T('Dino'), fluss2: T('Fluss', 2),
-  king: T('King'), haus: T('Haus'), direkt: T('Direkt'), platz: T('Mimiplatz'),
-  ziel: T('Nächstes'), zehn1: T('zehntausend'), echte: T('echte'), stadt: T('Stadt'), schreib: T('Schreib'), schl: T('Schlüssel'), hschl: T('Hausschlüssel'), aber: T('Aber'), zehn2: T('zehntausend', 2),
-  doch: T('Doch'), mitter: T('Mitternacht'), brummen: T('Brummen'), rand: T('Stadtrand'), bagger: T('Bagger'), schild: T('Schild'), park: T('Parkplatz'),
-  was: T('Was'), top: T('Top-Kommentar'), teil: T('Teil'), abend: T('Abend') };
+  tag: T('Tag'), entsch: T('entschieden'), palast1: T('Katzenpalast'), gestern: T('Gestern'), heute: T('Heute'), sechs: T('sechstausend'),
+  und2: T('Und', 2), buerg: T('Bürgermeisterin'), hanna: T('Hanna'), gelb: T('gelbgrüne'), laden: T('Laden'), futter: T('Katzenfutter'),
+  lou: T('Lou'), dino: T('Dino'), fluss: T('Fluss'), king: T('King'), und3: T('Und', 3), haus: T('Haus', 2), direkt: T('Direkt'), palast2: T('Palast'),
+  und4: T('Und', 4), parkour: T('Parkour'), steht: T('Steht'), tramp: T('Trampolin'),
+  ziel: T('Nächstes'), zehn1: T('zehntausend'), offiz: T('offizielle'), schreib: T('Schreib'), schl: T('Schlüssel'), hschl: T('Hausschlüssel'), aber: T('Aber'), zehn2: T('zehntausend', 2),
+  doch: T('Doch'), mitter: T('Mitternacht'), dach: T('Dachboden'), augen: T('Augen'), erinnert: T('Erinnert'), gleichen: T('gleichen'), ersten: T('ersten', 2),
+  und5: T('Und', 5), stimme: T('Stimme'), sagte: T('sagte'), laenger: T('länger'),
+  machen: T('Machen'), tuer: T('Tür'), top: T('Top-Kommentar'), teil: T('Teil', 2), abend: T('Abend') };
 
 const SFX = { end: END, music_gain: .13, events: [], beds: [] };
 const e = (t, n, g = 1) => SFX.events.push([+t.toFixed(3), n, g]);
-SFX.beds.push([tw.doch, tw.was, 'wind', .6]);
-e(.05, 'whoosh', .7); e(tw.tag + .1, 'pop', .8); e(.6, 'meow_happy', .6);
+SFX.beds.push([tw.doch, tw.machen, 'wind', .6]);
+e(.05, 'whoosh', .7); e(tw.tag + .1, 'pop', .8); e(tw.entsch, 'ding', .6); e(tw.palast1, 'tada', .9); e(tw.palast1 + .3, 'meow_happy', .6);
 e(tw.gestern - .1, 'whoosh', .6); e(tw.gestern + .4, 'ding', .6); for (let i = 0; i < 14; i++) e(tw.heute + .2 + i * .08, i % 4 ? 'tick' : 'pop', .45); e(tw.sechs + .1, 'tada', .8);
-e(tw.und1 - .1, 'whoosh', .7); e(tw.offiz + .1, 'stamp', 1); e(tw.buerg, 'tada', .9); for (let i = 0; i < 6; i++) e(tw.buerg + .2 + i * .1, 'pop', .3);
-e(tw.rathaus - .05, 'pop', .9); e(tw.rathaus + .25, 'ding', .5); e(tw.bruecke - .05, 'pop', .9); e(tw.bruecke + .2, 'splash', .4); e(tw.laden1 - .05, 'pop', .9);
-e(tw.im - .1, 'whoosh', .6); e(tw.hanna, 'meow_happy', .7); e(tw.gelb, 'sparkle', .6);
-e(tw.lou - .1, 'whoosh', .6); e(tw.dino, 'boing', .8); e(tw.fluss2, 'splash', .5);
-e(tw.king - .1, 'whoosh', .7); e(tw.haus, 'swoosh_up', .6); e(tw.platz, 'ding', .8);
-e(tw.ziel - .1, 'whoosh', .7); e(tw.zehn1, 'swoosh_up', .6); e(tw.stadt, 'sparkle', .8);
+e(tw.und2 - .1, 'whoosh', .7); e(tw.buerg, 'stamp', 1); e(tw.buerg + .2, 'tada', .9); for (let i = 0; i < 6; i++) e(tw.buerg + .3 + i * .1, 'pop', .3);
+e(tw.hanna - .1, 'whoosh', .6); e(tw.hanna, 'meow_happy', .7); e(tw.gelb, 'sparkle', .6); e(tw.laden, 'pop', .8);
+e(tw.lou - .1, 'whoosh', .6); e(tw.dino, 'boing', .8); e(tw.fluss, 'splash', .5);
+e(tw.und3 - .1, 'whoosh', .7); e(tw.haus, 'swoosh_up', .6); e(tw.direkt, 'ding', .8);
+e(tw.und4 - .1, 'whoosh', .7); e(tw.steht, 'stamp', .9); for (let i = 0; i < 4; i++) e(tw.tramp + i * .4, 'boing', .7);
+e(tw.ziel - .1, 'whoosh', .7); e(tw.zehn1, 'swoosh_up', .6); e(tw.offiz, 'sparkle', .8);
 e(tw.schreib - .1, 'whoosh', .6); for (let i = 0; i < 9; i++) e(tw.schl + i * .05, 'tick', .5); e(tw.hschl, 'ding', .8); e(tw.aber, 'stamp', .9);
-e(tw.doch - .1, 'boom', .8); e(tw.mitter, 'tick', .7); e(tw.mitter + .5, 'tick', .7); e(tw.brummen, 'boom', .7);
-e(tw.rand - .1, 'whoosh', .7); e(tw.bagger, 'boom', 1); e(tw.park, 'stamp', .9);
-e(tw.was - .1, 'whoosh', .7); e(tw.top, 'pop', .9); e(tw.teil - .1, 'boom', .7); e(tw.abend, 'ding', .8);
+e(tw.doch - .1, 'boom', .8); e(tw.mitter, 'tick', .7); e(tw.mitter + .5, 'tick', .7); e(tw.augen, 'hiss', .9);
+e(tw.erinnert - .1, 'whoosh', .7); e(tw.gleichen, 'boom', .6);
+e(tw.stimme - .1, 'boom', .7); e(tw.laenger, 'hiss', .7);
+e(tw.machen - .1, 'whoosh', .7); e(tw.top, 'pop', .9); e(tw.teil - .1, 'boom', .7); e(tw.abend, 'ding', .8);
 window.SFX = SFX;
 // ---------- canvas helpers ----------
 const out = document.createElement('canvas'); out.width = W; out.height = H; document.body.appendChild(out); const g = out.getContext('2d');
@@ -554,76 +556,111 @@ function parkSign(x, y, k) { if (k <= .01) return; g.save(); g.translate(x, y); 
   rrect(-380, -230, 760, 260, 22); fillStroke('#ffffff', 8); rrect(-360, -210, 120, 120, 18); fillStroke('#2f6fe0', 5); text('P', -300, -148, 100, '#ffffff', null, 0);
   text('HIER KOMMT', 60, -170, 64, '#d23a3a', null, 0); text('EIN PARKPLATZ', 60, -90, 64, '#d23a3a', null, 0); text('HIN!', 0, -10, 70, OUT, null, 0); g.restore(); }
 const mimi = (x, y, s, o, t) => cat(x, y, s, Object.assign({}, MIMI, o), t);
+// Mimi's house = Katzenpalast (the name the comments chose in Tag 2)
+function palace(x, y, k, t, named = 1) { if (k <= .01) return; g.save(); g.translate(x, y); g.scale(k, k);
+  for (const sx of [-1, 1]) { rrect(sx * 300 - 80, -620, 160, 620, 8); fillStroke('#ffd3e2', 7); g.beginPath(); g.moveTo(sx * 300 - 100, -620); g.lineTo(sx * 300, -780); g.lineTo(sx * 300 + 100, -620); g.closePath(); fillStroke('#ff6f91', 7);
+    g.fillStyle = OUT; g.fillRect(sx * 300 - 3, -860, 6, 90); g.fillStyle = '#ffd23f'; g.fillRect(sx * 300 + 3, -860, 60 + Math.sin(t * 4 + sx) * 6, 34); rrect(sx * 300 - 34, -520, 68, 90, 34); fillStroke('#fff3c4', 5); }
+  rrect(-240, -480, 480, 480, 8); fillStroke('#ffe3ef', 7); g.beginPath(); g.moveTo(-280, -480); g.lineTo(0, -680); g.lineTo(280, -480); g.closePath(); fillStroke('#ff6f91', 7);
+  rrect(-90, -230, 180, 230, 90); fillStroke('#c98a52', 7); for (const sx of [-1, 1]) { rrect(sx * 160 - 40, -400, 80, 100, 40); fillStroke('#fff3c4', 5); }
+  g.save(); g.translate(0, -560); g.scale(1.2, 1.2); g.beginPath(); g.moveTo(-52, 20); g.lineTo(-58, -36); g.lineTo(-26, -6); g.lineTo(0, -46); g.lineTo(26, -6); g.lineTo(58, -36); g.lineTo(52, 20); g.closePath(); fillStroke('#ffd23f', 6); g.restore();
+  if (named > .01) { g.save(); g.translate(0, -330); g.scale(named, named); rrect(-300, -52, 600, 104, 20); fillStroke('#ffffff', 7); text('KATZENPALAST', 0, 4, 66, '#e0457a', null, 0); g.restore(); }
+  g.restore(); }
+function trampoline(x, y, k) { if (k <= .01) return; g.save(); g.translate(x, y); g.scale(k, k);
+  for (const sx of [-1, 1]) { g.lineWidth = 12; g.strokeStyle = OUT; g.beginPath(); g.moveTo(sx * 200, -60); g.lineTo(sx * 240, 0); g.stroke(); }
+  ell(0, -70, 240, 50); fillStroke('#4fb4ff', 8); ell(0, -74, 190, 34); g.fillStyle = '#2f2a33'; g.fill(); g.restore(); }
+function parkour(t, k) { if (k <= .01) return; g.save(); g.globalAlpha = cl(k * 1.5);
+  const P = [[160, 1180, 220], [420, 980, 200], [700, 800, 220], [880, 1050, 170], [300, 640, 180]];
+  P.forEach(([x, y, w], i) => { const kk = back(cl(k * 5 - i)); if (kk <= .01) return; g.save(); g.translate(x, y); g.scale(kk, kk); rrect(-w / 2, -24, w, 48, 14); fillStroke(['#ffb648', '#5fd3a8', '#a98bff', '#ff8fb1', '#7fb4e6'][i], 6);
+    g.lineWidth = 6; g.strokeStyle = OUT; g.beginPath(); g.moveTo(-w / 2 + 20, 24); g.lineTo(-w / 2 + 20, 70); g.moveTo(w / 2 - 20, 24); g.lineTo(w / 2 - 20, 70); g.stroke(); g.restore(); });
+  g.restore(); }
+function eyes(x, y, s, k, t) { if (k <= .01) return; const bl = Math.sin(t * 1.3) > .97 ? .15 : 1;
+  for (const sx of [-1, 1]) { const ex = x + sx * 70 * s; g.save(); g.globalAlpha = cl(k); g.shadowColor = '#ffe24a'; g.shadowBlur = 50 * s; ell(ex, y, 36 * s, 42 * s * bl); g.fillStyle = '#ffd21f'; g.fill(); g.shadowColor = 'transparent';
+    ell(ex, y, 9 * s, 36 * s * bl); g.fillStyle = '#1a1420'; g.fill(); g.restore(); } }
+function attic(t, open = 0) {   // dark room, the attic hatch in the middle of the ceiling
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#120d1e'); bg.addColorStop(1, '#2a2040'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#1d1530'; g.fillRect(0, 0, W, 780); g.fillStyle = '#2a1f3a'; for (let i = 0; i < 6; i++) g.fillRect(i * 200 + 40, 0, 50, 800);
+  rrect(290, 520, 500, 230, 14); fillStroke('#3a2a22', 8, '#0a0610'); g.fillStyle = '#05030a'; g.fillRect(310, 540, 460, 190);
+  if (open > 0) { g.save(); g.translate(310, 730); g.rotate(-open * 1.2); rrect(0, -10, 460, 20, 4); fillStroke('#5a3a2a', 5, '#0a0610'); g.restore(); }
+  g.fillStyle = '#5a4a3a'; for (let i = 0; i < 6; i++) g.fillRect(500 + 0, 760 + i * 70, 80, 12); g.fillRect(490, 760, 10, 420); g.fillRect(580, 760, 10, 420);   // ladder
+  g.fillStyle = '#2a2236'; g.fillRect(0, 1250, W, H - 1250); }
 
 function frame(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.globalAlpha = 1;
   const bob = Math.abs(Math.sin(t * 6)) * 20;
-  // A: Tag 3 in Mimistadt
-  if (t < tw.gestern - .05) { city(t, YESTERDAY, lerp(1.75, 2.1, ramp(t, 0, tw.gestern))); crowd(t, 0); mimi(W / 2, 1480 - bob, 1.2, { mood: 'happy' }, t);
-    tape('TAG 3', pop(t, 0, .3), 'Mimistadt', ORANGE); sticker('🐾 ' + fmt(FOLLOWERS), W / 2, 540, pop(t, .4), RED, .04); return; }
+  // A: Tag 3 — you decided: Mimi's house is now called Katzenpalast
+  if (t < tw.gestern - .05) { street(t); palace(W / 2, 1300, .9 * pop(t, 0, .4), t, 0); sticker('MIMIS KATZENPALAST', W / 2, 680, pop(t, tw.palast1 - .05, .35), '#e0457a', -.05, 62); mimi(W / 2, 1520 - bob, .8, { mood: 'happy', crown: 1 }, t);
+    confetti(t, tw.palast1, ramp(t, tw.palast1 - .1, tw.palast1 + .2));
+    tape('TAG 3', pop(t, 0, .3), 'Mimistadt', ORANGE); sticker('IHR HABT ENTSCHIEDEN ✓', W / 2, 520, pop(t, tw.entsch - .05), GREEN, -.04, 46); return; }
   // B: live counter
-  if (t < tw.und1 - .05) { const nk = ease(t, tw.heute + .1, tw.sechs + .5); city(t, lerp(YESTERDAY, FOLLOWERS, nk), 2.1); crowd(t, Math.round(lerp(100, CROWD.length, nk)));
+  if (t < tw.und2 - .05) { const nk = ease(t, tw.heute + .1, tw.sechs + .5); city(t, lerp(YESTERDAY, FOLLOWERS, nk), 2.1); crowd(t, Math.round(lerp(100, CROWD.length, nk)));
     mimi(W / 2, 1460 - bob, .95, { mood: t > tw.heute ? 'wow' : 'happy' }, t);
     profileCard(pop(t, tw.gestern - .05, .3), lerp(YESTERDAY, FOLLOWERS, nk), ease(t, tw.sechs, tw.sechs + .5), t);
     tape(t < tw.heute ? 'GESTERN' : 'HEUTE', 1, null, t < tw.heute ? '#a98bff' : ORANGE);
     sticker(`+${fmt(FOLLOWERS - YESTERDAY)} NEUE`, W / 2, 840, pop(t, tw.sechs + .1), GREEN, .07); return; }
-  // C: Mimi is officially mayor
-  if (t < tw.bekommen - .1) { city(t, FOLLOWERS, 2.1); crowd(t, CROWD.length); const y = 1500 - bob * .5, s = .9; mimi(W / 2, y, s, { mood: 'wow' }, t);
-    mayorChain(W / 2, y, s * pop(t, tw.buerg - .2, .4)); stamp(W / 2, 790, ramp(t, tw.offiz, tw.offiz + .25), 'OFFIZIELL');
-    tape('BÜRGERMEISTERIN', pop(t, tw.buerg - .1), 'Mimi', '#d9a21f'); confetti(t, tw.buerg, ramp(t, tw.buerg - .1, tw.buerg + .2)); ladder(ramp(t, tw.buerg + .1, tw.buerg + .3), 570); return; }
-  // D: town hall, bridge, cat food shop
-  if (t < tw.im - .1) { street(t); g.fillStyle = '#8fd0ff'; g.fillRect(0, 1340, W, 100);
-    townHall(200, 1400, pop(t, tw.rathaus - .1) * .95); bridge(545, 1370, pop(t, tw.bruecke - .1) * .95); shop(885, 1400, pop(t, tw.laden1 - .1) * .9, t); for (let i = 0; i < 7; i++) { const c = CROWD[i * 9]; const o = lookOf(CATS[c.k], c.k); o.mood = 'happy'; cat(90 + i * 150 + (i > 2 ? 150 : 0), 1640 - Math.abs(Math.sin(t * 6 + i)) * 14, .36, o, t + i); } if (true) { const y = 1660 - bob * .4; mimi(W / 2, y, .55, { mood: 'happy' }, t); mayorChain(W / 2, y, .55); } const lab = t < tw.bruecke - .1 ? 'RATHAUS' : t < tw.laden1 - .1 ? 'BRÜCKE' : 'KATZENFUTTER';
-    tape(lab, pop(t, t < tw.bruecke - .1 ? tw.rathaus - .1 : t < tw.laden1 - .1 ? tw.bruecke - .1 : tw.laden1 - .1, .25), 'NEU IN MIMISTADT', GREEN);
-    sticker('3 NEUE GEBÄUDE', W / 2, 560, pop(t, tw.futter + .2), RED); return; }
-  // E: Hanna sells cat food (yellow-green kitten with an apron)
-  if (t < tw.lou - .05) { street(t); shop(W / 2, 1080, 1.3, t); const k = pop(t, tw.im, .4); const y = 1520 - bob * .5, s = .95 * k;
+  // C: Mimi becomes mayor of Mimistadt
+  if (t < tw.hanna - .1) { city(t, FOLLOWERS, 2.1); crowd(t, CROWD.length); const y = 1500 - bob * .5, s = .9; mimi(W / 2, y, s, { mood: 'wow' }, t);
+    mayorChain(W / 2, y, s * pop(t, tw.buerg - .2, .4)); stamp(W / 2, 790, ramp(t, tw.buerg, tw.buerg + .25), 'GEWÄHLT');
+    tape('BÜRGERMEISTERIN', pop(t, tw.buerg - .1), 'von Mimistadt', '#d9a21f'); confetti(t, tw.buerg, ramp(t, tw.buerg - .1, tw.buerg + .2)); ladder(ramp(t, tw.buerg + .2, tw.buerg + .4), 570); return; }
+  // D: Hanna gets her own cat food shop
+  if (t < tw.lou - .05) { street(t); shop(W / 2, 1080, 1.3 * pop(t, tw.laden - .1, .4), t); const k = pop(t, tw.hanna - .05, .4); const y = 1520 - bob * .5, s = .95 * k;
     cat(W / 2, y, s, { c: '#c8e65a', c2: '#fff6b8', pat: 'stripes', sc: '#f0c020', mood: 'happy', paw: '#fff6b8', seed: 7, acc: 'bow' }, t); if (k > .05) apron(W / 2, y, s);
-    tape('KATZENFUTTER-LADEN', pop(t, tw.im - .05), 'Verkäuferin Hanna', '#e0702a'); if (ROLES.hanna) sticker(ROLES.hanna, W / 2, 540, pop(t, tw.hanna), '#ffffff', .03, 40); return; }
-  // F: Lou in a dino costume by the river
-  if (t < tw.king - .05) { street(t); river(t); const k = pop(t, tw.lou - .05, .4); const y = 1560 - bob * .5, s = 1.05 * k;
+    tape('HANNAS LADEN', pop(t, tw.hanna - .05), 'Katzenfutter', '#e0702a'); if (ROLES.hanna) sticker(ROLES.hanna, W / 2, 540, pop(t, tw.hanna + .1), '#ffffff', .03, 40); return; }
+  // E: Lou in a dino costume by the river
+  if (t < tw.und3 - .05) { street(t); river(t); const k = pop(t, tw.lou - .05, .4); const y = 1560 - bob * .5, s = 1.05 * k;
     if (k > .05 && t > tw.dino - .15) dinoSpikes(W / 2, y, s * pop(t, tw.dino - .15, .3));
     cat(W / 2, y, s, t > tw.dino - .15 ? { c: '#6cc85a', c2: '#f3e7c0', ear: '#6cc85a', tailc: '#6cc85a', mood: 'happy', seed: 3 } : { c: '#9aa3ad', c2: '#f1f3f5', mood: 'happy', seed: 3 }, t);
     tape('AM FLUSS', pop(t, tw.lou - .05), 'Lou im Dino-Kostüm', '#3fbf6a'); if (ROLES.lou) sticker(ROLES.lou, W / 2, 540, pop(t, tw.lou + .1), '#ffffff', .03, 40);
     sticker('RAWR!', W / 2, 680, pop(t, tw.dino + .1), RED, .12, 60); return; }
-  // G: King, here is your house — zoom into the map next to Mimiplatz
-  if (t < tw.ziel - .05) { const zk = ease(t, tw.king, tw.direkt), z = lerp(2.1, 11, zk), fx = lerp(CEN, KING.x, zk), fy = lerp(CEN, KING.y, zk);
+  // F: King, here is your house — zoom into the map next to the palace on Mimiplatz
+  if (t < tw.und4 - .05) { const zk = ease(t, tw.und3, tw.direkt), z = lerp(2.1, 11, zk), fx = lerp(CEN, KING.x, zk), fy = lerp(CEN, KING.y, zk);
     city(t, FOLLOWERS, z, fx, fy, 1200); const [px, py] = cityXY(KING.x, KING.y, z, fx, fy, 1200);
     pin(px, py - 60 * zk, pop(t, tw.haus - .05, .4), ROLES.king || 'King');
-    bubble(W / 2, 600, 50, 'Kannst du mein Haus zeigen?', pop(t, tw.king - .05, .3) * (1 - ramp(t, tw.haus, tw.haus + .3)));
-    tape('DEIN HAUS, KING', pop(t, tw.haus - .1), null, ORANGE); sticker('DIREKT AM MIMIPLATZ', W / 2, 620, pop(t, tw.direkt), GREEN, -.04, 50); return; }
-  // H: next goal
+    bubble(W / 2, 600, 50, 'Kannst du mein Haus zeigen?', pop(t, tw.und3 - .05, .3) * (1 - ramp(t, tw.haus, tw.haus + .3)));
+    tape('DEIN HAUS, KING', pop(t, tw.haus - .1), null, ORANGE); sticker('NEBEN DEM PALAST', W / 2, 620, pop(t, tw.palast2 - .1), GREEN, -.04, 50); return; }
+  // G: the parkour promised in Tag 2 — done, with a trampoline
+  if (t < tw.ziel - .05) { room(t); parkour(t, ramp(t, tw.parkour - .1, tw.parkour + .6)); trampoline(W / 2, 1480, pop(t, tw.tramp - .1, .35));
+    const jump = t > tw.tramp - .05 ? Math.abs(Math.sin((t - tw.tramp) * 4)) * 420 : 0; mimi(W / 2, 1420 - jump, .7, { mood: 'happy', sq: jump < 40 && t > tw.tramp ? .5 : 0 }, t);
+    crowd(t, 40); tape('PARKOUR', pop(t, tw.und4 - .05), 'versprochen in Teil 2', '#a98bff');
+    stamp(W / 2, 760, ramp(t, tw.steht, tw.steht + .25), 'STEHT ✓'); sticker('+ TRAMPOLIN', W / 2, 560, pop(t, tw.tramp), RED, .05, 54); return; }
+  // H: next goal — official city at 10.000
   if (t < tw.schreib - .05) { city(t, FOLLOWERS, 2.1); crowd(t, CROWD.length); g.fillStyle = 'rgba(40,20,60,.55)'; g.fillRect(0, 0, W, H);
-    if (t > tw.stadt - .1) { g.save(); g.globalAlpha = ramp(t, tw.stadt - .1, tw.stadt + .2); g.setLineDash([20, 14]); g.lineWidth = 8; g.strokeStyle = '#ffffff';
+    if (t > tw.offiz - .1) { g.save(); g.globalAlpha = ramp(t, tw.offiz - .1, tw.offiz + .2); g.setLineDash([20, 14]); g.lineWidth = 8; g.strokeStyle = '#ffffff';
       for (let i = 0; i < 9; i++) { const x = 40 + i * 118, h = 200 + ((i * 97) % 5) * 70; g.strokeRect(x, 1500 - h, 96, h); } g.restore(); }
-    goalCard(pop(t, tw.ziel, .35), FOLLOWERS, t); tape('NÄCHSTES ZIEL', pop(t, tw.ziel - .05), 'Bürgermeisterin: ✓', '#a98bff');
-    sticker('ECHTE STADT', W / 2, 1180, pop(t, tw.echte), GREEN, .05, 70); return; }
+    goalCard(pop(t, tw.ziel, .35), FOLLOWERS, t); tape('NÄCHSTES ZIEL', pop(t, tw.ziel - .05), null, '#a98bff');
+    sticker('OFFIZIELLE STADT', W / 2, 1180, pop(t, tw.offiz), GREEN, .05, 64); return; }
   // I: Hausschlüssel
   if (t < tw.doch - .05) { street(t); g.fillStyle = 'rgba(255,246,230,.6)'; g.fillRect(0, 0, W, H);
     keyCard(pop(t, tw.schreib - .05, .35), t); const typed = 'Schlüssel'.slice(0, Math.floor(ramp(t, tw.schl - .05, tw.schl + .45) * 9 + .001));
     commentBox(ramp(t, tw.schreib, tw.schreib + .3), typed, 1190); tape('NEU HIER?', pop(t, tw.schreib - .05), null, ORANGE);
     sticker(`NUR FÜR DIE ERSTEN ${fmt(GOAL)}`, W / 2, 1390, pop(t, tw.aber), RED, -.05, 50); return; }
-  // J: midnight, a loud rumble
-  if (t < tw.rand - .05) { const sh = ramp(t, tw.brummen - .1, tw.brummen + .1) * (1 - ramp(t, tw.rand - .6, tw.rand)) * 10; g.save(); g.translate(Math.sin(t * 60) * sh, Math.cos(t * 47) * sh);
-    street(t, 1); crowd(t, CROWD.length, 'wow', 1); mimi(W / 2, 1460, .95, { mood: 'wow', blink: 0 }, 0); g.restore();
-    grey(ease(t, tw.doch, tw.mitter + .3) * .6); tape('MITTERNACHT', pop(t, tw.doch - .05), null, '#3a3456');
-    const ck = pop(t, tw.mitter - .2, .3); if (ck > .01) { g.save(); g.translate(W / 2, 620); g.scale(ck, ck); rrect(-250, -110, 500, 220, 30); fillStroke('#1d1a24', 7); text('00:00', 0, 6, 150, '#ff4a4a', null, 0); g.restore(); }
-    sticker('BRRRMMM…', W / 2, 830, pop(t, tw.brummen), '#6b6476', .1, 60); return; }
-  // K: the excavator at the edge of town
-  if (t < tw.was - .05) { const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#141a3a'); sky.addColorStop(1, '#3a3456'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 30; i++) { g.fillStyle = '#fff'; g.fillRect((i * 137) % W, (i * 71) % 700, 3, 3); }
-    g.fillStyle = '#2b2f3a'; g.fillRect(0, 1300, W, H - 1300);
-    const bz = ease(t, tw.rand - .1, tw.bagger + .5); bagger(lerp(1150, 470, bz), 1400, .9, t, ramp(t, tw.bagger - .2, tw.bagger + .1), Math.sin(t * 2) * .08);
-    parkSign(W / 2, 640, pop(t, tw.schild, .4)); mimi(W / 2, 1540, .5, { mood: 'wow', blink: 0 }, t);
-    tape('AM STADTRAND', pop(t, tw.rand - .05), null, '#3a3456'); return; }
-  // L: what does Mimi do? top comment decides + cliffhanger card
-  const dark = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); dark.addColorStop(0, '#5a2a10'); dark.addColorStop(1, '#1a0a04'); g.fillStyle = dark; g.fillRect(0, 0, W, H);
-  if (t < tw.teil - .05) { g.save(); g.globalAlpha = .45; bagger(440, 1480, .8, t, 1); g.restore(); mimi(W / 2, 1450, .8, { mood: 'wow' }, t); mayorChain(W / 2, 1450, .8);
-    tape('WAS MACHT MIMI?', pop(t, tw.was - .05), null, ORANGE);
-    bubble(W / 2, 560, 54, 'Bagger stoppen!', pop(t, tw.was + .3, .3)); bubble(W / 2, 710, 54, 'Alle Kätzchen holen!', pop(t, tw.was + .6, .3));
-    sticker('TOP-KOMMENTAR ENTSCHEIDET 👇', W / 2, 860, pop(t, tw.top), '#ffffff', -.03, 46); return; }
+  // J: midnight, two eyes light up on the attic
+  if (t < tw.erinnert - .05) { attic(t); mimi(W / 2, 1480, .85, { mood: t > tw.augen ? 'wow' : 'tired', blink: t > tw.augen ? 0 : 1 }, t);
+    eyes(W / 2, 640, 1, ramp(t, tw.augen - .15, tw.augen + .2), t);
+    tape('MITTERNACHT', pop(t, tw.doch - .05), null, '#3a3456');
+    if (t < tw.dach) { const ck = pop(t, tw.mitter - .2, .3); if (ck > .01) { g.save(); g.translate(W / 2, 640); g.scale(ck, ck); rrect(-250, -110, 500, 220, 30); fillStroke('#1d1a24', 7); text('00:00', 0, 6, 150, '#ff4a4a', null, 0); g.restore(); } }
+    else sticker('DACHBODEN', W / 2, 480, pop(t, tw.dach), '#6b6476', -.04, 50); return; }
+  // K: remember? the same eyes as on day one (flashback polaroid of the first video)
+  if (t < tw.und5 - .05) { attic(t); g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(0, 0, W, H);
+    const k = pop(t, tw.erinnert - .05, .4); g.save(); g.translate(W / 2, 860); g.rotate(-.05); g.scale(k, k);
+    rrect(-330, -380, 660, 760, 14); fillStroke('#f6efe2', 7); g.fillStyle = '#1a1420'; g.fillRect(-290, -340, 580, 580);
+    g.save(); g.beginPath(); g.rect(-290, -340, 580, 580); g.clip(); g.translate(-W / 2, -800); g.globalAlpha = .9;
+    g.fillStyle = '#463549'; g.beginPath(); g.moveTo(240, 760); g.lineTo(540, 470); g.lineTo(840, 760); g.closePath(); g.fill(); g.fillStyle = '#5b4a5e'; g.fillRect(290, 760, 500, 300);
+    g.fillStyle = '#1c1730'; g.fillRect(480, 590, 120, 100); g.restore();
+    eyes(0, -170, .45, 1, t); text('TAG 1', 0, 300, 64, OUT, null, 0); g.restore();
+    tape('ERINNERT IHR EUCH?', pop(t, tw.erinnert - .05), null, '#3a3456'); sticker('DIE GLEICHEN AUGEN', W / 2, 1360, pop(t, tw.gleichen), RED, -.04, 50); return; }
+  // L: a voice: "I've lived here much longer than you."
+  if (t < tw.machen - .05) { const bg = g.createRadialGradient(W / 2, 760, 50, W / 2, 760, 900); bg.addColorStop(0, '#2a1f3a'); bg.addColorStop(1, '#05030a'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const z = ease(t, tw.und5, tw.laenger + .4); eyes(W / 2, 760, lerp(1.6, 2.4, z), 1, t);
+    bubble(W / 2, 1140, 52, 'Ich wohne hier schon', pop(t, tw.sagte + .1, .35)); bubble(W / 2, 1290, 52, 'viel länger als ihr.', pop(t, tw.laenger - .4, .35));
+    tape('EINE STIMME', pop(t, tw.und5 - .05), null, '#3a3456'); return; }
+  // M: open the door? top comment decides + cliffhanger card
+  const dark = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); dark.addColorStop(0, '#3a1050'); dark.addColorStop(1, '#0a0410'); g.fillStyle = dark; g.fillRect(0, 0, W, H);
+  if (t < tw.teil - .05) { eyes(W / 2, 1080, 1.2, .6, t); mimi(W / 2, 1460, .7, { mood: 'wow', blink: 0 }, t);
+    const v1 = pop(t, tw.machen, .3), v2 = pop(t, tw.tuer, .3);
+    for (const [x, lab, col, k] of [[310, 'AUF ✓', GREEN, v1], [770, 'ZU ✗', RED, v2]]) { if (k <= .01) continue; g.save(); g.translate(x, 600); g.scale(k, k); rrect(-200, -90, 400, 180, 40); fillStroke(col, 7); text(lab, 0, 4, 76, '#fff', OUT, 10); g.restore(); }
+    tape('TÜR AUFMACHEN?', pop(t, tw.machen - .05), null, ORANGE); sticker('TOP-KOMMENTAR ENTSCHEIDET 👇', W / 2, 820, pop(t, tw.top), '#ffffff', -.03, 46); return; }
   const k = pop(t, tw.teil - .05, .35); g.save(); g.translate(W / 2, 820); g.scale(k, k); text('HEUTE', 0, -90, 170, '#ffffff', OUT, 0); text('ABEND', 0, 90, 170, ORANGE, OUT, 0); g.restore();
-  sticker('Tag 3 · Teil 2', W / 2, 1060, pop(t, tw.teil + .3), '#ffffff', -.03, 46); sticker('MIMISTADT', W / 2, 1180, pop(t, tw.abend), GREEN, .03, 50);
+  sticker('Tag 3 · Teil 2', W / 2, 1060, pop(t, tw.teil + .3), '#ffffff', -.03, 46); sticker('KATZENPALAST', W / 2, 1180, pop(t, tw.abend), GREEN, .03, 50);
 }
 window.END = END; window.TW = tw;
 window.renderAt = (t, q = .92) => { frame(t); return out.toDataURL('image/jpeg', q); };

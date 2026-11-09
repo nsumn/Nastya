@@ -1,128 +1,144 @@
 1
-00:00:00,000 --> 00:00:01,463
-Tag drei in
-Mimistadt.
+00:00:00,000 --> 00:00:00,813
+Tag drei.
 
 2
-00:00:01,741 --> 00:00:03,332
+00:00:01,057 --> 00:00:03,262
+Und ihr habt
+entschieden: Mimis Haus
+
+3
+00:00:03,320 --> 00:00:04,656
+heißt jetzt
+Katzenpalast!
+
+4
+00:00:04,934 --> 00:00:06,560
 Gestern waren wir
 viertausend.
 
-3
-00:00:03,611 --> 00:00:05,700
+5
+00:00:06,838 --> 00:00:08,858
 Heute sind wir schon
 über sechstausend!
 
-4
-00:00:05,979 --> 00:00:07,964
-Und das heißt: Mimi
-ist ab jetzt
-
-5
-00:00:08,046 --> 00:00:09,462
-offiziell
-Bürgermeisterin!
-
 6
-00:00:09,985 --> 00:00:12,272
-Wir bekommen ein
-Rathaus, eine Brücke
+00:00:09,102 --> 00:00:11,297
+Und das heißt: Mimi
+wird Bürgermeisterin
 
 7
-00:00:12,353 --> 00:00:14,164
-über den Fluss und
-einen Laden mit
+00:00:11,355 --> 00:00:12,249
+von Mimistadt!
 
 8
-00:00:14,222 --> 00:00:15,104
-Katzenfutter.
+00:00:12,585 --> 00:00:14,408
+Hanna, das gelbgrüne
+Kätzchen, bekommt
 
 9
-00:00:15,488 --> 00:00:17,519
-Im Laden verkauft
-Hanna, das gelbgrüne
+00:00:14,455 --> 00:00:16,242
+ihren eigenen Laden
+mit Katzenfutter.
 
 10
-00:00:17,566 --> 00:00:18,158
-Kätzchen.
-
-11
-00:00:18,436 --> 00:00:20,166
+00:00:16,521 --> 00:00:18,344
 Lou wohnt ab heute
 im Dino-Kostüm am
 
-12
-00:00:20,213 --> 00:00:20,689
+11
+00:00:18,402 --> 00:00:18,855
 Fluss.
 
-13
-00:00:21,072 --> 00:00:22,767
+12
+00:00:19,006 --> 00:00:20,550
 Und King, hier ist
 dein Haus.
 
+13
+00:00:20,701 --> 00:00:21,966
+Direkt neben
+dem Palast.
+
 14
-00:00:23,046 --> 00:00:24,520
-Direkt am Mimiplatz.
+00:00:22,210 --> 00:00:24,149
+Und der Parkour
+aus Teil zwei?
 
 15
-00:00:24,857 --> 00:00:26,761
+00:00:24,427 --> 00:00:24,927
+Steht.
+
+16
+00:00:25,263 --> 00:00:26,169
+Mit Trampolin.
+
+17
+00:00:26,552 --> 00:00:28,642
 Nächstes Ziel:
 zehntausend.
 
-16
-00:00:27,039 --> 00:00:29,373
-Dann wird Mimistadt
-eine echte Stadt.
+18
+00:00:29,025 --> 00:00:31,266
+Dann ist Mimistadt
+eine offizielle Stadt.
 
-17
-00:00:29,617 --> 00:00:31,463
+19
+00:00:31,544 --> 00:00:33,483
 Schreib Schlüssel in
 die Kommentare, dann
 
-18
-00:00:31,497 --> 00:00:32,774
+20
+00:00:33,530 --> 00:00:35,074
 bekommst du deinen
 Hausschlüssel.
 
-19
-00:00:33,053 --> 00:00:34,748
+21
+00:00:35,411 --> 00:00:37,349
 Aber nur die ersten
 zehntausend!
 
-20
-00:00:35,271 --> 00:00:37,744
-Doch dann, um
-Mitternacht, hörte Mimi ein
-
-21
-00:00:37,802 --> 00:00:38,754
-lautes Brummen.
-
 22
-00:00:39,137 --> 00:00:41,192
-Am Stadtrand stand
-ein riesiger Bagger.
+00:00:37,791 --> 00:00:39,788
+Doch dann, um
+Mitternacht, gingen auf dem
 
 23
-00:00:41,470 --> 00:00:43,491
-Und auf seinem Schild
-stand: Hier kommt
+00:00:39,834 --> 00:00:41,552
+Dachboden zwei
+Augen an.
 
 24
-00:00:43,526 --> 00:00:44,408
-ein Parkplatz hin.
+00:00:42,156 --> 00:00:43,282
+Erinnert ihr euch?
 
 25
-00:00:44,536 --> 00:00:45,534
-Was macht Mimi jetzt?
+00:00:43,560 --> 00:00:45,395
+Die gleichen Augen
+wie am ersten Tag.
 
 26
-00:00:45,743 --> 00:00:47,264
+00:00:45,580 --> 00:00:47,740
+Und eine Stimme
+sagte: Ich wohne hier
+
+27
+00:00:47,775 --> 00:00:49,063
+schon viel länger
+als ihr.
+
+28
+00:00:49,214 --> 00:00:50,341
+Machen wir die
+Tür auf?
+
+29
+00:00:50,619 --> 00:00:52,256
 Euer Top-Kommentar
 entscheidet.
 
-27
-00:00:47,601 --> 00:00:49,319
+30
+00:00:52,500 --> 00:00:54,334
 Teil zwei kommt
 heute Abend.
 
