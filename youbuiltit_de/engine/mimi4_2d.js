@@ -455,7 +455,7 @@ for (let bj = 0; bj < NB; bj++) for (let bi = 0; bi < NB; bi++) {
 }
 PLOTS.sort((a, b) => a.d - b.d); PLOTS.forEach((p, i) => { p.i = i; });
 const litR = n => PLOTS[Math.min(PLOTS.length - 1, Math.round(PLOTS.length * n / GOALN))].d - 4;
-function mkCanvas() { const c = document.createElement('canvas'); c.width = WS; c.height = WS; return [c, c.getContext('2d')]; }
+function mkCanvas() { const c = document.createElement('canvas'); c.width = WS; c.height = WS; return [c, c.getContext('2d', { willReadFrequently: true })]; }   // CPU-backed: a 3000px GPU canvas sometimes came out with black edges
 function houseG(q, x, y, s, wall, roof, flag) { q.fillStyle = wall; q.fillRect(x - s / 2, y - s * .45, s, s * .55); q.lineWidth = Math.max(2, s * .05); q.strokeStyle = OUT; q.strokeRect(x - s / 2, y - s * .45, s, s * .55);
   q.beginPath(); q.moveTo(x - s * .62, y - s * .4); q.lineTo(x, y - s * .9); q.lineTo(x + s * .62, y - s * .4); q.closePath(); q.fillStyle = roof; q.fill(); q.stroke();
   q.fillStyle = '#fff3c4'; q.fillRect(x - s * .15, y - s * .3, s * .3, s * .22); if (flag) { q.fillStyle = OUT; q.fillRect(x + s * .3, y - s * 1.3, 4, s * .5); q.fillStyle = '#ffd23f'; q.fillRect(x + s * .3 + 4, y - s * 1.3, s * .3, s * .18); } }
@@ -482,7 +482,10 @@ PLOTS.forEach(p => { qa.setLineDash([6, 6]); qa.strokeStyle = '#b8b0a4'; qa.line
 const KING = PLOTS[0];
 function city(t, n, z = 1.75, fx = CEN, fy = CEN, cy = 980) {
   g.fillStyle = '#cdeab0'; g.fillRect(0, 0, W, H); const S = W / WS * z; g.save(); g.translate(W / 2, cy); g.scale(S, S); g.translate(-fx, -fy);
-  g.drawImage(mapA, 0, 0); g.save(); g.beginPath(); g.arc(CEN, CEN, litR(n), 0, 7); g.clip(); g.drawImage(mapB, 0, 0); g.restore(); g.restore(); }
+  // draw only the visible part of the map
+  const x0 = Math.max(0, Math.floor(fx - W / 2 / S) - 2), y0 = Math.max(0, Math.floor(fy - cy / S) - 2), x1 = Math.min(WS, Math.ceil(fx + W / 2 / S) + 2), y1 = Math.min(WS, Math.ceil(fy + (H - cy) / S) + 2);
+  const part = m => g.drawImage(m, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+  part(mapA); g.save(); g.beginPath(); g.arc(CEN, CEN, litR(n), 0, 7); g.clip(); part(mapB); g.restore(); g.restore(); }
 const cityXY = (x, y, z = 1.75, fx = CEN, fy = CEN, cy = 980) => { const S = W / WS * z; return [W / 2 + (x - fx) * S, cy + (y - fy) * S]; };
 
 // street-level background: sky, a row of little houses, cobblestones
@@ -585,6 +588,7 @@ function attic(t, open = 0) {   // dark room, the attic hatch in the middle of t
   g.fillStyle = '#2a2236'; g.fillRect(0, 1250, W, H - 1250); }
 
 function frame(t) {
+  if (g.reset) g.reset();   // drop any leftover save()/clip from the previous frame
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.globalAlpha = 1;
   const bob = Math.abs(Math.sin(t * 6)) * 20;
   // A: Tag 3 — you decided: Mimi's house is now called Katzenpalast
