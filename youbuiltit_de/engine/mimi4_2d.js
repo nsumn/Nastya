@@ -320,7 +320,7 @@ function garden(t, night = 0) {
   for (let i = 0; i < 10; i++) { const x = 40 + i * 112; g.beginPath(); g.moveTo(x - 30, 1460); g.lineTo(x - 30, 1290); g.lineTo(x, 1255); g.lineTo(x + 30, 1290); g.lineTo(x + 30, 1460); g.closePath(); fillStroke('#fff3e6', 5); }
 }
 const FLOCKE = { c: '#f7f3fb', c2: '#ffffff', fluffy: true, collar: true };
-seed = 5; const CROWD = []; for (let i = 0; i < 170; i++) CROWD.push({ x: rr(60, W - 60), y: rr(1470, 1890), s: rr(.3, .44), k: i % CATS.length, ph: rr(0, 6) });
+seed = 5; const CROWD = []; for (let i = 0; i < 170; i++) CROWD.push({ x: rr(60, W - 60), y: rr(1250, 1720), s: rr(.3, .44), k: i % CATS.length, ph: rr(0, 6) });
 CROWD.sort((a, b) => a.y - b.y);
 function polaroid(x, y, r, k, i, t, m = 0) { if (k <= .01) return; g.save(); g.translate(x, y); g.rotate(r); g.scale(k, k); rrect(-130, -150, 260, 300, 10); fillStroke('#ffffff', 6);
   g.fillStyle = '#efe9ff'; g.fillRect(-110, -130, 220, 210); g.save(); g.beginPath(); g.rect(-110, -130, 220, 210); g.clip();
@@ -348,7 +348,7 @@ function karton(x, y, k, t) { if (k <= .01) return; g.save(); g.translate(x, y);
 // ===================== Tag 3 scenes =====================
 const PINK = '#ff7ab6', RED = '#ff3b4f', GREEN = '#3fbf6a';
 // scene label: tape strip at the top (with an optional small white sub-label)
-function tape(txt, k, sub, col = PINK) { if (k <= .01) return; g.save(); g.translate(W / 2, 170); g.rotate(-.035); g.scale(k, k);
+function tape(txt, k, sub, col = PINK) { if (k <= .01) return; g.save(); g.translate(W / 2, 330); g.rotate(-.035); g.scale(k, k);
   g.font = '700 66px Fredoka'; const w = g.measureText(txt).width + 90; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
   g.beginPath(); g.moveTo(-w / 2, -50); g.lineTo(w / 2, -50); g.lineTo(w / 2 - 18, 0); g.lineTo(w / 2, 50); g.lineTo(-w / 2, 50); g.lineTo(-w / 2 + 18, 0); g.closePath(); g.fillStyle = col; g.fill(); g.shadowColor = 'transparent';
   g.lineWidth = 6; g.strokeStyle = OUT; g.stroke(); text(txt, 0, 3, 66, '#ffffff', OUT, 10);
@@ -392,7 +392,7 @@ function townSign(x, y, k, name, sub) { if (k <= .01) return; g.save(); g.transl
   text(name, 0, -110, 104, OUT, null, 0); text(sub, 0, -10, 46, OUT, null, 0); g.restore(); }
 function stamp(x, y, k, txt) { if (k <= .01) return; const s = lerp(2.4, 1, ease(k, 0, 1)); g.save(); g.translate(x, y); g.rotate(-.18); g.scale(s, s); g.globalAlpha = cl(k * 2);
   g.font = '700 84px Fredoka'; const w = g.measureText(txt).width + 60; rrect(-w / 2, -66, w, 132, 18); g.lineWidth = 12; g.strokeStyle = '#e8352f'; g.stroke(); text(txt, 0, 4, 84, '#e8352f', null, 0); g.restore(); }
-function profileCard(k, n, ring, t) { if (k <= .01) return; const x = 90, y = 330, w = W - 180, h = 300; g.save(); g.translate(0, (1 - k) * -500);
+function profileCard(k, n, ring, t) { if (k <= .01) return; const x = 90, y = 450, w = W - 180, h = 300; g.save(); g.translate(0, (1 - k) * -500);
   g.shadowColor = 'rgba(0,0,0,.3)'; g.shadowBlur = 30; g.shadowOffsetY = 10; rrect(x, y, w, h, 40); g.fillStyle = '#ffffff'; g.fill(); g.shadowColor = 'transparent'; g.lineWidth = 6; g.strokeStyle = OUT; g.stroke();
   g.save(); ell(x + w - 140, y + 140, 92, 92); g.clip(); g.fillStyle = '#ffe6c8'; g.fillRect(x + w - 240, y + 40, 200, 200); cat(x + w - 140, y + 310, .62, Object.assign({ mood: 'happy' }, MIMI), t); g.restore();
   ell(x + w - 140, y + 140, 92, 92); g.lineWidth = 6; g.strokeStyle = OUT; g.stroke();
@@ -400,7 +400,7 @@ function profileCard(k, n, ring, t) { if (k <= .01) return; const x = 90, y = 33
   text(fmt(n), x + 50, y + 210, 92, '#1d1d1f', null, 0, 'left'); text('Follower', x + 50, y + 268, 34, '#8a8a92', null, 0, 'left');
   if (ring > .01) { g.save(); g.lineWidth = 9; g.strokeStyle = RED; g.beginPath(); g.ellipse(x + 175, y + 215, 160, 66, -.05, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ring); g.stroke(); g.restore(); }
   g.restore(); }
-function goalCard(k, n, t) { if (k <= .01) return; const x = 110, y = 560, w = W - 220; g.save(); g.translate(W / 2, y + 230); g.scale(k, k); g.translate(-W / 2, -(y + 230));
+function goalCard(k, n, t) { if (k <= .01) return; const x = 110, y = 470, w = W - 220; g.save(); g.translate(W / 2, y + 230); g.scale(k, k); g.translate(-W / 2, -(y + 230));
   rrect(x, y, w, 460, 40); fillStroke('#ffffff', 7);
   text('STADT', W / 2, y + 90, 96, OUT, null, 0); text(`ab ${fmt(GOAL)} Kätzchen`, W / 2, y + 170, 44, '#8a8a92', null, 0);
   const bx = x + 60, bw = w - 120, by = y + 230; rrect(bx, by, bw, 76, 38); fillStroke('#eadccb', 5); const f = cl(n / GOAL);
@@ -493,8 +493,8 @@ function street(t, night = 0) {
   g.fillStyle = night ? '#3a3a52' : '#e8d8bf'; g.fillRect(0, 1240, W, H - 1240); g.strokeStyle = night ? 'rgba(0,0,0,.25)' : 'rgba(150,120,80,.3)'; g.lineWidth = 3;
   for (let r = 0; r < 14; r++) for (let c = 0; c < 12; c++) { const x = c * 96 + (r % 2) * 48, y = 1262 + r * 48; g.beginPath(); g.ellipse(x, y, 42, 18, 0, 0, 7); g.stroke(); }
 }
-function river(t) { g.fillStyle = '#8fd0ff'; g.fillRect(0, 1380, W, 260); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 5;
-  for (let i = 0; i < 14; i++) { const x = ((i * 157 + t * 60) % (W + 100)) - 50, y = 1410 + (i * 37) % 210; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 20, y - 10, x + 40, y); g.stroke(); } }
+function river(t) { g.fillStyle = '#8fd0ff'; g.fillRect(0, 1240, W, 220); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 5;
+  for (let i = 0; i < 14; i++) { const x = ((i * 157 + t * 60) % (W + 100)) - 50, y = 1270 + (i * 37) % 170; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 20, y - 10, x + 40, y); g.stroke(); } }
 function mayorChain(x, y, s) { g.save(); g.translate(x, y); g.scale(s, s);
   for (let i = 0; i <= 10; i++) { const a = Math.PI * (.12 + .76 * i / 10); ell(Math.cos(a) * 82, -150 + Math.sin(a) * 70, 13, 10, a); fillStroke('#ffd23f', 4); }
   ell(0, -64, 34, 34); fillStroke('#ffc21f', 5); star5(0, -64, 20, '#fff3a0'); g.restore(); }
@@ -523,7 +523,7 @@ function apron(x, y, s) { g.save(); g.translate(x, y); g.scale(s, s); g.beginPat
 function pin(x, y, k, label) { if (k <= .01) return; g.save(); g.translate(x, y); g.scale(k, k);
   g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(-60, -80, -70, -150, 0, -150); g.bezierCurveTo(70, -150, 60, -80, 0, 0); fillStroke(RED, 7); ell(0, -105, 24, 24); g.fillStyle = '#fff'; g.fill();
   if (label) { g.font = '700 46px Fredoka'; const w = g.measureText(label).width + 50; rrect(-w / 2, -250, w, 80, 40); fillStroke('#ffffff', 6); text(label, 0, -208, 46, OUT, null, 0); } g.restore(); }
-function keyCard(k, t) { if (k <= .01) return; const x = 120, y = 520, w = W - 240, h = 560; g.save(); g.translate(W / 2, y + h / 2); g.rotate(-.04 + Math.sin(t * 2) * .01); g.scale(k, k); g.translate(-W / 2, -(y + h / 2));
+function keyCard(k, t) { if (k <= .01) return; const x = 120, y = 460, w = W - 240, h = 560; g.save(); g.translate(W / 2, y + h / 2); g.rotate(-.04 + Math.sin(t * 2) * .01); g.scale(k, k); g.translate(-W / 2, -(y + h / 2));
   g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 30; rrect(x, y, w, h, 36); g.fillStyle = '#fff3d6'; g.fill(); g.shadowColor = 'transparent'; g.lineWidth = 7; g.strokeStyle = OUT; g.stroke();
   rrect(x, y, w, 120, 36); g.fillStyle = ORANGE; g.fill(); g.fillRect(x, y + 60, w, 60); text('HAUSSCHLÜSSEL', W / 2, y + 62, 62, '#ffffff', OUT, 9);
   // the key
@@ -559,39 +559,39 @@ function frame(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.globalAlpha = 1;
   const bob = Math.abs(Math.sin(t * 6)) * 20;
   // A: Tag 3 in Mimistadt
-  if (t < tw.gestern - .05) { city(t, YESTERDAY, lerp(1.75, 2.1, ramp(t, 0, tw.gestern))); crowd(t, 0); mimi(W / 2, 1640 - bob, 1.2, { mood: 'happy' }, t);
-    tape('TAG 3', pop(t, 0, .3), 'Mimistadt', ORANGE); sticker('🐾 ' + fmt(FOLLOWERS), 860, 400, pop(t, .4), RED, .08); return; }
+  if (t < tw.gestern - .05) { city(t, YESTERDAY, lerp(1.75, 2.1, ramp(t, 0, tw.gestern))); crowd(t, 0); mimi(W / 2, 1480 - bob, 1.2, { mood: 'happy' }, t);
+    tape('TAG 3', pop(t, 0, .3), 'Mimistadt', ORANGE); sticker('🐾 ' + fmt(FOLLOWERS), W / 2, 540, pop(t, .4), RED, .04); return; }
   // B: live counter
   if (t < tw.und1 - .05) { const nk = ease(t, tw.heute + .1, tw.sechs + .5); city(t, lerp(YESTERDAY, FOLLOWERS, nk), 2.1); crowd(t, Math.round(lerp(100, CROWD.length, nk)));
-    mimi(W / 2, 1600 - bob, .95, { mood: t > tw.heute ? 'wow' : 'happy' }, t);
+    mimi(W / 2, 1460 - bob, .95, { mood: t > tw.heute ? 'wow' : 'happy' }, t);
     profileCard(pop(t, tw.gestern - .05, .3), lerp(YESTERDAY, FOLLOWERS, nk), ease(t, tw.sechs, tw.sechs + .5), t);
     tape(t < tw.heute ? 'GESTERN' : 'HEUTE', 1, null, t < tw.heute ? '#a98bff' : ORANGE);
-    sticker(`+${fmt(FOLLOWERS - YESTERDAY)} NEUE`, 760, 700, pop(t, tw.sechs + .1), GREEN, .07); return; }
+    sticker(`+${fmt(FOLLOWERS - YESTERDAY)} NEUE`, W / 2, 840, pop(t, tw.sechs + .1), GREEN, .07); return; }
   // C: Mimi is officially mayor
-  if (t < tw.bekommen - .1) { city(t, FOLLOWERS, 2.1); crowd(t, CROWD.length); const y = 1660 - bob * .5, s = .9; mimi(W / 2, y, s, { mood: 'wow' }, t);
-    mayorChain(W / 2, y, s * pop(t, tw.buerg - .2, .4)); stamp(W / 2, 640, ramp(t, tw.offiz, tw.offiz + .25), 'OFFIZIELL');
-    tape('BÜRGERMEISTERIN', pop(t, tw.buerg - .1), 'Mimi', '#d9a21f'); confetti(t, tw.buerg, ramp(t, tw.buerg - .1, tw.buerg + .2)); ladder(ramp(t, tw.buerg + .1, tw.buerg + .3), 900); return; }
+  if (t < tw.bekommen - .1) { city(t, FOLLOWERS, 2.1); crowd(t, CROWD.length); const y = 1500 - bob * .5, s = .9; mimi(W / 2, y, s, { mood: 'wow' }, t);
+    mayorChain(W / 2, y, s * pop(t, tw.buerg - .2, .4)); stamp(W / 2, 790, ramp(t, tw.offiz, tw.offiz + .25), 'OFFIZIELL');
+    tape('BÜRGERMEISTERIN', pop(t, tw.buerg - .1), 'Mimi', '#d9a21f'); confetti(t, tw.buerg, ramp(t, tw.buerg - .1, tw.buerg + .2)); ladder(ramp(t, tw.buerg + .1, tw.buerg + .3), 570); return; }
   // D: town hall, bridge, cat food shop
-  if (t < tw.im - .1) { street(t); g.fillStyle = '#8fd0ff'; g.fillRect(0, 1500, W, 100);
-    townHall(200, 1560, pop(t, tw.rathaus - .1) * .95); bridge(545, 1530, pop(t, tw.bruecke - .1) * .95); shop(885, 1560, pop(t, tw.laden1 - .1) * .9, t); for (let i = 0; i < 7; i++) { const c = CROWD[i * 9]; const o = lookOf(CATS[c.k], c.k); o.mood = 'happy'; cat(90 + i * 150 + (i > 2 ? 150 : 0), 1860 - Math.abs(Math.sin(t * 6 + i)) * 14, .36, o, t + i); } if (true) { const y = 1880 - bob * .4; mimi(W / 2, y, .55, { mood: 'happy' }, t); mayorChain(W / 2, y, .55); } const lab = t < tw.bruecke - .1 ? 'RATHAUS' : t < tw.laden1 - .1 ? 'BRÜCKE' : 'KATZENFUTTER';
+  if (t < tw.im - .1) { street(t); g.fillStyle = '#8fd0ff'; g.fillRect(0, 1340, W, 100);
+    townHall(200, 1400, pop(t, tw.rathaus - .1) * .95); bridge(545, 1370, pop(t, tw.bruecke - .1) * .95); shop(885, 1400, pop(t, tw.laden1 - .1) * .9, t); for (let i = 0; i < 7; i++) { const c = CROWD[i * 9]; const o = lookOf(CATS[c.k], c.k); o.mood = 'happy'; cat(90 + i * 150 + (i > 2 ? 150 : 0), 1640 - Math.abs(Math.sin(t * 6 + i)) * 14, .36, o, t + i); } if (true) { const y = 1660 - bob * .4; mimi(W / 2, y, .55, { mood: 'happy' }, t); mayorChain(W / 2, y, .55); } const lab = t < tw.bruecke - .1 ? 'RATHAUS' : t < tw.laden1 - .1 ? 'BRÜCKE' : 'KATZENFUTTER';
     tape(lab, pop(t, t < tw.bruecke - .1 ? tw.rathaus - .1 : t < tw.laden1 - .1 ? tw.bruecke - .1 : tw.laden1 - .1, .25), 'NEU IN MIMISTADT', GREEN);
-    sticker('3 NEUE GEBÄUDE', W / 2, 520, pop(t, tw.futter + .2), RED); return; }
+    sticker('3 NEUE GEBÄUDE', W / 2, 560, pop(t, tw.futter + .2), RED); return; }
   // E: Hanna sells cat food (yellow-green kitten with an apron)
-  if (t < tw.lou - .05) { street(t); shop(W / 2, 1250, 1.6, t); const k = pop(t, tw.im, .4); const y = 1760 - bob * .5, s = 1.1 * k;
+  if (t < tw.lou - .05) { street(t); shop(W / 2, 1080, 1.3, t); const k = pop(t, tw.im, .4); const y = 1520 - bob * .5, s = .95 * k;
     cat(W / 2, y, s, { c: '#c8e65a', c2: '#fff6b8', pat: 'stripes', sc: '#f0c020', mood: 'happy', paw: '#fff6b8', seed: 7, acc: 'bow' }, t); if (k > .05) apron(W / 2, y, s);
-    tape('KATZENFUTTER-LADEN', pop(t, tw.im - .05), 'Verkäuferin Hanna', '#e0702a'); if (ROLES.hanna) sticker(ROLES.hanna, W / 2, 1860, pop(t, tw.hanna), '#ffffff', .03, 40); return; }
+    tape('KATZENFUTTER-LADEN', pop(t, tw.im - .05), 'Verkäuferin Hanna', '#e0702a'); if (ROLES.hanna) sticker(ROLES.hanna, W / 2, 540, pop(t, tw.hanna), '#ffffff', .03, 40); return; }
   // F: Lou in a dino costume by the river
-  if (t < tw.king - .05) { street(t); river(t); const k = pop(t, tw.lou - .05, .4); const y = 1760 - bob * .5, s = 1.15 * k;
+  if (t < tw.king - .05) { street(t); river(t); const k = pop(t, tw.lou - .05, .4); const y = 1560 - bob * .5, s = 1.05 * k;
     if (k > .05 && t > tw.dino - .15) dinoSpikes(W / 2, y, s * pop(t, tw.dino - .15, .3));
     cat(W / 2, y, s, t > tw.dino - .15 ? { c: '#6cc85a', c2: '#f3e7c0', ear: '#6cc85a', tailc: '#6cc85a', mood: 'happy', seed: 3 } : { c: '#9aa3ad', c2: '#f1f3f5', mood: 'happy', seed: 3 }, t);
-    tape('AM FLUSS', pop(t, tw.lou - .05), 'Lou im Dino-Kostüm', '#3fbf6a'); if (ROLES.lou) sticker(ROLES.lou, W / 2, 1860, pop(t, tw.lou + .1), '#ffffff', .03, 40);
-    sticker('RAWR!', 830, 620, pop(t, tw.dino + .1), RED, .12, 60); return; }
+    tape('AM FLUSS', pop(t, tw.lou - .05), 'Lou im Dino-Kostüm', '#3fbf6a'); if (ROLES.lou) sticker(ROLES.lou, W / 2, 540, pop(t, tw.lou + .1), '#ffffff', .03, 40);
+    sticker('RAWR!', W / 2, 680, pop(t, tw.dino + .1), RED, .12, 60); return; }
   // G: King, here is your house — zoom into the map next to Mimiplatz
   if (t < tw.ziel - .05) { const zk = ease(t, tw.king, tw.direkt), z = lerp(2.1, 11, zk), fx = lerp(CEN, KING.x, zk), fy = lerp(CEN, KING.y, zk);
-    city(t, FOLLOWERS, z, fx, fy, 1100); const [px, py] = cityXY(KING.x, KING.y, z, fx, fy, 1100);
+    city(t, FOLLOWERS, z, fx, fy, 1200); const [px, py] = cityXY(KING.x, KING.y, z, fx, fy, 1200);
     pin(px, py - 60 * zk, pop(t, tw.haus - .05, .4), ROLES.king || 'King');
-    bubble(W / 2, 560, 50, 'Kannst du mein Haus zeigen?', pop(t, tw.king - .05, .3) * (1 - ramp(t, tw.haus, tw.haus + .3)));
-    tape('DEIN HAUS, KING', pop(t, tw.haus - .1), null, ORANGE); sticker('DIREKT AM MIMIPLATZ', W / 2, 1720, pop(t, tw.direkt), GREEN, -.04, 50); return; }
+    bubble(W / 2, 600, 50, 'Kannst du mein Haus zeigen?', pop(t, tw.king - .05, .3) * (1 - ramp(t, tw.haus, tw.haus + .3)));
+    tape('DEIN HAUS, KING', pop(t, tw.haus - .1), null, ORANGE); sticker('DIREKT AM MIMIPLATZ', W / 2, 620, pop(t, tw.direkt), GREEN, -.04, 50); return; }
   // H: next goal
   if (t < tw.schreib - .05) { city(t, FOLLOWERS, 2.1); crowd(t, CROWD.length); g.fillStyle = 'rgba(40,20,60,.55)'; g.fillRect(0, 0, W, H);
     if (t > tw.stadt - .1) { g.save(); g.globalAlpha = ramp(t, tw.stadt - .1, tw.stadt + .2); g.setLineDash([20, 14]); g.lineWidth = 8; g.strokeStyle = '#ffffff';
@@ -601,27 +601,27 @@ function frame(t) {
   // I: Hausschlüssel
   if (t < tw.doch - .05) { street(t); g.fillStyle = 'rgba(255,246,230,.6)'; g.fillRect(0, 0, W, H);
     keyCard(pop(t, tw.schreib - .05, .35), t); const typed = 'Schlüssel'.slice(0, Math.floor(ramp(t, tw.schl - .05, tw.schl + .45) * 9 + .001));
-    commentBox(ramp(t, tw.schreib, tw.schreib + .3), typed, 1200); tape('NEU HIER?', pop(t, tw.schreib - .05), null, ORANGE);
-    sticker(`NUR FÜR DIE ERSTEN ${fmt(GOAL)}`, W / 2, 1460, pop(t, tw.aber), RED, -.05, 50); return; }
+    commentBox(ramp(t, tw.schreib, tw.schreib + .3), typed, 1190); tape('NEU HIER?', pop(t, tw.schreib - .05), null, ORANGE);
+    sticker(`NUR FÜR DIE ERSTEN ${fmt(GOAL)}`, W / 2, 1390, pop(t, tw.aber), RED, -.05, 50); return; }
   // J: midnight, a loud rumble
   if (t < tw.rand - .05) { const sh = ramp(t, tw.brummen - .1, tw.brummen + .1) * (1 - ramp(t, tw.rand - .6, tw.rand)) * 10; g.save(); g.translate(Math.sin(t * 60) * sh, Math.cos(t * 47) * sh);
-    street(t, 1); crowd(t, CROWD.length, 'wow', 1); mimi(W / 2, 1640, .95, { mood: 'wow', blink: 0 }, 0); g.restore();
+    street(t, 1); crowd(t, CROWD.length, 'wow', 1); mimi(W / 2, 1460, .95, { mood: 'wow', blink: 0 }, 0); g.restore();
     grey(ease(t, tw.doch, tw.mitter + .3) * .6); tape('MITTERNACHT', pop(t, tw.doch - .05), null, '#3a3456');
     const ck = pop(t, tw.mitter - .2, .3); if (ck > .01) { g.save(); g.translate(W / 2, 620); g.scale(ck, ck); rrect(-250, -110, 500, 220, 30); fillStroke('#1d1a24', 7); text('00:00', 0, 6, 150, '#ff4a4a', null, 0); g.restore(); }
-    sticker('BRRRMMM…', 780, 900, pop(t, tw.brummen), '#6b6476', .1, 60); return; }
+    sticker('BRRRMMM…', W / 2, 830, pop(t, tw.brummen), '#6b6476', .1, 60); return; }
   // K: the excavator at the edge of town
   if (t < tw.was - .05) { const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#141a3a'); sky.addColorStop(1, '#3a3456'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
     for (let i = 0; i < 30; i++) { g.fillStyle = '#fff'; g.fillRect((i * 137) % W, (i * 71) % 700, 3, 3); }
     g.fillStyle = '#2b2f3a'; g.fillRect(0, 1300, W, H - 1300);
-    const bz = ease(t, tw.rand - .1, tw.bagger + .5); bagger(lerp(1150, 470, bz), 1500, .9, t, ramp(t, tw.bagger - .2, tw.bagger + .1), Math.sin(t * 2) * .08);
-    parkSign(W / 2, 700, pop(t, tw.schild, .4)); mimi(200, 1840, .5, { mood: 'wow', blink: 0 }, t);
-    tape('AM STADTRAND', pop(t, tw.rand - .05), null, '#3a3456'); sticker('???', 900, 1120, pop(t, tw.bagger), RED, .1, 60); return; }
+    const bz = ease(t, tw.rand - .1, tw.bagger + .5); bagger(lerp(1150, 470, bz), 1400, .9, t, ramp(t, tw.bagger - .2, tw.bagger + .1), Math.sin(t * 2) * .08);
+    parkSign(W / 2, 640, pop(t, tw.schild, .4)); mimi(W / 2, 1540, .5, { mood: 'wow', blink: 0 }, t);
+    tape('AM STADTRAND', pop(t, tw.rand - .05), null, '#3a3456'); return; }
   // L: what does Mimi do? top comment decides + cliffhanger card
   const dark = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); dark.addColorStop(0, '#5a2a10'); dark.addColorStop(1, '#1a0a04'); g.fillStyle = dark; g.fillRect(0, 0, W, H);
-  if (t < tw.teil - .05) { g.save(); g.globalAlpha = .45; bagger(440, 1650, .8, t, 1); g.restore(); mimi(W / 2, 1500, .8, { mood: 'wow' }, t); mayorChain(W / 2, 1500, .8);
+  if (t < tw.teil - .05) { g.save(); g.globalAlpha = .45; bagger(440, 1480, .8, t, 1); g.restore(); mimi(W / 2, 1450, .8, { mood: 'wow' }, t); mayorChain(W / 2, 1450, .8);
     tape('WAS MACHT MIMI?', pop(t, tw.was - .05), null, ORANGE);
-    bubble(320, 560, 54, 'Bagger stoppen!', pop(t, tw.was + .3, .3)); bubble(640, 740, 54, 'Alle Kätzchen holen!', pop(t, tw.was + .6, .3));
-    sticker('TOP-KOMMENTAR ENTSCHEIDET 👇', W / 2, 1000, pop(t, tw.top), '#ffffff', -.03, 46); return; }
+    bubble(W / 2, 560, 54, 'Bagger stoppen!', pop(t, tw.was + .3, .3)); bubble(W / 2, 710, 54, 'Alle Kätzchen holen!', pop(t, tw.was + .6, .3));
+    sticker('TOP-KOMMENTAR ENTSCHEIDET 👇', W / 2, 860, pop(t, tw.top), '#ffffff', -.03, 46); return; }
   const k = pop(t, tw.teil - .05, .35); g.save(); g.translate(W / 2, 820); g.scale(k, k); text('HEUTE', 0, -90, 170, '#ffffff', OUT, 0); text('ABEND', 0, 90, 170, ORANGE, OUT, 0); g.restore();
   sticker('Tag 3 · Teil 2', W / 2, 1060, pop(t, tw.teil + .3), '#ffffff', -.03, 46); sticker('MIMISTADT', W / 2, 1180, pop(t, tw.abend), GREEN, .03, 50);
 }

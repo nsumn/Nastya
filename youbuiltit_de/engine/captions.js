@@ -3,11 +3,13 @@
 // captions.json: { "style": "word" | "phrase", "y": 1450, "size": 96, "color": "#fff", "hi": "#5ff0ff", "outline": "#000",
 //                  "keys": ["Momo", ...] (word style: these words get the highlight colour),
 //                  "show": {"zehn": "10"} (display replacements), "hide": [["Folg", 2]] (hide from that word to the end),
-//                  "moves": [[["Folgst", 1], ["Zusammen", 1], 1400]] (between two words use another y) }
+//                  "moves": [[["Folgst", 1], ["Zusammen", 1], 1400]] (between two words use another y),
+//                  "center": true (phrase style: only the words already spoken are laid out, always centred),
+//                  "maxw": 860 (max caption width, keeps it clear of the TikTok icons on the right) }
 await document.fonts.load('700 96px Fredoka');
 const W = 1080, H = 1920, Q = new URLSearchParams(location.search), DIR = Q.get('dir');
 const WORDS = await (await fetch(`../${DIR}/words.json`)).json();
-const C = Object.assign({ style: 'word', y: 1450, size: 96, color: '#ffffff', hi: '#ffd23f', outline: '#000000', keys: [], show: {}, hide: [], moves: [] }, await (await fetch(`../${DIR}/captions.json`)).json());
+const C = Object.assign({ style: 'word', y: 1450, size: 96, color: '#ffffff', hi: '#ffd23f', outline: '#000000', keys: [], show: {}, hide: [], moves: [], center: false, maxw: 980 }, await (await fetch(`../${DIR}/captions.json`)).json());
 const clean = w => w.replace(/[.,!?:]/g, '');
 function T(word, n = 1) { let k = 0; for (const [w, s] of WORDS) if (clean(w).startsWith(word) && ++k === n) return s; throw new Error('word not found: ' + word + ' #' + n); }
 const cl = x => Math.max(0, Math.min(1, x)), ramp = (t, a, b) => cl((t - a) / (b - a));
@@ -25,12 +27,12 @@ function frame(t) {
   let wi = -1; for (let i = 0; i < WORDS.length; i++) if (WORDS[i][1] <= t + .02) wi = i; if (wi < 0 || t > WORDS[wi][2] + .5) return;
   if (C.style === 'word') {
     let w = clean(WORDS[wi][0]); const hi = C.keys.includes(w); w = C.show[w] || w;
-    let fs = C.size; g.font = `700 ${fs}px Fredoka`; while (g.measureText(w).width > W - 120) { fs -= 4; g.font = `700 ${fs}px Fredoka`; }
+    let fs = C.size; g.font = `700 ${fs}px Fredoka`; while (g.measureText(w).width > C.maxw) { fs -= 4; g.font = `700 ${fs}px Fredoka`; }
     text(w, W / 2, y, fs, hi ? C.hi : C.color); return;
   }
-  const ph = PHR.find(p => p.includes(wi)); if (!ph) return; const ws = ph.map(i => disp(WORDS[i][0]));
+  let ph = PHR.find(p => p.includes(wi)); if (!ph) return; if (C.center) ph = ph.filter(i => i <= wi); const ws = ph.map(i => disp(WORDS[i][0]));
   let fs = C.size; g.font = `700 ${fs}px Fredoka`; const sp = fs * .46, tot = () => ws.reduce((a, w) => a + g.measureText(w).width, 0) + sp * (ws.length - 1);
-  while (tot() > W - 100) { fs -= 4; g.font = `700 ${fs}px Fredoka`; }
+  while (tot() > C.maxw) { fs -= 4; g.font = `700 ${fs}px Fredoka`; }
   let x = W / 2 - tot() / 2;
   ph.forEach((i, j) => { g.font = `700 ${fs}px Fredoka`; const w = ws[j], mw = g.measureText(w).width; if (i > wi) { x += mw + sp; return; }
     const on = i === wi, k = on ? pop(t, WORDS[i][1], .18) : 1, s = on ? 1 + .14 * k : 1;
