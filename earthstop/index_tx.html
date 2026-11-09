@@ -73,7 +73,8 @@
   #sub{display:inline-block;margin-top:12px;font-weight:800;font-size:22px;letter-spacing:.1em;opacity:1;background:rgba(255,255,255,.94);color:#0b0f16;padding:5px 14px;text-shadow:none}
   #cap{font-family:'Inter';font-style:normal;font-weight:900;font-size:54px;line-height:1.28;letter-spacing:-.005em;padding:0 150px;
     text-shadow:0 0 3px #000,0 0 3px #000,0 3px 0 #000,0 0 14px rgba(0,0,0,.9),0 0 30px rgba(0,0,0,.6)}
-  #cap .y{color:#0b0f16;background:#ffc23a;font-weight:900;padding:0 10px;border-radius:6px;text-shadow:none;box-shadow:0 4px 0 #b86a00}
+  #cap span{padding:0 9px;margin:0 -5px;border-radius:6px}   /* every word keeps the same box, so the highlighter never reflows the line (her note: captions jumped) */
+  #cap .y{color:#0b0f16;background:#ffc23a;font-weight:900;text-shadow:none;box-shadow:0 4px 0 #b86a00}
   .card .cn{font-family:'Anton';font-size:32px;text-transform:uppercase;letter-spacing:.02em} .card.small .cn{font-size:24px}
   .card .quote{font-family:'Anton';font-style:normal;text-transform:uppercase;font-size:36px}
   .stk{font-weight:900}

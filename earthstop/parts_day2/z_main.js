@@ -140,12 +140,15 @@ function introHTML(t) { if (t > T.wash + 0.5) return ''; const k = pop(t, T.intr
   return `<div id="intro" style="opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)})"><div class="idate"><b>●</b> MONDAY · NOV 9, 2026</div><div class="ititle">The last</div><div class="iplate" style="transform:skewX(-8deg) scale(${(0.6 + 0.4 * easeOut(span(t, T.intro + 0.15, T.intro + 0.45))).toFixed(3)})"><span>24 HOURS</span></div>
     <div><div class="isub" style="opacity:${smooth(T.intro + 0.5, T.intro + 0.8, t)}">IN AMERICA <i>&</i> AROUND THE WORLD</div></div><div class="iclock">${clock}</div></div>`; }
 function domAt(t) { const P = PROPS; let h = introHTML(t);
-  h += card('huang', T.huang - 0.05, T.dc, 640, 660, t, { tag: t >= T.spy ? 'ADMITS AFFAIR' : '', tagc: 'r', tagT: T.spy });
+  h += card('huang', T.huang - 0.05, T.dc, 640, 575, t, { tag: t >= T.spy ? 'ADMITS AFFAIR' : '', tagc: 'r', tagT: T.spy });
   h += card('hegseth', T.hegseth - 0.3, T.wh, 110, 640, t, { tag: t >= T.impeach ? 'IMPEACHMENT?' : '', tagc: 'r', tagT: T.impeach + 0.1 });
   h += card('jeffries', T.jeffries - 0.05, T.wh, 650, 680, t, { small: true, quote: 'HARD YES', qT: T.yes });
   h += card('miller', T.miller - 0.05, T.count, 110, 640, t, { tag: 'DAY 1', tagc: 'b', tagT: T.miller + 0.3 });
   h += card('dana_white', T.dana - 0.05, T.count, 650, 680, t, { small: true, tag: 'MEETING TODAY', tagc: 'b', tagT: T.dana + 0.3 });
   h += card('eisenkot', T.eisenkot - 0.05, T.jp, 110, 640, t, { tag: '28 DAYS', tagc: 'b', tagT: T.d28 });
+  // Huang's apology email to staff (quote as reported by Axios, Nov 8) — shown as a quote card, not a fake screenshot
+  if (t >= T.board - 0.1 && t < T.dc) { const k = pop(t, T.board - 0.1, 0.35), al = 1 - smooth(T.dc - 0.3, T.dc, t);
+    h += `<div class="mail" style="opacity:${al.toFixed(2)};transform:translateX(-50%) scale(${k.toFixed(3)}) rotate(-2deg)"><div class="mh">✉ HUANG’S EMAIL TO NVIDIA STAFF <span>· VIA AXIOS</span></div><div class="mq">“I owe my family and all of you an apology.”</div></div>`; }
   if (P) {
     if (t >= T.wash + 1.4 && t < T.dc) h += sticker('NVIDIA HQ · SANTA CLARA', off('sc', 0, 0).setY(9), t, T.wash + 1.4, 'sm w');
     if (t >= T.spy && t < T.dc) h += sticker('SUSPECTED CHINESE SPY', off('sc', 0, 3).setY(4), t, T.spy + 0.1, 'r');
