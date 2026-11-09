@@ -1,3 +1,1 @@
-{ "style": "phrase", "y": 1120, "size": 88, "color": "#ffffff", "hi": "#ff7ab6", "outline": "#3a2350",
-  "show": {"zweitausend": "2.000", "zweitausendfünfhundert": "2.500", "fünftausend": "5.000", "drei": "3", "fünfzehn": "15", "zwei": "2"},
-  "moves": [[["Schreib", 1], ["Doch", 1], 1700]] }
+{"style": "phrase", "y": 1120, "size": 88, "color": "#ffffff", "hi": "#ff7ab6", "outline": "#3a2350", "show": {"zweitausend": "2.000", "zweitausendfünfhundert": "2.500", "fünftausend": "5.000", "drei": "3", "fünfzehn": "15", "zwei": "2"}, "moves": [[["Schreib", 1], ["Doch", 1], 1700]], "hide": [["Teil", 1]]}
