@@ -54,7 +54,7 @@ e(tw.stimme - .1, 'boom', .7); e(tw.laenger, 'hiss', .7);
 e(tw.machen - .1, 'whoosh', .7); e(tw.top, 'pop', .9); e(tw.teil - .1, 'boom', .7); e(tw.abend, 'ding', .8);
 window.SFX = SFX;
 // ---------- canvas helpers ----------
-const out = document.createElement('canvas'); out.width = W; out.height = H; document.body.appendChild(out); const g = out.getContext('2d');
+const out = document.createElement('canvas'); out.width = W; out.height = H; document.body.appendChild(out); const g = out.getContext('2d', { willReadFrequently: true });   // CPU canvas: the GPU one sometimes lost its content mid-frame
 const OUT = '#3a2350';
 function rrect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function ell(x, y, rx, ry, rot = 0) { g.beginPath(); g.ellipse(x, y, Math.max(.1, rx), Math.max(.1, ry), rot, 0, Math.PI * 2); }
@@ -69,6 +69,7 @@ function off(w, h, fn) { const c = document.createElement('canvas'); c.width = w
 // o: {c: body colour, c2: belly/muzzle, mood: 'sad'|'happy'|'neutral'|'wow'|'tired', blink, tail(phase), sq(squash), tear, crown, collar, label, look(-1..1), paw}
 const COLORS = [['#f3a35b', '#fff4e6'], ['#9aa3ad', '#f1f3f5'], ['#3d3a3c', '#e9e2dd'], ['#f6efe6', '#ffffff'], ['#c98a52', '#f7e3cc'], ['#e7c79c', '#fff6ea'], ['#6f6a72', '#e8e4ea'], ['#f4c06a', '#fff6e0'], ['#b9b0a8', '#ffffff'], ['#ee9d7c', '#fff0e8']];
 function cat(x, y, s, o = {}, t = 0) {
+  if (!(s > .004)) return;   // a zero scale (kitten not popped in yet) corrupted later frames in SwiftShader
   const [c, c2] = [o.c || '#f3a35b', o.c2 || '#fff4e6'];
   g.save(); g.translate(x, y); g.scale(s, s);
   const sq = o.sq || 0; g.scale(1 + sq * .12, 1 - sq * .12);
