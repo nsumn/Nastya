@@ -17,7 +17,9 @@ const win = (t, a, b, f = .3) => ramp(t, a, a + f) * (1 - ramp(t, b - f, b));
 let seed = 11; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; const rr = (a, b) => a + (b - a) * rnd();
 const fmt = n => Math.round(n).toLocaleString('de-DE');
 
-const CATS = await (await fetch('../14_flocke_tag2/cats.json')).json();
+// commenter data is local only (gitignored); without it the crowd uses generic coats
+const CATS = await fetch('../14_flocke_tag2/cats.json').then(r => r.ok ? r.json() : null).catch(() => null)
+  || ['tabby', 'ginger', 'black', 'white', 'calico', 'grey', 'tuxedo', 'siamese', 'pink', 'golden', 'tabwhite', 'lilac'].map((look, i) => ({ uid: '', look, fluffy: i % 3 === 0, acc: null }));
 const PHOTO = CATS.map(() => null);
 const FOLLOWERS = 2554, YESTERDAY = 2000, GOAL = 5000, NWALL = 0;
 const tw = {
