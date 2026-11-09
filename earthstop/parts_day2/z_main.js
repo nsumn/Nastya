@@ -146,13 +146,15 @@ function domAt(t) { const P = PROPS; let h = introHTML(t);
   h += card('miller', T.miller - 0.05, T.count, 110, 640, t, { tag: 'DAY 1', tagc: 'b', tagT: T.miller + 0.3 });
   h += card('dana_white', T.dana - 0.05, T.count, 650, 680, t, { small: true, tag: 'MEETING TODAY', tagc: 'b', tagT: T.dana + 0.3 });
   h += card('eisenkot', T.eisenkot - 0.05, T.jp, 110, 640, t, { tag: '28 DAYS', tagc: 'b', tagT: T.d28 });
-  // Huang's apology email to staff (quote as reported by Axios, Nov 8) — shown as a quote card, not a fake screenshot
-  if (t >= T.board - 0.1 && t < T.dc) { const k = pop(t, T.board - 0.1, 0.35), al = 1 - smooth(T.dc - 0.3, T.dc, t);
-    h += `<div class="mail" style="opacity:${al.toFixed(2)};transform:translateX(-50%) scale(${k.toFixed(3)}) rotate(-2deg)"><div class="mh">✉ HUANG’S EMAIL TO NVIDIA STAFF <span>· VIA AXIOS</span></div><div class="mq">“I owe my family and all of you an apology.”</div></div>`; }
+  // Huang's letter to staff, published on NVIDIA's newsroom ("A Message to Our Company", Nov 8) — short quoted lines typed in; a quote card, not a fake screenshot
+  if (t >= T.board - 0.3 && t < T.dc) { const k = pop(t, T.board - 0.3, 0.35), al = 1 - smooth(T.dc - 0.3, T.dc, t);
+    const LINES = ['I owe my family and all of you an apology.', 'I was unfaithful to my wife.', 'My actions hurt her and our children.', 'There is no excuse for what I did.', 'I am deeply sorry.'];
+    const per = (T.china + 0.3 - T.board) / LINES.length; let body = '';
+    LINES.forEach((ln, i) => { const a0 = T.board + i * per, n = Math.floor(ln.length * span(t, a0, a0 + per * 0.75)); if (t >= a0) body += `<div class="ml">${ln.slice(0, n)}${n < ln.length ? '<i>|</i>' : ''}</div>`; });
+    h += `<div class="mail" style="opacity:${al.toFixed(2)};transform:translateX(-50%) scale(${k.toFixed(3)}) rotate(-1.5deg)"><div class="mh">✉ JENSEN HUANG · “A MESSAGE TO OUR COMPANY” <span>· NOV 8</span></div><div class="mto">To my colleagues at NVIDIA,</div>${body}<div class="msrc">PUBLISHED ON NVIDIA’S NEWSROOM</div></div>`; }
   if (P) {
     if (t >= T.wash + 1.4 && t < T.dc) h += sticker('NVIDIA HQ · SANTA CLARA', off('sc', 0, 0).setY(9), t, T.wash + 1.4, 'sm w');
     if (t >= T.spy && t < T.dc) h += sticker('SUSPECTED CHINESE SPY', off('sc', 0, 3).setY(4), t, T.spy + 0.1, 'r');
-    if (t >= T.china && t < T.dc) h += sticker('CHINA: “GROUNDLESS”', off('sc', 0, 6).setY(2), t, T.china + 0.2, 'g sm');
     if (t >= T.dc + 0.9 && t < T.wh) h += sticker('THE PENTAGON', off('pent', -1, 0).setY(5), t, T.dc + 0.9, 'sm w');
     if (t >= T.wh + 0.6 && t < T.count) h += sticker('WHITE HOUSE', off('dc', -3, 0.5).setY(9), t, T.wh + 0.6, 'sm w');
     if (t >= T.count + 0.8 && t < T.abu) { h += sticker('ALASKA · COUNTING', P3('ak', 6), t, T.count + 0.8, 'g'); h += sticker('MISSISSIPPI · COUNTING', P3('ms', 6), t, T.count + 1.0, 'g'); }
