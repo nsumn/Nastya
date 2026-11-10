@@ -82,23 +82,24 @@ function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPain
   WH.visible = t >= T.wh && t < T.iran + 0.6; if (WH.visible) { const k = easeOut(span(t, T.wh + 0.3, T.wh + 1.0)); WH.position.copy(off('dc', -3, 0.5)).setY(0.3 + 6 * (1 - k)); WH.scale.setScalar(3.2 * k + 0.01); WH.rotation.y = 0; }
   if (t >= T.wh && t < T.iran + 0.6) { paintState('District of Columbia', GOLD, 0.9, 0.6); }
   // Iran + Hormuz: ships on fire
-  if (t >= T.iran && t < T.boeing + 0.4) { paintCountry('Iran', '#ff9a5a', 0.45 * smooth(T.iran, T.iran + 0.5, t), 0.6); }
+  if (t >= T.iran && t < T.boeing + 0.4) { paintCountry('Iran', '#ff7a2a', 0.8 * smooth(T.iran, T.iran + 0.5, t), 2.2 * smooth(T.iran, T.iran + 0.5, t)); }
   P.ships.forEach((s, i) => { const on = t >= T.ships - 0.4 + i * 0.25 && t < T.boeing + 0.3; s.visible = on; if (on) { const k = easeOut(span(t, T.ships - 0.4 + i * 0.25, T.ships + 0.2 + i * 0.25)); s.position.copy(llPos(56.6 + i * 0.9, 26.0 - i * 0.55, 0.2)); s.rotation.y = 0.5 + i * 0.4; s.scale.setScalar(mCam.position.y / 70 * k + 0.01);
       const f = 1 + 0.25 * Math.sin(t * 13 + i); s.userData.fire.scale.setScalar(f); s.userData.smoke.position.y = 4.5 + ((t * 0.8 + i) % 2) * 1.5; s.userData.smoke.scale.setScalar(1.2 + ((t * 0.8 + i) % 2)); s.userData.smoke.material.opacity = 0.7 * (1 - ((t * 0.8 + i) % 2) / 2); } });
   if (t >= T.iran + 0.8 && t < T.boeing) pulsePin(P.hormuzPin, P3('hormuz'), t, T.iran + 0.8, mCam.position.y / 45); else P.hormuzPin.visible = false;
   // Boeing: a jet climbing out of Everett
   { const on = t >= T.boeing + 0.5 && t < T.abu + 0.4; P.jet.visible = on; if (on) { const u = span(t, T.boeing + 0.5, T.abu + 0.4); P.jet.position.copy(off('everett', -6 + 16 * u, 4 - 10 * u)).setY(2 + 7 * u); P.jet.rotation.set(0, 0.6, 0.12 + 0.1 * u); P.jet.scale.setScalar(1.25 * pop(t, T.boeing + 0.5, 0.4)); } }
-  if (t >= T.boeing && t < T.abu + 0.4) paintState('Washington', '#3d7dff', 0.25, 0.3);
+  if (t >= T.boeing && t < T.abu + 0.4) paintState('Washington', '#3d7dff', 0.8, 1.6);
   // Abu Dhabi talks
   const arcK = (a) => t < a || t > T.follow + 0.2 ? 0 : easeOut(span(t, a, a + 0.9)); arcShow(P.arcs[0], arcK(T.ukr - 0.1)); arcShow(P.arcs[1], arcK(T.ukr + 0.4)); arcShow(P.arcs[2], arcK(T.first - 0.2));
-  if (t >= T.abu && t < T.follow + 0.3) { paintCountry('Ukraine', GOLD, 0.55, 0.5); paintCountry('Russia', RED, 0.4, 0.4); paintCountry('United Arab Emirates', GOLD, 0.85, 0.8); }
+  if (t >= T.abu && t < T.follow + 0.3) { paintCountry('Ukraine', GOLD, 0.85, 2.0); paintCountry('Russia', RED, 0.55, 0.8); paintCountry('United Arab Emirates', GOLD, 0.9, 2.0); }
   if (t >= T.abu + 0.6 && t < T.follow + 0.3) pulsePin(P.abuPin, P3('abu'), t, T.abu + 0.6, mCam.position.y / 45); else P.abuPin.visible = false;
+  if (typeof rims === 'function') rims([...(t >= T.iran && t < T.boeing + 0.4 ? [['country', 'Iran', 0.9 * smooth(T.iran, T.iran + 0.5, t)]] : []), ...(t >= T.abu && t < T.follow + 0.3 ? [['country', 'Ukraine', 0.85], ['country', 'United Arab Emirates', 0.85]] : []), ...(t >= T.boeing && t < T.abu + 0.4 ? [['state', 'Washington', 0.85]] : [])]);
   palTex.needsUpdate = true; }
 // ---- DOM ----
 const photo = { massie: ['Thomas Massie', 'REPUBLICAN · KENTUCKY'], hegseth: ['Pete Hegseth', 'DEFENSE SECRETARY'], dana_white: ['Dana White', 'UFC BOSS'], trump: ['Donald Trump', 'PRESIDENT'] };
 function card(key, t0, t1, x, y, t, o = {}) { if (t < t0 || t > t1) return ''; const k = pop(t, t0, 0.3), a = 1 - smooth(t1 - 0.25, t1, t); const [n, r] = photo[key]; const fx = o.fx ?? 0;
   const dy = -8 * esin(span(t, t0, t1));
-  return `<div class="card${o.small ? ' small' : ''}${o.dim ? ' dim' : ''}" style="left:${x}px;top:${(y + dy).toFixed(1)}px;opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)}) rotate(${(o.rot ?? 0)}deg)"><img src="assets/news/photos/${key}.jpg">${o.tag ? `<div class="tag ${o.tagc || ''}" style="transform:scale(${pop(t, o.tagT ?? t0, 0.25).toFixed(3)})">${o.tag}</div>` : ''}${o.quote && t >= (o.qT ?? t0) ? `<div class="quote" style="transform:scale(${pop(t, o.qT ?? t0, 0.25).toFixed(3)})">${o.quote}</div>` : ''}<div class="cn">${n}</div><div class="cr">${r}</div></div>`; }
+  return `<div class="card${o.small ? ' small' : ''}${o.dim ? ' dim' : ''}${o.ring ? ' ring-' + o.ring : ''}" style="left:${x}px;top:${(y + dy).toFixed(1)}px;opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)}) rotate(${(o.rot ?? 0)}deg)"><img src="assets/news/photos/${key}.jpg">${o.flag === false ? '' : '<div class="flag"></div>'}${o.tag ? `<div class="tag ${o.tagc || ''}" style="transform:scale(${pop(t, o.tagT ?? t0, 0.25).toFixed(3)})">${o.tag}</div>` : ''}${o.quote && t >= (o.qT ?? t0) ? `<div class="quote" style="transform:scale(${pop(t, o.qT ?? t0, 0.25).toFixed(3)})">${o.quote}</div>` : ''}<div class="cn">${n}</div><div class="cr">${r}</div></div>`; }
 function proj(p) { const v = p.clone().project(mCam); return v.z > 1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; }
 function stickerRaw(txt, pos, t, t0, cls = '') { if (t < t0) return ''; const q = proj(pos); if (!q) return ''; const x = clamp(q[0], 160, 900);
   return `<div class="stk ${cls}" style="left:${x.toFixed(0)}px;top:${q[1].toFixed(0)}px;transform:translate(-50%,-100%) scale(${pop(t, t0, 0.25).toFixed(3)})">${txt}</div>`; }

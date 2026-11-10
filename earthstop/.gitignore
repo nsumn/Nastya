@@ -9,3 +9,7 @@ ffmpeg2pass-*
 scene_*_new.js
 index_*_new.html
 .lumean.key
+
+# NASA Blue Marble source + the big world texture (re-create: download per tools/sat_tex.py, then python3 tools/sat_tex.py)
+data/raw/
+data/sat_world.jpg

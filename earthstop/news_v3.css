@@ -1,0 +1,18 @@
+/* ===== news map v3 look (Nov 10 2026): round photo medallions, bolder plates — link AFTER the page's own <style> ===== */
+.card{width:270px;padding:0;background:none;border:none;box-shadow:none;text-align:center}
+.card::after{display:none}
+.card img{width:250px;height:250px;margin:0 auto;object-fit:cover;object-position:50% 22%;border-radius:50%;border:9px solid #fff;
+  box-shadow:0 0 0 5px rgba(0,0,0,.35),0 18px 44px rgba(0,0,0,.55);display:block;background:#222}
+.card .cn{display:inline-block;margin-top:-26px;position:relative;font-family:'Anton';font-size:34px;letter-spacing:.02em;color:#fff;background:linear-gradient(100deg,#0b0f16,#1c2433);
+  padding:4px 18px 6px;border-radius:8px;border:2px solid rgba(255,255,255,.85);box-shadow:0 8px 24px rgba(0,0,0,.5);text-transform:uppercase;white-space:nowrap}
+.card .cr{font-family:'Inter';font-weight:900;font-size:15px;letter-spacing:.12em;color:#ffd28a;margin-top:6px;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.card .tag{left:50%;top:-12px;transform-origin:50% 50%;margin-left:-70px;width:140px;text-align:center;font-size:20px;border:2px solid #fff;border-radius:999px}
+.card.small{width:200px} .card.small img{width:180px;height:180px;border-width:7px} .card.small .cn{font-size:24px;margin-top:-20px} .card.small .cr{font-size:12px} .card.small .tag{margin-left:-60px;width:120px;font-size:16px}
+.card.dim img{filter:grayscale(1) brightness(.8)}
+.card .quote{bottom:-58px}
+.card .flag{position:absolute;left:50%;margin-left:62px;top:182px;width:58px;height:58px;border-radius:50%;border:5px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.5);
+  background:linear-gradient(#b22234 0 14%,#fff 14% 28%,#b22234 28% 42%,#fff 42% 57%,#b22234 57% 71%,#fff 71% 85%,#b22234 85%);overflow:hidden}
+.card .flag::before{content:"";position:absolute;left:0;top:0;width:52%;height:57%;background:#3c3b6e}
+.card.small .flag{margin-left:44px;top:128px;width:44px;height:44px;border-width:4px}
+.card.ring-b img{border-color:#4a86ff} .card.ring-r img{border-color:#ff4a4a}
+.stk{font-family:'Inter';font-weight:900;letter-spacing:.08em;border:2px solid rgba(255,255,255,.9)}
