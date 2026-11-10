@@ -129,14 +129,14 @@ function introHTML(t) { if (t > T.wash + 0.5) return ''; const k = pop(t, T.intr
     <div><div class="isub" style="opacity:${smooth(T.intro + 0.5, T.intro + 0.8, t)}">IN AMERICA <i>&</i> AROUND THE WORLD</div></div><div class="iclock">${clock}</div></div>`; }
 function domAt(t) { const P = PROPS; STK = []; let h = introHTML(t);
   h += card('massie', T.massie - 0.05, T.farce - 0.05, 110, 640, t, { tag: '8 ARTICLES', tagc: 'r', tagT: T.eight });
-  h += card('hegseth', T.farce - 0.25, T.senate, 650, 660, t, { small: true, quote: '“A FARCE”', qT: T.farce });
+  h += card('hegseth', T.farce - 0.25, T.senate, 640, 640, t, { small: true, quote: '“A FARCE”', qT: T.farce });
   h += card('dana_white', T.dana - 0.05, T.iran, 110, 640, t, { tag: t >= T.down ? 'SAID NO' : '', tagc: 'r', tagT: T.down });
-  h += card('trump', S[6] - 0.05, T.iran, 650, 660, t, { small: true, quote: '“DEVASTATED”', qT: S[6] + 0.4 });
+  h += card('trump', S[6] - 0.05, T.iran, 640, 640, t, { small: true, quote: '“DEVASTATED”', qT: S[6] + 0.4 });
   h += card('trump', T.over - 0.3, T.denies, 110, 640, t, { small: true, quote: '“EFFECTIVELY OVER”', qT: T.over });
   if (P) {
     if (t >= T.wash + 1.4 && t < T.senate) sticker('THE PENTAGON', off('pent', -3, 0).setY(6), t, T.wash + 1.4, 'sm w');
     if (t >= T.senate + 0.4 && t < T.wh) { sticker('REPUBLICANS 218', llPos(-101, 39.5, 14), t, T.senate + 0.6, 'r'); sticker('DEMOCRATS 214', llPos(-89, 39.5, 14), t, T.senate + 0.8, 'b'); }
-    if (t >= T.wh + 1.0 && t < T.iran) sticker('WHITE HOUSE', off('dc', -3, 4).setY(3), t, T.wh + 1.0, 'sm w');
+
     if (t >= T.ships && t < T.boeing) sticker('STRAIT OF HORMUZ', P3('hormuz', 8), t, T.ships + 0.2, 'r');
     if (t >= T.boeing + 1.0 && t < T.abu) sticker('BOEING · EVERETT, WA', off('everett', 0, 0).setY(4), t, T.boeing + 1.0, 'sm w');
     if (t >= T.abu + 1.0 && t < T.follow) { sticker('ABU DHABI', P3('abu', 30), t, T.abu + 1.0, 'w'); sticker('KYIV', P3('kyiv', 4), t, T.ukr, 'sm'); sticker('MOSCOW', P3('moscow', 4), t, T.ukr + 0.4, 'r sm'); }

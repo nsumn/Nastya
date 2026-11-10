@@ -76,7 +76,8 @@ function grp(x, y, z, ry, parent) { const g = new THREE.Group(); g.position.set(
 const SENT = [0.0, 2.426, 10.522, 15.945, 21.473, 25.305, 30.928, 34.238, 37.408, 42.354, 47.823, 54.024];
 const WORDS = [[0.0, 0.325, "Here's"], [0.36, 0.488, "what"], [0.546, 0.871, "happened"], [0.906, 0.964, "in"], [1.022, 1.091, "the"], [1.149, 1.393, "last"], [1.428, 2.009, "24"], [2.067, 2.368, "hours."], [2.426, 3.1, "Republican"], [3.158, 3.506, "Thomas"], [3.587, 4.122, "Massie"], [4.262, 4.703, "filed"], [4.842, 5.133, "eight"], [5.202, 5.702, "articles"], [5.748, 5.806, "of"], [5.864, 6.387, "impeachment"], [6.445, 6.805, "against"], [6.839, 7.199, "Defense"], [7.234, 7.791, "Secretary"], [7.896, 8.209, "Pete"], [8.267, 8.86, "Hegseth,"], [9.0, 9.29, "over"], [9.348, 9.418, "the"], [9.476, 9.685, "war"], [9.743, 9.894, "with"], [9.94, 10.382, "Iran."], [10.522, 10.65, "The"], [10.708, 10.928, "House"], [10.963, 11.114, "has"], [11.161, 11.219, "to"], [11.288, 11.544, "act"], [11.59, 11.869, "within"], [11.927, 12.147, "two"], [12.252, 12.832, "legislative"], [12.856, 13.123, "days,"], [13.169, 13.286, "and"], [13.344, 13.924, "Republicans"], [13.971, 14.156, "hold"], [14.214, 14.423, "just"], [14.47, 14.505, "a"], [14.609, 15.143, "four-seat"], [15.201, 15.805, "majority."], [15.945, 16.398, "Hegseth"], [16.445, 16.689, "calls"], [16.735, 16.793, "it"], [16.828, 16.851, "a"], [16.909, 17.362, "farce,"], [17.466, 17.629, "and"], [17.699, 18.059, "Speaker"], [18.117, 18.314, "Mike"], [18.36, 18.709, "Johnson"], [18.767, 18.987, "says"], [19.045, 19.115, "the"], [19.173, 19.37, "vote"], [19.405, 19.475, "to"], [19.533, 19.823, "block"], [19.881, 19.963, "it"], [20.021, 20.172, "is"], [20.276, 20.543, "not"], [20.601, 20.81, "going"], [20.857, 20.903, "to"], [20.961, 21.333, "fail."], [21.473, 21.752, "Even"], [21.798, 21.856, "if"], [21.914, 22.088, "he's"], [22.135, 22.657, "impeached,"], [22.727, 23.203, "removing"], [23.261, 23.412, "him"], [23.47, 23.749, "takes"], [23.807, 24.051, "two"], [24.155, 24.503, "thirds"], [24.538, 24.608, "of"], [24.666, 24.736, "the"], [24.782, 25.165, "Senate."], [25.305, 25.456, "At"], [25.49, 25.56, "the"], [25.607, 25.851, "White"], [25.874, 26.257, "House,"], [26.397, 26.85, "UFC"], [26.99, 27.269, "boss"], [27.338, 27.617, "Dana"], [27.675, 27.942, "White"], [27.989, 28.302, "turned"], [28.325, 28.476, "down"], [28.511, 28.581, "the"], [28.639, 28.906, "press"], [28.952, 29.417, "secretary"], [29.475, 29.8, "job,"], [29.94, 30.126, "live"], [30.149, 30.196, "at"], [30.23, 30.3, "the"], [30.335, 30.788, "briefing."], [30.928, 31.229, "Trump"], [31.287, 31.462, "said"], [31.52, 31.578, "he"], [31.636, 31.752, "was"], [31.833, 32.553, "devastated,"], [32.693, 32.902, "then"], [32.96, 33.204, "called"], [33.227, 33.296, "the"], [33.354, 33.598, "offer"], [33.656, 33.68, "a"], [33.738, 34.098, "joke."], [34.238, 34.563, "Trump"], [34.633, 34.946, "also"], [35.004, 35.225, "says"], [35.295, 35.399, "the"], [35.457, 35.782, "Iran"], [35.852, 36.061, "war"], [36.142, 36.235, "is"], [36.281, 36.874, "effectively"], [36.932, 37.268, "over."], [37.408, 37.779, "Iran"], [37.837, 38.139, "denies"], [38.22, 38.464, "any"], [38.522, 38.894, "talks,"], [38.94, 39.068, "and"], [39.126, 39.3, "two"], [39.358, 39.555, "more"], [39.59, 39.857, "ships"], [39.904, 40.043, "are"], [40.09, 40.194, "on"], [40.252, 40.612, "fire"], [40.658, 40.833, "near"], [40.891, 40.96, "the"], [41.018, 41.367, "Strait"], [41.425, 41.494, "of"], [41.552, 42.214, "Hormuz."], [42.354, 42.69, "Boeing"], [42.748, 42.83, "is"], [42.876, 43.132, "cutting"], [43.166, 43.375, "about"], [43.48, 43.817, "five"], [43.863, 44.223, "percent"], [44.258, 44.316, "of"], [44.362, 44.467, "its"], [44.525, 44.989, "commercial"], [45.047, 45.454, "airplane"], [45.477, 45.941, "division,"], [46.081, 46.487, "according"], [46.534, 46.603, "to"], [46.673, 46.731, "an"], [46.777, 47.207, "internal"], [47.277, 47.683, "email."], [47.823, 47.963, "And"], [48.021, 48.079, "in"], [48.16, 48.439, "Abu"], [48.497, 48.845, "Dhabi,"], [48.903, 49.379, "Ukraine"], [49.402, 49.484, "and"], [49.553, 49.936, "Russia"], [50.076, 50.367, "sat"], [50.425, 50.622, "down"], [50.68, 50.773, "for"], [50.808, 50.959, "their"], [51.017, 51.307, "first"], [51.446, 52.375, "U.S.-brokered"], [52.41, 52.851, "talks"], [52.932, 53.187, "since"], [53.234, 53.884, "February."], [54.024, 54.326, "Follow"], [54.384, 54.477, "for"], [54.535, 54.941, "tomorrow's"], [54.987, 55.498, "24"], [55.545, 56.16, "hours."]];
 const VO_END = 56.749;
-// =================== MAP v2 (Nov 9 2026, her notes: blocky borders, soft "soapy" close-ups, overlapping stickers) ===================
+// =================== MAP v3 (Nov 10 2026, her note: Geolyth's picture is much better) = map v2 + NASA Blue Marble satellite colour, punchier grade, glossy raised regions ===================
+// textures: data/sat_world.jpg, data/sat_us.jpg, data/sat_ak.jpg (tools/sat_tex.py; NASA Blue Marble Next Generation, public domain)
 // = parts_day/y_map.js + crisp VECTOR borders (LineSegments2, pixel width), per-pixel normals with fine detail noise, finer relief:
 //   US plane data/us_dem2.png (z6, 0.02°), Alaska patch data/ak_dem.png (z6, 0.02°) — both from tools/patch_dem.py.
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
@@ -97,9 +98,9 @@ const sunM = new THREE.DirectionalLight(0xfff0dc, 2.4); sunM.position.set(-120, 
 const PAL = new Float32Array(256 * 4 * 4), palTex = new THREE.DataTexture(PAL, 256, 4, THREE.RGBAFormat, THREE.FloatType); palTex.magFilter = palTex.minFilter = THREE.NearestFilter; palTex.needsUpdate = true;
 const COUNTRIES = [], STATES = [], COUNTIES = [];   // { id, name, lon, lat }
 const mapUni = { uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uFade: { value: new THREE.Vector2(400, 900) }, uT: { value: 0 }, uCty: { value: 0 } };
-function mapMaterial(B, dem, idTex, us) {
+function mapMaterial(B, dem, idTex, us, sat) {
   const dx = (B.lon1 - B.lon0) * CLAT * SC / dem.image.width, dz = (B.lat1 - B.lat0) * SC / dem.image.height;
-  return new THREE.ShaderMaterial({ uniforms: { tDem: { value: dem }, tId: { value: idTex }, tPal: { value: palTex }, uSun: mapUni.uSun, uFade: mapUni.uFade, uT: mapUni.uT, uCty: mapUni.uCty,
+  return new THREE.ShaderMaterial({ uniforms: { tDem: { value: dem }, tId: { value: idTex }, tPal: { value: palTex }, tSat: { value: sat }, uSun: mapUni.uSun, uFade: mapUni.uFade, uT: mapUni.uT, uCty: mapUni.uCty,
       uE: { value: new THREE.Vector2(1 / dem.image.width, 1 / dem.image.height) }, uD: { value: new THREE.Vector2(dx, dz) }, uP: { value: new THREE.Vector2(1 / B.cw, 1 / B.ch) } }, fog: false,
     defines: us ? { US: 1 } : {},
     vertexShader: `uniform sampler2D tDem, tId, tPal; uniform vec2 uE, uD; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
@@ -120,7 +121,7 @@ function mapMaterial(B, dem, idTex, us) {
         if (sid > 0.5 && uv.y > 0.5833) p.y -= 0.6;   // tuck the world's US (lower 48 + Alaska; not Hawaii) under the finer planes
       #endif
         vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: `uniform sampler2D tId, tPal, tDem; uniform vec3 uSun; uniform vec2 uFade, uP, uE, uD; uniform float uT, uCty; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
+    fragmentShader: `uniform sampler2D tId, tPal, tDem, tSat; uniform vec3 uSun; uniform vec2 uFade, uP, uE, uD; uniform float uT, uCty; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
       float hh(vec2 uv){ vec4 d = texture2D(tDem, uv);
       #ifdef US
         return d.r * d.r * 11.0;
@@ -132,6 +133,7 @@ function mapMaterial(B, dem, idTex, us) {
       float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hs(i), hs(i + vec2(1, 0)), f.x), mix(hs(i + vec2(0, 1)), hs(i + vec2(1, 1)), f.x), f.y); }
       float fbm(vec2 p){ return 0.5 * vn(p) + 0.25 * vn(p * 2.03) + 0.125 * vn(p * 4.11) + 0.0625 * vn(p * 8.3); }
       vec3 ids(vec2 o){ vec4 c = texture2D(tId, vUv + o); return floor(c.rgb * 255.0 + 0.5); }
+      float liftOf(vec3 c){ vec4 lf = texture2D(tPal, vec2((c.g > 0.5 ? c.g : c.r) / 256.0 + 0.5 / 256.0, 2.5 / 4.0)); float l = c.g > 0.5 ? lf.g : lf.r; if (c.b > 0.5) l += texture2D(tPal, vec2(c.b / 256.0 + 0.5 / 256.0, 2.5 / 4.0)).b; return l; }
       void main(){ vec3 id = ids(vec2(0.0)); float cid = id.x, sid = id.y, kid = id.z;
       #ifdef US
         if (sid < 0.5) discard;
@@ -144,18 +146,21 @@ function mapMaterial(B, dem, idTex, us) {
         n = normalize(n); float dif = max(dot(n, uSun), 0.0), sh = 0.3 + 1.05 * dif;
         float e = vHt; vec3 land = mix(vec3(0.24, 0.33, 0.18), vec3(0.40, 0.40, 0.24), smoothstep(0.06, 0.32, e)); land = mix(land, vec3(0.50, 0.40, 0.28), smoothstep(0.32, 0.55, e));
         land = mix(land, vec3(0.42, 0.33, 0.26), smoothstep(0.55, 0.75, e)); land = mix(land, vec3(0.86, 0.86, 0.88), smoothstep(0.78, 0.92, e));
+        vec3 sat = texture2D(tSat, vUv).rgb; float lum = dot(sat, vec3(0.3, 0.59, 0.11)); sat = mix(vec3(lum), sat, 1.25); land = sat * 1.15;
         bool sea = cid < 0.5 && vHt < 0.03 && vDp > 0.0;
         vec3 col;
         if (sea) { float dp = vDp; col = mix(vec3(0.10, 0.30, 0.38), vec3(0.04, 0.12, 0.22), smoothstep(0.02, 0.3, dp)); col = mix(col, vec3(0.02, 0.06, 0.13), smoothstep(0.3, 0.8, dp)); col *= 0.55 + 0.6 * dif; }
-        else col = land * sh;
+        else { float sh2 = 0.22 + 1.35 * pow(dif, 1.15); col = land * sh2; }
         if (cid > 0.5 || sid > 0.5) { vec4 c = sid > 0.5 ? texture2D(tPal, vec2(sid / 256.0 + 0.5 / 256.0, 1.5 / 4.0)) : texture2D(tPal, vec2(cid / 256.0 + 0.5 / 256.0, 0.5 / 4.0));
-          col = mix(col, c.rgb * (0.5 + 0.8 * dif), c.a); col += c.rgb * c.a * 0.1; }
+          vec3 V = normalize(cameraPosition - vW), Hh = normalize(uSun + V); float spec = pow(max(dot(n, Hh), 0.0), 40.0) * 0.6;
+          col = mix(col, c.rgb * (0.42 + 0.95 * dif) * 1.15 + spec, c.a); col += c.rgb * c.a * 0.12; }
         if (kid > 0.5) { vec4 c = texture2D(tPal, vec2(kid / 256.0 + 0.5 / 256.0, 3.5 / 4.0)); col = mix(col, c.rgb * (0.5 + 0.8 * dif), c.a); col += c.rgb * c.a * 0.1; }
         // borders: compare ids with the neighbours (states thin, countries brighter, coasts soft)
         vec3 a = ids(vec2(uP.x, 0.0)), b = ids(vec2(-uP.x, 0.0)), c2 = ids(vec2(0.0, uP.y)), d = ids(vec2(0.0, -uP.y)); bool kb = a.z != kid || b.z != kid || c2.z != kid || d.z != kid;
         bool cb = a.x != cid || b.x != cid || c2.x != cid || d.x != cid; bool sb = a.y != sid || b.y != sid || c2.y != sid || d.y != sid;
         bool coast = cb && (cid < 0.5 || a.x < 0.5 || b.x < 0.5 || c2.x < 0.5 || d.x < 0.5);
         if (coast) col = mix(col, vec3(0.75, 0.85, 0.9), 0.18);
+        { float myL = liftOf(id); float sh3 = 0.0; for (int k = 1; k <= 4; k++) { vec2 o = normalize(vec2(uSun.x, -uSun.z)) * uP * (3.0 * float(k)); float l = liftOf(ids(o)); sh3 = max(sh3, smoothstep(0.25, 1.2, l - myL) * (1.0 - 0.18 * float(k))); } col *= 1.0 - 0.5 * sh3; }
         float dist = length(vW - cameraPosition); col = mix(col, vec3(0.027, 0.067, 0.114), clamp((dist - uFade.x) / (uFade.y - uFade.x), 0.0, 0.9));
         gl_FragColor = vec4(col, 1.0); }` }); }
 function planeFor(B, mat, sx, sz) { const w = (B.lon1 - B.lon0) * CLAT * SC, d = (B.lat1 - B.lat0) * SC, c = ll2xz((B.lon0 + B.lon1) / 2, (B.lat0 + B.lat1) / 2);
@@ -168,22 +173,27 @@ function idCanvas(B, countries, states, usaId, counties = []) { const cv = docum
     for (const poly of polys) for (const ring of poly) { let px = null; ring.forEach((pt, i) => { let [lon, lat] = pt; if (px !== null && Math.abs(lon - px) > 180) lon += lon < px ? 360 : -360; px = lon; const [x, y] = P([lon, lat]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); } g.fill('evenodd'); };
   countries.forEach(f => f.geometry && draw(f.geometry, `rgb(${f.cid},0,0)`)); states.forEach(f => draw(f.geometry, `rgb(${usaId},${f.sid},0)`)); counties.forEach(f => draw(f.geometry, `rgb(${usaId},${f.sid},${f.kid})`));
   const tx = new THREE.CanvasTexture(cv); tx.magFilter = tx.minFilter = THREE.NearestFilter; tx.generateMipmaps = false; tx.colorSpace = THREE.NoColorSpace; return tx; }
-let worldMesh = null, usMesh = null, akMesh = null, WORLD_CV = null, HGT = () => 0; const BORDERS = {};
+let worldMesh = null, usMesh = null, akMesh = null, WORLD_CV = null, HGT = () => 0; const BORDERS = {}, TOPO = {}, RIMS = {};
+// a thick white rim around a raised state / country (built on first use); call rims(t) once per frame after painting
+function rim(kind, name) { const key = kind + ':' + name; if (RIMS[key]) return RIMS[key]; const topo = kind === 'state' ? TOPO.us : TOPO.wd, obj = kind === 'state' ? topo.objects.states : topo.objects.countries;
+  const g = obj.geometries.find(q => q.properties && q.properties.name === name); if (!g) return null; const l = TOPO.lines(topojson.mesh(topo, obj, (a, b) => a === g || b === g), 4.2, 0xffffff, 0, 1); l.renderOrder = 1.5; return (RIMS[key] = l); }
+function rims(list) { for (const k in RIMS) RIMS[k].material.opacity = 0; for (const [kind, name, a] of list) { const l = rim(kind, name); if (l) l.material.opacity = a; } }
 function countryAt(lon, lat) { const x = Math.floor((lon - WB.lon0) / (WB.lon1 - WB.lon0) * WB.cw), y = Math.floor((WB.lat1 - lat) / (WB.lat1 - WB.lat0) * WB.ch); const d = WORLD_CV.getContext("2d").getImageData(x, y, 1, 1).data; const c = COUNTRIES.find(q => q.id === d[0]); return c ? c.name : ""; }
 const mapReady = (async () => {
   const [us, wd] = await Promise.all([fetch('node_modules/us-atlas/states-10m.json').then(r => r.json()), fetch('node_modules/world-atlas/countries-50m.json').then(r => r.json())]);
   const cf = topojson.feature(wd, wd.objects.countries).features; cf.forEach((f, i) => { f.cid = i + 1; if (f.geometry) { const c = d3c(f.geometry); COUNTRIES.push({ id: f.cid, name: f.properties.name, lon: c[0], lat: c[1] }); } });
   const usa = cf.find(f => f.properties.name === 'United States of America');
   const sf = topojson.feature(us, us.objects.states).features; sf.forEach((f, i) => { f.sid = i + 1; const c = d3c(f.geometry); STATES.push({ id: f.sid, name: f.properties.name, lon: c[0], lat: c[1] }); });
-  const L = new THREE.TextureLoader(); const [wdem, udem, adem] = await Promise.all([L.loadAsync('data/world_dem.png'), L.loadAsync('data/us_dem2.png'), L.loadAsync('data/ak_dem.png')]);
+  const L = new THREE.TextureLoader(); const [wdem, udem, adem, wsat, usat, asat] = await Promise.all([L.loadAsync('data/world_dem.png'), L.loadAsync('data/us_dem2.png'), L.loadAsync('data/ak_dem.png'), L.loadAsync('data/sat_world.jpg'), L.loadAsync('data/sat_us.jpg'), L.loadAsync('data/sat_ak.jpg')]);
+  for (const t of [wsat, usat, asat]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; }
   for (const d of [wdem, udem, adem]) { d.colorSpace = THREE.NoColorSpace; d.minFilter = THREE.LinearFilter; d.generateMipmaps = false; }
-  worldMesh = planeFor(WB, mapMaterial(WB, wdem, idCanvas(WB, cf, sf, usa.cid), false), 1500, 580);
+  worldMesh = planeFor(WB, mapMaterial(WB, wdem, idCanvas(WB, cf, sf, usa.cid), false, wsat), 1500, 580);
   WORLD_CV = worldMesh.material.uniforms.tId.value.image;
   let kf = [];
   if (typeof COUNTY_FIPS === 'string') { const cj = await fetch('node_modules/us-atlas/counties-10m.json').then(r => r.json()); const st = sf.find(f => f.id === COUNTY_FIPS);
     kf = topojson.feature(cj, cj.objects.counties).features.filter(f => String(f.id).startsWith(COUNTY_FIPS)); kf.forEach((f, i) => { f.kid = i + 1; f.sid = st.sid; const c = d3c(f.geometry); COUNTIES.push({ id: f.kid, name: f.properties.name, fips: f.id, lon: c[0], lat: c[1] }); }); }
-  usMesh = planeFor(UB, mapMaterial(UB, udem, idCanvas(UB, [], sf, usa.cid, kf), true), 1100, 600); usMesh.position.y = 0.02;
-  akMesh = planeFor(AKB, mapMaterial(AKB, adem, idCanvas(AKB, [], sf.filter(f => f.properties.name === 'Alaska'), usa.cid), true), 700, 340); akMesh.position.y = 0.02;
+  usMesh = planeFor(UB, mapMaterial(UB, udem, idCanvas(UB, [], sf, usa.cid, kf), true, usat), 1100, 600); usMesh.position.y = 0.02;
+  akMesh = planeFor(AKB, mapMaterial(AKB, adem, idCanvas(AKB, [], sf.filter(f => f.properties.name === 'Alaska'), usa.cid), true, asat), 700, 340); akMesh.position.y = 0.02;
   // ---- vector borders: heights sampled from the same DEMs; drawn after the terrain without depth test (props draw over them) ----
   const sampler = (img, B, k, sea) => { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data;
     return (lon, lat) => { if (lon < B.lon0 || lon >= B.lon1 || lat <= B.lat0 || lat > B.lat1) return null; const x = Math.floor((lon - B.lon0) / (B.lon1 - B.lon0) * c.width), y = Math.floor((B.lat1 - lat) / (B.lat1 - B.lat0) * c.height); const r = d[(y * c.width + x) * 4] / 255; return r * r * k; }; };
@@ -210,6 +220,7 @@ const mapReady = (async () => {
         .replace('vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );', 'vec4 end = modelViewMatrix * vec4( instanceEnd + vec3(0.0, liftAt(instanceEnd), 0.0), 1.0 );'); };
     m.customProgramCacheKey = () => 'lift-lines';
     const l = new LineSegments2(g, m); l.renderOrder = order; l.frustumCulled = false; MAPSC.add(l); return l; };
+  TOPO.us = us; TOPO.wd = wd; TOPO.lines = lines;
   BORDERS.country = lines(topojson.mesh(wd, wd.objects.countries, (a, b) => a !== b), 2.4, 0xf4f1ea, 0.7, 1);
   BORDERS.state = lines(topojson.mesh(us, us.objects.states, (a, b) => a !== b), 1.8, 0xeef2fa, 0.55, 1);
   if (typeof COUNTY_FIPS === 'string') { const cj = await fetch('node_modules/us-atlas/counties-10m.json').then(r => r.json()); const geos = { type: 'GeometryCollection', geometries: cj.objects.counties.geometries.filter(g => String(g.id).startsWith(COUNTY_FIPS)) };
@@ -341,23 +352,24 @@ function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPain
   WH.visible = t >= T.wh && t < T.iran + 0.6; if (WH.visible) { const k = easeOut(span(t, T.wh + 0.3, T.wh + 1.0)); WH.position.copy(off('dc', -3, 0.5)).setY(0.3 + 6 * (1 - k)); WH.scale.setScalar(3.2 * k + 0.01); WH.rotation.y = 0; }
   if (t >= T.wh && t < T.iran + 0.6) { paintState('District of Columbia', GOLD, 0.9, 0.6); }
   // Iran + Hormuz: ships on fire
-  if (t >= T.iran && t < T.boeing + 0.4) { paintCountry('Iran', '#ff9a5a', 0.45 * smooth(T.iran, T.iran + 0.5, t), 0.6); }
+  if (t >= T.iran && t < T.boeing + 0.4) { paintCountry('Iran', '#ff7a2a', 0.8 * smooth(T.iran, T.iran + 0.5, t), 2.2 * smooth(T.iran, T.iran + 0.5, t)); }
   P.ships.forEach((s, i) => { const on = t >= T.ships - 0.4 + i * 0.25 && t < T.boeing + 0.3; s.visible = on; if (on) { const k = easeOut(span(t, T.ships - 0.4 + i * 0.25, T.ships + 0.2 + i * 0.25)); s.position.copy(llPos(56.6 + i * 0.9, 26.0 - i * 0.55, 0.2)); s.rotation.y = 0.5 + i * 0.4; s.scale.setScalar(mCam.position.y / 70 * k + 0.01);
       const f = 1 + 0.25 * Math.sin(t * 13 + i); s.userData.fire.scale.setScalar(f); s.userData.smoke.position.y = 4.5 + ((t * 0.8 + i) % 2) * 1.5; s.userData.smoke.scale.setScalar(1.2 + ((t * 0.8 + i) % 2)); s.userData.smoke.material.opacity = 0.7 * (1 - ((t * 0.8 + i) % 2) / 2); } });
   if (t >= T.iran + 0.8 && t < T.boeing) pulsePin(P.hormuzPin, P3('hormuz'), t, T.iran + 0.8, mCam.position.y / 45); else P.hormuzPin.visible = false;
   // Boeing: a jet climbing out of Everett
   { const on = t >= T.boeing + 0.5 && t < T.abu + 0.4; P.jet.visible = on; if (on) { const u = span(t, T.boeing + 0.5, T.abu + 0.4); P.jet.position.copy(off('everett', -6 + 16 * u, 4 - 10 * u)).setY(2 + 7 * u); P.jet.rotation.set(0, 0.6, 0.12 + 0.1 * u); P.jet.scale.setScalar(1.25 * pop(t, T.boeing + 0.5, 0.4)); } }
-  if (t >= T.boeing && t < T.abu + 0.4) paintState('Washington', '#3d7dff', 0.25, 0.3);
+  if (t >= T.boeing && t < T.abu + 0.4) paintState('Washington', '#3d7dff', 0.8, 1.6);
   // Abu Dhabi talks
   const arcK = (a) => t < a || t > T.follow + 0.2 ? 0 : easeOut(span(t, a, a + 0.9)); arcShow(P.arcs[0], arcK(T.ukr - 0.1)); arcShow(P.arcs[1], arcK(T.ukr + 0.4)); arcShow(P.arcs[2], arcK(T.first - 0.2));
-  if (t >= T.abu && t < T.follow + 0.3) { paintCountry('Ukraine', GOLD, 0.55, 0.5); paintCountry('Russia', RED, 0.4, 0.4); paintCountry('United Arab Emirates', GOLD, 0.85, 0.8); }
+  if (t >= T.abu && t < T.follow + 0.3) { paintCountry('Ukraine', GOLD, 0.85, 2.0); paintCountry('Russia', RED, 0.55, 0.8); paintCountry('United Arab Emirates', GOLD, 0.9, 2.0); }
   if (t >= T.abu + 0.6 && t < T.follow + 0.3) pulsePin(P.abuPin, P3('abu'), t, T.abu + 0.6, mCam.position.y / 45); else P.abuPin.visible = false;
+  if (typeof rims === 'function') rims([...(t >= T.iran && t < T.boeing + 0.4 ? [['country', 'Iran', 0.9 * smooth(T.iran, T.iran + 0.5, t)]] : []), ...(t >= T.abu && t < T.follow + 0.3 ? [['country', 'Ukraine', 0.85], ['country', 'United Arab Emirates', 0.85]] : []), ...(t >= T.boeing && t < T.abu + 0.4 ? [['state', 'Washington', 0.85]] : [])]);
   palTex.needsUpdate = true; }
 // ---- DOM ----
 const photo = { massie: ['Thomas Massie', 'REPUBLICAN · KENTUCKY'], hegseth: ['Pete Hegseth', 'DEFENSE SECRETARY'], dana_white: ['Dana White', 'UFC BOSS'], trump: ['Donald Trump', 'PRESIDENT'] };
 function card(key, t0, t1, x, y, t, o = {}) { if (t < t0 || t > t1) return ''; const k = pop(t, t0, 0.3), a = 1 - smooth(t1 - 0.25, t1, t); const [n, r] = photo[key]; const fx = o.fx ?? 0;
   const dy = -8 * esin(span(t, t0, t1));
-  return `<div class="card${o.small ? ' small' : ''}${o.dim ? ' dim' : ''}" style="left:${x}px;top:${(y + dy).toFixed(1)}px;opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)}) rotate(${(o.rot ?? 0)}deg)"><img src="assets/news/photos/${key}.jpg">${o.tag ? `<div class="tag ${o.tagc || ''}" style="transform:scale(${pop(t, o.tagT ?? t0, 0.25).toFixed(3)})">${o.tag}</div>` : ''}${o.quote && t >= (o.qT ?? t0) ? `<div class="quote" style="transform:scale(${pop(t, o.qT ?? t0, 0.25).toFixed(3)})">${o.quote}</div>` : ''}<div class="cn">${n}</div><div class="cr">${r}</div></div>`; }
+  return `<div class="card${o.small ? ' small' : ''}${o.dim ? ' dim' : ''}${o.ring ? ' ring-' + o.ring : ''}" style="left:${x}px;top:${(y + dy).toFixed(1)}px;opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)}) rotate(${(o.rot ?? 0)}deg)"><img src="assets/news/photos/${key}.jpg">${o.flag === false ? '' : '<div class="flag"></div>'}${o.tag ? `<div class="tag ${o.tagc || ''}" style="transform:scale(${pop(t, o.tagT ?? t0, 0.25).toFixed(3)})">${o.tag}</div>` : ''}${o.quote && t >= (o.qT ?? t0) ? `<div class="quote" style="transform:scale(${pop(t, o.qT ?? t0, 0.25).toFixed(3)})">${o.quote}</div>` : ''}<div class="cn">${n}</div><div class="cr">${r}</div></div>`; }
 function proj(p) { const v = p.clone().project(mCam); return v.z > 1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; }
 function stickerRaw(txt, pos, t, t0, cls = '') { if (t < t0) return ''; const q = proj(pos); if (!q) return ''; const x = clamp(q[0], 160, 900);
   return `<div class="stk ${cls}" style="left:${x.toFixed(0)}px;top:${q[1].toFixed(0)}px;transform:translate(-50%,-100%) scale(${pop(t, t0, 0.25).toFixed(3)})">${txt}</div>`; }
@@ -387,14 +399,14 @@ function introHTML(t) { if (t > T.wash + 0.5) return ''; const k = pop(t, T.intr
     <div><div class="isub" style="opacity:${smooth(T.intro + 0.5, T.intro + 0.8, t)}">IN AMERICA <i>&</i> AROUND THE WORLD</div></div><div class="iclock">${clock}</div></div>`; }
 function domAt(t) { const P = PROPS; STK = []; let h = introHTML(t);
   h += card('massie', T.massie - 0.05, T.farce - 0.05, 110, 640, t, { tag: '8 ARTICLES', tagc: 'r', tagT: T.eight });
-  h += card('hegseth', T.farce - 0.25, T.senate, 650, 660, t, { small: true, quote: '“A FARCE”', qT: T.farce });
+  h += card('hegseth', T.farce - 0.25, T.senate, 640, 640, t, { small: true, quote: '“A FARCE”', qT: T.farce });
   h += card('dana_white', T.dana - 0.05, T.iran, 110, 640, t, { tag: t >= T.down ? 'SAID NO' : '', tagc: 'r', tagT: T.down });
-  h += card('trump', S[6] - 0.05, T.iran, 650, 660, t, { small: true, quote: '“DEVASTATED”', qT: S[6] + 0.4 });
+  h += card('trump', S[6] - 0.05, T.iran, 640, 640, t, { small: true, quote: '“DEVASTATED”', qT: S[6] + 0.4 });
   h += card('trump', T.over - 0.3, T.denies, 110, 640, t, { small: true, quote: '“EFFECTIVELY OVER”', qT: T.over });
   if (P) {
     if (t >= T.wash + 1.4 && t < T.senate) sticker('THE PENTAGON', off('pent', -3, 0).setY(6), t, T.wash + 1.4, 'sm w');
     if (t >= T.senate + 0.4 && t < T.wh) { sticker('REPUBLICANS 218', llPos(-101, 39.5, 14), t, T.senate + 0.6, 'r'); sticker('DEMOCRATS 214', llPos(-89, 39.5, 14), t, T.senate + 0.8, 'b'); }
-    if (t >= T.wh + 1.0 && t < T.iran) sticker('WHITE HOUSE', off('dc', -3, 4).setY(3), t, T.wh + 1.0, 'sm w');
+
     if (t >= T.ships && t < T.boeing) sticker('STRAIT OF HORMUZ', P3('hormuz', 8), t, T.ships + 0.2, 'r');
     if (t >= T.boeing + 1.0 && t < T.abu) sticker('BOEING · EVERETT, WA', off('everett', 0, 0).setY(4), t, T.boeing + 1.0, 'sm w');
     if (t >= T.abu + 1.0 && t < T.follow) { sticker('ABU DHABI', P3('abu', 30), t, T.abu + 1.0, 'w'); sticker('KYIV', P3('kyiv', 4), t, T.ukr, 'sm'); sticker('MOSCOW', P3('moscow', 4), t, T.ukr + 0.4, 'r sm'); }
