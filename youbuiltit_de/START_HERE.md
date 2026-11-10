@@ -7,6 +7,9 @@
 - `youbuiltit_de/CLAUDE.md`: главный файл для Claude. В нём формат, конвейер по шагам, команды, грабли и ключи.
 - `youbuiltit_de/01_keller/`: готовый ролик про подвал (`DE_01_keller.mp4`).
 - `youbuiltit_de/02_burg/`: готовый ролик про рыцарский замок (`DE_02_burg.mp4`).
+- `youbuiltit_de/04_kuehlschrank/`: ролик в формате @oddtilt («Wie du den Kühlschrank erfunden hast»).
+- `youbuiltit_de/19_waldhuette/`: последний готовый ролик, выживание в лесу (`DE_19_waldhuette.mp4`), со звуками и субтитрами отдельным слоем. Лучший образец для новых роликов.
+- `youbuiltit_de/CATS.md`: отдельные кошачьи аккаунты Насти (Mimi, Flocke, Momo), ветка `claude/cats`. К этому каналу не относятся.
 - `youbuiltit_de/engine/`: 3D-движок (three.js + Playwright + ffmpeg) и сцены обоих роликов.
 - `youbuiltit_frames/`: разбор оригинального аккаунта (кадры).
 - `bot/`, `deploy/`: отдельный Telegram-бот, к видео не относится.

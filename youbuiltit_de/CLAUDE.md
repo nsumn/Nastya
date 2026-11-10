@@ -22,6 +22,7 @@
 | 01 | `01_keller/` | Wie ein Loch im Garten zum Keller wird (подвал: weiße Wanne, Fugenblech, Dämmung, Lichtschacht, Rückstauklappe) | 65.8 с | готов, `DE_01_keller.mp4` |
 | 02 | `02_burg/` | Wie ein Hügel zur Ritterburg wird (Holzhütte, Palisade, Mauer, Zinnen, Graben, Zugbrücke, Türme, Belagerung, Brunnen, Bergfried) | 60.3 с | готов, `DE_02_burg.mp4` |
 | 04 | `04_kuehlschrank/` | **Формат @oddtilt:** Wie du den Kühlschrank erfunden hast (пещерный человек: снег → ледник в яме → ящик с соломой и льдом → испарение → насос → AKW, но «du bist in Deutschland» → Windrad) | 49.9 с | готов, `DE_04_kuehlschrank.mp4` |
+| 19 | `19_waldhuette/` | Wie du eine Nacht im Wald überlebst: Waldhütte (Ast an umgestürztem Baum → Äste wie ein Zelt → Laub und Moos 50 cm → Bett aus Fichtenzweigen 30 cm → Feuer + Reflektorwand aus Stämmen → Wildschwein, Tür aus Astbündel → drei Feuer im Dreieck als Notsignal, weißer Rauch → Hubschrauber). Сцена `engine/wald_main.js`, звук и субтитры слоем | 63.8 с | готов, `DE_19_waldhuette.mp4` |
 | 05 | `05_tuer/` | **Формат @oddtilt:** Wie du die Tür erfunden hast (пещера → шкура → щит из досок → шип в каменной пятке → рама с притвором → засов → падающие штыри и ключ → глазок → двери наружу) | ~52 с | в работе, сцена в Blender (`blender/tuer_scene.py`), озвучки нет |
 
 ### Второй формат: @oddtilt («How you invented …», 1–9 млн просмотров)
@@ -43,6 +44,16 @@
 - Windrad;
 - Bunker / Luftschutzkeller;
 - Wasserturm.
+
+### Как сделана 19_waldhuette (образец для новых 3D-роликов)
+- Тема взята по хитам @youbuiltit: выживание у них лучше всего (Shelter aus Ästen 5.8 млн). Немецкий угол: Fichtenzweige, Wildschwein, жёлтый спасательный вертолёт.
+- Финал можно расширить: «Glückwunsch! Du hast eine Waldhütte gebaut und überlebt.»
+- **Звук:** сцена экспортирует `window.SFX` (события по словам + фоновые «кровати»: wind, rain, fire, heli). `render_video.sh` сам вызывает `sfx.py` и микширует их с голосом и тихой музыкой (`music_gain` 0.08 для этого канала).
+  Список звуков: функции `s_*` и `bed_*` в `sfx.py`. Новый звук = новая функция `s_имя(d)` или `bed_имя(d)`.
+- **Субтитры** отдельным слоем (`captions.json`, style `word`, y 990, жёлтым выделены ключевые слова). Своих субтитров сцена не рисует.
+- **Разрез (cutaway):** когда камера смотрит внутрь шалаша, ближняя стенка (ребра и лист с +x) скрывается. Так видно, что внутри, а снаружи всё цело.
+- **Ночь:** кроме неба и света снижай `scene.environmentIntensity` (с 0.35 до 0.04) и exposure, иначе ночь выглядит как день.
+- Описание к посту: «Allein im Wald verlaufen 🌲 Eine Hütte aus Ästen, Laub und Moos, ein Bett aus Fichtenzweigen, eine Feuerwand gegen die Kälte und drei Feuer als Notsignal. Hättest du die Nacht überlebt? 👇» `#überleben #wald #bushcraft #survival #wiesgebautwird`
 
 ## 3. Структура папки
 ```
@@ -172,6 +183,11 @@ cd youbuiltit_de/blender
 - Кадры в видео первые 60 штук рендерятся медленнее (около 6 с на кадр), дальше 2.5–4 с.
 - `render_video.sh` раньше склеивал старые куски с новым голосом, если сцену или озвучку меняли после рендера. Теперь в `chunks/<name>.hash` хранится хеш сцены и `words.json`; если он другой, старые куски удаляются сами.
 - Фоновые задачи в облачной сессии живут не дольше 2 часов, а контейнер может перезапуститься. Поэтому рендер всегда идёт кусками с докачкой.
+- Тёмные «дыры» на земле, похожие на тени, оказались второй плоскостью земли под рельефом: она просвечивала там, где рельеф ниже её. Дальнюю плоскость опускай на -0.5 и ниже.
+  Проверить, тень это или нет, можно так: временно `sun.castShadow = false` и снова стоп-кадр.
+- Поваленное дерево или любой толстый объект между камерой и героем закрывает половину кадра. Делай его тоньше, а камеру ставь выше (y 3–4.5).
+- После остановки рендера (pkill) умирает и файл-сервер на 8766. Перед новым запуском проверь его: `pgrep -f "http.server 8766"`.
+- Собранные `<name>.js` в `engine/` добавляй в `engine/.gitignore` (там список), иначе стоп-хук просит их закоммитить.
 - `node_modules/`, `frames/`, `chunks/`, `*.mp4` в `engine/` и собранные `keller.js`/`burg.js` в git не идут. После клона запусти `bash setup.sh`.
 
 ## 6. Ключи и секреты
