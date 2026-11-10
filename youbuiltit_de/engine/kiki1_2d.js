@@ -540,6 +540,13 @@ function frame(t) {
   const k = pop(t, tw.ep2 - .05, .35); g.save(); g.translate(W / 2, 820); g.scale(k, k); text('2편', 0, -90, 190, '#ffffff', NAVY, 0); text('내일!', 0, 100, 190, PINKK, NAVY, 0); g.restore();
   sticker('키키 이야기', W / 2, 1100, pop(t, tw.naeil2), '#ffffff', -.03, 50);
 }
+// profile picture: Kiki big in the top 1080x1080 square (crop it after rendering). bg: 'pink' or 'alley'
+window.renderAvatar = (bg = 'pink') => { if (g.reset) g.reset(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  if (bg === 'alley') { g.save(); g.translate(-200, -520); g.scale(1.35, 1.35); alley(2.3); g.restore(); g.fillStyle = 'rgba(20,22,50,.25)'; g.fillRect(0, 0, W, 1080); }
+  else { const gr = g.createRadialGradient(540, 470, 80, 540, 540, 760); gr.addColorStop(0, '#fff1f6'); gr.addColorStop(1, '#ffb3cf'); g.fillStyle = gr; g.fillRect(0, 0, W, 1080);
+    for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; star(540 + Math.cos(a) * 470, 560 + Math.sin(a) * 470, 18); } }
+  kiki(540, 960, 2.0, { mood: 'neutral', look: 0 }, 0);
+  return out.toDataURL('image/png'); };
 window.END = END; window.TW = tw;
 window.renderAt = (t, q = .92) => { frame(t); return out.toDataURL('image/jpeg', q); };
 window.__done = true;
