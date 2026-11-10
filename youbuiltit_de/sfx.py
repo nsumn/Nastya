@@ -136,6 +136,16 @@ def bed_heli(d):   # rotor chop: low noise pulsed at ~18 Hz, slowly rising
     t = t_(d); x = lp(noise(d), 260) * (.35 + .65 * np.abs(np.sin(np.pi * 18 * t)) ** 4) + .25 * np.sin(2 * np.pi * 72 * t) * .3
     return norm(x * np.minimum(1, .3 + t / 1.2), .55)
 
+def bed_engine(d):   # diesel hum
+    t = t_(d); x = lp(noise(d), 180) * (.6 + .4 * np.abs(np.sin(np.pi * 28 * t))) + .2 * np.sin(2 * np.pi * 55 * t)
+    return norm(x, .5)
+def bed_traffic(d):  # cars passing by: swelling road noise
+    t = t_(d); x = bp(noise(d), 200, 1800) * (.45 + .55 * np.sin(2 * np.pi * .35 * t + 1) ** 2)
+    return norm(x, .5)
+def s_honk():
+    t = t_(.55); x = (np.sign(np.sin(2 * np.pi * 415 * t)) + np.sign(np.sin(2 * np.pi * 523 * t))) * .5
+    return norm(lp(x, 2500) * env(len(t), .01, d=.08), .6)
+
 def music_box(d, bpm=96):
     """Cozy music-box loop: F - Dm - Bb - C, arpeggios + soft pad."""
     beat = 60 / bpm; out = np.zeros(int((d + 2) * SR))
