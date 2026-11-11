@@ -321,7 +321,7 @@ const KEYS = [
   [tw.g5 + CUT, V(.15, 1.38, 1.15), V(.2, .95, -.4), 1], [tw.s5, V(.15, 1.35, 1.08), V(.2, .95, -.4)],
   [tw.s5 + CUT, V(-1.4, 1.65, 2.2), V(.1, 1.0, -.1), 1], [tw.g6, V(-1.25, 1.6, 2.0), V(.1, 1.0, -.1)],
   [tw.g6 + CUT, V(.05, 1.45, 1.35), V(.3, 1.15, -.7), 1], [tw.s6, V(.05, 1.42, 1.25), V(.3, 1.15, -.7)],
-  [tw.s6 + CUT, V(-.05, 1.72, 1.45), V(-.05, .74, .2), 1], [tw.g7, V(-.05, 1.68, 1.38), V(-.05, .74, .2)],
+  [tw.s6 + CUT, V(-.16, 1.72, 1.5), V(-.1, .74, .22), 1], [tw.g7, V(-.16, 1.68, 1.42), V(-.1, .74, .22)],
   [tw.g7 + CUT, V(.85, 1.25, .95), V(.25, .88, -.05), 1], [tw.s7, V(.8, 1.22, .9), V(.25, .88, -.05)],
   [tw.s7 + CUT, V(.6, 1.12, .78), V(.13, .86, .1), 1], [tw.g8, V(.57, 1.1, .74), V(.13, .86, .1)],
   [tw.g8 + CUT, V(.1, 1.4, 1.45), V(.25, 1.05, -.7), 1], [tw.s8, V(.1, 1.37, 1.35), V(.25, 1.05, -.7)],
@@ -468,9 +468,9 @@ function update(t) {
   lab(LB.bitter, win(t, tw.sseojyeo - .1, tw.s5, .15) * pop(t, tw.sseojyeo - .1), SEAT_DU.x - .2, 1.85, SEAT_DU.z, .45);
   lab(LB.newp, win(t, tw.sae - .05, tw.g6, .15) * pop(t, tw.sae - .05), 0, 1.0, 0, .32);
   lab(LB.greasy, win(t, tw.neukki - .1, tw.s6, .15) * pop(t, tw.neukki - .1), SEAT_DU.x - .1, 1.85, SEAT_DU.z, .45);
-  lab(LB.kimchi, win(t, tw.kimchi - .05, tw.g7, .15) * pop(t, tw.kimchi - .05), -.36, .95, .22, .45);
-  lab(LB.kong, win(t, tw.kong - .05, tw.g7, .15) * pop(t, tw.kong - .05), -.06, .95, .4, .45);
-  lab(LB.pa, win(t, tw.pa - .05, tw.g7, .15) * pop(t, tw.pa - .05), .26, .95, .3, .45);
+  lab(LB.kimchi, win(t, tw.kimchi - .05, tw.g7, .15) * pop(t, tw.kimchi - .05), -.36, .83, .3, .45);
+  lab(LB.kong, win(t, tw.kong - .05, tw.g7, .15) * pop(t, tw.kong - .05), -.06, .83, .5, .45);
+  lab(LB.pa, win(t, tw.pa - .05, tw.g7, .15) * pop(t, tw.pa - .05), .26, .83, .4, .45);
   lab(LB.free, win(t, tw.gongjja - .05, tw.g7, .15) * pop(t, tw.gongjja - .05), -.05, 1.0, .3, .3);
   lab(LB.p16, win(t, tw.soju - .05, tw.s7, .15) * pop(t, tw.soju - .05), .3, 1.04, -.18, .3);
   lab(LB.p5, win(t, tw.maekju - .05, tw.s7, .15) * pop(t, tw.maekju - .05), .38, 1.12, .02, .3);
