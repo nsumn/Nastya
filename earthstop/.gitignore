@@ -13,3 +13,6 @@ index_*_new.html
 # NASA Blue Marble source + the big world texture (re-create: download per tools/sat_tex.py, then python3 tools/sat_tex.py)
 data/raw/
 data/sat_world.jpg
+
+# map v5 high-res focus patches (re-create: python3 tools/hires_patch.py <name> <bbox>)
+data/hi_*
