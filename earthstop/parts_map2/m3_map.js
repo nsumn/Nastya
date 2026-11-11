@@ -19,10 +19,10 @@ const sunM = new THREE.DirectionalLight(0xfff0dc, 2.4); sunM.position.set(-120, 
 // optional counties of ONE state on the US plane (id texture B channel): define `const COUNTY_FIPS = '48'` before this part
 const PAL = new Float32Array(256 * 4 * 4), palTex = new THREE.DataTexture(PAL, 256, 4, THREE.RGBAFormat, THREE.FloatType); palTex.magFilter = palTex.minFilter = THREE.NearestFilter; palTex.needsUpdate = true;
 const COUNTRIES = [], STATES = [], COUNTIES = [];   // { id, name, lon, lat }
-const mapUni = { uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uFade: { value: new THREE.Vector2(400, 900) }, uT: { value: 0 }, uCty: { value: 0 } };
+const mapUni = { uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uFade: { value: new THREE.Vector2(400, 900) }, uT: { value: 0 }, uCty: { value: 0 }, uDim: { value: 0 } };
 function mapMaterial(B, dem, idTex, us, sat) {
   const dx = (B.lon1 - B.lon0) * CLAT * SC / dem.image.width, dz = (B.lat1 - B.lat0) * SC / dem.image.height;
-  return new THREE.ShaderMaterial({ uniforms: { tDem: { value: dem }, tId: { value: idTex }, tPal: { value: palTex }, tSat: { value: sat }, uSun: mapUni.uSun, uFade: mapUni.uFade, uT: mapUni.uT, uCty: mapUni.uCty,
+  return new THREE.ShaderMaterial({ uniforms: { tDem: { value: dem }, tId: { value: idTex }, tPal: { value: palTex }, tSat: { value: sat }, uSun: mapUni.uSun, uFade: mapUni.uFade, uT: mapUni.uT, uCty: mapUni.uCty, uDim: mapUni.uDim,
       uE: { value: new THREE.Vector2(1 / dem.image.width, 1 / dem.image.height) }, uD: { value: new THREE.Vector2(dx, dz) }, uP: { value: new THREE.Vector2(1 / B.cw, 1 / B.ch) } }, fog: false,
     defines: us ? { US: 1 } : {},
     vertexShader: `uniform sampler2D tDem, tId, tPal; uniform vec2 uE, uD; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
@@ -43,7 +43,7 @@ function mapMaterial(B, dem, idTex, us, sat) {
         if (sid > 0.5 && uv.y > 0.5833) p.y -= 0.6;   // tuck the world's US (lower 48 + Alaska; not Hawaii) under the finer planes
       #endif
         vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: `uniform sampler2D tId, tPal, tDem, tSat; uniform vec3 uSun; uniform vec2 uFade, uP, uE, uD; uniform float uT, uCty; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
+    fragmentShader: `uniform sampler2D tId, tPal, tDem, tSat; uniform vec3 uSun; uniform vec2 uFade, uP, uE, uD; uniform float uT, uCty, uDim; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
       float hh(vec2 uv){ vec4 d = texture2D(tDem, uv);
       #ifdef US
         return d.r * d.r * 11.0;
@@ -73,6 +73,8 @@ function mapMaterial(B, dem, idTex, us, sat) {
         vec3 col;
         if (sea) { float dp = vDp; col = mix(vec3(0.10, 0.30, 0.38), vec3(0.04, 0.12, 0.22), smoothstep(0.02, 0.3, dp)); col = mix(col, vec3(0.02, 0.06, 0.13), smoothstep(0.3, 0.8, dp)); col *= 0.55 + 0.6 * dif; }
         else { float sh2 = 0.22 + 1.35 * pow(dif, 1.15); col = land * sh2; }
+        // v4: a darker, calmer background so the painted subject glows (mapUni.uDim 0..1)
+        if (uDim > 0.0) { float lm = dot(col, vec3(0.3, 0.59, 0.11)); col = mix(col, vec3(lm) * vec3(0.95, 0.97, 1.05), 0.5 * uDim) * (1.0 - 0.42 * uDim); }
         if (cid > 0.5 || sid > 0.5) { vec4 c = sid > 0.5 ? texture2D(tPal, vec2(sid / 256.0 + 0.5 / 256.0, 1.5 / 4.0)) : texture2D(tPal, vec2(cid / 256.0 + 0.5 / 256.0, 0.5 / 4.0));
           vec3 V = normalize(cameraPosition - vW), Hh = normalize(uSun + V); float spec = pow(max(dot(n, Hh), 0.0), 40.0) * 0.6;
           col = mix(col, c.rgb * (0.42 + 0.95 * dif) * 1.15 + spec, c.a); col += c.rgb * c.a * 0.12; }
