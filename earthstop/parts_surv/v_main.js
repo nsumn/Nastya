@@ -134,8 +134,8 @@ function domAt(t) { const P = PROPS; STK = []; let h = '';
   if (t >= T.shelves && t < T.one) h += `<div class="stamp" style="font-size:120px;top:1110px;transform:translate(-50%,-50%) rotate(-8deg) scale(${(1 + 1.5 * (1 - easeOut(span(t, T.shelves, T.shelves + 0.18)))).toFixed(3)})">SHELVED</div>`;
   if (t >= T.ask - 0.1 && t < ENDC) h += `<div class="cta" style="opacity:${smooth(T.ask - 0.1, T.ask + 0.2, t)};transform:scale(${pop(t, T.ask - 0.1, 0.35).toFixed(3)})">Try again in<br><span class="hl">January?</span> 👇</div>`;
   $('labels').innerHTML = h;
-// Nov 11: she removed the top plate (kicker + Anton headline) — the voice, captions and medallions carry the story. SHOW_HUD = true brings it back.
-const SHOW_HUD = false;
+// Nov 11: she asked to drop the top plate (kicker + Anton headline), then changed her mind — kept. SHOW_HUD = false hides it.
+const SHOW_HUD = true;
   const hd = SHOW_HUD ? hudAt(t) : null; $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 16 ? 80 : 100) + 'px'; $('sub').textContent = ''; $('sub').style.display = 'none'; }
   let pp = 1; for (const k of EV) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `skewX(-6deg) scale(${pp.toFixed(3)})`;
   $('cap').innerHTML = capHTML(t); $('cap').style.opacity = t < ENDC ? 1 : 0;
