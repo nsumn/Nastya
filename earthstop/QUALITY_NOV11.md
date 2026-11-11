@@ -43,3 +43,7 @@ dailyplugusa posts twice a day at 6–7 am and 5 pm ET (both top videos at 7 am 
 - `assets/news/cutouts/<key>.png` — background-removed portraits with a white sticker outline (`pip install rembg[cpu]`, model u2net_human_seg; script in the Nov 11 session: rembg → MaxFilter(21) outline + blurred shadow).
 - `parts_surv/v_main.js` `?v5=1` → v5 light + v5 camera on holds (`V5LOOK`): ~16 %/s zoom alternating in/out + slow turn, fly-overs start from the moving shot. Copy this into the next news main and make it the default.
 - Subject SFX (Lumean, `tools/news_audio.py` → out/nwaudio): shutter, coins, gavel, crowd, cheer, boom, jet, type, ding, paper, alarm. Use them in cues next to pop/whoosh (shutter on every photo, coins on money, gavel on Congress, crowd on votes, boom only for real strikes), +3–6 dB over the old level.
+
+## Faster pipeline (Nov 11)
+`bash tools/news_make.sh <name> <parts_dir> all [fps]` = voice (Drew 1.1) → timing (MAXGAP 0.14) → scene build (adds parts_map2/m5_hi.js when the main uses it) → 14 test frames + sheet → PASS=scene/text at 60 fps → cues + bed + voice, loudnorm −14 → compose (4500k at 60 fps) → final sheet. Stages can be run one by one (`voice`, `timing`, `build`, `test`, `render`, `audio`, `compose`). Writing the script/table and the main is still the manual part.
+Map v5 for any region: `python3 tools/hires_patch.py <name> <lon0> <lon1> <lat0> <lat1>` (NASA tiles download on demand), then in the main `await addHiPatch('<name>')` and `mapUni.uV5.value = 1`.
