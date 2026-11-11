@@ -305,8 +305,10 @@ function lerpShot(A, B, u, hop = 0) { const h = Math.exp(lerp(Math.log(A.h), Mat
   return { c: A.c.clone().lerp(B.c, u), h, yaw: lerp(A.yaw, B.yaw, u), tilt: lerp(A.tilt, B.tilt, u), fov: lerp(A.fov, B.fov, u) }; }
 let FLYING = 0;
 function shotAt(t) { if (!HOLDS) HOLDS = holds(); FLYING = 0;
-  for (let i = 0; i < HOLDS.length; i++) { const [a, b, A, B] = HOLDS[i]; if (t >= a && t <= b) return lerpShot(A, B, esin(span(t, a, b)));
-    const nx = HOLDS[i + 1]; if (nx && t > b && t < nx[0]) { const E = HOLDS[i][3], N = nx[2], u = ease(span(t, b, nx[0])); const d = E.c.distanceTo(N.c); FLYING = Math.sin(Math.PI * u); return lerpShot(E, N, u, d * 0.55); } }
+  for (let i = 0; i < HOLDS.length; i++) { const [a, b, A, B] = HOLDS[i]; if (t >= a && t <= b) { const sh = lerpShot(A, B, V5LOOK ? 0.25 * esin(span(t, a, b)) + 0.75 * span(t, a, b) : esin(span(t, a, b)));
+      if (V5LOOK) { const dir = i % 2 ? 1 : -1, el = t - a; sh.h *= Math.exp(dir * 0.16 * el); sh.yaw += 0.11 * el * (i % 3 === 1 ? -1 : 1); sh.tilt *= 1 + 0.04 * el * (dir < 0 ? 1 : 0); }   // v5 camera: never a still hold — ~16 %/s zoom (in/out alternating) + a slow turn
+      return sh; }
+    const nx = HOLDS[i + 1]; if (nx && t > b && t < nx[0]) { const E = V5LOOK ? shotAt(b) : HOLDS[i][3], N = V5LOOK ? shotAt(nx[0]) : nx[2], u = ease(span(t, b, nx[0])); const d = E.c.distanceTo(N.c); FLYING = Math.sin(Math.PI * u); return lerpShot(E, N, u, d * 0.55); } }
   const L = HOLDS[HOLDS.length - 1]; return L[3]; }
 function camAt(t) { const s = shotAt(t); const back = s.h * s.tilt; mCam.position.set(s.c.x + Math.sin(s.yaw) * back, s.h, s.c.z + Math.cos(s.yaw) * back);
   mCam.lookAt(s.c.x, 0, s.c.z); mCam.fov = s.fov; mCam.aspect = W / H; mCam.near = Math.max(0.3, s.h * 0.02); mCam.far = s.h * 12 + 500; mCam.updateProjectionMatrix(); mCam.updateMatrixWorld();
