@@ -142,6 +142,15 @@ def bed_engine(d):   # diesel hum
 def bed_traffic(d):  # cars passing by: swelling road noise
     t = t_(d); x = bp(noise(d), 200, 1800) * (.45 + .55 * np.sin(2 * np.pi * .35 * t + 1) ** 2)
     return norm(x, .5)
+def s_clink():     # two glasses touching: short inharmonic ring
+    t = t_(.6); x = sum(a * np.sin(2 * np.pi * f * t) * np.exp(-t / d) for f, a, d in [(2637, 1, .14), (3951, .6, .09), (5274, .35, .05), (3322, .4, .11)])
+    return norm(x * env(len(t), .0008), .55)
+def bed_pub(d):    # pub murmur: voice-band noise with random syllable bursts + low room tone
+    t = t_(d); x = bp(noise(d), 250, 2400) * .6
+    m = np.zeros(len(t))
+    for _ in range(9): f = R.uniform(2.5, 6.5); ph = R.uniform(0, 6.3); m += np.abs(np.sin(2 * np.pi * f * t + ph)) ** 2 * R.uniform(.4, 1)
+    x = x * (.35 + m / 9) + .25 * lp(noise(d), 160)
+    return norm(x, .45)
 def s_honk():
     t = t_(.55); x = (np.sign(np.sin(2 * np.pi * 415 * t)) + np.sign(np.sin(2 * np.pi * 523 * t))) * .5
     return norm(lp(x, 2500) * env(len(t), .01, d=.08), .6)
