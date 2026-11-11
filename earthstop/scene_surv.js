@@ -146,13 +146,13 @@ function mapMaterial(B, dem, idTex, us, sat) {
         n = normalize(n); float dif = max(dot(n, uSun), 0.0), sh = 0.3 + 1.05 * dif;
         float e = vHt; vec3 land = mix(vec3(0.24, 0.33, 0.18), vec3(0.40, 0.40, 0.24), smoothstep(0.06, 0.32, e)); land = mix(land, vec3(0.50, 0.40, 0.28), smoothstep(0.32, 0.55, e));
         land = mix(land, vec3(0.42, 0.33, 0.26), smoothstep(0.55, 0.75, e)); land = mix(land, vec3(0.86, 0.86, 0.88), smoothstep(0.78, 0.92, e));
-        vec3 sat = texture2D(tSat, vUv).rgb; float lum = dot(sat, vec3(0.3, 0.59, 0.11)); sat = mix(vec3(lum), sat, 1.25); land = sat * 1.15;
+        vec3 sat = texture2D(tSat, vUv).rgb; float lum = dot(sat, vec3(0.3, 0.59, 0.11)); sat = mix(vec3(lum), sat, 1.25); land = sat * 1.4;
         bool sea = cid < 0.5 && vHt < 0.03 && vDp > 0.0;
         vec3 col;
         if (sea) { float dp = vDp; col = mix(vec3(0.10, 0.30, 0.38), vec3(0.04, 0.12, 0.22), smoothstep(0.02, 0.3, dp)); col = mix(col, vec3(0.02, 0.06, 0.13), smoothstep(0.3, 0.8, dp)); col *= 0.55 + 0.6 * dif; }
         else { float sh2 = 0.22 + 1.35 * pow(dif, 1.15); col = land * sh2; }
         // v4: a darker, calmer background so the painted subject glows (mapUni.uDim 0..1)
-        if (uDim > 0.0) { float lm = dot(col, vec3(0.3, 0.59, 0.11)); col = mix(col, vec3(lm) * vec3(0.95, 0.97, 1.05), 0.5 * uDim) * (1.0 - 0.42 * uDim); }
+        if (uDim > 0.0) { float lm = dot(col, vec3(0.3, 0.59, 0.11)); if (sea) col *= 1.0 - 0.45 * uDim; else col = mix(col, vec3(lm), 0.25 * uDim) * (1.0 - 0.12 * uDim); }   // v4: deeper sea, land only slightly calmer (she found the full dim too dark)
         if (cid > 0.5 || sid > 0.5) { vec4 c = sid > 0.5 ? texture2D(tPal, vec2(sid / 256.0 + 0.5 / 256.0, 1.5 / 4.0)) : texture2D(tPal, vec2(cid / 256.0 + 0.5 / 256.0, 0.5 / 4.0));
           vec3 V = normalize(cameraPosition - vW), Hh = normalize(uSun + V); float spec = pow(max(dot(n, Hh), 0.0), 40.0) * 0.6;
           col = mix(col, c.rgb * (0.42 + 0.95 * dif) * 1.15 + spec, c.a); col += c.rgb * c.a * 0.12; }
@@ -330,7 +330,7 @@ function buildProps() { const P = {};
   return P; }
 const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), s4 = new THREE.Vector3(), col = new THREE.Color();
 function seatPos(s, c0) { return V3(c0.x + Math.cos(s.a) * s.R, 0.9 + s.r * 0.38, c0.z - Math.sin(s.a) * s.R * 0.85); }
-function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPaint(); mapUni.uDim.value = 0.75;
+function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPaint(); mapUni.uDim.value = 0.6;
   paintState('District of Columbia', GOLD, 0.95, 1.2);
   CAP.visible = true; { const k = easeOut(span(t, 0.0, 0.6)), bump = 1 + 0.08 * Math.max(0, Math.sin(Math.PI * span(t, T.survived, T.survived + 0.35))); CAP.position.copy(P3('dc', 0.8 + 10 * (1 - k))); CAP.scale.setScalar(2.1 * k * bump + 0.01); CAP.rotation.y = 0.25 + 0.05 * t; }
   // House: the vote to send it to committee (211 shelve · 204 keep), Massie's lone seat; then January (Democrats take the majority)
