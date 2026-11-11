@@ -34,7 +34,7 @@ function lerpShot(A, B, u, hop = 0) { const h = Math.exp(lerp(Math.log(A.h), Mat
 let FLYING = 0;
 function shotAt(t) { if (!HOLDS) HOLDS = holds(); FLYING = 0;
   for (let i = 0; i < HOLDS.length; i++) { const [a, b, A, B] = HOLDS[i]; if (t >= a && t <= b) { const sh = lerpShot(A, B, V5LOOK ? 0.25 * esin(span(t, a, b)) + 0.75 * span(t, a, b) : esin(span(t, a, b)));
-      if (V5LOOK) { const dir = i % 2 ? 1 : -1, el = t - a; sh.h *= Math.exp(dir * 0.16 * el); sh.yaw += 0.11 * el * (i % 3 === 1 ? -1 : 1); sh.tilt *= 1 + 0.04 * el * (dir < 0 ? 1 : 0); }   // v5 camera: never a still hold — ~16 %/s zoom (in/out alternating) + a slow turn
+      if (V5LOOK) { const el = t - a; sh.h *= Math.exp(-0.11 * Math.min(el, 3.5) - 0.03 * Math.max(0, el - 3.5)); sh.yaw += 0.1 * el * (i % 2 ? -1 : 1); sh.tilt *= 1 + 0.03 * Math.min(el, 4); }   // v5 camera: never a still hold — a steady push-in (~11 %/s, capped so the subject never overflows) + a slow turn, alternating side
       return sh; }
     const nx = HOLDS[i + 1]; if (nx && t > b && t < nx[0]) { const E = V5LOOK ? shotAt(b) : HOLDS[i][3], N = V5LOOK ? shotAt(nx[0]) : nx[2], u = ease(span(t, b, nx[0])); const d = E.c.distanceTo(N.c); FLYING = Math.sin(Math.PI * u); return lerpShot(E, N, u, d * 0.55); } }
   const L = HOLDS[HOLDS.length - 1]; return L[3]; }
