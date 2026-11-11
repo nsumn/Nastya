@@ -6,6 +6,8 @@ The API key is read from the LUMEAN_API_KEY environment variable — never write
   python lumean.py order   <script.txt> <out_dir>   # paid: voices the text, waits, downloads mp3 + alignment
   python lumean.py resume  <out_dir>                # free: re-poll/download an order already placed (order_id file)
   python lumean.py template                         # free: create the Lennard template on YOUR Lumean account, prints its id
+  python lumean.py voice <voice_id> <lang> <speed> <name>   # free: template for any ElevenLabs voice (e.g. Korean: ko), prints its id
+  python lumean.py search <text> [provider]          # free: find voices in the library (e.g. search Taemin)
                                                     #       -> then export LUMEAN_TEMPLATE=<id> (the default id only exists on Nastya's account)
 """
 import json, os, sys, time, urllib.request, urllib.error
@@ -37,6 +39,17 @@ LENNARD = {"tts_settings": {"model_id": "eleven_multilingual_v2", "voice_id": "H
 def make_template():
     r = call("POST", "/templates", {"service_key": "elevenlabs", "name": "DE Wie es gebaut wird – Lennard schnell", "config": LENNARD})
     print("template id:", r["data"]["id"], "\n-> export LUMEAN_TEMPLATE=" + r["data"]["id"])
+
+def make_voice_template(voice_id, lang, speed, name):
+    cfg = json.loads(json.dumps(LENNARD)); ts = cfg["tts_settings"]
+    ts["voice_id"] = voice_id; ts["language_code"] = lang; ts["voice_settings"]["speed"] = float(speed)
+    r = call("POST", "/templates", {"service_key": "elevenlabs", "name": name, "config": cfg})
+    print("template id:", r["data"]["id"], "\n-> export LUMEAN_TEMPLATE=" + r["data"]["id"])
+
+def search(text, provider="elevenlabs"):
+    import urllib.parse
+    r = call("GET", "/voices?provider=" + provider + "&search=" + urllib.parse.quote(text))
+    for v in r["data"].get("items", []): print(v["voice_id"], "|", v["name"], "|", v.get("language"), "|", (v.get("description") or "")[:90])
 
 def read_script(p):
     t = open(p, encoding="utf-8").read().strip()
@@ -76,4 +89,6 @@ if __name__ == "__main__":
     elif len(sys.argv) >= 4 and sys.argv[1] == "order": order(sys.argv[2], sys.argv[3])
     elif len(sys.argv) >= 3 and sys.argv[1] == "resume": order(None, sys.argv[2], open(f"{sys.argv[2]}/order_id").read().strip())
     elif len(sys.argv) >= 2 and sys.argv[1] == "template": make_template()
+    elif len(sys.argv) >= 6 and sys.argv[1] == "voice": make_voice_template(*sys.argv[2:6])
+    elif len(sys.argv) >= 3 and sys.argv[1] == "search": search(*sys.argv[2:4])
     else: print(__doc__)
