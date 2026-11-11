@@ -1,0 +1,48 @@
+# v5 mix (Nov 11 comparison): SFX +4 dB, music 0.24, a camera shutter on every portrait
+music news0 0.0 0.24 30.0
+music news1 29.8 0.24 65.85
+music news0 59.6 0.24 64.55
+0.02 whoosh 0.80
+1.46 stamp 1.12
+2.82 pop 0.61
+4.17 whoosh 0.80
+4.47 pop 0.61
+6.16 pop 0.61
+6.16 rise 0.80
+7.26 pop 0.61
+9.21 pop 0.61
+9.82 pop 0.61
+13.06 pop 0.61
+15.12 pop 0.61
+16.98 whoosh 0.96
+17.28 pop 0.61
+20.89 pop 0.61
+21.46 pop 0.61
+25.33 whoosh 0.64
+25.63 pop 0.61
+29.07 pop 0.61
+29.58 pop 0.61
+32.40 pop 0.61
+32.40 thud 0.96
+33.66 pop 0.61
+33.66 flip 0.96
+36.24 pop 0.61
+38.27 pop 0.61
+41.02 whoosh 0.80
+41.32 pop 0.61
+43.97 pop 0.61
+43.97 rise 0.80
+45.15 whoosh 0.80
+45.45 pop 0.61
+48.48 pop 0.61
+51.87 pop 0.61
+54.74 pop 0.61
+55.61 pop 0.61
+55.61 stamp 0.96
+56.78 pop 0.61
+61.25 thud 0.80
+0.05 shutter 0.9
+15.02 shutter 0.9
+17.08 shutter 0.9
+25.53 shutter 0.9
+29.48 shutter 0.9

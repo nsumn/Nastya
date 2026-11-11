@@ -360,7 +360,8 @@ function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPain
 const photo = { hegseth: ['Pete Hegseth', 'DEFENSE SECRETARY'], massie: ['Thomas Massie', 'REPUBLICAN · KENTUCKY'], johnson: ['Mike Johnson', 'HOUSE SPEAKER'] };
 function card(key, t0, t1, x, y, t, o = {}) { if (t < t0 || t > t1) return ''; const k = pop(t, t0, 0.3), a = 1 - smooth(t1 - 0.25, t1, t); const [n, r] = photo[key]; const fx = o.fx ?? 0;
   const dy = -8 * esin(span(t, t0, t1));
-  return `<div class="card${o.small ? ' small' : ''}${o.dim ? ' dim' : ''}${o.ring ? ' ring-' + o.ring : ''}${o.big ? ' big' : ''}" style="left:${x}px;top:${(y + dy).toFixed(1)}px;opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)}) rotate(${(o.rot ?? 0)}deg)"><img src="assets/news/photos/${key}.jpg">${o.flag === false ? '' : '<div class="flag"></div>'}${o.tag ? `<div class="tag ${o.tagc || ''}" style="transform:scale(${pop(t, o.tagT ?? t0, 0.25).toFixed(3)})">${o.tag}</div>` : ''}${o.quote && t >= (o.qT ?? t0) ? `<div class="quote" style="transform:scale(${pop(t, o.qT ?? t0, 0.25).toFixed(3)})">${o.quote}</div>` : ''}<div class="cn">${n}</div><div class="cr">${r}</div></div>`; }
+  const cut = V5LOOK && !o.small; if (cut) { x -= o.big ? 15 : 10; y += o.big ? 10 : -70; }   // v5: big cut-out portrait instead of the round medallion
+  return `<div class="card${o.small ? ' small' : ''}${o.dim ? ' dim' : ''}${o.ring ? ' ring-' + o.ring : ''}${o.big ? ' big' : ''}${cut ? ' cut' : ''}" style="left:${x}px;top:${(y + dy).toFixed(1)}px;opacity:${a.toFixed(2)};transform:scale(${k.toFixed(3)}) rotate(${(o.rot ?? 0)}deg)"><img src="assets/news/${cut ? 'cutouts' : 'photos'}/${key}.${cut ? 'png' : 'jpg'}">${o.flag === false ? '' : '<div class="flag"></div>'}${o.tag ? `<div class="tag ${o.tagc || ''}" style="transform:scale(${pop(t, o.tagT ?? t0, 0.25).toFixed(3)})">${o.tag}</div>` : ''}${o.quote && t >= (o.qT ?? t0) ? `<div class="quote" style="transform:scale(${pop(t, o.qT ?? t0, 0.25).toFixed(3)})">${o.quote}</div>` : ''}<div class="cn">${n}</div><div class="cr">${r}</div></div>`; }
 function proj(p) { const v = p.clone().project(mCam); return v.z > 1 ? null : [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; }
 function stickerRaw(txt, pos, t, t0, cls = '') { if (t < t0) return ''; const q = proj(pos); if (!q) return ''; const x = clamp(q[0], 160, 900);
   return `<div class="stk ${cls}" style="left:${x.toFixed(0)}px;top:${q[1].toFixed(0)}px;transform:translate(-50%,-100%) scale(${pop(t, t0, 0.25).toFixed(3)})">${txt}</div>`; }
@@ -408,11 +409,12 @@ function domAt(t) { const P = PROPS; STK = []; let h = '';
   h += layoutStickers() + histHTML(t) + bigHTML(t);
   if (t >= T.survived && t < T.over + 0.6) h += `<div class="stamp" style="font-size:118px;top:1110px;color:#3d7dff;border-color:#3d7dff;transform:translate(-50%,-50%) rotate(-8deg) scale(${(1 + 1.5 * (1 - easeOut(span(t, T.survived, T.survived + 0.18)))).toFixed(3)})">SURVIVED</div>`;
   if (t >= T.shelves && t < T.one) h += `<div class="stamp" style="font-size:120px;top:1110px;transform:translate(-50%,-50%) rotate(-8deg) scale(${(1 + 1.5 * (1 - easeOut(span(t, T.shelves, T.shelves + 0.18)))).toFixed(3)})">SHELVED</div>`;
+  if (V5LOOK && t < 1.7) h += `<div class="hook" style="opacity:${(1 - smooth(1.4, 1.7, t)).toFixed(2)};transform:scale(${pop(t, 0, 0.3).toFixed(3)})"><span class="date">NOV 10 · THE HOUSE</span>Hegseth <span class="hl">survived</span></div>`;   // v5: the first-frame hook
   if (t >= T.ask - 0.1 && t < ENDC) h += `<div class="cta" style="opacity:${smooth(T.ask - 0.1, T.ask + 0.2, t)};transform:scale(${pop(t, T.ask - 0.1, 0.35).toFixed(3)})">Try again in<br><span class="hl">January?</span> 👇</div>`;
   $('labels').innerHTML = h;
 // Nov 11: she asked to drop the top plate (kicker + Anton headline), then changed her mind — kept. SHOW_HUD = false hides it.
 const SHOW_HUD = true;
-  const hd = SHOW_HUD ? hudAt(t) : null; $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 16 ? 80 : 100) + 'px'; $('sub').textContent = ''; $('sub').style.display = 'none'; }
+  const hd = SHOW_HUD && !(V5LOOK && t < 1.7) ? hudAt(t) : null; $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 16 ? 80 : 100) + 'px'; $('sub').textContent = ''; $('sub').style.display = 'none'; }
   let pp = 1; for (const k of EV) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `skewX(-6deg) scale(${pp.toFixed(3)})`;
   $('cap').innerHTML = capHTML(t); $('cap').style.opacity = t < ENDC ? 1 : 0;
   $('end').style.opacity = smooth(ENDC, ENDC + 0.35, t) * 0.96; $('endT').style.opacity = smooth(ENDC + 0.1, ENDC + 0.45, t); $('endS').style.opacity = smooth(ENDC + 0.8, ENDC + 1.2, t); }
@@ -431,4 +433,4 @@ window.renderAt = (t) => { if (!window.__ord) { orderProps(); window.__ord = 1; 
   else { shootTo(RTA, MAPSC, mCam); compMat.uniforms.tA.value = RTA.texture; }
   const u = compMat.uniforms; u.uLook.value = V5LOOK ? 0.0 : 0.1; u.uWhip.value = 0; u.uPixOn.value = 0; u.uRed.value = 0; u.uSepia.value = 0; u.uTilt.value = 0;
   composite(0, 1.0 + 0.7 * flashAt(t), 1.0); return true; };
-window.sceneReady = (async () => { await document.fonts.ready; await mapReady; await Promise.all(Object.keys(photo).map(k => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = `assets/news/photos/${k}.jpg`; }))); window.renderAt(0); return true; })();
+window.sceneReady = (async () => { await document.fonts.ready; await mapReady; await Promise.all(Object.keys(photo).flatMap(k => [`photos/${k}.jpg`, `cutouts/${k}.png`]).map(f => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = `assets/news/${f}`; }))); window.renderAt(0); return true; })();
