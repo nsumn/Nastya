@@ -34,3 +34,11 @@ Audio: everyone starts the voice at 0.0 s; 160–190 wpm (WHN 225; ours 153–17
 6. MATERIAL: cut-out politicians (no circle) next to the medallions, speech bubbles with real quotes (key words yellow), our own headline cards (source + headline, no foreign logos), detailed 3D stickers (plane, ship, missile, money, handcuffs, warning sign). Short real news footage only if she accepts the copyright risk.
 7. LENGTH test: one 2–2.5 min "24 hours" video (Geolyth/dollarindex/dailyplugusa length).
 8. SPEED: a fast "24 hours" template that can be built in ~1 h, so it goes out the same day.
+
+## Posting times (ET, last 15 posts)
+dailyplugusa posts twice a day at 6–7 am and 5 pm ET (both top videos at 7 am "what happened overnight"); didyouknow.geo's 2.2M hit went up at 3 am ET right after the count; Geolyth 5 am–9 pm (hit at 11 am). → Be first after the event; for the "24 hours" rubric use US morning 6–8 am ET = 14–16 MSK.
+
+## Ready-made pieces (Nov 11)
+- `news_v3.css` `.hook` + `.hook .date` — the first-frame huge question/word.
+- `assets/news/cutouts/<key>.png` — background-removed portraits with a white sticker outline (`pip install rembg[cpu]`, model u2net_human_seg; script in the Nov 11 session: rembg → MaxFilter(21) outline + blurred shadow).
+- `parts_surv/v_main.js` `?v5=1` → v5 light + v5 camera on holds (`V5LOOK`): ~16 %/s zoom alternating in/out + slow turn, fly-overs start from the moving shot. Copy this into the next news main and make it the default.

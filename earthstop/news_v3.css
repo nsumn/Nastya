@@ -17,3 +17,9 @@
 .card.ring-b img{border-color:#4a86ff} .card.ring-r img{border-color:#ff4a4a}
 .stk{font-family:'Inter';font-weight:900;letter-spacing:.08em;border:2px solid rgba(255,255,255,.9)}
 .card.big{width:400px} .card.big img{width:380px;height:380px;border-width:11px} .card.big .cn{font-size:44px;margin-top:-32px} .card.big .flag{margin-left:102px;top:282px;width:74px;height:74px} .card.big .tag{font-size:24px;width:260px;margin-left:-130px}
+/* v5 (Nov 11 comparison): the first-frame HOOK — one huge question / word over the map for 0–1.5 s (dollarindex "Will Trump Get Impeached Now?", didyouknow.geo "VOTED BLUE").
+   Usage: <div class="hook">Will Democrats <span class="hl">try again?</span></div>, pop it in with transform: scale(pop(t, 0, 0.3)) and fade it out by ~1.6 s. */
+.hook{position:absolute;left:60px;right:60px;top:430px;text-align:center;font-family:'Anton';font-size:132px;line-height:1.0;color:#fff;text-transform:uppercase;letter-spacing:.01em;
+  -webkit-text-stroke:6px #0b0f16;paint-order:stroke fill;text-shadow:0 10px 0 rgba(0,0,0,.35),0 18px 40px rgba(0,0,0,.55);transform-origin:50% 60%;rotate:-3deg}
+.hook .hl{color:#ffc23a}
+.hook .date{display:block;font-family:'Inter';font-weight:900;font-size:34px;letter-spacing:.14em;-webkit-text-stroke:0;color:#ffc23a;text-shadow:0 2px 10px rgba(0,0,0,.8);margin-bottom:14px;rotate:0deg}
