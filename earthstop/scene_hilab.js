@@ -267,11 +267,11 @@ function makeBar(col) { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1).
 function makeArc(a, b, hgt, col) { const mid = a.clone().lerp(b, 0.5).setY(hgt); const cur = new THREE.QuadraticBezierCurve3(a, mid, b); const geo = new THREE.TubeGeometry(cur, 120, 0.45, 8, false);
   const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col })); m.visible = false; m.userData.n = geo.index.count; MAPSC.add(m); m.userData.cur = cur; return m; }
 function arcShow(m, k) { m.visible = k > 0.001; m.geometry.setDrawRange(0, Math.floor(m.userData.n * clamp(k, 0, 1) / 6) * 6); }
-// =================== MAP v5 LAB (Nov 11 2026): before / after on the SAME camera — ?v=4 = the current news map, ?v=5 = the upgrades from the Geolyth / geomapstories comparison ===================
-// v5 = (1) a high-res focus patch (tools/hires_patch.py: 0.004° Terrarium relief + NASA 500 m colour) so close-ups are crisp, (2) rivers (Natural Earth 10 m),
-//      (3) brighter, more saturated land like theirs (they average 110–170 brightness / 140–170 saturation; v4 sat at 85), (4) the focus state painted with relief showing through + a thick rim,
-//      (5) a clean finish (no paper/grain/vignette — they look crisp), (6) camera framing used for the frames: oblique 1.0–1.2, the subject fills the frame.
-const Q = new URLSearchParams(location.search), V5 = Q.get('v') === '5', HI = Q.get('hi') || 'tx';
+// =================== MAP v5 add-on (Nov 11 2026, from the Geolyth / geomapstories comparison) — include AFTER parts_map2/m3_map.js ===================
+// addHiPatch(name): a high-res focus plane over the region of the story (data/hi_<name>_*.{png,jpg,json} from tools/hires_patch.py) + its rivers.
+// groundLabel(text, lon, lat, size, opts): a place name lying ON the terrain in perspective. cityDot(name, lon, lat, size): white dot + ring + name.
+// Also set mapUni.uV5.value = 1 (brighter land, deeper paint with the relief showing through) and mapUni.uDim.value = 0.
+// Load the Inter weights before drawing label canvases: await Promise.all(['900','800','700','600'].map(w => document.fonts.load(`${w} 160px Inter`))).
 let HIM = null, RIV = null;
 async function addHiPatch(name) {
   const meta = await fetch(`data/hi_${name}_rivers.json`).then(r => r.json()); const [lon0, lon1, lat0, lat1] = meta.bbox; const HB = { lon0, lon1, lat0, lat1, cw: meta.w, ch: meta.h };
@@ -293,6 +293,11 @@ function cityDot(name, lon, lat, size) { const g = new THREE.Group(); const p = 
   const d = new THREE.Mesh(new THREE.CircleGeometry(size * 0.16, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', depthTest: false })); d.renderOrder = 3; g.add(d);
   const r = new THREE.Mesh(new THREE.RingGeometry(size * 0.2, size * 0.27, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.6, depthTest: false })); r.renderOrder = 3; g.add(r);
   g.visible = false; MAPSC.add(g); GLAB.push(g); const l = groundLabel(name, lon, lat, size * 0.36, { font: '700', shadow: 0.8 }); l.position.x += size * 0.95 + l.geometry.parameters.width / 2 - size * 0.5; return g; }
+// =================== MAP v5 LAB (Nov 11 2026): before / after on the SAME camera — ?v=4 = the current news map, ?v=5 = the upgrades from the Geolyth / geomapstories comparison ===================
+// v5 = (1) a high-res focus patch (tools/hires_patch.py: 0.004° Terrarium relief + NASA 500 m colour) so close-ups are crisp, (2) rivers (Natural Earth 10 m),
+//      (3) brighter, more saturated land like theirs (they average 110–170 brightness / 140–170 saturation; v4 sat at 85), (4) the focus state painted with relief showing through + a thick rim,
+//      (5) a clean finish (no paper/grain/vignette — they look crisp), (6) camera framing used for the frames: oblique 1.0–1.2, the subject fills the frame.
+const Q = new URLSearchParams(location.search), V5 = Q.get('v') === '5', HI = Q.get('hi') || 'tx';
 const SHOTS = [   // [lon, lat, height, tilt, yaw, fov]
   [-99.3, 31.0, 260, 1.05, 0.25, 34],    // all of Texas, oblique
   [-98.4, 30.3, 70, 1.15, 0.45, 34],     // Hill Country / Austin close-up
