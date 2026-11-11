@@ -1,6 +1,6 @@
 # Quality comparison, Nov 11 2026 — our US news-map videos vs @geolyth__, @geomapstories, @worldhistorynetwork (+ @dailyplugusa, @dollarindex, @didyouknow.geo, @cruzastudillo, @quarterchart)
 
-Her request (Nov 11, night): compare OUR videos with theirs in every detail (camera, map, font, animations, materials, sound, views/likes, topics) and make ours better. The full illustrated report is an Artifact (link in the chat); this file keeps the facts and the rules for the next sessions.
+Her request (Nov 11, night): compare OUR videos with theirs in every detail (camera, map, font, animations, materials, sound, views/likes, topics) and make ours better. The full illustrated report is an Artifact: https://claude.ai/artifact/XCamuKXVdsB6EemsDbKwrj ; this file keeps the facts and the rules for the next sessions.
 
 ## How it was measured (reproducible)
 - Download: `yt-dlp --impersonate chrome` (needs `pip install yt-dlp curl_cffi`; she explicitly allowed TikTok downloads). Videos are NOT committed.
@@ -42,3 +42,4 @@ dailyplugusa posts twice a day at 6–7 am and 5 pm ET (both top videos at 7 am 
 - `news_v3.css` `.hook` + `.hook .date` — the first-frame huge question/word.
 - `assets/news/cutouts/<key>.png` — background-removed portraits with a white sticker outline (`pip install rembg[cpu]`, model u2net_human_seg; script in the Nov 11 session: rembg → MaxFilter(21) outline + blurred shadow).
 - `parts_surv/v_main.js` `?v5=1` → v5 light + v5 camera on holds (`V5LOOK`): ~16 %/s zoom alternating in/out + slow turn, fly-overs start from the moving shot. Copy this into the next news main and make it the default.
+- Subject SFX (Lumean, `tools/news_audio.py` → out/nwaudio): shutter, coins, gavel, crowd, cheer, boom, jet, type, ding, paper, alarm. Use them in cues next to pop/whoosh (shutter on every photo, coins on money, gavel on Congress, crowd on votes, boom only for real strikes), +3–6 dB over the old level.

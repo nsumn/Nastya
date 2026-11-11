@@ -11,6 +11,18 @@ SFX = {
   'thud':    ('deep soft impact hit for a big number on screen', 1.2),
   'stamp':   ('rubber stamp slam on paper', 0.8),
   'tick':    ('soft single counter tick, low, wooden', 0.5),
+  # Nov 11 comparison: SFX that match the subject (geomapstories: coins/shutter/cartoon pops; WHN: shutter on every photo; Geolyth war stories: distant explosions)
+  'shutter': ('camera shutter click, crisp, single', 0.5),
+  'coins':   ('handful of coins dropping on a table, bright clink', 1.0),
+  'gavel':   ('wooden gavel bang on a desk, single hit', 0.8),
+  'crowd':   ('crowd of people murmuring and reacting, large hall, short', 2.0),
+  'cheer':   ('crowd cheering and applause burst, short', 2.0),
+  'boom':    ('distant explosion, deep but short, cinematic, no music', 1.5),
+  'jet':     ('fighter jet fly-by whoosh, fast', 2.0),
+  'type':    ('fast keyboard typing, short burst', 1.0),
+  'ding':    ('phone news notification ding, clean', 0.6),
+  'paper':   ('paper sheet slide and slap on a desk', 0.7),
+  'alarm':   ('short warning alert beep, two tones', 1.0),
 }
 MUSIC = {'news': 'modern news explainer background music, pulsing synth bass, tense but upbeat, documentary, 100 bpm, no vocals'}
 jobs = json.load(open(OJ)) if os.path.exists(OJ) else {}
