@@ -271,7 +271,7 @@ function makeBar(col) { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1).
 function makeArc(a, b, hgt, col) { const mid = a.clone().lerp(b, 0.5).setY(hgt); const cur = new THREE.QuadraticBezierCurve3(a, mid, b); const geo = new THREE.TubeGeometry(cur, 120, 0.45, 8, false);
   const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col })); m.visible = false; m.userData.n = geo.index.count; MAPSC.add(m); m.userData.cur = cur; return m; }
 function arcShow(m, k) { m.visible = k > 0.001; m.geometry.setDrawRange(0, Math.floor(m.userData.n * clamp(k, 0, 1) / 6) * 6); }
-const V5LOOK = new URLSearchParams(location.search).get('v5') === '1';   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — + v5 camera on holds; default off
+const V5LOOK = new URLSearchParams(location.search).get('v5') === '1' || window.V5 === 1;   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — + v5 camera on holds; default off
 const $ = id => document.getElementById(id);
 const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 const esin = x => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1));

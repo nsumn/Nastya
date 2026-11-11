@@ -1,4 +1,4 @@
-const V5LOOK = new URLSearchParams(location.search).get('v5') === '1';   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — + v5 camera on holds; default off
+const V5LOOK = new URLSearchParams(location.search).get('v5') === '1' || window.V5 === 1;   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — + v5 camera on holds; default off
 const $ = id => document.getElementById(id);
 const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 const esin = x => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1));
