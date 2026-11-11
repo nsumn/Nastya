@@ -293,10 +293,10 @@ const off = (k, dx, dz) => P3(k).add(V3(dx, 0, dz));
 function shot(where, h, yaw = 0, tilt = 1.05, fov = 36) { const c = Array.isArray(where) ? llPos(where[0], where[1]) : typeof where === 'string' ? P3(where) : where.clone(); return { c, h, yaw, tilt, fov }; }
 let HOLDS = null;
 function holds() { return [[0, T.vote - 0.3, shot(off('dc', 0, 1), 46, -0.5, 1.2), shot(off('dc', 0, 1), 38, 0.25, 1.25)],
-    [T.vote + 0.2, T.iran - 0.3, shot(off('house', 0, 3), 78, -0.25, 1.15), shot(off('house', 0, 3), 66, 0.3, 1.2)],
+    [T.vote + 0.2, T.iran - 0.3, shot(off('house', 0, -9), 118, -0.25, 1.05), shot(off('house', 0, -9), 104, 0.3, 1.1)],
     [T.iran + 1.4, T.leaving - 0.1, shot([51.5, 33.5], 220, 0.1, 0.8), shot([52, 33.2], 180, -0.15, 0.9)],
     [T.leaving + 1.2, T.catch - 0.2, shot(off('dc', 0, 1), 52, 0.9, 1.15), shot(off('dc', 0, 1), 42, 1.7, 1.2)],
-    [T.catch + 0.4, T.removal - 0.3, shot(off('house', 0, 3), 74, 0.35, 1.15), shot(off('house', 0, 3), 62, -0.3, 1.2)],
+    [T.catch + 0.4, T.removal - 0.3, shot(off('house', 0, -9), 114, 0.35, 1.05), shot(off('house', 0, -9), 100, -0.3, 1.1)],
     [T.removal + 0.3, T.only - 0.3, shot(off('senate', 0, 2), 60, 0.2, 1.15), shot(off('senate', 0, 2), 50, -0.25, 1.2)],
     [T.only + 0.4, T.ask - 0.2, shot(off('dc', 0, 1), 60, -0.6, 1.0), shot(off('dc', 0, 1), 48, 0.3, 1.1)],
     [T.ask + 0.2, T_END, shot([-77, 38.6], 260, 0, 0.6), shot([-77, 38.6], 300, 0.05, 0.55)]]; }
@@ -324,8 +324,8 @@ const CAP = new THREE.Group(); MAPSC.add(CAP);
 function chamber(n, rows, r0, dr) { const seats = []; for (let r = 0; r < rows; r++) { const R = r0 + r * dr, m = Math.round(Math.PI * R / (dr * 0.95)); for (let i = 0; i < m; i++) seats.push({ a: Math.PI * (1 - (i + 0.5) / m), R, r }); }
   seats.sort((p, q) => q.a - p.a || p.R - q.R); return seats.slice(0, n); }
 function buildProps() { const P = {};
-  P.house = chamber(435, 10, 9, 2.0); P.hMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.3, 1.1, 1.3), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.35, metalness: 0.05 }), 435); P.hMesh.frustumCulled = false; P.hMesh.visible = false; MAPSC.add(P.hMesh);
-  P.senateS = chamber(100, 5, 6, 2.0); P.sMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 1.1, 1.4), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.35, metalness: 0.05 }), 100); P.sMesh.frustumCulled = false; P.sMesh.visible = false; MAPSC.add(P.sMesh);
+  P.house = chamber(435, 13, 9, 2.0); P.hMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.3, 1.1, 1.3), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.35, metalness: 0.05 }), 435); P.hMesh.frustumCulled = false; P.hMesh.visible = false; MAPSC.add(P.hMesh);
+  P.senateS = chamber(100, 7, 6, 2.0); P.sMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 1.1, 1.4), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.35, metalness: 0.05 }), 100); P.sMesh.frustumCulled = false; P.sMesh.visible = false; MAPSC.add(P.sMesh);
   P.massieSeat = 300; P.arc = makeArc(P3('dc', 0.5), P3('tehran', 0.5), 420, '#ff7a2a'); P.ring = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.9, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, depthWrite: false })); P.ring.visible = false; MAPSC.add(P.ring);
   return P; }
 const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), s4 = new THREE.Vector3(), col = new THREE.Color();
