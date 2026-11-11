@@ -1,3 +1,4 @@
+const V5LOOK = new URLSearchParams(location.search).get('v5') === '1';   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — + v5 camera on holds; default off
 const $ = id => document.getElementById(id);
 const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
 const esin = x => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1));
@@ -138,7 +139,6 @@ function domAt(t) { const P = PROPS; STK = []; let h = '';
   $('labels').innerHTML = h;
 // Nov 11: she asked to drop the top plate (kicker + Anton headline), then changed her mind — kept. SHOW_HUD = false hides it.
 const SHOW_HUD = true;
-const V5LOOK = new URLSearchParams(location.search).get('v5') === '1';   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — for before/after frames only
   const hd = SHOW_HUD ? hudAt(t) : null; $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 16 ? 80 : 100) + 'px'; $('sub').textContent = ''; $('sub').style.display = 'none'; }
   let pp = 1; for (const k of EV) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `skewX(-6deg) scale(${pp.toFixed(3)})`;
   $('cap').innerHTML = capHTML(t); $('cap').style.opacity = t < ENDC ? 1 : 0;
