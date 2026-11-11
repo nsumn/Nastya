@@ -68,6 +68,8 @@ Rendered headless in Chromium (three.js), encoded with ffmpeg.
 - `scene_groc.js` (from `parts_groc/g_head.js parts_coffee/c_smoke.js parts_dad/d_block.js parts_mom/m_sets.js parts_groc/g_times.js parts_groc/g_world.js parts_groc/g_rig.js parts_groc/g_main.js`) + `index_groc.html` (`?style=lowpoly|clay|smooth`) + `audio_groc.py` (`--no-music`) — "One trip with all the groceries" (66.6 s, narrated). Timeline from TTS word timestamps (`tools/groc_timing.py` → `g_times.js`); voice/SFX/music files in `out/groc/` (from the Lumean API, not in git). GTAO ambient occlusion pass between the scene render and the composite.
 - `tools/penny_math.py` — numbers for the planned "What if you dropped a penny from the Empire State Building?" (terminal speed ~25 mph, vacuum 177–209 mph).
 - `people.js` — new jointed low-poly people (knees/elbows, hair, outfits) + walk / idle / flail / sit poses. `makePerson(rnd, {top, bottom, skin, …})` overrides the outfit.
+- `index_day4.html` + `parts_day4/` — "The last 24 hours" daily, Nov 11 2026 (v5 rules): Hegseth vote, Jordan, Thune/Schumer, measles, Abu Dhabi talks, Veterans Day. `bash tools/news_make.sh day4 parts_day4 all 60`.
+- `index_ebola.html` + `parts_ebola/` — "Ebola just passed 11,000 cases — how close is it to America?", Nov 11 2026 (v5, one topic): Congo hotspots, spread arcs to Kenya/Nigeria/France, Addis→Washington flight with a plane, US airports, entry ban + passenger form, 0 US cases. `bash tools/news_make.sh ebola parts_ebola all 60`.
 - `render.mjs` — renders frames: `PAGE=index_en.html node render.mjs <outDir> <tStart> <tEnd> 30 [comma-separated times for test frames]`.
 - `audio*.py` — soundtrack synthesis per video (numpy/scipy), then loudnorm to −14 LUFS.
 
