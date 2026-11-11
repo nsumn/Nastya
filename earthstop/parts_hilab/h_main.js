@@ -37,7 +37,7 @@ function camAtL(i) { const [lon, lat, h, tilt, yaw, fov] = SHOTS[i], c = ll2xz(l
 const CLIP = Q.get('clip') === '1';
 function camClip(t) { const es = x => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1)); let lon, lat, h, tilt, yaw;
   if (!V5) { const u = t / 6; lon = -99.3; lat = 31.0; h = 260 - 30 * u; tilt = 1.05; yaw = 0.25; }
-  else { const a = es(t / 1.6), b = es((t - 1.6) / 4.4); lon = lerp(-97.5, -99.3, a) + (-97.8 + 99.3) * b; lat = lerp(35.0, 31.0, a) + (30.75 - 31.0) * b;
+  else { const a = es(t / 1.8), b = es((t - 0.9) / 5.1); lon = lerp(-97.5, -99.3, a) + (-97.8 + 99.3) * b; lat = lerp(35.0, 31.0, a) + (30.75 - 31.0) * b;
     h = Math.exp(lerp(Math.log(560), Math.log(240), a) + (Math.log(34) - Math.log(240)) * b); tilt = lerp(0.85, 1.0, a) + 0.3 * b; yaw = lerp(-0.25, 0.2, a) + 0.55 * b; }
   const c = ll2xz(lon, lat), back = h * tilt; mCam.position.set(c.x + Math.sin(yaw) * back, h, c.z + Math.cos(yaw) * back); mCam.lookAt(c.x, 0, c.z);
   mCam.fov = 34; mCam.aspect = W / H; mCam.near = Math.max(0.3, h * 0.02); mCam.far = h * 12 + 500; mCam.updateProjectionMatrix(); mCam.updateMatrixWorld(); }

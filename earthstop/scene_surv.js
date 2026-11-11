@@ -97,10 +97,10 @@ const sunM = new THREE.DirectionalLight(0xfff0dc, 2.4); sunM.position.set(-120, 
 // optional counties of ONE state on the US plane (id texture B channel): define `const COUNTY_FIPS = '48'` before this part
 const PAL = new Float32Array(256 * 4 * 4), palTex = new THREE.DataTexture(PAL, 256, 4, THREE.RGBAFormat, THREE.FloatType); palTex.magFilter = palTex.minFilter = THREE.NearestFilter; palTex.needsUpdate = true;
 const COUNTRIES = [], STATES = [], COUNTIES = [];   // { id, name, lon, lat }
-const mapUni = { uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uFade: { value: new THREE.Vector2(400, 900) }, uT: { value: 0 }, uCty: { value: 0 }, uDim: { value: 0 } };
+const mapUni = { uSun: { value: V3(-0.55, 0.62, -0.55).normalize() }, uFade: { value: new THREE.Vector2(400, 900) }, uT: { value: 0 }, uCty: { value: 0 }, uDim: { value: 0 }, uV5: { value: 0 } };   // uV5: v5 grade (brighter, more saturated land — see parts_hilab)
 function mapMaterial(B, dem, idTex, us, sat) {
   const dx = (B.lon1 - B.lon0) * CLAT * SC / dem.image.width, dz = (B.lat1 - B.lat0) * SC / dem.image.height;
-  return new THREE.ShaderMaterial({ uniforms: { tDem: { value: dem }, tId: { value: idTex }, tPal: { value: palTex }, tSat: { value: sat }, uSun: mapUni.uSun, uFade: mapUni.uFade, uT: mapUni.uT, uCty: mapUni.uCty, uDim: mapUni.uDim,
+  return new THREE.ShaderMaterial({ uniforms: { tDem: { value: dem }, tId: { value: idTex }, tPal: { value: palTex }, tSat: { value: sat }, uSun: mapUni.uSun, uFade: mapUni.uFade, uT: mapUni.uT, uCty: mapUni.uCty, uDim: mapUni.uDim, uV5: mapUni.uV5,
       uE: { value: new THREE.Vector2(1 / dem.image.width, 1 / dem.image.height) }, uD: { value: new THREE.Vector2(dx, dz) }, uP: { value: new THREE.Vector2(1 / B.cw, 1 / B.ch) } }, fog: false,
     defines: us ? { US: 1 } : {},
     vertexShader: `uniform sampler2D tDem, tId, tPal; uniform vec2 uE, uD; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
@@ -121,7 +121,7 @@ function mapMaterial(B, dem, idTex, us, sat) {
         if (sid > 0.5 && uv.y > 0.5833) p.y -= 0.6;   // tuck the world's US (lower 48 + Alaska; not Hawaii) under the finer planes
       #endif
         vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: `uniform sampler2D tId, tPal, tDem, tSat; uniform vec3 uSun; uniform vec2 uFade, uP, uE, uD; uniform float uT, uCty, uDim; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
+    fragmentShader: `uniform sampler2D tId, tPal, tDem, tSat; uniform vec3 uSun; uniform vec2 uFade, uP, uE, uD; uniform float uT, uCty, uDim, uV5; varying vec2 vUv; varying vec3 vN; varying vec3 vW; varying float vHt, vDp;
       float hh(vec2 uv){ vec4 d = texture2D(tDem, uv);
       #ifdef US
         return d.r * d.r * 11.0;
@@ -146,16 +146,17 @@ function mapMaterial(B, dem, idTex, us, sat) {
         n = normalize(n); float dif = max(dot(n, uSun), 0.0), sh = 0.3 + 1.05 * dif;
         float e = vHt; vec3 land = mix(vec3(0.24, 0.33, 0.18), vec3(0.40, 0.40, 0.24), smoothstep(0.06, 0.32, e)); land = mix(land, vec3(0.50, 0.40, 0.28), smoothstep(0.32, 0.55, e));
         land = mix(land, vec3(0.42, 0.33, 0.26), smoothstep(0.55, 0.75, e)); land = mix(land, vec3(0.86, 0.86, 0.88), smoothstep(0.78, 0.92, e));
-        vec3 sat = texture2D(tSat, vUv).rgb; float lum = dot(sat, vec3(0.3, 0.59, 0.11)); sat = mix(vec3(lum), sat, 1.25); land = sat * 1.4;
+        vec3 sat = texture2D(tSat, vUv).rgb; float lum = dot(sat, vec3(0.3, 0.59, 0.11)); sat = mix(vec3(lum), sat, 1.25 + 0.35 * uV5); land = sat * (1.4 + 0.5 * uV5);
         bool sea = cid < 0.5 && vHt < 0.03 && vDp > 0.0;
         vec3 col;
         if (sea) { float dp = vDp; col = mix(vec3(0.10, 0.30, 0.38), vec3(0.04, 0.12, 0.22), smoothstep(0.02, 0.3, dp)); col = mix(col, vec3(0.02, 0.06, 0.13), smoothstep(0.3, 0.8, dp)); col *= 0.55 + 0.6 * dif; }
-        else { float sh2 = 0.22 + 1.35 * pow(dif, 1.15); col = land * sh2; }
+        else { float sh2 = 0.22 + 1.35 * pow(dif, 1.15); if (uV5 > 0.0) sh2 = mix(sh2, 0.12 + 1.6 * pow(dif, 1.4), uV5); col = land * sh2; }   // v5: deeper relief shading (Geolyth-like embossed look)
         // v4: a darker, calmer background so the painted subject glows (mapUni.uDim 0..1)
         if (uDim > 0.0) { float lm = dot(col, vec3(0.3, 0.59, 0.11)); if (sea) col *= 1.0 - 0.45 * uDim; else col = mix(col, vec3(lm), 0.25 * uDim) * (1.0 - 0.12 * uDim); }   // v4: deeper sea, land only slightly calmer (she found the full dim too dark)
         if (cid > 0.5 || sid > 0.5) { vec4 c = sid > 0.5 ? texture2D(tPal, vec2(sid / 256.0 + 0.5 / 256.0, 1.5 / 4.0)) : texture2D(tPal, vec2(cid / 256.0 + 0.5 / 256.0, 0.5 / 4.0));
           vec3 V = normalize(cameraPosition - vW), Hh = normalize(uSun + V); float spec = pow(max(dot(n, Hh), 0.0), 40.0) * 0.6;
-          col = mix(col, c.rgb * (0.42 + 0.95 * dif) * 1.15 + spec, c.a); col += c.rgb * c.a * 0.12; }
+          vec3 pc = c.rgb * (0.42 + 0.95 * dif) * 1.15 + spec; if (uV5 > 0.0) pc = mix(pc, c.rgb * (0.16 + 1.3 * pow(dif, 1.35)) + spec * 0.2, uV5);   // v5: deep saturated paint, relief shows through (Geolyth-like)
+          col = mix(col, pc, c.a); col += c.rgb * c.a * 0.12 * (1.0 - 0.6 * uV5); }
         if (kid > 0.5) { vec4 c = texture2D(tPal, vec2(kid / 256.0 + 0.5 / 256.0, 3.5 / 4.0)); col = mix(col, c.rgb * (0.5 + 0.8 * dif), c.a); col += c.rgb * c.a * 0.1; }
         // borders: compare ids with the neighbours (states thin, countries brighter, coasts soft)
         vec3 a = ids(vec2(uP.x, 0.0)), b = ids(vec2(-uP.x, 0.0)), c2 = ids(vec2(0.0, uP.y)), d = ids(vec2(0.0, -uP.y)); bool kb = a.z != kid || b.z != kid || c2.z != kid || d.z != kid;
@@ -330,7 +331,7 @@ function buildProps() { const P = {};
   return P; }
 const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), s4 = new THREE.Vector3(), col = new THREE.Color();
 function seatPos(s, c0) { return V3(c0.x + Math.cos(s.a) * s.R, 0.9 + s.r * 0.38, c0.z - Math.sin(s.a) * s.R * 0.85); }
-function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPaint(); mapUni.uDim.value = 0.6;
+function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPaint(); mapUni.uDim.value = V5LOOK ? 0 : 0.6; mapUni.uV5.value = V5LOOK ? 1 : 0;
   paintState('District of Columbia', GOLD, 0.95, 1.2);
   CAP.visible = true; { const k = easeOut(span(t, 0.0, 0.6)), bump = 1 + 0.08 * Math.max(0, Math.sin(Math.PI * span(t, T.survived, T.survived + 0.35))); CAP.position.copy(P3('dc', 0.8 + 10 * (1 - k))); CAP.scale.setScalar(2.1 * k * bump + 0.01); CAP.rotation.y = 0.25 + 0.05 * t; }
   // House: the vote to send it to committee (211 shelve · 204 keep), Massie's lone seat; then January (Democrats take the majority)
@@ -408,6 +409,7 @@ function domAt(t) { const P = PROPS; STK = []; let h = '';
   $('labels').innerHTML = h;
 // Nov 11: she asked to drop the top plate (kicker + Anton headline), then changed her mind — kept. SHOW_HUD = false hides it.
 const SHOW_HUD = true;
+const V5LOOK = new URLSearchParams(location.search).get('v5') === '1';   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — for before/after frames only
   const hd = SHOW_HUD ? hudAt(t) : null; $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 16 ? 80 : 100) + 'px'; $('sub').textContent = ''; $('sub').style.display = 'none'; }
   let pp = 1; for (const k of EV) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `skewX(-6deg) scale(${pp.toFixed(3)})`;
   $('cap').innerHTML = capHTML(t); $('cap').style.opacity = t < ENDC ? 1 : 0;
@@ -425,6 +427,6 @@ window.renderAt = (t) => { if (!window.__ord) { orderProps(); window.__ord = 1; 
     for (let k = 0; k < K; k++) { camAt(t + (k / (K - 1) - 0.5) * 0.5 / 30); shootTo(RTB, MAPSC, mCam); renderer.setRenderTarget(ACC); renderer.autoClear = false; accMat.uniforms.tS.value = RTB.texture; accMat.uniforms.uW.value = 1 / K; renderer.render(accScene, compCam); renderer.autoClear = true; }
     camAt(t); compMat.uniforms.tA.value = ACC.texture; }
   else { shootTo(RTA, MAPSC, mCam); compMat.uniforms.tA.value = RTA.texture; }
-  const u = compMat.uniforms; u.uLook.value = 0.1; u.uWhip.value = 0; u.uPixOn.value = 0; u.uRed.value = 0; u.uSepia.value = 0; u.uTilt.value = 0;
+  const u = compMat.uniforms; u.uLook.value = V5LOOK ? 0.0 : 0.1; u.uWhip.value = 0; u.uPixOn.value = 0; u.uRed.value = 0; u.uSepia.value = 0; u.uTilt.value = 0;
   composite(0, 1.0 + 0.7 * flashAt(t), 1.0); return true; };
 window.sceneReady = (async () => { await document.fonts.ready; await mapReady; await Promise.all(Object.keys(photo).map(k => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = `assets/news/photos/${k}.jpg`; }))); window.renderAt(0); return true; })();

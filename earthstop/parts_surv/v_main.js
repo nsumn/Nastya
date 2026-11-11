@@ -58,7 +58,7 @@ function buildProps() { const P = {};
   return P; }
 const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), s4 = new THREE.Vector3(), col = new THREE.Color();
 function seatPos(s, c0) { return V3(c0.x + Math.cos(s.a) * s.R, 0.9 + s.r * 0.38, c0.z - Math.sin(s.a) * s.R * 0.85); }
-function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPaint(); mapUni.uDim.value = 0.6;
+function mapAt(t) { if (!PROPS) PROPS = buildProps(); const P = PROPS; clearPaint(); mapUni.uDim.value = V5LOOK ? 0 : 0.6; mapUni.uV5.value = V5LOOK ? 1 : 0;
   paintState('District of Columbia', GOLD, 0.95, 1.2);
   CAP.visible = true; { const k = easeOut(span(t, 0.0, 0.6)), bump = 1 + 0.08 * Math.max(0, Math.sin(Math.PI * span(t, T.survived, T.survived + 0.35))); CAP.position.copy(P3('dc', 0.8 + 10 * (1 - k))); CAP.scale.setScalar(2.1 * k * bump + 0.01); CAP.rotation.y = 0.25 + 0.05 * t; }
   // House: the vote to send it to committee (211 shelve · 204 keep), Massie's lone seat; then January (Democrats take the majority)
@@ -136,6 +136,7 @@ function domAt(t) { const P = PROPS; STK = []; let h = '';
   $('labels').innerHTML = h;
 // Nov 11: she asked to drop the top plate (kicker + Anton headline), then changed her mind — kept. SHOW_HUD = false hides it.
 const SHOW_HUD = true;
+const V5LOOK = new URLSearchParams(location.search).get('v5') === '1';   // Nov 11 comparison: v5 light (bright land, sea not dimmed, no paper/vignette) — for before/after frames only
   const hd = SHOW_HUD ? hudAt(t) : null; $('hud').style.opacity = hd ? 1 : 0; if (hd) { $('stat').innerHTML = '<b></b>' + hd[0]; $('val').textContent = hd[1]; $('val').style.fontSize = (hd[1].length > 16 ? 80 : 100) + 'px'; $('sub').textContent = ''; $('sub').style.display = 'none'; }
   let pp = 1; for (const k of EV) if (t >= k && t < k + 0.3) pp = pop(t, k, 0.3); $('val').style.transform = `skewX(-6deg) scale(${pp.toFixed(3)})`;
   $('cap').innerHTML = capHTML(t); $('cap').style.opacity = t < ENDC ? 1 : 0;
@@ -153,6 +154,6 @@ window.renderAt = (t) => { if (!window.__ord) { orderProps(); window.__ord = 1; 
     for (let k = 0; k < K; k++) { camAt(t + (k / (K - 1) - 0.5) * 0.5 / 30); shootTo(RTB, MAPSC, mCam); renderer.setRenderTarget(ACC); renderer.autoClear = false; accMat.uniforms.tS.value = RTB.texture; accMat.uniforms.uW.value = 1 / K; renderer.render(accScene, compCam); renderer.autoClear = true; }
     camAt(t); compMat.uniforms.tA.value = ACC.texture; }
   else { shootTo(RTA, MAPSC, mCam); compMat.uniforms.tA.value = RTA.texture; }
-  const u = compMat.uniforms; u.uLook.value = 0.1; u.uWhip.value = 0; u.uPixOn.value = 0; u.uRed.value = 0; u.uSepia.value = 0; u.uTilt.value = 0;
+  const u = compMat.uniforms; u.uLook.value = V5LOOK ? 0.0 : 0.1; u.uWhip.value = 0; u.uPixOn.value = 0; u.uRed.value = 0; u.uSepia.value = 0; u.uTilt.value = 0;
   composite(0, 1.0 + 0.7 * flashAt(t), 1.0); return true; };
 window.sceneReady = (async () => { await document.fonts.ready; await mapReady; await Promise.all(Object.keys(photo).map(k => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = `assets/news/photos/${k}.jpg`; }))); window.renderAt(0); return true; })();

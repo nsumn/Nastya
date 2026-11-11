@@ -21,6 +21,10 @@ Account medians (last 13–30 posts): geomapstories 240K views, dailyplugusa 57K
 
 Same-topic case: @didyouknow.geo "Texas just voted blue" = 2.2M views (posted Nov 4, flat paper-style 2D map, huge 3D words "VOTED BLUE"/"2026"/"7.7M", checklist UI) vs ours "Texas went BLUE" = 12.6K (posted Nov 8). All election hits went up on Nov 4 (dollarindex 463K, dailyplugusa 363K). Speed (first 6–12 h) beats render quality for news.
 
+Honest caveat: the two biggest same-topic hits were nearly STATIC (didyouknow.geo Texas: motion 0.37, 26 static s/60, no music; dollarindex impeachment: motion 0.25, 23 static s, 68 % near-black frames, real Trump clips). Camera/map quality = the look of the strong map accounts and TikTok's 'quality' for Additional Reward; virality in news = topic + being first + the opening line (theirs and ours were almost the same words: "Texas just voted/flipped blue … For 32 years").
+
+Audio: everyone starts the voice at 0.0 s; 160–190 wpm (WHN 225; ours 153–170). Map accounts keep music 50–95 % of the time; the two biggest hits had NO music. SFX match the subject: Geolyth war footage = explosions/artillery/gunfire; geomapstories = coins, camera shutter, cartoon pops; WHN = shutter click on every photo. Our pop/whoosh/stamp set is masked by the music (the tagger hears only 'Music') → +3–6 dB and subject-specific SFX; test one video voice + SFX without music.
+
 ## Rules for the next news videos (v5)
 1. CAMERA: continuous zoom 12–20 % of scale per second in every shot (direction flips on each new event) + 0.1–0.2 rad/s turn; tilt opens up (more oblique) as the camera gets close; topic changes = a 0.8–1.2 s fly-over through height with motion blur. Never a drifting near-static hold.
 2. 60 fps output (they are 1080p60; render time ×2).
