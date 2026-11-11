@@ -9,7 +9,7 @@ Word timestamps of a TTS order: result.service_files -> result.json (words[]); t
 import json, os, sys, time, urllib.request
 _kf = os.path.join(os.path.dirname(__file__), '..', '.lumean.key')
 K = os.environ.get('LUMEAN_API_KEY') or (open(_kf).read().strip() if os.path.exists(_kf) else None)
-if not K: sys.exit('Set LUMEAN_API_KEY (Lumean public API key) first.')
+if not K: K = 'proxy-injected'   # the cloud environment stores the key as a network secret for api.lumean.app (X-API-KEY) and the proxy puts the real one in (her rule Nov 11: never ask again)
 B = 'https://api.lumean.app/api/public'
 def call(method, path, body=None):
     req = urllib.request.Request(B + path, method=method, data=json.dumps(body).encode() if body is not None else None,

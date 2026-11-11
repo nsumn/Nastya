@@ -133,7 +133,7 @@ function domAt(t) { const P = PROPS; STK = []; let h = '';
   h += card('jordan', T.jordan - 0.05, T.senate - 0.15, 90, 560, t, { tag: t >= T.n33 ? '+33 VOTES' : 'NEW LEADER', tagc: 'r', tagT: T.jordan + 0.3 });
   h += card('scalise', T.scalise - 0.05, T.senate - 0.15, 640, 620, t, { small: true, dim: true });
   h += card('johnson', T.johnson - 0.05, T.senate - 0.15, 640, 980, t, { small: true, dim: true });
-  h += card('thune', T.thune - 0.1, T.fight - 0.05, 330, 560, t, { big: true, tag: 'STAYS', tagc: 'r', tagT: T.thune + 0.3 });
+  h += card('thune', T.thune - 0.1, T.sanders - 0.15, 330, 560, t, { big: true, tag: 'STAYS', tagc: 'r', tagT: T.thune + 0.3 });
   h += card('sanders', T.sanders - 0.1, T.measles - 0.15, 80, 560, t, { tag: 'NO TO SCHUMER', tagc: 'b', tagT: T.schumer });
   h += card('schumer', T.schumer - 0.1, T.measles - 0.15, 640, 640, t, { small: true, dim: t >= T.five });
   h += card('trump', T.vets - 0.05, T.ask - 0.1, 620, 600, t, { small: true });
