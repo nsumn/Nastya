@@ -1,0 +1,32 @@
+# Quality comparison, Nov 11 2026 — our US news-map videos vs @geolyth__, @geomapstories, @worldhistorynetwork (+ @dailyplugusa, @dollarindex, @didyouknow.geo, @cruzastudillo, @quarterchart)
+
+Her request (Nov 11, night): compare OUR videos with theirs in every detail (camera, map, font, animations, materials, sound, views/likes, topics) and make ours better. The full illustrated report is an Artifact (link in the chat); this file keeps the facts and the rules for the next sessions.
+
+## How it was measured (reproducible)
+- Download: `yt-dlp --impersonate chrome` (needs `pip install yt-dlp curl_cffi`; she explicitly allowed TikTok downloads). Videos are NOT committed.
+- Stats: `yt-dlp --impersonate chrome --skip-download --playlist-end 30 --print "%(id)s|%(upload_date)s|%(duration)s|%(view_count)s|%(like_count)s|%(comment_count)s|%(repost_count)s|%(title)s" https://www.tiktok.com/@<handle>`
+- Frame metrics (first 60 s, 10 fps at 360×640): Farneback optical flow in the middle 70 % of the frame → motion px / 0.1 s, radial part = zoom, median vector = pan; "static second" = flow < 0.15 and pixel diff < 1.2; colour/brightness/dark-fraction at 1080×1920 1 fps. Audio: faster-whisper base.en (words/min, hook), AST AudioSet tagger (MIT/ast-finetuned-audioset) on 3 s windows, librosa onsets.
+
+## Numbers
+| | motion px/0.1 s | zoom s / 60 | pan s / 60 | brightness | saturation | near-black share | fps |
+|---|---|---|---|---|---|---|---|
+| Geolyth (3) | 6.1 | 47 | 44 | 144 | 155 | 23 % | 60 |
+| geomapstories (3) | 5.3 | 48 | 31 | 151 | 164 | 5 % | 60 |
+| WorldHistoryNetwork (2) | 3.5 | 39 | 19 | 117 | 157 | 23 % | 30 (720p) |
+| dailyplugusa (2) | 0.4 | 29 | 2 | 120 | 82 | 28 % | 30 |
+| ours: Texas / Alaska / 7 states | 0.7 | 17 | 3 | 157 | 101 | 5 % | 30 |
+| ours: Hegseth (v4) | 1.0 | 3 | 1 | 85 | 179 | 61 % | 30 |
+
+Account medians (last 13–30 posts): geomapstories 240K views, dailyplugusa 57K, dollarindex 48K, geolyth 47K, cruzastudillo 27K, quarterchart 17K, didyouknow.geo 9K, worldhistorynetwork 8.5K; ours (news, Nov 8–11) 1.3K; ours (body/habit what-ifs, Oct 24–Nov 2) 38.8K. Like rate is the same everywhere (2.6–3.9 %; ours 3.9 %) → our problem is distribution, not the people who watch.
+
+Same-topic case: @didyouknow.geo "Texas just voted blue" = 2.2M views (posted Nov 4, flat paper-style 2D map, huge 3D words "VOTED BLUE"/"2026"/"7.7M", checklist UI) vs ours "Texas went BLUE" = 12.6K (posted Nov 8). All election hits went up on Nov 4 (dollarindex 463K, dailyplugusa 363K). Speed (first 6–12 h) beats render quality for news.
+
+## Rules for the next news videos (v5)
+1. CAMERA: continuous zoom 12–20 % of scale per second in every shot (direction flips on each new event) + 0.1–0.2 rad/s turn; tilt opens up (more oblique) as the camera gets close; topic changes = a 0.8–1.2 s fly-over through height with motion blur. Never a drifting near-static hold.
+2. 60 fps output (they are 1080p60; render time ×2).
+3. LIGHT: no near-black frames — sea not dimmed below ~0.6 of v3, land bright (`mapUni.uV5 = 1`), average brightness 120–160.
+4. MAP v5 (parts_hilab, tools/hires_patch.py): hi-res focus patch for the story's region (Terrarium z9 relief + NASA BMNG 500 m colour), Natural Earth rivers, deep saturated paint with relief showing through + white rim, place names lying ON the terrain (`groundLabel`, `cityDot`; load Inter weights with `document.fonts.load` before drawing canvases).
+5. FIRST FRAME: one huge word/number over the map (didyouknow.geo style) + a face; voice from 0.0 s with a recognisable rubric line ("Here's what happened in America in the last 24 hours").
+6. MATERIAL: cut-out politicians (no circle) next to the medallions, speech bubbles with real quotes (key words yellow), our own headline cards (source + headline, no foreign logos), detailed 3D stickers (plane, ship, missile, money, handcuffs, warning sign). Short real news footage only if she accepts the copyright risk.
+7. LENGTH test: one 2–2.5 min "24 hours" video (Geolyth/dollarindex/dailyplugusa length).
+8. SPEED: a fast "24 hours" template that can be built in ~1 h, so it goes out the same day.
