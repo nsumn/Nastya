@@ -1,0 +1,3 @@
+{ "style": "word", "y": 990, "size": 96, "color": "#ffffff", "hi": "#ffd21f", "outline": "#000000",
+  "keys": ["Bierkeller", "Kies", "Kastanien", "Biergarten", "König", "Brezn", "Radi", "Obazda", "Brotzeit", "Maß", "Verein", "Radler", "Glückwunsch", "Stange"],
+  "show": {"dreizehntausend": "13.000"} }
