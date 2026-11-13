@@ -27,7 +27,7 @@ const SH = [
   [S[14], 'massie', 'EPSTEIN FILES', 8], [wordT('218', S[14]) - 0.2, 'chart:epstein', 'EPSTEIN FILES', 8],
   [S[15], ['witkoff', 'kushner'], 'RUSSIA', 9], [wordT('Vladimir', S[15]) - 0.1, 'putin', 'RUSSIA', 9],
   [S[16], 'darchiev', 'RUSSIA', 10],
-  [T_CTA, 'capitol', '', 11]];
+  [T_CTA, 'none', '', 11]];   // her note Nov 13: no photo under the follow call — just the avatar animation
 // the 2-second recap: [photo, line] (one per story, 5–6 max)
 const RECAP = [['huang', 'NVIDIA’S CEO RESIGNED'], ['flatbush', 'BROOKLYN COLLAPSE: 8 DEAD'], ['colom', 'MISSISSIPPI ELECTS A DEMOCRAT'], ['peltola', 'ALASKA STILL COUNTING'], ['darchiev', 'RUSSIA’S U.S. ENVOY DIED']];
 const shotIx = t => { let i = 0; while (i < SH.length - 1 && t >= SH[i + 1][0]) i++; return i; };
@@ -107,9 +107,10 @@ function chartHTML(id, t, a, b) { const C = CHARTS[id], u = span(t, a + 0.15, Ma
     if (u > 0.9) g += `<g transform="translate(500 680) scale(${pop(t, a + 0.15 + 0.9 * 2.45, 0.3).toFixed(3)})"><text text-anchor="middle" font-family="Anton" font-size="56" fill="#ffc23a">${C.label}</text></g>`; }
   return `<div class="ph chart" style="left:40px;width:${W}px"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><text x="90" y="110" font-family="Inter" font-weight="900" font-size="34" letter-spacing="4" fill="#ffc23a">${C.title}</text>${C.sub && u > 0.9 ? `<text x="910" y="110" text-anchor="end" font-family="Inter" font-weight="900" font-size="26" letter-spacing="3" fill="rgba(255,255,255,.7)">${C.sub}</text>` : ''}${g}</svg></div>`; }
 function shotHTML(i, t) { const [a, p] = SH[i], b = i < SH.length - 1 ? SH[i + 1][0] : T_END;
+  if (p === 'none') return '';
   if (isChart(p)) return chartHTML(p.slice(6), t, a, b);
   return Array.isArray(p) ? photoHTML(p[0], t, a, b, 487, 40) + photoHTML(p[1], t, a, b, 487, 553) : photoHTML(p, t, a, b, 1000, 40); }
-const bgKey = p => Array.isArray(p) ? p[0] : isChart(p) ? CHARTS[p.slice(6)].bg : p;
+const bgKey = p => Array.isArray(p) ? p[0] : isChart(p) ? CHARTS[p.slice(6)].bg : p === 'none' ? null : p;
 function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   // slide-in of the new shot over the old one (0.28 s), with a short blur
   const k = i > 0 ? easeOut(span(t, a, a + 0.28)) : 1;
@@ -118,7 +119,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   if (k < 1 && !(INTRO && i === 1)) h += `<div class="band" style="transform:translateX(${(-1080 * k * 0.35).toFixed(0)}px);opacity:${(1 - k).toFixed(2)}">${shotHTML(i - 1, t)}</div>`;
   h += `<div class="band" style="transform:translateX(${(1080 * (1 - k)).toFixed(0)}px);filter:blur(${(10 * (1 - k)).toFixed(1)}px)">${shotHTML(i, t)}</div>`;
   $('bands').innerHTML = h; $('bands').className = BIG.some(x => t >= x[0] - 0.1 && t < x[1]) ? 'hidenm' : '';
-  $('bg').src = src(bgKey(p)); $('bg').style.transform = `scale(${(1.35 + 0.05 * Math.sin(t * 0.2)).toFixed(3)})`;
+  { let j = i, k = bgKey(p); while (!k && j > 0) k = bgKey(SH[--j][1]); $('bg').src = src(k); }   // 'none' keeps the previous blurred backdrop $('bg').style.transform = `scale(${(1.35 + 0.05 * Math.sin(t * 0.2)).toFixed(3)})`;
   // header + kicker + counter
   const kk = kick && t < ENDC ? pop(t, SH.find(s => s[2] === kick)[0], 0.3) : 0;
   $('kick').style.opacity = kick && t < ENDC ? 1 : 0; $('kick').textContent = kick; $('kick').style.transform = `skewX(-8deg) scale(${kk.toFixed(3)})`;
@@ -143,7 +144,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   if (t >= ENDC) $('endS').innerHTML = RECAP.map(([k, l], j) => `<div class="rc" style="opacity:${smooth(ENDC + 0.1 + j * 0.08, ENDC + 0.25 + j * 0.08, t).toFixed(2)};transform:translateX(${(60 * (1 - easeOut(span(t, ENDC + 0.1 + j * 0.08, ENDC + 0.4 + j * 0.08)))).toFixed(0)}px)"><img src="${src(k)}" style="object-position:${POS[k] || '50% 25%'}"><span>${soft(l)}</span></div>`).join('');
   return true; }
 window.renderAt = renderAt;
-const KEYS = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : isChart(s[1]) ? [CHARTS[s[1].slice(6)].bg] : [s[1]]).concat(RECAP.map(r => r[0])))], ALL = KEYS.map(src);
+const KEYS = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : isChart(s[1]) ? [CHARTS[s[1].slice(6)].bg] : s[1] === 'none' ? [] : [s[1]]).concat(RECAP.map(r => r[0])))], ALL = KEYS.map(src);
 window.sceneReady = (async () => { await document.fonts.ready; try { FACES = await (await fetch('assets/news/big/faces.json')).json(); } catch (e) { FACES = {}; } await Promise.all(['900', '800', '700'].map(w => document.fonts.load(`${w} 60px Inter`)).concat([document.fonts.load('400 60px Anton')]));
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
