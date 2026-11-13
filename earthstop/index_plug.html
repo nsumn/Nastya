@@ -32,7 +32,7 @@
   #hook{position:absolute;left:50px;right:50px;top:560px;text-align:center;font-family:'Anton';font-size:128px;line-height:1.02;color:#fff;text-transform:uppercase;text-shadow:0 6px 30px rgba(0,0,0,.8);z-index:5}
   #hook .d{display:block;font-family:'Inter';font-weight:900;font-size:34px;letter-spacing:.16em;color:#ffc23a;margin-bottom:16px}
   #hook .r{color:#ffc23a}
-  #cta{position:absolute;left:60px;right:60px;top:600px;text-align:center;font-family:'Anton';font-size:100px;line-height:1.08;color:#fff;text-transform:uppercase;text-shadow:0 6px 30px rgba(0,0,0,.85);z-index:5}
+  #cta{position:absolute;left:60px;right:60px;top:520px;text-align:center;font-family:'Anton';font-size:100px;line-height:1.08;color:#fff;text-transform:uppercase;text-shadow:0 6px 30px rgba(0,0,0,.85);z-index:5}
   #cta .r{color:#ffc23a}
   #end{position:absolute;inset:0;background:#0b0f16;opacity:0;z-index:8}
   #endB{position:absolute;left:0;right:0;top:290px;text-align:center;font-family:'Anton';font-size:48px;letter-spacing:.06em;color:#fff;opacity:0;z-index:9}
@@ -41,6 +41,13 @@
   #endS{position:absolute;left:110px;right:110px;top:560px;opacity:0;z-index:9}
   .rc{display:flex;align-items:center;gap:26px;margin:0 0 22px;font-family:'Inter';font-weight:900;font-size:34px;letter-spacing:.04em;color:#fff}
   .rc img{width:120px;height:120px;border-radius:18px;object-fit:cover;box-shadow:0 0 0 3px rgba(255,255,255,.2);flex:none}
+  #fol{position:absolute;left:540px;top:800px;width:260px;height:300px;z-index:6;opacity:0;transform-origin:50% 40%}
+  #folAv{position:absolute;left:0;top:0;width:260px;height:260px;border-radius:50%;border:8px solid #fff;box-sizing:border-box;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+  #folAv svg{width:100%;height:100%;display:block}
+  #folPlus{position:absolute;left:50%;top:214px;width:92px;height:92px;margin-left:0;border-radius:50%;background:#fe2c55;color:#fff;font:900 76px/88px Inter;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  #folPlus.ok{background:#fff;color:#fe2c55;font-size:58px;line-height:92px}
+  #folRip{position:absolute;left:50%;top:214px;width:92px;height:92px;border-radius:50%;border:6px solid #fff;box-sizing:border-box;opacity:0}
+  #folHand{position:absolute;left:160px;top:270px;font-size:130px;line-height:1;filter:drop-shadow(0 8px 14px rgba(0,0,0,.6));transform-origin:30% 10%}
 </style></head>
 <body><div id="wrap">
   <img id="bg" src="assets/news/big/capitol.jpg"><div id="shade"></div>
@@ -50,6 +57,7 @@
   <div id="big"></div>
   <div id="cap"></div>
   <div id="hook"><span class="d">THURSDAY · NOV 12–13</span>What happened in <span class="r">America</span> today</div>
+  <div id="fol"><div id="folAv"><svg viewBox="0 0 600 600"><circle cx="300" cy="300" r="300" fill="#0B1F4B"/><path d="M262 110 L338 110 L230 490 L130 490 Z" fill="#D62828"/><path d="M262 110 L338 110 L470 490 L370 490 Z" fill="#fff"/><path d="M300 314L311.2 344.6L343.7 345.7L318.1 365.7L327.1 397L300 378.8L272.9 397L281.9 365.7L256.3 345.7L288.8 344.6Z" fill="#fff"/></svg></div><div id="folRip"></div><div id="folPlus">+</div><div id="folHand">👆</div></div>
   <div id="cta">Follow to stay <span class="r">up to date</span> 🔔</div>
   <div id="end"></div>
   <div id="endB"><span class="wm"><svg class="al" viewBox="130 110 340 380"><path d="M262 110 L338 110 L230 490 L130 490 Z" fill="#D62828"/><path d="M262 110 L338 110 L470 490 L370 490 Z" fill="#fff"/><path d="M300 314L311.2 344.6L343.7 345.7L318.1 365.7L327.1 397L300 378.8L272.9 397L281.9 365.7L256.3 345.7L288.8 344.6Z" fill="#fff"/></svg>MERICA IN BRIEF</span></div>
