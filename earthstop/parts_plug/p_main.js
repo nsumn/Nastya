@@ -14,41 +14,43 @@ const ENDC = Math.max(VO_END + 0.3, T_CTA + 2.1), T_END = ENDC + 2.2;   // the f
 const POS = { huang: '50% 34%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
   tomb: '55% 50%', hegseth: '50% 20%', flame: '50% 55%', massie: '50% 22%', witkoff: '50% 22%', kushner: '50% 22%', putin: '50% 22%', kreml: '50% 50%', darchiev: '50% 22%', capitol: '50% 30%', mississippi: '50% 60%', anchorage: '50% 50%' };
 // shots: [start, photo | [left, right], kicker, story #]
-const N = 11, N_ST = 10;   // N_ST = number of stories in the counter
+const N = 10, N_ST = 9;   // N_ST = number of stories in the counter
+// Nov 13 EVENING edition ("Here's what happened in America today")
 const SH = [
-  [0, 'capitol', '', 0],
-  [S[1], 'huang', 'NVIDIA', 1], [S[2], 'huang', 'NVIDIA', 1], [S[3], 'chart:nvda', 'NVIDIA', 1], [S[4], 'nvidiahq', 'NVIDIA', 1],
-  [S[5], 'flatbush', 'BROOKLYN, NY', 2], [S[6], 'brooklyn', 'BROOKLYN, NY', 2], [S[7], 'fdny', 'BROOKLYN, NY', 2],
-  [S[8], ['colom', 'hydesmith'], 'MISSISSIPPI', 3], [S[9], 'colom', 'MISSISSIPPI', 3],
-  [S[10], ['peltola', 'sullivan'], 'ALASKA', 4], [wordT('15', S[10]) - 0.3, 'chart:ak', 'ALASKA', 4],
-  [S[11], 'bessent', 'TREASURY', 5],
-  [S[12], 'tomb', 'ARLINGTON', 6], [wordT('Hegseth', S[12]) - 0.1, 'hegseth', 'ARLINGTON', 6],
-  [S[13], 'flame', 'KENNEDY FAMILY', 7],
-  [S[14], 'massie', 'EPSTEIN FILES', 8], [wordT('218', S[14]) - 0.2, 'chart:epstein', 'EPSTEIN FILES', 8],
-  [S[15], ['witkoff', 'kushner'], 'RUSSIA', 9], [wordT('Vladimir', S[15]) - 0.1, 'putin', 'RUSSIA', 9],
-  [S[16], 'darchiev', 'RUSSIA', 10],
-  [T_CTA, 'none', '', 11]];   // her note Nov 13: no photo under the follow call — just the avatar animation
+  [0, 'trump', '', 0],
+  [S[1], ['trump', 'vance'], 'IRAN', 1], [S[2], 'trump', 'IRAN', 1], [S[3], 'hormuz', 'IRAN', 1],
+  [S[5], ['vanhollen', 'schumer'], 'SENATE', 2], [wordT('Bernie', S[5]) - 0.1, 'sanders', 'SENATE', 2], [S[6], 'senate', 'SENATE', 2],
+  [S[7], 'msft', 'MICROSOFT', 3],
+  [S[8], 'brooklyn', 'BROOKLYN, NY', 4], [S[9], 'mamdani', 'BROOKLYN, NY', 4],
+  [S[10], 'tomb', 'ARLINGTON', 5], [S[11], 'hegseth', 'ARLINGTON', 5],
+  [S[13], ['timscott', 'huang'], 'NVIDIA', 6], [wordT('Howard', S[13]) - 0.1, 'lutnick', 'NVIDIA', 6], [S[14], 'chart:nvcap', 'NVIDIA', 6],
+  [S[15], 'fbihq', 'FBI', 7],
+  [S[16], 'holscher', 'KANSAS', 8],
+  [S[17], ['witkoff', 'kushner'], 'RUSSIA · UKRAINE', 9], [wordT('Vladimir', S[17]) - 0.1, 'putin', 'RUSSIA · UKRAINE', 9], [wordT('Volodymyr', S[17]) - 0.1, 'zelensky', 'RUSSIA · UKRAINE', 9],
+  [T_CTA, 'none', '', 10]];   // her note Nov 13: no photo under the follow call — just the avatar animation
 // the 2-second recap: [photo, line] (one per story, 5–6 max)
-const RECAP = [['huang', 'NVIDIA’S CEO RESIGNED'], ['flatbush', 'BROOKLYN COLLAPSE: 8 DEAD'], ['colom', 'MISSISSIPPI ELECTS A DEMOCRAT'], ['peltola', 'ALASKA STILL COUNTING'], ['darchiev', 'RUSSIA’S U.S. ENVOY DIED']];
+const RECAP = [['vance', 'VANCE PULLED FROM IRAN TALKS'], ['vanhollen', 'SCHUMER GETS A CHALLENGER'], ['msft', 'HUGE MICROSOFT OUTAGE'], ['brooklyn', 'BROOKLYN COLLAPSE: 23 INJURED'], ['huang', 'HUANG CALLED TO TESTIFY']];
 const shotIx = t => { let i = 0; while (i < SH.length - 1 && t >= SH[i + 1][0]) i++; return i; };
 // big numbers / stamps: [from, to, text, sub, colour class]
 const BIG = [
-  [wordT('resigned', S[1]), S[2], 'RESIGNED', 'CEO SINCE 1993', 'r'],
-  [wordT('spied', S[2]) - 0.1, S[3], 'ALLEGED SPY', 'TWO AFFAIRS REPORTED', 'r'],
-  [wordT('13', S[3]), S[4], '−13%', 'NVIDIA STOCK, AT ONE POINT', 'r'],
-  [S[4] + 0.2, S[5], 'INTERIM CEO', 'COLETTE KRESS · CFO', 'w'],
-  [wordT('Eight', S[6]), S[7], '8 DEAD', '2 CHILDREN · 17+ INJURED', 'r'],
-  [wordT('investigation', S[7]) - 0.2, S[8], 'CAUSE?', 'UNDER INVESTIGATION', 'w'],
-  [wordT('1982', S[9]), S[10], '1ST SINCE 1982', 'FIRST BLACK SENATOR SINCE RECONSTRUCTION', 'b'],
-  [wordT('15', S[10]), S[11], '15% LEFT', 'BALLOTS STILL UNCOUNTED', 'b'],
-  [wordT('military', S[11]), S[12], 'MILITARY BASE', 'AFTER THREATS FROM IRAN', 'r'],
-  [wordT('stop', S[12]), S[13], '“SILENCE AND RESPECT”', 'THE TOMB GUARD', 'w'],
-  [wordT('250', S[13]), S[14], '250 FT', 'TRUMP’S PLANNED ARCH', 'r'],
-  [wordT('218', S[14]), S[15], '218', 'SIGNATURES — A NEW VOTE', 'b'],
-  [wordT('died', S[16]), S[18] - 0.1, 'DIED SUDDENLY', 'NO CAUSE GIVEN', 'r']].map(b => (b[1] === S[18] - 0.1 ? [b[0], T_CTA - 0.1, ...b.slice(2)] : b));
+  [wordT('pulled', S[1]), S[2] - 0.1, 'NO TALKS', 'VANCE PULLED FROM IRAN TALKS', 'r'],
+  [S[2] + 0.1, S[3] - 0.1, '“WE DON’T NEED A DEAL”', 'TRUMP ON IRAN', 'w'],
+  [wordT('destroyed', S[3]), wordT('four', S[4]) - 0.1, 'RADAR HIT?', 'IRAN’S CLAIM · BAHRAIN', 'r'],
+  [wordT('four', S[4]), S[5] - 0.1, '4 TANKERS', 'HIT IN THE STRAIT OF HORMUZ', 'r'],
+  [wordT('challenge', S[5]), wordT('Bernie', S[5]) - 0.2, 'CHALLENGE', 'VAN HOLLEN VS SCHUMER', 'b'],
+  [wordT('50', S[6]), S[7] - 0.1, '50+ ARRESTED', 'SIT-IN AT SCHUMER’S OFFICE', 'r'],
+  [wordT('74', S[7]), S[8] - 0.1, '74 COUNTRIES', 'OUTLOOK · TEAMS · COPILOT DOWN', 'r'],
+  [wordT('23', S[8]), S[9] - 0.1, '23 INJURED', 'BUILDING COLLAPSE', 'r'],
+  [wordT('100', S[9]), S[10] - 0.1, '~100 SITES', 'TO BE INSPECTED', 'w'],
+  [wordT('medal', S[10]), S[11] - 0.1, 'MEDAL', 'FOR THE TOMB GUARD', 'b'],
+  [S[11] + 0.1, S[13] - 0.1, '“WE LOVE STANDARDS”', 'HEGSETH', 'w'],
+  [wordT('testify', S[13]), S[14] - 0.1, 'TO TESTIFY', 'NEXT MONTH · SENATE BANKING', 'b'],
+  [S[15] + 1.2, S[16] - 0.1, '$1.2B SEIZED', 'STOLEN BY NORTH KOREAN HACKERS', 'b'],
+  [wordT('won', S[16]), S[17] - 0.1, 'NEW GOVERNOR', 'DEMOCRAT · KANSAS', 'b'],
+  [wordT('largest', S[17]), T_CTA - 0.1, 'BIGGEST SWAP', 'OF THE WAR — ZELENSKY', 'w']];
 // two-photo tags
-const TAGS = { colom: ['WON', 'b'], hydesmith: ['LOST', 'g'], peltola: ['LEADS', 'b'], sullivan: ['TRAILS', 'g'], witkoff: ['WITKOFF', 'w'], kushner: ['KUSHNER', 'w'] };
-const NAMES = { huang: 'JENSEN HUANG', huang2: 'JENSEN HUANG', colom: 'SCOTT COLOM', hydesmith: 'CINDY HYDE-SMITH', peltola: 'MARY PELTOLA', sullivan: 'DAN SULLIVAN', bessent: 'SCOTT BESSENT', hegseth: 'PETE HEGSETH', massie: 'THOMAS MASSIE', putin: 'VLADIMIR PUTIN', darchiev: 'ALEXANDER DARCHIEV', flame: 'JFK’S ETERNAL FLAME', tomb: 'TOMB OF THE UNKNOWN SOLDIER', flatbush: 'FLATBUSH AVENUE', nvidiahq: 'NVIDIA HQ · SANTA CLARA' };
+const TAGS = { trump: ['PRESIDENT', 'w'], vance: ['PULLED OUT', 'g'], vanhollen: ['CHALLENGER', 'b'], schumer: ['LEADER', 'g'], timscott: ['SUMMONS', 'b'], huang: ['TO TESTIFY', 'g'], witkoff: ['WITKOFF', 'w'], kushner: ['KUSHNER', 'w'] };
+const NAMES = { trump: 'DONALD TRUMP', vance: 'JD VANCE', vanhollen: 'CHRIS VAN HOLLEN', schumer: 'CHUCK SCHUMER', sanders: 'BERNIE SANDERS', mamdani: 'ZOHRAN MAMDANI', hegseth: 'PETE HEGSETH', tomb: 'TOMB OF THE UNKNOWN SOLDIER', timscott: 'SEN. TIM SCOTT', lutnick: 'HOWARD LUTNICK', huang: 'JENSEN HUANG', holscher: 'CINDY HOLSCHER', putin: 'VLADIMIR PUTIN', zelensky: 'VOLODYMYR ZELENSKY', fbihq: 'FBI HEADQUARTERS', hormuz: 'STRAIT OF HORMUZ' };
 const src = k => `assets/news/big/${k}.jpg`;
 const ASP = {};
 const ORIG = {};   // per-photo zoom origin (% of height): 70 = push toward the chin so the forehead goes (Huang, her note) — default 40   // photo aspect w/h, filled in sceneReady
@@ -84,7 +86,8 @@ function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (M
 //  bars  {title, rows:[[label, value, color]], unit, bg} — horizontal bars grow, values count up
 //  dots  {title, total, filled, need, label, bg} — a grid of dots fills up to `filled`, a marker at `need` (e.g. 218 of 435)
 //  progress {title, pct, label, bg} — a big ring fills to pct (e.g. ballots counted)
-const CHARTS = { nvda: { type: 'stock', title: 'NVIDIA STOCK', from: 100, to: 87, label: '−13%', sub: 'AT ONE POINT', bg: 'nvidiahq' },
+const CHARTS = { nvcap: { type: 'stock', title: 'NVIDIA VALUE', from: 100, to: 58, label: '−$2T', sub: 'SINCE EARLY OCTOBER', bg: 'nvidiahq' },
+  nvda: { type: 'stock', title: 'NVIDIA STOCK', from: 100, to: 87, label: '−13%', sub: 'AT ONE POINT', bg: 'nvidiahq' },
   ak: { type: 'progress', title: 'ALASKA SENATE · BALLOTS COUNTED', pct: 85, label: '15% LEFT', bg: 'anchorage' },
   epstein: { type: 'dots', title: 'SIGNATURES TO FORCE A VOTE', total: 435, filled: 218, need: 218, label: '218 / 218 NEEDED', bg: 'capitol' } };
 const isChart = p => typeof p === 'string' && p.startsWith('chart:');
@@ -149,4 +152,4 @@ window.sceneReady = (async () => { await document.fonts.ready; try { FACES = awa
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
-  [S[1], 'shutter', 0.7], [S[3], 'coins', 0.5], [S[8], 'cheer', 0.4], [S[14], 'paper', 0.6], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'follow', 0.9], [ENDC, 'whoosh', 0.5]];
+  [S[1], 'shutter', 0.7], [S[3], 'boom', 0.35], [S[6], 'crowd', 0.5], [S[7], 'alarm', 0.45], [S[10], 'shutter', 0.6], [S[14], 'coins', 0.5], [S[15], 'type', 0.5], [S[16], 'cheer', 0.4], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'follow', 0.9], [ENDC, 'whoosh', 0.5]];
