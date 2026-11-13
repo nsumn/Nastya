@@ -21,6 +21,7 @@ SFX = {
   'jet':     ('fighter jet fly-by whoosh, fast', 2.0),
   'type':    ('fast keyboard typing, short burst', 1.0),
   'ding':    ('phone news notification ding, clean', 0.6),
+  'follow':  ('smartphone app follow button tap: a crisp soft UI click followed by a short bright two-note success chime, clean, modern', 1.0),   # the follow animation at the end of the photo news
   'paper':   ('paper sheet slide and slap on a desk', 0.7),
   'alarm':   ('short warning alert beep, two tones', 1.0),
 }

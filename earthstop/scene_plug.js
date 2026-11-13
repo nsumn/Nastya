@@ -136,14 +136,14 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   // hook (frame 0) and CTA
   $('hook').style.opacity = 1 - smooth(1.45, 1.75, t); $('hook').style.transform = `scale(${pop(t, 0, 0.3).toFixed(3)})`;
   // FOLLOW animation (her idea Nov 13, like TikTok's avatar "+"): our avatar pops in, a finger taps the red "+", it flips to a ✓
-  { const f0 = T_CTA + 0.05, on = t >= f0 && t < ENDC; $('fol').style.opacity = on ? smooth(f0, f0 + 0.2, t) * (1 - smooth(ENDC - 0.15, ENDC, t)) : 0;
+  { const f0 = T_CTA + 0.05, on = t >= f0 && t < ENDC; const OUT = 1 - smooth(ENDC - 0.25, ENDC, t); $('fol').style.opacity = on ? smooth(f0, f0 + 0.2, t) * OUT : 0;
     if (on) { const tap = f0 + 1.0, k = pop(t, f0, 0.35), fu = easeOut(span(t, f0 + 0.35, tap - 0.05)), press = t >= tap - 0.05 && t < tap + 0.15 ? 0.82 : 1, done = t >= tap + 0.12;
       $('fol').style.transform = `translateX(-50%) scale(${k.toFixed(3)})`;
       $('folPlus').style.transform = `translateX(-50%) scale(${(press * (done ? pop(t, tap + 0.12, 0.3) : 1)).toFixed(3)}) rotate(${done ? 0 : 0}deg)`; $('folPlus').className = done ? 'ok' : '';
       $('folPlus').textContent = done ? '✓' : '+'; $('folRip').style.opacity = t >= tap ? (1 - span(t, tap, tap + 0.5)).toFixed(2) : 0; $('folRip').style.transform = `translateX(-50%) scale(${(1 + 1.6 * span(t, tap, tap + 0.5)).toFixed(3)})`;
-      $('folHand').style.transform = `translate(${(160 * (1 - fu)).toFixed(0)}px, ${(220 * (1 - fu) + (press < 1 ? 10 : 0)).toFixed(0)}px)`; $('folHand').style.opacity = t < tap + 0.6 ? 1 : 1 - span(t, tap + 0.6, tap + 0.9); } }
-  $('cta').style.opacity = t >= T_CTA - 0.1 && t < ENDC ? smooth(T_CTA - 0.1, T_CTA + 0.2, t) : 0; $('cta').style.transform = `scale(${pop(t, T_CTA - 0.1, 0.35).toFixed(3)})`;
-  $('cap').innerHTML = t < ENDC ? capHTML(t) : '';
+      $('folHand').style.transform = `translate(${(160 * (1 - fu)).toFixed(0)}px, ${(220 * (1 - fu) + (press < 1 ? 10 : 0)).toFixed(0)}px) rotate(-14deg)`; $('folHand').style.opacity = 1; } }
+  $('cta').style.opacity = t >= T_CTA - 0.1 && t < ENDC ? smooth(T_CTA - 0.1, T_CTA + 0.2, t) * (1 - smooth(ENDC - 0.25, ENDC, t)) : 0; $('cta').style.transform = `scale(${pop(t, T_CTA - 0.1, 0.35).toFixed(3)})`;
+  $('cap').innerHTML = t < ENDC ? capHTML(t) : ''; $('cap').style.opacity = t >= T_CTA ? 1 - smooth(ENDC - 0.25, ENDC, t) : 1;
   $('end').style.opacity = smooth(ENDC, ENDC + 0.2, t); $('endT').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endB').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endS').style.opacity = t >= ENDC ? 1 : 0;
   if (t >= ENDC) $('endS').innerHTML = RECAP.map(([k, l], j) => `<div class="rc" style="opacity:${smooth(ENDC + 0.1 + j * 0.08, ENDC + 0.25 + j * 0.08, t).toFixed(2)};transform:translateX(${(60 * (1 - easeOut(span(t, ENDC + 0.1 + j * 0.08, ENDC + 0.4 + j * 0.08)))).toFixed(0)}px)"><img src="${src(k)}" style="object-position:${POS[k] || '50% 25%'}"><span>${soft(l)}</span></div>`).join('');
   return true; }
@@ -153,4 +153,4 @@ window.sceneReady = (async () => { await document.fonts.ready; try { FACES = awa
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
-  [S[1], 'shutter', 0.7], [S[3], 'coins', 0.5], [S[8], 'cheer', 0.4], [S[14], 'paper', 0.6], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'pop', 0.8], [T_CTA + 1.1, 'ding', 0.5], [ENDC, 'whoosh', 0.5]];
+  [S[1], 'shutter', 0.7], [S[3], 'coins', 0.5], [S[8], 'cheer', 0.4], [S[14], 'paper', 0.6], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'follow', 0.9], [ENDC, 'whoosh', 0.5]];
