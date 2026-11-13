@@ -8,7 +8,13 @@ Branch: `claude/what-if-video-ideas-nmv78w` (repo `nsumn/Nastya`) — the CURREN
 - Every video: research facts (web search, cite sources), compute numbers in `tools/*.py`, send a time-coded **script table**, wait for "ок/да", build, check a contact sheet, then send the mp4 + TikTok caption + 6–8 hashtags + 2 short alternatives + known flaws + posting tip (7–9 pm ET).
 - Commit + push engine changes (not frames / mp4 / wav / assets) after each step.
 
-## NOW (Nov 8–11 2026) — US NEWS ON A 3D MAP (the channel's current format) — READ THIS FIRST
+## NOW (from Nov 13 2026) — DAILY PHOTO NEWS, every day, on @wowwwwhatif (her decision)
+- Account check Nov 13: the map news got 400–13K views, old "What if" videos 5K–814K. She still chose US news only ("каждый день новости, и будь что будет") — the goal is a US audience; @dailyplugusa (30–80K a video, 2 posts a day, 6–7 am + 5 pm ET) is the model.
+- Format: `index_plug.html` + `parts_plug/` ("What happened in America in the last 24 hours", 1:30–2:00, 8–10 stories, photos with a slow Ken Burns push, slide-in cuts, Anton stamps, word-highlight captions, story counter, date on screen, NO channel name yet). Intro variants: `index_intro.html?v=D|E|F` and `index_imap.html?v=A|B` (+ `?v=O` overlay), spliced by `tools/plug_assemble.sh <name> <V>`. README has the commands.
+- Workflow per day (~2 h): research (Democracy Now headlines + Just Security Early Edition + one search for overnight news) → `out/<name>/vo.txt` (~260 words) → voice/timing (news_make.sh voice|timing with parts_plug) → photos (`tools/plug_photo.py`, Commons rate-limits: space the calls) → edit SH/BIG/TAGS/NAMES in p_main.js → test frames → render (≈1.5 fps, ~70 min for 100 s at 60 fps) → mix → assemble → send + description with photo credits.
+- Soft words on screen (CLAUDE.md §2). Post 6–7 am ET = 14–15 MSK (winter).
+
+## EARLIER (Nov 8–11 2026) — US NEWS ON A 3D MAP (the channel's current format) — READ THIS FIRST
 **Why:** her audience drifted to Indonesia/Europe; she switched the account to US politics/geography/news so US viewers (higher RPM) come. Real photos of politicians are allowed (CLAUDE.md §2). Inspiration accounts: @geolyth__ (daily "Last 24 Hours In U.S. & Geopolitics", 2–3 min), @dollarindex, @cruzastudillo, @didyouknow.geo, @quarterchart, @worldhistorynetwork. Same genre, OUR OWN look — never copy theirs.
 
 **Videos made (all on branch, README has one entry each):** midterms (`parts_news`), daily "The last 24 hours" Nov 8 (`parts_day`), Nov 9 (`parts_day2`, Nvidia/Huang letter card), Nov 10 (`parts_day3`), "Why Texas turned blue" (`parts_tx`, counties), "The 7 states that flipped the Senate" (`parts_seven`), "Why is Alaska still counting votes?" (`parts_ak`), "Can the House impeach Hegseth?" (`parts_imp`, built but NOT rendered — she stopped it), "Hegseth survived impeachment — but January could change everything" (`parts_surv`, Nov 11, the first v4 video).

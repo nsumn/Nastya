@@ -51,8 +51,12 @@ const BIG = [
 const TAGS = { colom: ['WON', 'b'], hydesmith: ['LOST', 'g'], peltola: ['LEADS', 'b'], sullivan: ['TRAILS', 'g'], witkoff: ['WITKOFF', 'w'], kushner: ['KUSHNER', 'w'] };
 const NAMES = { huang: 'JENSEN HUANG', huang2: 'JENSEN HUANG', colom: 'SCOTT COLOM', hydesmith: 'CINDY HYDE-SMITH', peltola: 'MARY PELTOLA', sullivan: 'DAN SULLIVAN', bessent: 'SCOTT BESSENT', hegseth: 'PETE HEGSETH', massie: 'THOMAS MASSIE', putin: 'VLADIMIR PUTIN', darchiev: 'ALEXANDER DARCHIEV', flame: 'JFK’S ETERNAL FLAME', tomb: 'TOMB OF THE UNKNOWN SOLDIER', flatbush: 'FLATBUSH AVENUE', nvidiahq: 'NVIDIA HQ · SANTA CLARA' };
 const src = k => `assets/news/big/${k === 'huang2' ? 'huang' : k}.jpg`;
+// her rule (Nov 13 2026): soften death/violence words ON SCREEN (stamps, captions, end card) — TikTok's text scan can cut reach; the VOICE stays natural
+const SOFT = [[/\bkill(ed|ing|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdead\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdie(d|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdeath(s)?\b/gi, m => m[0] + '*' + m.slice(2)],
+  [/\bshoot(ing|er)?\b/gi, m => m.slice(0, 2) + '**' + m.slice(4)], [/\bmurder(ed|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bsuicide\b/gi, () => 'su*cide']];
+const soft = s => SOFT.reduce((a, [re, f]) => a.replace(re, f), s);
 const CHUNKS = (() => { const out = []; let cur = []; WORDS.forEach((w, i) => { cur.push(w); const end = /[.?!]$/.test(w[2]) || (/[,:]$/.test(w[2]) && cur.length >= 3) || cur.length >= 5; if (end || i === WORDS.length - 1) { out.push(cur); cur = []; } }); return out; })();
-function capHTML(t) { const c = CHUNKS.find(ch => t >= ch[0][0] - 0.05 && t < (ch[ch.length - 1][1] + 0.2)); if (!c) return ''; return c.map(w => `<span class="${t >= w[0] && t < w[1] + 0.08 ? 'y' : ''}">${w[2]}</span>`).join(' '); }
+function capHTML(t) { const c = CHUNKS.find(ch => t >= ch[0][0] - 0.05 && t < (ch[ch.length - 1][1] + 0.2)); if (!c) return ''; return c.map(w => `<span class="${t >= w[0] && t < w[1] + 0.08 ? 'y' : ''}">${soft(w[2])}</span>`).join(' '); }
 function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (key.length % 2) ? 1 : -1, k = key === 'huang2' ? 1.35 : 1.0;
   const sc = k * (1.04 + 0.14 * u), tx = dir * 18 * (u - 0.5), ty = key === 'huang2' ? 60 : -8 * u;
   const nm = NAMES[key] && w > 600 ? `<div class="nm">${NAMES[key]}</div>` : NAMES[key] ? `<div class="nm sm">${NAMES[key]}</div>` : '';
@@ -77,7 +81,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   $('head').style.opacity = t < 1.7 || t >= ENDC ? 0 : 1;
   // big number / stamp
   const B = BIG.find(x => t >= x[0] && t < x[1]); if (B) { const q = pop(t, B[0], 0.32), f = 1 - smooth(B[1] - 0.2, B[1], t);
-    $('big').innerHTML = `<div class="bv ${B[4]}" style="font-size:${B[2].length > 12 ? 74 : B[2].length > 8 ? 96 : 130}px">${B[2]}</div><div class="bs">${B[3]}</div>`; $('big').style.opacity = f; $('big').style.transform = `rotate(-3deg) scale(${q.toFixed(3)})`; }
+    $('big').innerHTML = `<div class="bv ${B[4]}" style="font-size:${B[2].length > 12 ? 74 : B[2].length > 8 ? 96 : 130}px">${soft(B[2])}</div><div class="bs">${soft(B[3])}</div>`; $('big').style.opacity = f; $('big').style.transform = `rotate(-3deg) scale(${q.toFixed(3)})`; }
   else $('big').style.opacity = 0;
   // hook (frame 0) and CTA
   $('hook').style.opacity = 1 - smooth(1.45, 1.75, t); $('hook').style.transform = `scale(${pop(t, 0, 0.3).toFixed(3)})`;
@@ -86,6 +90,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   $('end').style.opacity = smooth(ENDC, ENDC + 0.35, t); $('endT').style.opacity = smooth(ENDC + 0.1, ENDC + 0.45, t); $('endS').style.opacity = smooth(ENDC + 0.7, ENDC + 1.1, t);
   return true; }
 window.renderAt = renderAt;
+document.getElementById('endS').innerHTML = soft(document.getElementById('endS').innerHTML);
 const ALL = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : [s[1]]).map(src))];
 window.sceneReady = (async () => { await document.fonts.ready; await Promise.all(['900', '800', '700'].map(w => document.fonts.load(`${w} 60px Inter`)).concat([document.fonts.load('400 60px Anton')]));
   await Promise.all(ALL.map(f => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = f; }))); renderAt(0); return true; })();

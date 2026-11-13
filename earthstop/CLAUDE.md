@@ -12,6 +12,7 @@ Anastasia runs a TikTok channel of low-poly 3D "What if…" videos for a US audi
 ## 2. Content rules (TikTok)
 - No blood, wounds, gore or violence; zombies/monsters are cartoony (green skin + flash). Bites OK if bloodless.
 - Real people: her rule changed Nov 8 2026 — real photos of politicians/public figures ARE allowed (and wanted in the US news-map format). Prefer public-domain official portraits (US federal works) or CC-licensed Wikimedia Commons files (`tools/commons_photo.py`, photos go to git-ignored `assets/news/photos/`); give credit in the TikTok description when the license asks for it. Don't copy another creator's look (Geolyth etc.) — same genre, our own style. No explicit nudity — phallic shapes get videos restricted; if she insists, keep it stylized, never write the word on screen, warn her about strikes.
+- Death/violence words ON SCREEN (stamps, captions, end card, TikTok description): soften them — k*lled, d*ad, d*ed, sh**ting, su*cide — or use neutral words ("8 LOST", "PASSED AWAY"). TikTok's text scan can cut reach / Creator Rewards on such videos (her rule, Nov 13 2026). The voice stays natural. `soft()` in `parts_plug/p_main.js` does it automatically.
 - Text must be CENTERED. Safe zones for 1080×1920: nothing important at y < 320 (tabs/Stories pill), right column x > 900 for y 950–1670 (icons), y > 1650 (caption/search), ~57 px side crop. Title top ≥ 340 px, HUD `left:100px; top:900px`, captions `top:1250px; padding:0 190px; text-align:center`.
 
 ## 3. Engine layout
