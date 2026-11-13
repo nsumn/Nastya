@@ -17,14 +17,14 @@ const POS = { huang: '50% 34%', nvidiahq: '50% 50%', flatbush: '50% 40%', brookl
 const N = 11;
 const SH = [
   [0, 'capitol', '', 0],
-  [S[1], 'huang', 'NVIDIA', 1], [S[2], 'huang', 'NVIDIA', 1], [S[3], 'nvidiahq', 'NVIDIA', 1],
+  [S[1], 'huang', 'NVIDIA', 1], [S[2], 'huang', 'NVIDIA', 1], [S[3], 'chart:nvda', 'NVIDIA', 1], [S[4], 'nvidiahq', 'NVIDIA', 1],
   [S[5], 'flatbush', 'BROOKLYN, NY', 2], [S[6], 'brooklyn', 'BROOKLYN, NY', 2], [S[7], 'fdny', 'BROOKLYN, NY', 2],
   [S[8], ['colom', 'hydesmith'], 'MISSISSIPPI', 3], [S[9], 'colom', 'MISSISSIPPI', 3],
-  [S[10], ['peltola', 'sullivan'], 'ALASKA', 4],
+  [S[10], ['peltola', 'sullivan'], 'ALASKA', 4], [wordT('15', S[10]) - 0.3, 'chart:ak', 'ALASKA', 4],
   [S[11], 'bessent', 'TREASURY', 5],
   [S[12], 'tomb', 'ARLINGTON', 6], [wordT('Hegseth', S[12]) - 0.1, 'hegseth', 'ARLINGTON', 6],
   [S[13], 'flame', 'KENNEDY FAMILY', 7],
-  [S[14], 'massie', 'EPSTEIN FILES', 8],
+  [S[14], 'massie', 'EPSTEIN FILES', 8], [wordT('218', S[14]) - 0.2, 'chart:epstein', 'EPSTEIN FILES', 8],
   [S[15], ['witkoff', 'kushner'], 'RUSSIA', 9], [wordT('Vladimir', S[15]) - 0.1, 'putin', 'RUSSIA', 9],
   [S[16], 'darchiev', 'RUSSIA', 10],
   [T_CTA, 'capitol', '', 11]];
@@ -79,9 +79,37 @@ function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (M
   const tg = TAGS[key] ? `<div class="tg ${TAGS[key][1]}" style="transform:scale(${pop(t, a + 0.35, 0.25).toFixed(3)})">${TAGS[key][0]}</div>` : '';
   const flt = fl && fl.startsWith('FLOAT'), st = fl ? `position:absolute;${fl.replace('FLOAT', '')}${flt ? ';-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)' : ''}` : `transform-origin:50% ${ORIG[key] || 40}%;object-position:${POS[key] || (asp < 1.2 ? '50% 22%' : '50% 40%')};transform:translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${sc.toFixed(4)})`;
   return `<div class="ph" style="left:${x}px;width:${w}px">${flt ? `<img src="${src(key)}" style="filter:blur(26px) brightness(.7);transform:scale(1.2)">` : ''}<img src="${src(key)}" style="${st}">${nm}${tg}</div>`; }
+// ---- INFOGRAPHICS (her note Nov 13: "sometimes" — 1–2 per edition, only where a number tells the story). In SH use 'chart:<id>' instead of a photo key.
+//  stock {title, from, to, label, bg}  — a price line falling/rising, area fill, the % lands at the end
+//  bars  {title, rows:[[label, value, color]], unit, bg} — horizontal bars grow, values count up
+//  dots  {title, total, filled, need, label, bg} — a grid of dots fills up to `filled`, a marker at `need` (e.g. 218 of 435)
+//  progress {title, pct, label, bg} — a big ring fills to pct (e.g. ballots counted)
+const CHARTS = { nvda: { type: 'stock', title: 'NVIDIA STOCK', from: 100, to: 87, label: '−13%', sub: 'AT ONE POINT', bg: 'nvidiahq' },
+  ak: { type: 'progress', title: 'ALASKA SENATE · BALLOTS COUNTED', pct: 85, label: '15% LEFT', bg: 'anchorage' },
+  epstein: { type: 'dots', title: 'SIGNATURES TO FORCE A VOTE', total: 435, filled: 218, need: 218, label: '218 / 218 NEEDED', bg: 'capitol' } };
+const isChart = p => typeof p === 'string' && p.startsWith('chart:');
+function chartHTML(id, t, a, b) { const C = CHARTS[id], u = span(t, a + 0.15, Math.min(b, a + 2.6)), W = 1000, H = 720; let g = '';
+  if (C.type === 'stock') { const N = 60, pts = []; for (let i = 0; i <= N; i++) { const k = i / N, v = C.from + (C.to - C.from) * Math.pow(k, 1.8) + 1.1 * Math.sin(i * 0.9) * (1 - k * 0.5) + 0.5 * Math.sin(i * 2.3);
+      pts.push([90 + k * 820, 0, v]); } const lo = Math.min(C.from, C.to) - 6, hi = Math.max(C.from, C.to) + 6; pts.forEach(q => { q[1] = 600 - (q[2] - lo) / (hi - lo) * 420; });
+    const n = Math.max(2, Math.round(easeOut(u) * N) + 1), sh = pts.slice(0, n), line = sh.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(''), col = C.to < C.from ? '#ff4a4a' : '#2ad07a';
+    g += [0, 1, 2, 3].map(k => `<line x1="90" x2="910" y1="${180 + k * 140}" y2="${180 + k * 140}" stroke="rgba(255,255,255,.12)" stroke-width="2"/>`).join('');
+    g += `<path d="${line}L${sh[n - 1][0].toFixed(1)} 620L90 620Z" fill="${col}" opacity=".18"/><path d="${line}" stroke="${col}" stroke-width="9" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${sh[n - 1][0]}" cy="${sh[n - 1][1]}" r="16" fill="${col}"/>`;
+    if (u > 0.85) g += `<g transform="translate(${Math.min(820, sh[n - 1][0])} ${sh[n - 1][1] - 120}) scale(${pop(t, a + 0.15 + 0.85 * 2.45, 0.3).toFixed(3)})"><text text-anchor="middle" font-family="Anton" font-size="120" fill="${col}">${C.label}</text></g>`; }
+  if (C.type === 'bars') { const mx = Math.max(...C.rows.map(r => r[1])); C.rows.forEach(([l, v, c], i) => { const k = easeOut(span(u, i * 0.12, 0.7 + i * 0.12)), y = 200 + i * 130;
+      g += `<text x="90" y="${y - 18}" font-family="Inter" font-weight="900" font-size="34" fill="#fff" letter-spacing="2">${l}</text><rect x="90" y="${y}" width="${(780 * v / mx * k).toFixed(1)}" height="64" rx="10" fill="${c}"/><text x="${(110 + 780 * v / mx * k).toFixed(1)}" y="${y + 48}" font-family="Anton" font-size="52" fill="#fff">${Math.round(v * k).toLocaleString('en-US')}${C.unit || ''}</text>`; }); }
+  if (C.type === 'dots') { const cols = 29, r = 10, f = Math.round(C.filled * easeOut(u)); for (let i = 0; i < C.total; i++) { const x = 110 + (i % cols) * 27.5, y = 190 + Math.floor(i / cols) * 27.5;
+      g += `<circle cx="${x}" cy="${y}" r="${r}" fill="${i < f ? '#ffc23a' : 'rgba(255,255,255,.16)'}"/>`; }
+    const ny = 190 + Math.floor((C.need - 1) / cols) * 27.5, nx = 110 + ((C.need - 1) % cols) * 27.5; g += `<circle cx="${nx}" cy="${ny}" r="17" fill="none" stroke="#fff" stroke-width="4"/>`;
+    if (u > 0.9) g += `<g transform="translate(500 650) scale(${pop(t, a + 0.15 + 0.9 * 2.45, 0.3).toFixed(3)})"><text text-anchor="middle" font-family="Anton" font-size="64" fill="#fff">${C.label}</text></g>`; }
+  if (C.type === 'progress') { const R = 200, L = 2 * Math.PI * R, k = C.pct / 100 * easeOut(u);
+    g += `<circle cx="500" cy="400" r="${R}" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="44"/><circle cx="500" cy="400" r="${R}" fill="none" stroke="#2a7bff" stroke-width="44" stroke-linecap="round" stroke-dasharray="${(L * k).toFixed(1)} ${L}" transform="rotate(-90 500 400)"/>
+      <text x="500" y="430" text-anchor="middle" font-family="Anton" font-size="130" fill="#fff">${Math.round(C.pct * easeOut(u))}%</text>`;
+    if (u > 0.9) g += `<g transform="translate(500 680) scale(${pop(t, a + 0.15 + 0.9 * 2.45, 0.3).toFixed(3)})"><text text-anchor="middle" font-family="Anton" font-size="56" fill="#ffc23a">${C.label}</text></g>`; }
+  return `<div class="ph chart" style="left:40px;width:${W}px"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><text x="90" y="110" font-family="Inter" font-weight="900" font-size="34" letter-spacing="4" fill="#ffc23a">${C.title}</text>${C.sub && u > 0.9 ? `<text x="910" y="110" text-anchor="end" font-family="Inter" font-weight="900" font-size="26" letter-spacing="3" fill="rgba(255,255,255,.7)">${C.sub}</text>` : ''}${g}</svg></div>`; }
 function shotHTML(i, t) { const [a, p] = SH[i], b = i < SH.length - 1 ? SH[i + 1][0] : T_END;
+  if (isChart(p)) return chartHTML(p.slice(6), t, a, b);
   return Array.isArray(p) ? photoHTML(p[0], t, a, b, 487, 40) + photoHTML(p[1], t, a, b, 487, 553) : photoHTML(p, t, a, b, 1000, 40); }
-const bgKey = p => Array.isArray(p) ? p[0] : p;
+const bgKey = p => Array.isArray(p) ? p[0] : isChart(p) ? CHARTS[p.slice(6)].bg : p;
 function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   // slide-in of the new shot over the old one (0.28 s), with a short blur
   const k = i > 0 ? easeOut(span(t, a, a + 0.28)) : 1;
@@ -97,7 +125,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   $('cnt').style.opacity = n >= 1 && n <= 10 ? 1 : 0; $('cnt').textContent = `${n}/10`;
   $('head').style.opacity = t < 1.7 || t >= ENDC ? 0 : 1;
   // big number / stamp
-  const B = BIG.find(x => t >= x[0] && t < x[1]); if (B) { const q = pop(t, B[0], 0.32), f = 1 - smooth(B[1] - 0.2, B[1], t);
+  const B = isChart(p) ? null : BIG.find(x => t >= x[0] && t < x[1]); /* a chart carries its own number */ if (B) { const q = pop(t, B[0], 0.32), f = 1 - smooth(B[1] - 0.2, B[1], t);
     $('big').innerHTML = `<div class="bv ${B[4]}" style="font-size:${B[2].length > 12 ? 74 : B[2].length > 8 ? 96 : 130}px">${soft(B[2])}</div><div class="bs">${soft(B[3])}</div>`; $('big').style.opacity = f; $('big').style.transform = `rotate(-3deg) scale(${q.toFixed(3)})`; }
   else $('big').style.opacity = 0;
   // hook (frame 0) and CTA
@@ -108,7 +136,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   if (t >= ENDC) $('endS').innerHTML = RECAP.map(([k, l], j) => `<div class="rc" style="opacity:${smooth(ENDC + 0.1 + j * 0.08, ENDC + 0.25 + j * 0.08, t).toFixed(2)};transform:translateX(${(60 * (1 - easeOut(span(t, ENDC + 0.1 + j * 0.08, ENDC + 0.4 + j * 0.08)))).toFixed(0)}px)"><img src="${src(k)}" style="object-position:${POS[k] || '50% 25%'}"><span>${soft(l)}</span></div>`).join('');
   return true; }
 window.renderAt = renderAt;
-const KEYS = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : [s[1]]).concat(RECAP.map(r => r[0])))], ALL = KEYS.map(src);
+const KEYS = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : isChart(s[1]) ? [CHARTS[s[1].slice(6)].bg] : [s[1]]).concat(RECAP.map(r => r[0])))], ALL = KEYS.map(src);
 window.sceneReady = (async () => { await document.fonts.ready; try { FACES = await (await fetch('assets/news/big/faces.json')).json(); } catch (e) { FACES = {}; } await Promise.all(['900', '800', '700'].map(w => document.fonts.load(`${w} 60px Inter`)).concat([document.fonts.load('400 60px Anton')]));
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
