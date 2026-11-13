@@ -141,7 +141,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
       $('fol').style.transform = `translateX(-50%) scale(${k.toFixed(3)})`;
       $('folPlus').style.transform = `translateX(-50%) scale(${(press * (done ? pop(t, tap + 0.12, 0.3) : 1)).toFixed(3)}) rotate(${done ? 0 : 0}deg)`; $('folPlus').className = done ? 'ok' : '';
       $('folPlus').textContent = done ? '✓' : '+'; $('folRip').style.opacity = t >= tap ? (1 - span(t, tap, tap + 0.5)).toFixed(2) : 0; $('folRip').style.transform = `translateX(-50%) scale(${(1 + 1.6 * span(t, tap, tap + 0.5)).toFixed(3)})`;
-      $('folHand').style.transform = `translate(${(160 * (1 - fu)).toFixed(0)}px, ${(220 * (1 - fu) + (press < 1 ? 10 : 0)).toFixed(0)}px) rotate(-12deg)`; $('folHand').style.opacity = t < tap + 0.6 ? 1 : 1 - span(t, tap + 0.6, tap + 0.9); } }
+      $('folHand').style.transform = `translate(${(160 * (1 - fu)).toFixed(0)}px, ${(220 * (1 - fu) + (press < 1 ? 10 : 0)).toFixed(0)}px)`; $('folHand').style.opacity = t < tap + 0.6 ? 1 : 1 - span(t, tap + 0.6, tap + 0.9); } }
   $('cta').style.opacity = t >= T_CTA - 0.1 && t < ENDC ? smooth(T_CTA - 0.1, T_CTA + 0.2, t) : 0; $('cta').style.transform = `scale(${pop(t, T_CTA - 0.1, 0.35).toFixed(3)})`;
   $('cap').innerHTML = t < ENDC ? capHTML(t) : '';
   $('end').style.opacity = smooth(ENDC, ENDC + 0.2, t); $('endT').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endB').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endS').style.opacity = t >= ENDC ? 1 : 0;
