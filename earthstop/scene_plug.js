@@ -18,7 +18,7 @@ const T_CTA = S[S.length - 1];   // the last sentence is the follow call (no que
 const POS = { huang: '50% 34%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
   tomb: '55% 50%', hegseth: '50% 20%', flame: '50% 55%', massie: '50% 22%', witkoff: '50% 22%', kushner: '50% 22%', putin: '50% 22%', kreml: '50% 50%', darchiev: '50% 22%', capitol: '50% 30%', mississippi: '50% 60%', anchorage: '50% 50%' };
 // shots: [start, photo | [left, right], kicker, story #]
-const N = 11;
+const N = 11, N_ST = 10;   // N_ST = number of stories in the counter
 const SH = [
   [0, 'capitol', '', 0],
   [S[1], 'huang', 'NVIDIA', 1], [S[2], 'huang', 'NVIDIA', 1], [S[3], 'chart:nvda', 'NVIDIA', 1], [S[4], 'nvidiahq', 'NVIDIA', 1],
@@ -126,7 +126,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   // header + kicker + counter
   const kk = kick && t < ENDC ? pop(t, SH.find(s => s[2] === kick)[0], 0.3) : 0;
   $('kick').style.opacity = kick && t < ENDC ? 1 : 0; $('kick').textContent = kick; $('kick').style.transform = `skewX(-8deg) scale(${kk.toFixed(3)})`;
-  $('cnt').style.opacity = n >= 1 && n <= 10 ? 1 : 0; $('cnt').textContent = `${n}/10`;
+  $('cnt').style.opacity = n >= 1 && n <= N_ST ? 1 : 0; $('cnt').innerHTML = `<b>${n}</b> / ${N_ST}`; $('cnt').style.transform = `scale(${(t - a < 0.4 && SH.findIndex(x => x[3] === n) === i ? pop(t, a, 0.35) : 1).toFixed(3)})`;   // bigger: viewers see more is coming (her note)
   $('head').style.opacity = t < 1.7 || t >= ENDC ? 0 : 1;
   // big number / stamp
   const B = isChart(p) ? null : BIG.find(x => t >= x[0] && t < x[1]); /* a chart carries its own number */ if (B) { const q = pop(t, B[0], 0.32), f = 1 - smooth(B[1] - 0.2, B[1], t);
