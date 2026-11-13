@@ -8,7 +8,8 @@ const smooth = (a, b, x) => { const k = span(x, a, b); return k * k * (3 - 2 * k
 const easeOut = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
 const pop = (t, a, d = 0.3) => { const k = clamp((t - a) / d, 0, 1); return k <= 0 ? 0.001 : 1 + 0.25 * Math.sin(Math.PI * k) * (1 - k) - (1 - k) * (1 - k) * 0.9; };
 const S = SENT, wordT = (w, after = 0) => { const q = WORDS.find(x => x[0] >= after - 0.01 && x[2].replace(/[^A-Za-z0-9-]/g, '').toLowerCase().startsWith(w.toLowerCase())); return q ? q[0] : after; };
-const ENDC = VO_END + 0.35, T_END = ENDC + 4.9;
+const ENDC = VO_END + 0.3, T_END = ENDC + 2.2;   // her rule Nov 13: the recap at the end lasts ~2 s and has pictures
+const T_CTA = S[S.length - 1];   // the last sentence is the follow call (no question to the viewers — her rule Nov 13)
 // photo framing: object-position (faces high in the frame)
 const POS = { huang: '50% 25%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
   tomb: '55% 50%', hegseth: '50% 20%', flame: '50% 55%', massie: '50% 22%', witkoff: '50% 22%', kushner: '50% 22%', putin: '50% 22%', kreml: '50% 50%', darchiev: '50% 22%', capitol: '50% 30%', mississippi: '50% 60%', anchorage: '50% 50%' };
@@ -16,7 +17,7 @@ const POS = { huang: '50% 25%', nvidiahq: '50% 50%', flatbush: '50% 40%', brookl
 const N = 11;
 const SH = [
   [0, 'capitol', '', 0],
-  [S[1], 'huang', 'NVIDIA', 1], [S[2], 'huang2', 'NVIDIA', 1], [S[3], 'nvidiahq', 'NVIDIA', 1],
+  [S[1], 'huang', 'NVIDIA', 1], [S[2], 'huang', 'NVIDIA', 1], [S[3], 'nvidiahq', 'NVIDIA', 1],
   [S[5], 'flatbush', 'BROOKLYN, NY', 2], [S[6], 'brooklyn', 'BROOKLYN, NY', 2], [S[7], 'fdny', 'BROOKLYN, NY', 2],
   [S[8], ['colom', 'hydesmith'], 'MISSISSIPPI', 3], [S[9], 'colom', 'MISSISSIPPI', 3],
   [S[10], ['peltola', 'sullivan'], 'ALASKA', 4],
@@ -26,7 +27,9 @@ const SH = [
   [S[14], 'massie', 'EPSTEIN FILES', 8],
   [S[15], ['witkoff', 'kushner'], 'RUSSIA', 9], [wordT('Vladimir', S[15]) - 0.1, 'putin', 'RUSSIA', 9],
   [S[16], 'darchiev', 'RUSSIA', 10],
-  [S[18], 'capitol', '', 11]];
+  [T_CTA, 'capitol', '', 11]];
+// the 2-second recap: [photo, line] (one per story, 5–6 max)
+const RECAP = [['huang', 'NVIDIA’S CEO RESIGNED'], ['flatbush', 'BROOKLYN COLLAPSE: 8 DEAD'], ['colom', 'MISSISSIPPI ELECTS A DEMOCRAT'], ['peltola', 'ALASKA STILL COUNTING'], ['darchiev', 'RUSSIA’S U.S. ENVOY DIED']];
 const shotIx = t => { let i = 0; while (i < SH.length - 1 && t >= SH[i + 1][0]) i++; return i; };
 // big numbers / stamps: [from, to, text, sub, colour class]
 const BIG = [
@@ -42,25 +45,27 @@ const BIG = [
   [wordT('stop', S[12]), S[13], '“SILENCE AND RESPECT”', 'THE TOMB GUARD', 'w'],
   [wordT('250', S[13]), S[14], '250 FT', 'TRUMP’S PLANNED ARCH', 'r'],
   [wordT('218', S[14]), S[15], '218', 'SIGNATURES — A NEW VOTE', 'b'],
-  [wordT('died', S[16]), S[18] - 0.1, 'DIED SUDDENLY', 'NO CAUSE GIVEN', 'r']];
+  [wordT('died', S[16]), S[18] - 0.1, 'DIED SUDDENLY', 'NO CAUSE GIVEN', 'r']].map(b => (b[1] === S[18] - 0.1 ? [b[0], T_CTA - 0.1, ...b.slice(2)] : b));
 // two-photo tags
 const TAGS = { colom: ['WON', 'b'], hydesmith: ['LOST', 'g'], peltola: ['LEADS', 'b'], sullivan: ['TRAILS', 'g'], witkoff: ['WITKOFF', 'w'], kushner: ['KUSHNER', 'w'] };
 const NAMES = { huang: 'JENSEN HUANG', huang2: 'JENSEN HUANG', colom: 'SCOTT COLOM', hydesmith: 'CINDY HYDE-SMITH', peltola: 'MARY PELTOLA', sullivan: 'DAN SULLIVAN', bessent: 'SCOTT BESSENT', hegseth: 'PETE HEGSETH', massie: 'THOMAS MASSIE', putin: 'VLADIMIR PUTIN', darchiev: 'ALEXANDER DARCHIEV', flame: 'JFK’S ETERNAL FLAME', tomb: 'TOMB OF THE UNKNOWN SOLDIER', flatbush: 'FLATBUSH AVENUE', nvidiahq: 'NVIDIA HQ · SANTA CLARA' };
-const src = k => `assets/news/big/${k === 'huang2' ? 'huang' : k}.jpg`;
+const src = k => `assets/news/big/${k}.jpg`;
+const ASP = {};   // photo aspect w/h, filled in sceneReady
 // her rule (Nov 13 2026): soften death/violence words ON SCREEN (stamps, captions, end card) — TikTok's text scan can cut reach; the VOICE stays natural
 const SOFT = [[/\bkill(ed|ing|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdead\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdie(d|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdeath(s)?\b/gi, m => m[0] + '*' + m.slice(2)],
   [/\bshoot(ing|er)?\b/gi, m => m.slice(0, 2) + '**' + m.slice(4)], [/\bmurder(ed|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bsuicide\b/gi, () => 'su*cide']];
 const soft = s => SOFT.reduce((a, [re, f]) => a.replace(re, f), s);
 const CHUNKS = (() => { const out = []; let cur = []; WORDS.forEach((w, i) => { cur.push(w); const end = /[.?!]$/.test(w[2]) || (/[,:]$/.test(w[2]) && cur.length >= 3) || cur.length >= 5; if (end || i === WORDS.length - 1) { out.push(cur); cur = []; } }); return out; })();
 function capHTML(t) { const c = CHUNKS.find(ch => t >= ch[0][0] - 0.05 && t < (ch[ch.length - 1][1] + 0.2)); if (!c) return ''; return c.map(w => `<span class="${t >= w[0] && t < w[1] + 0.08 ? 'y' : ''}">${soft(w[2])}</span>`).join(' '); }
-function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (key.length % 2) ? 1 : -1, k = key === 'huang2' ? 1.35 : 1.0;
-  const sc = k * (1.04 + 0.14 * u), tx = dir * 18 * (u - 0.5), ty = key === 'huang2' ? 60 : -8 * u;
+function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (Math.round(a * 10) % 2) ? 1 : -1, asp = ASP[key] || 1.4;
+  if (w > 600 && asp < 1.3) { const w2 = Math.round(Math.max(asp, 0.72) * 720); x += (w - w2) / 2; w = w2; }   // portrait / square: narrow the card, keep the whole photo (her note Nov 13: no eyes-only crops)
+  const sc = 1.02 + 0.07 * u, tx = dir * 10 * (u - 0.5), ty = -5 * u;
   const nm = NAMES[key] && w > 600 ? `<div class="nm">${NAMES[key]}</div>` : NAMES[key] ? `<div class="nm sm">${NAMES[key]}</div>` : '';
   const tg = TAGS[key] ? `<div class="tg ${TAGS[key][1]}" style="transform:scale(${pop(t, a + 0.35, 0.25).toFixed(3)})">${TAGS[key][0]}</div>` : '';
   return `<div class="ph" style="left:${x}px;width:${w}px"><img src="${src(key)}" style="object-position:${POS[key] || POS[key.replace(/\d$/, '')] || '50% 30%'};transform:translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${sc.toFixed(4)})">${nm}${tg}</div>`; }
 function shotHTML(i, t) { const [a, p] = SH[i], b = i < SH.length - 1 ? SH[i + 1][0] : T_END;
   return Array.isArray(p) ? photoHTML(p[0], t, a, b, 487, 40) + photoHTML(p[1], t, a, b, 487, 553) : photoHTML(p, t, a, b, 1000, 40); }
-const bgKey = p => Array.isArray(p) ? p[0] : p === 'huang2' ? 'huang' : p;
+const bgKey = p => Array.isArray(p) ? p[0] : p;
 function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   // slide-in of the new shot over the old one (0.28 s), with a short blur
   const k = i > 0 ? easeOut(span(t, a, a + 0.28)) : 1;
@@ -81,15 +86,15 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   else $('big').style.opacity = 0;
   // hook (frame 0) and CTA
   $('hook').style.opacity = 1 - smooth(1.45, 1.75, t); $('hook').style.transform = `scale(${pop(t, 0, 0.3).toFixed(3)})`;
-  $('cta').style.opacity = t >= S[18] - 0.1 && t < ENDC ? smooth(S[18] - 0.1, S[18] + 0.2, t) : 0; $('cta').style.transform = `scale(${pop(t, S[18] - 0.1, 0.35).toFixed(3)})`;
+  $('cta').style.opacity = t >= T_CTA - 0.1 && t < ENDC ? smooth(T_CTA - 0.1, T_CTA + 0.2, t) : 0; $('cta').style.transform = `scale(${pop(t, T_CTA - 0.1, 0.35).toFixed(3)})`;
   $('cap').innerHTML = t < ENDC ? capHTML(t) : '';
-  $('end').style.opacity = smooth(ENDC, ENDC + 0.35, t); $('endT').style.opacity = smooth(ENDC + 0.1, ENDC + 0.45, t); $('endS').style.opacity = smooth(ENDC + 0.7, ENDC + 1.1, t);
+  $('end').style.opacity = smooth(ENDC, ENDC + 0.2, t); $('endT').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endS').style.opacity = t >= ENDC ? 1 : 0;
+  if (t >= ENDC) $('endS').innerHTML = RECAP.map(([k, l], j) => `<div class="rc" style="opacity:${smooth(ENDC + 0.1 + j * 0.08, ENDC + 0.25 + j * 0.08, t).toFixed(2)};transform:translateX(${(60 * (1 - easeOut(span(t, ENDC + 0.1 + j * 0.08, ENDC + 0.4 + j * 0.08)))).toFixed(0)}px)"><img src="${src(k)}" style="object-position:${POS[k] || '50% 25%'}"><span>${soft(l)}</span></div>`).join('');
   return true; }
 window.renderAt = renderAt;
-document.getElementById('endS').innerHTML = soft(document.getElementById('endS').innerHTML);
-const ALL = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : [s[1]]).map(src))];
+const KEYS = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : [s[1]]).concat(RECAP.map(r => r[0])))], ALL = KEYS.map(src);
 window.sceneReady = (async () => { await document.fonts.ready; await Promise.all(['900', '800', '700'].map(w => document.fonts.load(`${w} 60px Inter`)).concat([document.fonts.load('400 60px Anton')]));
-  await Promise.all(ALL.map(f => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = f; }))); renderAt(0); return true; })();
+  await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
-  [S[1], 'shutter', 0.7], [S[3], 'coins', 0.5], [S[8], 'cheer', 0.4], [S[14], 'paper', 0.6], [S[18], 'ding', 0.6], [ENDC, 'thud', 0.5]];
+  [S[1], 'shutter', 0.7], [S[3], 'coins', 0.5], [S[8], 'cheer', 0.4], [S[14], 'paper', 0.6], [T_CTA, 'ding', 0.6], [ENDC, 'whoosh', 0.5]];
