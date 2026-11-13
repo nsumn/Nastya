@@ -55,19 +55,34 @@ const TAGS = { colom: ['WON', 'b'], hydesmith: ['LOST', 'g'], peltola: ['LEADS',
 const NAMES = { huang: 'JENSEN HUANG', huang2: 'JENSEN HUANG', colom: 'SCOTT COLOM', hydesmith: 'CINDY HYDE-SMITH', peltola: 'MARY PELTOLA', sullivan: 'DAN SULLIVAN', bessent: 'SCOTT BESSENT', hegseth: 'PETE HEGSETH', massie: 'THOMAS MASSIE', putin: 'VLADIMIR PUTIN', darchiev: 'ALEXANDER DARCHIEV', flame: 'JFK’S ETERNAL FLAME', tomb: 'TOMB OF THE UNKNOWN SOLDIER', flatbush: 'FLATBUSH AVENUE', nvidiahq: 'NVIDIA HQ · SANTA CLARA' };
 const src = k => `assets/news/big/${k}.jpg`;
 const ASP = {};
-const ORIG = { huang: 70 };   // per-photo zoom origin (% of height): 70 = push toward the chin so the forehead goes (Huang, her note) — default 40   // photo aspect w/h, filled in sceneReady
+const ORIG = {};   // per-photo zoom origin (% of height): 70 = push toward the chin so the forehead goes (Huang, her note) — default 40   // photo aspect w/h, filled in sceneReady
 // her rule (Nov 13 2026): soften death/violence words ON SCREEN (stamps, captions, end card) — TikTok's text scan can cut reach; the VOICE stays natural
 const SOFT = [[/\bkill(ed|ing|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdead\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdie(d|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bdeath(s)?\b/gi, m => m[0] + '*' + m.slice(2)],
   [/\bshoot(ing|er)?\b/gi, m => m.slice(0, 2) + '**' + m.slice(4)], [/\bmurder(ed|s)?\b/gi, m => m[0] + '*' + m.slice(2)], [/\bsuicide\b/gi, () => 'su*cide']];
 const soft = s => SOFT.reduce((a, [re, f]) => a.replace(re, f), s);
 const CHUNKS = (() => { const out = []; let cur = []; WORDS.forEach((w, i) => { cur.push(w); const end = /[.?!]$/.test(w[2]) || (/[,:]$/.test(w[2]) && cur.length >= 3) || cur.length >= 5; if (end || i === WORDS.length - 1) { out.push(cur); cur = []; } }); return out; })();
 function capHTML(t) { const c = CHUNKS.find(ch => t >= ch[0][0] - 0.05 && t < (ch[ch.length - 1][1] + 0.2)); if (!c) return ''; return c.map(w => `<span class="${t >= w[0] && t < w[1] + 0.08 ? 'y' : ''}">${soft(w[2])}</span>`).join(' '); }
+// AUTO-FRAMING for photos with a face (tools/plug_faces.py → faces.json), the photographers' rules (Nov 13 research):
+//  eyes on the upper-third line (a touch lower, 0.36, under our kicker plate) · face ≈ 46% of the card height at the end of the push (medium close-up)
+//  · if it's tight, crop the FOREHEAD / top of the head, never the chin: chin stays ≥ 7% above the bottom edge for the whole push (chin ≈ eyes + 0.76 face-box heights) · no gaps: the photo always covers the card
+//  · the push zooms around the eyes, so the face never drifts out · scenes without a face keep cover + POS/ORIG.
+let FACES = {};
+function faceLayout(key, W, H, u, dir) { const F = FACES[key]; if (!F || !F.faces.length) return null; const [x, y, fw, fh] = F.faces[0], iw = F.w, ih = F.h; if (fw < 0.15 * iw) return null;
+  const eye = y + 0.42 * fh, chin = y + 1.18 * fh, cx = x + fw / 2, c0 = Math.max(W / iw, H / ih);   // Haar boxes stop at the mouth: the chin is ~1.18 box heights down
+  // cover the card whenever the chin can stay in with the eyes no higher than 0.2 H (tight close-ups crop the forehead — fine); only a headshot too tight even for that floats on its own blurred copy
+  const fill = (chin - eye) * c0 * 1.06 <= 0.73 * H, sMax = 0.73 * H / (chin - eye);
+  let sEnd = fill ? Math.min(Math.max(c0 * 1.12, 0.46 * H / fh), sMax) : 0.5 * H / (chin - eye), sStart = fill ? Math.max(c0, sEnd / 1.12) : sEnd / 1.1;
+  if (fill && sEnd < c0 * 1.04) sEnd = c0 * 1.04;
+  const sc = sStart + (sEnd - sStart) * u, eyeT = fill ? Math.min(0.36 * H, 0.93 * H - (chin - eye) * sEnd) : 0.36 * H;
+  let L = W / 2 + dir * 8 * (u - 0.5) - cx * sc, T = eyeT - eye * sc; if (fill) { L = Math.min(0, Math.max(W - iw * sc, L)); T = Math.min(0, Math.max(H - ih * sc, T)); }
+  return (fill ? '' : 'FLOAT') + `left:${L.toFixed(1)}px;top:${T.toFixed(1)}px;width:${(iw * sc).toFixed(1)}px;height:${(ih * sc).toFixed(1)}px;max-width:none;object-fit:fill`; }
 function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (Math.round(a * 10) % 2) ? 1 : -1, asp = ASP[key] || 1.4;
-  // full-width card (her choice Nov 13); framing is PER PHOTO (POS + ORIG) — look at each one, don't change the defaults for one bad crop
-  const sc = 1.04 + 0.14 * u, tx = dir * 18 * (u - 0.5), ty = 0;   // the push she likes (Nov 13); zoom origin per photo (ORIG)
+  const fl = faceLayout(key, w, 720, u, dir);
+  const sc = 1.04 + 0.14 * u, tx = dir * 18 * (u - 0.5), ty = 0;   // scenes: the push she likes (Nov 13), zoom origin per photo (ORIG)
   const nm = NAMES[key] && w > 600 ? `<div class="nm">${NAMES[key]}</div>` : NAMES[key] ? `<div class="nm sm">${NAMES[key]}</div>` : '';
   const tg = TAGS[key] ? `<div class="tg ${TAGS[key][1]}" style="transform:scale(${pop(t, a + 0.35, 0.25).toFixed(3)})">${TAGS[key][0]}</div>` : '';
-  return `<div class="ph" style="left:${x}px;width:${w}px"><img src="${src(key)}" style="transform-origin:50% ${ORIG[key] || 40}%;object-position:${POS[key] || (asp < 1.2 ? '50% 22%' : '50% 40%')};transform:translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${sc.toFixed(4)})">${nm}${tg}</div>`; }
+  const flt = fl && fl.startsWith('FLOAT'), st = fl ? `position:absolute;${fl.replace('FLOAT', '')}${flt ? ';-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)' : ''}` : `transform-origin:50% ${ORIG[key] || 40}%;object-position:${POS[key] || (asp < 1.2 ? '50% 22%' : '50% 40%')};transform:translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${sc.toFixed(4)})`;
+  return `<div class="ph" style="left:${x}px;width:${w}px">${flt ? `<img src="${src(key)}" style="filter:blur(26px) brightness(.7);transform:scale(1.2)">` : ''}<img src="${src(key)}" style="${st}">${nm}${tg}</div>`; }
 function shotHTML(i, t) { const [a, p] = SH[i], b = i < SH.length - 1 ? SH[i + 1][0] : T_END;
   return Array.isArray(p) ? photoHTML(p[0], t, a, b, 487, 40) + photoHTML(p[1], t, a, b, 487, 553) : photoHTML(p, t, a, b, 1000, 40); }
 const bgKey = p => Array.isArray(p) ? p[0] : p;
@@ -98,7 +113,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   return true; }
 window.renderAt = renderAt;
 const KEYS = [...new Set(SH.flatMap(s => Array.isArray(s[1]) ? s[1] : [s[1]]).concat(RECAP.map(r => r[0])))], ALL = KEYS.map(src);
-window.sceneReady = (async () => { await document.fonts.ready; await Promise.all(['900', '800', '700'].map(w => document.fonts.load(`${w} 60px Inter`)).concat([document.fonts.load('400 60px Anton')]));
+window.sceneReady = (async () => { await document.fonts.ready; try { FACES = await (await fetch('assets/news/big/faces.json')).json(); } catch (e) { FACES = {}; } await Promise.all(['900', '800', '700'].map(w => document.fonts.load(`${w} 60px Inter`)).concat([document.fonts.load('400 60px Anton')]));
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
