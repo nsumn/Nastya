@@ -61,7 +61,8 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   // slide-in of the new shot over the old one (0.28 s), with a short blur
   const k = i > 0 ? easeOut(span(t, a, a + 0.28)) : 1;
   let h = '';
-  if (k < 1) h += `<div class="band" style="transform:translateX(${(-1080 * k * 0.35).toFixed(0)}px);opacity:${(1 - k).toFixed(2)}">${shotHTML(i - 1, t)}</div>`;
+  const INTRO = new URLSearchParams(location.search).get('intro') === '1';
+  if (k < 1 && !(INTRO && i === 1)) h += `<div class="band" style="transform:translateX(${(-1080 * k * 0.35).toFixed(0)}px);opacity:${(1 - k).toFixed(2)}">${shotHTML(i - 1, t)}</div>`;
   h += `<div class="band" style="transform:translateX(${(1080 * (1 - k)).toFixed(0)}px);filter:blur(${(10 * (1 - k)).toFixed(1)}px)">${shotHTML(i, t)}</div>`;
   $('bands').innerHTML = h; $('bands').className = BIG.some(x => t >= x[0] - 0.1 && t < x[1]) ? 'hidenm' : '';
   $('bg').src = src(bgKey(p)); $('bg').style.transform = `scale(${(1.35 + 0.05 * Math.sin(t * 0.2)).toFixed(3)})`;
