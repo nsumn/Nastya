@@ -320,7 +320,7 @@ function update(t) {
   // ---- objects ----
   dome.visible = true; dome.scale.setScalar(Math.max(pop(t, tw.hwangto - .3, .5), .001));
   puffUpdate(heatPuffs, V(-1.8, .05, -1.6), t, (t > tw.hwangto - .2 && t < tw.s1) ? 1 : 0, { size: .45, rise: 1.4, spread: .7, op: .22 });
-  ice.visible = t > tw.eoreum - .3; ice.scale.setScalar(Math.max(pop(t, tw.eoreum - .3, .5), .001));
+  ice.visible = t > tw.eoreum - .3 && !(t > tw.bamsae && t < tw.chukha + .01); ice.scale.setScalar(Math.max(pop(t, tw.eoreum - .3, .5), .001));
   puffUpdate(coldPuffs, V(1.95, 1.7, -1.3), t, ice.visible ? .8 : 0, { size: .3, rise: -1.4, spread: .5, op: .3, speed: .35 });
   counter.visible = t < tw.g2 + .5 && t > tw.s1 - .5;
   stacks.forEach((s, i) => s.scale.setScalar(Math.max(pop(t, tw.ipgu - .2 + i * .12), .001)));
