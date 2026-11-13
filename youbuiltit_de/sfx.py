@@ -155,6 +155,35 @@ def s_honk():
     t = t_(.55); x = (np.sign(np.sin(2 * np.pi * 415 * t)) + np.sign(np.sin(2 * np.pi * 523 * t))) * .5
     return norm(lp(x, 2500) * env(len(t), .01, d=.08), .6)
 
+def s_knock():    # fist on a wall: low thud + wood knock
+    th = sweep(140, 55, .22) * env(int(.22 * SR), .002, d=.07); k = bp(noise(.22), 400, 1800) * env(int(.22 * SR), .001, d=.02)
+    return norm(th + .7 * k)
+def s_jingle():   # tambourine: shaken metal jingles + skin hit
+    d = .45; t = t_(d); x = np.zeros(len(t))
+    for f in [5200, 6100, 7300, 8400]: x += np.sin(2 * np.pi * f * t + R.uniform(0, 6)) * np.exp(-t / .12)
+    x = x * (1 + .8 * np.sin(2 * np.pi * 22 * t)) * .25 + hp(noise(d), 6000) * np.exp(-t / .08) * .8 + sweep(220, 120, d) * np.exp(-t / .03) * .5
+    return norm(x * env(len(t), .001), .7)
+def s_fanfare():  # karaoke "100 points" fanfare
+    out = np.zeros(int(1.8 * SR))
+    for i, f in enumerate([784, 784, 784, 1047]):
+        d = 1.2 if i == 3 else .11; t = t_(d); x = (np.sign(np.sin(2 * np.pi * f * t)) * .4 + np.sin(2 * np.pi * f * 1.5 * t) * .3) * env(len(t), .003, r=.04, d=.7 if i == 3 else None)
+        o = int(i * .13 * SR); out[o:o + len(x)] += lp(x, 5000)
+    return norm(out, .7)
+def bed_karaoke(d, bpm=118):   # cheesy karaoke backing: four-on-the-floor kick, offbeat hat, synth chords, bass
+    beat = 60 / bpm; out = np.zeros(int((d + 2) * SR)); hz = lambda m: 440 * 2 ** ((m - 69) / 12)
+    prog = [[60, 64, 67], [57, 60, 64], [65, 69, 72], [67, 71, 74]]
+    kick = sweep(120, 45, .18) * env(int(.18 * SR), .001, d=.06); hat = hp(noise(.05), 7000) * env(int(.05 * SR), .001, d=.012)
+    for b in range(int(d / (4 * beat)) + 1):
+        ch = prog[b % 4]
+        for i in range(4):
+            o = int((b * 4 + i) * beat * SR); out[o:o + len(kick)] += kick[:max(0, len(out) - o)] * .7
+            o2 = int((b * 4 + i + .5) * beat * SR); out[o2:o2 + len(hat)] += hat[:max(0, len(out) - o2)] * .35
+            t = t_(beat * .45); st = sum(np.sign(np.sin(2 * np.pi * hz(m) * t)) for m in ch) * .07 * env(len(t), .005, d=.15)
+            out[o2:o2 + len(st)] += lp(st, 2500)[:max(0, len(out) - o2)]
+            t = t_(beat * .9); bs = np.sin(2 * np.pi * hz(ch[0] - 24) * t) * .35 * env(len(t), .005, d=.3)
+            out[o:o + len(bs)] += bs[:max(0, len(out) - o)]
+    return norm(out[:int(d * SR)], .5)
+
 def music_box(d, bpm=96):
     """Cozy music-box loop: F - Dm - Bb - C, arpeggios + soft pad."""
     beat = 60 / bpm; out = np.zeros(int((d + 2) * SR))
