@@ -42,7 +42,7 @@ function renderAt(t) { let h = '';
     const n = Math.min(CLIPN - 1, Math.floor(t * 30 * 0.75)); h += `<div class="lay" style="transform:scale(${(1.05 + 0.06 * t / T1).toFixed(3)})"><img src="assets/news/wh_clip/f_${String(n + 1).padStart(4, '0')}.jpg"></div><div id="vig"></div>`; }
   // common overlay: date plate + title + captions (+ white flash at the hand-over)
   const k1 = pop(t, 0.12, 0.35), k2 = pop(t, 0.4, 0.35);
-  h += `<div id="date" style="transform:skewX(-8deg) scale(${k1.toFixed(3)})">FRIDAY · NOV 13, 2026</div>`;
+  h += `<div id="date" style="transform:skewX(-8deg) scale(${k1.toFixed(3)})">AMERICA IN BRIEF · FRIDAY, NOV 13</div>`;
   h += `<div id="tt" style="transform:scale(${k2.toFixed(3)})">What happened in <span class="r">America</span><br><span class="s">in the last 24 hours</span></div>`;
   h += `<div id="cap">${capHTML(t)}</div><div id="wf" style="opacity:${(0.85 * Math.max(0, 1 - Math.abs(t - T1) / 0.12)).toFixed(2)}"></div>`;
   $('ov').innerHTML = h; $('ov').style.transform = V !== 'O' ? `scale(${(1 + 0.25 * out * out).toFixed(3)})` : ''; return true; }

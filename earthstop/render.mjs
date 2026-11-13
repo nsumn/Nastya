@@ -5,6 +5,10 @@
 //   swiftshader — Chromium's built-in software GL, works everywhere, ~10–20% slower.
 //   gpu         — a real graphics card (Mac/PC), many times faster.
 import fs from 'fs';
+import { spawn } from 'child_process';
+// the http server on 8765 dies between cloud tool calls now and then (ERR_CONNECTION_REFUSED) — start it again right here
+try { await fetch('http://127.0.0.1:8765/'); } catch { spawn('python3', ['-m', 'http.server', '8765', '--bind', '127.0.0.1'], { cwd: new URL('.', import.meta.url).pathname, detached: true, stdio: 'ignore' }).unref();
+  for (let i = 0; i < 50; i++) { try { await fetch('http://127.0.0.1:8765/'); break; } catch { await new Promise(r => setTimeout(r, 200)); } } }
 
 let chromium;
 for (const p of ['playwright', '/opt/node-tools/node_modules/playwright/index.mjs', '/opt/npm-tools/node_modules/playwright/index.mjs']) {

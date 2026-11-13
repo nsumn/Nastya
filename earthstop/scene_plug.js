@@ -136,7 +136,7 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   $('hook').style.opacity = 1 - smooth(1.45, 1.75, t); $('hook').style.transform = `scale(${pop(t, 0, 0.3).toFixed(3)})`;
   $('cta').style.opacity = t >= T_CTA - 0.1 && t < ENDC ? smooth(T_CTA - 0.1, T_CTA + 0.2, t) : 0; $('cta').style.transform = `scale(${pop(t, T_CTA - 0.1, 0.35).toFixed(3)})`;
   $('cap').innerHTML = t < ENDC ? capHTML(t) : '';
-  $('end').style.opacity = smooth(ENDC, ENDC + 0.2, t); $('endT').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endS').style.opacity = t >= ENDC ? 1 : 0;
+  $('end').style.opacity = smooth(ENDC, ENDC + 0.2, t); $('endT').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endB').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endS').style.opacity = t >= ENDC ? 1 : 0;
   if (t >= ENDC) $('endS').innerHTML = RECAP.map(([k, l], j) => `<div class="rc" style="opacity:${smooth(ENDC + 0.1 + j * 0.08, ENDC + 0.25 + j * 0.08, t).toFixed(2)};transform:translateX(${(60 * (1 - easeOut(span(t, ENDC + 0.1 + j * 0.08, ENDC + 0.4 + j * 0.08)))).toFixed(0)}px)"><img src="${src(k)}" style="object-position:${POS[k] || '50% 25%'}"><span>${soft(l)}</span></div>`).join('');
   return true; }
 window.renderAt = renderAt;
