@@ -15,8 +15,8 @@ const S = SENT, wordT = (w, after = 0) => { const q = WORDS.find(x => x[0] >= af
 const ENDC = VO_END + 0.3, T_END = ENDC + 2.2;   // her rule Nov 13: the recap at the end lasts ~2 s and has pictures
 const T_CTA = S[S.length - 1];   // the last sentence is the follow call (no question to the viewers — her rule Nov 13)
 // photo framing: object-position (faces high in the frame)
-const POS = { huang: '50% 25%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
-  tomb: '55% 50%', hegseth: '50% 20%', flame: '50% 55%', massie: '50% 22%', witkoff: '50% 22%', kushner: '50% 22%', putin: '50% 22%', kreml: '50% 50%', darchiev: '50% 22%', capitol: '50% 30%', mississippi: '50% 60%', anchorage: '50% 50%' };
+const POS = { huang: '50% 10%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 14%', hydesmith: '50% 14%', peltola: '50% 14%', sullivan: '50% 14%', bessent: '50% 14%',
+  tomb: '55% 50%', hegseth: '50% 20%', flame: '50% 55%', massie: '50% 14%', witkoff: '50% 14%', kushner: '50% 14%', putin: '50% 14%', kreml: '50% 50%', darchiev: '50% 14%', capitol: '50% 30%', mississippi: '50% 60%', anchorage: '50% 50%' };
 // shots: [start, photo | [left, right], kicker, story #]
 const N = 11;
 const SH = [
@@ -62,11 +62,11 @@ const soft = s => SOFT.reduce((a, [re, f]) => a.replace(re, f), s);
 const CHUNKS = (() => { const out = []; let cur = []; WORDS.forEach((w, i) => { cur.push(w); const end = /[.?!]$/.test(w[2]) || (/[,:]$/.test(w[2]) && cur.length >= 3) || cur.length >= 5; if (end || i === WORDS.length - 1) { out.push(cur); cur = []; } }); return out; })();
 function capHTML(t) { const c = CHUNKS.find(ch => t >= ch[0][0] - 0.05 && t < (ch[ch.length - 1][1] + 0.2)); if (!c) return ''; return c.map(w => `<span class="${t >= w[0] && t < w[1] + 0.08 ? 'y' : ''}">${soft(w[2])}</span>`).join(' '); }
 function photoHTML(key, t, a, b, w, x) { const u = span(t, a, b + 0.4), dir = (Math.round(a * 10) % 2) ? 1 : -1, asp = ASP[key] || 1.4;
-  if (w > 600 && asp < 1.3) { const w2 = Math.round(Math.max(asp, 0.72) * 720); x += (w - w2) / 2; w = w2; }   // portrait / square: narrow the card, keep the whole photo (her note Nov 13: no eyes-only crops)
-  const sc = 1.02 + 0.07 * u, tx = dir * 10 * (u - 0.5), ty = -5 * u;
+  // full-width card (her choice Nov 13), but never an eyes-only crop: no extra zoom, a gentle 6% push from 1.0; portraits keep head + shoulders (object-position high)
+  const sc = 1.0 + 0.06 * u, tx = dir * 8 * (u - 0.5) * (sc - 1) * 10, ty = 0;
   const nm = NAMES[key] && w > 600 ? `<div class="nm">${NAMES[key]}</div>` : NAMES[key] ? `<div class="nm sm">${NAMES[key]}</div>` : '';
   const tg = TAGS[key] ? `<div class="tg ${TAGS[key][1]}" style="transform:scale(${pop(t, a + 0.35, 0.25).toFixed(3)})">${TAGS[key][0]}</div>` : '';
-  return `<div class="ph" style="left:${x}px;width:${w}px"><img src="${src(key)}" style="object-position:${POS[key] || POS[key.replace(/\d$/, '')] || '50% 30%'};transform:translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${sc.toFixed(4)})">${nm}${tg}</div>`; }
+  return `<div class="ph" style="left:${x}px;width:${w}px"><img src="${src(key)}" style="object-position:${POS[key] || (asp < 1.2 ? '50% 18%' : '50% 40%')};transform:translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${sc.toFixed(4)})">${nm}${tg}</div>`; }
 function shotHTML(i, t) { const [a, p] = SH[i], b = i < SH.length - 1 ? SH[i + 1][0] : T_END;
   return Array.isArray(p) ? photoHTML(p[0], t, a, b, 487, 40) + photoHTML(p[1], t, a, b, 487, 553) : photoHTML(p, t, a, b, 1000, 40); }
 const bgKey = p => Array.isArray(p) ? p[0] : p;
