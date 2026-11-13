@@ -12,7 +12,8 @@ const smooth = (a, b, x) => { const k = span(x, a, b); return k * k * (3 - 2 * k
 const easeOut = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
 const pop = (t, a, d = 0.3) => { const k = clamp((t - a) / d, 0, 1); return k <= 0 ? 0.001 : 1 + 0.25 * Math.sin(Math.PI * k) * (1 - k) - (1 - k) * (1 - k) * 0.9; };
 const S = SENT, wordT = (w, after = 0) => { const q = WORDS.find(x => x[0] >= after - 0.01 && x[2].replace(/[^A-Za-z0-9-]/g, '').toLowerCase().startsWith(w.toLowerCase())); return q ? q[0] : after; };
-const T_CTA = S[S.length - 1];   // the last sentence is the follow call (no question to the viewers — her rule Nov 13)
+const T_CTA = S[S.length - 1];
+const FOL_MODE = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('fol') : null) || 'brand';   // 'brand' | 'tiktok' (see the FOLLOW call in renderAt)   // the last sentence is the follow call (no question to the viewers — her rule Nov 13)
 const ENDC = Math.max(VO_END + 0.3, T_CTA + 2.1), T_END = ENDC + 2.2;   // the follow animation needs ~2 s; the recap at the end lasts ~2 s and has pictures
 // photo framing: object-position (faces high in the frame)
 const POS = { huang: '50% 34%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
@@ -139,13 +140,19 @@ function renderAt(t) { const i = shotIx(t), [a, p, kick, n] = SH[i];
   else $('big').style.opacity = 0;
   // hook (frame 0) and CTA
   $('hook').style.opacity = 1 - smooth(1.45, 1.75, t); $('hook').style.transform = `scale(${pop(t, 0, 0.3).toFixed(3)})`;
-  // FOLLOW animation (her idea Nov 13, like TikTok's avatar "+"): our avatar pops in, a finger taps the red "+", it flips to a ✓
+  // FOLLOW call. FOL_MODE 'brand' (default since Nov 14): our avatar + our own red FOLLOW plate that pulses — nothing that imitates TikTok's UI.
+  // 'tiktok' = the Nov 13 version (red "+", a finger taps it, it turns into ✓) — the Nov 13 evening edition with it was removed by TikTok's automod; a fake platform button is a likely trigger.
+  if (FOL_MODE === 'tiktok') {
+  // (tiktok mode) (her idea Nov 13, like TikTok's avatar "+"): our avatar pops in, a finger taps the red "+", it flips to a ✓
   { const f0 = T_CTA + 0.05, on = t >= f0 && t < ENDC; const OUT = 1 - smooth(ENDC - 0.25, ENDC, t); $('fol').style.opacity = on ? smooth(f0, f0 + 0.2, t) * OUT : 0;
     if (on) { const tap = f0 + 1.0, k = pop(t, f0, 0.35), fu = easeOut(span(t, f0 + 0.35, tap - 0.05)), press = t >= tap - 0.05 && t < tap + 0.15 ? 0.82 : 1, done = t >= tap + 0.12;
       $('fol').style.transform = `translateX(-50%) scale(${k.toFixed(3)})`;
       $('folPlus').style.transform = `translateX(-50%) scale(${(press * (done ? pop(t, tap + 0.12, 0.3) : 1)).toFixed(3)}) rotate(${done ? 0 : 0}deg)`; $('folPlus').className = done ? 'ok' : '';
       $('folPlus').textContent = done ? '✓' : '+'; $('folRip').style.opacity = t >= tap ? (1 - span(t, tap, tap + 0.5)).toFixed(2) : 0; $('folRip').style.transform = `translateX(-50%) scale(${(1 + 1.6 * span(t, tap, tap + 0.5)).toFixed(3)})`;
       $('folHand').style.transform = `translate(${(160 * (1 - fu)).toFixed(0)}px, ${(220 * (1 - fu) + (press < 1 ? 10 : 0)).toFixed(0)}px) rotate(-14deg)`; $('folHand').style.opacity = 1; } }
+  } else { const f0 = T_CTA + 0.05, on = t >= f0 && t < ENDC, OUT = 1 - smooth(ENDC - 0.25, ENDC, t); $('fol').style.opacity = on ? smooth(f0, f0 + 0.2, t) * OUT : 0;
+    if (on) { $('fol').style.transform = `translateX(-50%) scale(${pop(t, f0, 0.35).toFixed(3)})`; $('folHand').style.opacity = 0; $('folRip').style.opacity = 0; $('folPlus').className = 'brand'; $('folPlus').textContent = 'FOLLOW';
+      const beat = (t - f0 - 0.5) % 0.9; $('folPlus').style.transform = `translateX(-50%) scale(${(t < f0 + 0.35 ? pop(t, f0 + 0.2, 0.3) : 1 + 0.06 * Math.max(0, Math.sin(Math.PI * Math.max(0, beat) / 0.3)) * (beat < 0.3 ? 1 : 0)).toFixed(3)})`; } }
   $('cta').style.opacity = t >= T_CTA - 0.1 && t < ENDC ? smooth(T_CTA - 0.1, T_CTA + 0.2, t) * (1 - smooth(ENDC - 0.25, ENDC, t)) : 0; $('cta').style.transform = `scale(${pop(t, T_CTA - 0.1, 0.35).toFixed(3)})`;
   $('cap').innerHTML = t < ENDC ? capHTML(t) : ''; $('cap').style.opacity = t >= T_CTA ? 1 - smooth(ENDC - 0.25, ENDC, t) : 1;
   $('end').style.opacity = smooth(ENDC, ENDC + 0.2, t); $('endT').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endB').style.opacity = smooth(ENDC + 0.05, ENDC + 0.25, t); $('endS').style.opacity = t >= ENDC ? 1 : 0;
@@ -157,4 +164,4 @@ window.sceneReady = (async () => { await document.fonts.ready; try { FACES = awa
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
-  [S[1], 'shutter', 0.7], [S[3], 'boom', 0.35], [S[7], 'crowd', 0.5], [S[8], 'alarm', 0.45], [S[11], 'shutter', 0.6], [S[15], 'coins', 0.5], [S[16], 'type', 0.5], [S[17], 'cheer', 0.4], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'follow', 0.9], [ENDC, 'whoosh', 0.5]];
+  [S[1], 'shutter', 0.7], [S[3], 'boom', 0.35], [S[7], 'crowd', 0.5], [S[8], 'alarm', 0.45], [S[11], 'shutter', 0.6], [S[15], 'coins', 0.5], [S[16], 'type', 0.5], [S[17], 'cheer', 0.4], [T_CTA, 'ding', 0.6], ...(FOL_MODE === 'tiktok' ? [[T_CTA + 1.05, 'follow', 0.9]] : [[T_CTA + 0.3, 'pop', 0.6]]), [ENDC, 'whoosh', 0.5]];
