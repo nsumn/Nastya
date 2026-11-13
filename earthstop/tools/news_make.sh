@@ -14,7 +14,7 @@ X=$(basename "$P" | sed 's/^parts_//'); MAIN=$(ls $P/*_main.js | head -1); TIMES
 D=out/$N; mkdir -p $D
 curl -s -o /dev/null http://127.0.0.1:8765/ || bash setup.sh > /dev/null 2>&1
 run() { echo "== $1"; }
-if [ $ST = voice ] || [ $ST = all ]; then run voice; VOICE=drew SPEED=1.1 python3 tools/news_voice.py $N $D/vo.txt; fi
+if [ $ST = voice ] || [ $ST = all ]; then run voice; VOICE=${VOICE:-sarah} SPEED=${SPEED:-1.05} python3 tools/news_voice.py $N $D/vo.txt; fi
 if [ $ST = timing ] || [ $ST = all ]; then run timing; TRIMHEAD=1 MAXGAP=0.14 OUTJS=$TIMES python3 tools/news_timing.py $N 0.0 ""; fi
 if [ $ST = build ] || [ $ST = all ] || [ $ST = test ]; then run build; EXTRA=""; grep -q "addHiPatch\|groundLabel" $MAIN && EXTRA=parts_map2/m5_hi.js
   cat parts_day/y_head.js $TIMES parts_map2/m3_map.js $EXTRA $MAIN > scene_$X.js && node --check scene_$X.js && echo "scene_$X.js ok"; fi
