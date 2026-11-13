@@ -18,15 +18,15 @@ const N = 10, N_ST = 9;   // N_ST = number of stories in the counter
 // Nov 13 EVENING edition ("Here's what happened in America today")
 const SH = [
   [0, 'trump', '', 0],
-  [S[1], ['trump', 'vance'], 'IRAN', 1], [S[2], 'trump', 'IRAN', 1], [S[3], 'hormuz', 'IRAN', 1],
-  [S[5], ['vanhollen', 'schumer'], 'SENATE', 2], [wordT('Bernie', S[5]) - 0.1, 'sanders', 'SENATE', 2], [S[6], 'senate', 'SENATE', 2],
-  [S[7], 'msft', 'MICROSOFT', 3],
-  [S[8], 'brooklyn', 'BROOKLYN, NY', 4], [S[9], 'mamdani', 'BROOKLYN, NY', 4],
-  [S[10], 'tomb', 'ARLINGTON', 5], [S[11], 'hegseth', 'ARLINGTON', 5],
-  [S[13], ['timscott', 'huang'], 'NVIDIA', 6], [wordT('Howard', S[13]) - 0.1, 'lutnick', 'NVIDIA', 6], [S[14], 'chart:nvcap', 'NVIDIA', 6],
-  [S[15], 'fbihq', 'FBI', 7],
-  [S[16], 'holscher', 'KANSAS', 8],
-  [S[17], ['witkoff', 'kushner'], 'RUSSIA · UKRAINE', 9], [wordT('Vladimir', S[17]) - 0.1, 'putin', 'RUSSIA · UKRAINE', 9], [wordT('Volodymyr', S[17]) - 0.1, 'zelensky', 'RUSSIA · UKRAINE', 9],
+  [S[1], ['trump', 'vance'], 'IRAN', 1], [S[2], 'trump', 'IRAN', 1], [S[3], 'hormuz', 'IRAN', 1], [S[5], 'trump', 'IRAN', 1],
+  [S[6], ['vanhollen', 'schumer'], 'SENATE', 2], [wordT('Bernie', S[6]) - 0.1, 'sanders', 'SENATE', 2], [S[7], 'senate', 'SENATE', 2],
+  [S[8], 'msft', 'MICROSOFT', 3],
+  [S[9], 'brooklyn', 'BROOKLYN, NY', 4], [S[10], 'mamdani', 'BROOKLYN, NY', 4],
+  [S[11], 'tomb', 'ARLINGTON', 5], [S[12], 'hegseth', 'ARLINGTON', 5],
+  [S[14], ['timscott', 'huang'], 'NVIDIA', 6], [wordT('Howard', S[14]) - 0.1, 'lutnick', 'NVIDIA', 6], [S[15], 'chart:nvcap', 'NVIDIA', 6],
+  [S[16], 'fbihq', 'FBI', 7],
+  [S[17], 'holscher', 'KANSAS', 8],
+  [S[18], ['witkoff', 'kushner'], 'RUSSIA · UKRAINE', 9], [wordT('Vladimir', S[18]) - 0.1, 'putin', 'RUSSIA · UKRAINE', 9], [wordT('Volodymyr', S[18]) - 0.1, 'zelensky', 'RUSSIA · UKRAINE', 9],
   [T_CTA, 'none', '', 10]];   // her note Nov 13: no photo under the follow call — just the avatar animation
 // the 2-second recap: [photo, line] (one per story, 5–6 max)
 const RECAP = [['vance', 'VANCE PULLED FROM IRAN TALKS'], ['vanhollen', 'SCHUMER GETS A CHALLENGER'], ['msft', 'HUGE MICROSOFT OUTAGE'], ['brooklyn', 'BROOKLYN COLLAPSE: 23 INJURED'], ['huang', 'HUANG CALLED TO TESTIFY']];
@@ -37,17 +37,18 @@ const BIG = [
   [S[2] + 0.1, S[3] - 0.1, '“WE DON’T NEED A DEAL”', 'TRUMP ON IRAN', 'w'],
   [wordT('destroyed', S[3]), wordT('four', S[4]) - 0.1, 'RADAR HIT?', 'IRAN’S CLAIM · BAHRAIN', 'r'],
   [wordT('four', S[4]), S[5] - 0.1, '4 TANKERS', 'HIT IN THE STRAIT OF HORMUZ', 'r'],
-  [wordT('challenge', S[5]), wordT('Bernie', S[5]) - 0.2, 'CHALLENGE', 'VAN HOLLEN VS SCHUMER', 'b'],
-  [wordT('50', S[6]), S[7] - 0.1, '50+ ARRESTED', 'SIT-IN AT SCHUMER’S OFFICE', 'r'],
-  [wordT('74', S[7]), S[8] - 0.1, '74 COUNTRIES', 'OUTLOOK · TEAMS · COPILOT DOWN', 'r'],
-  [wordT('23', S[8]), S[9] - 0.1, '23 INJURED', 'BUILDING COLLAPSE', 'r'],
-  [wordT('100', S[9]), S[10] - 0.1, '~100 SITES', 'TO BE INSPECTED', 'w'],
-  [wordT('medal', S[10]), S[11] - 0.1, 'MEDAL', 'FOR THE TOMB GUARD', 'b'],
-  [S[11] + 0.1, S[13] - 0.1, '“WE LOVE STANDARDS”', 'HEGSETH', 'w'],
-  [wordT('testify', S[13]), S[14] - 0.1, 'TO TESTIFY', 'NEXT MONTH · SENATE BANKING', 'b'],
-  [S[15] + 1.2, S[16] - 0.1, '$1.2B SEIZED', 'STOLEN BY NORTH KOREAN HACKERS', 'b'],
-  [wordT('won', S[16]), S[17] - 0.1, 'NEW GOVERNOR', 'DEMOCRAT · KANSAS', 'b'],
-  [wordT('largest', S[17]), T_CTA - 0.1, 'BIGGEST SWAP', 'OF THE WAR — ZELENSKY', 'w']];
+  [wordT('hold', S[5]), S[6] - 0.1, 'STRIKES ON HOLD', 'AFTER GULF ALLIES ASKED', 'w'],
+  [wordT('challenge', S[6]), wordT('Bernie', S[6]) - 0.2, 'CHALLENGE', 'VAN HOLLEN VS SCHUMER', 'b'],
+  [wordT('50', S[7]), S[8] - 0.1, '50+ ARRESTED', 'SIT-IN AT SCHUMER’S OFFICE', 'r'],
+  [wordT('74', S[8]), S[9] - 0.1, '74 COUNTRIES', 'OUTLOOK · TEAMS · COPILOT DOWN', 'r'],
+  [wordT('23', S[9]), S[10] - 0.1, '23 INJURED', 'BUILDING COLLAPSE', 'r'],
+  [wordT('100', S[10]), S[11] - 0.1, '~100 SITES', 'TO BE INSPECTED', 'w'],
+  [wordT('medal', S[11]), S[12] - 0.1, 'MEDAL', 'FOR THE TOMB GUARD', 'b'],
+  [S[12] + 0.1, S[14] - 0.1, '“WE LOVE STANDARDS”', 'HEGSETH', 'w'],
+  [wordT('testify', S[14]), S[15] - 0.1, 'TO TESTIFY', 'NEXT MONTH · SENATE BANKING', 'b'],
+  [S[16] + 1.2, S[17] - 0.1, '$1.2B SEIZED', 'STOLEN BY NORTH KOREAN HACKERS', 'b'],
+  [wordT('won', S[17]), S[18] - 0.1, 'NEW GOVERNOR', 'DEMOCRAT · KANSAS', 'b'],
+  [wordT('largest', S[18]), T_CTA - 0.1, 'BIGGEST SWAP', 'OF THE WAR — ZELENSKY', 'w']];
 // two-photo tags
 const TAGS = { trump: ['PRESIDENT', 'w'], vance: ['PULLED OUT', 'g'], vanhollen: ['CHALLENGER', 'b'], schumer: ['LEADER', 'g'], timscott: ['SUMMONS', 'b'], huang: ['TO TESTIFY', 'g'], witkoff: ['WITKOFF', 'w'], kushner: ['KUSHNER', 'w'] };
 const NAMES = { trump: 'DONALD TRUMP', vance: 'JD VANCE', vanhollen: 'CHRIS VAN HOLLEN', schumer: 'CHUCK SCHUMER', sanders: 'BERNIE SANDERS', mamdani: 'ZOHRAN MAMDANI', hegseth: 'PETE HEGSETH', tomb: 'TOMB OF THE UNKNOWN SOLDIER', timscott: 'SEN. TIM SCOTT', lutnick: 'HOWARD LUTNICK', huang: 'JENSEN HUANG', holscher: 'CINDY HOLSCHER', putin: 'VLADIMIR PUTIN', zelensky: 'VOLODYMYR ZELENSKY', fbihq: 'FBI HEADQUARTERS', hormuz: 'STRAIT OF HORMUZ' };
@@ -152,4 +153,4 @@ window.sceneReady = (async () => { await document.fonts.ready; try { FACES = awa
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
-  [S[1], 'shutter', 0.7], [S[3], 'boom', 0.35], [S[6], 'crowd', 0.5], [S[7], 'alarm', 0.45], [S[10], 'shutter', 0.6], [S[14], 'coins', 0.5], [S[15], 'type', 0.5], [S[16], 'cheer', 0.4], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'follow', 0.9], [ENDC, 'whoosh', 0.5]];
+  [S[1], 'shutter', 0.7], [S[3], 'boom', 0.35], [S[7], 'crowd', 0.5], [S[8], 'alarm', 0.45], [S[11], 'shutter', 0.6], [S[15], 'coins', 0.5], [S[16], 'type', 0.5], [S[17], 'cheer', 0.4], [T_CTA, 'ding', 0.6], [T_CTA + 1.05, 'follow', 0.9], [ENDC, 'whoosh', 0.5]];
