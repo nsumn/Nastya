@@ -38,5 +38,5 @@ music news1 89.4 0.22 94.85
 89.18 whoosh 0.45
 89.38 pop 0.6
 90.85 whoosh 0.45
-91.15 pop 0.6
+91.90 follow 0.9
 92.95 whoosh 0.5
