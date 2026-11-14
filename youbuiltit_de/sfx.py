@@ -155,6 +155,11 @@ def s_honk():
     t = t_(.55); x = (np.sign(np.sin(2 * np.pi * 415 * t)) + np.sign(np.sin(2 * np.pi * 523 * t))) * .5
     return norm(lp(x, 2500) * env(len(t), .01, d=.08), .6)
 
+def s_siren():    # police "wee-woo" (Korean style), ~1.6 s
+    out = []
+    for i in range(4): out.append(sweep(700 if i % 2 == 0 else 950, 950 if i % 2 == 0 else 700, .4))
+    x = np.concatenate(out); return norm(lp(x, 3000) * env(len(x), .02, r=.15), .55)
+
 def s_knock():    # fist on a wall: low thud + wood knock
     th = sweep(140, 55, .22) * env(int(.22 * SR), .002, d=.07); k = bp(noise(.22), 400, 1800) * env(int(.22 * SR), .001, d=.02)
     return norm(th + .7 * k)
