@@ -13,7 +13,7 @@ const T1 = SENT[1];   // story 1 starts
 document.documentElement.classList.add('v' + V);
 const CHUNKS = (() => { const out = []; let cur = []; WORDS.forEach((w, i) => { cur.push(w); const end = /[.?!]$/.test(w[2]) || (/[,:]$/.test(w[2]) && cur.length >= 3) || cur.length >= 5; if (end || i === WORDS.length - 1) { out.push(cur); cur = []; } }); return out; })();
 function capHTML(t) { const c = CHUNKS.find(ch => t >= ch[0][0] - 0.05 && t < (ch[ch.length - 1][1] + 0.2)); if (!c) return ''; return c.map(w => `<span class="${t >= w[0] && t < w[1] + 0.08 ? 'y' : ''}">${w[2]}</span>`).join(' '); }
-const STORIES = ['trump', 'vance', 'vanhollen', 'schumer', 'msft', 'brooklyn', 'mamdani', 'hegseth', 'huang', 'holscher', 'putin', 'zelensky'];
+const STORIES = ['board', 'planes', 'atc', 'duffy', 'measles', 'vaccine', 'trump', 'xi', 'putin', 'kreiss', 'huang', 'shenzhen'];
 const TICK = 'NVIDIA CEO JENSEN HUANG RESIGNS  •  BROOKLYN BUILDING COLLAPSE: 8 DEAD  •  MISSISSIPPI ELECTS A DEMOCRAT  •  ALASKA STILL COUNTING  •  BESSENT MOVES TO A MILITARY BASE  •  KENNEDYS SUE OVER TRUMP’S ARCH  •  ';
 // ---- E: waving flag on a 2D canvas ----
 const FC = document.createElement('canvas'); FC.width = 1080; FC.height = 1920; FC.id = 'flag';
@@ -42,8 +42,8 @@ function renderAt(t) { let h = '';
     const n = Math.min(CLIPN - 1, Math.floor(t * 30 * 0.75)); h += `<div class="lay" style="transform:scale(${(1.05 + 0.06 * t / T1).toFixed(3)})"><img src="assets/news/wh_clip/f_${String(n + 1).padStart(4, '0')}.jpg"></div><div id="vig"></div>`; }
   // common overlay: date plate + title + captions (+ white flash at the hand-over)
   const k1 = pop(t, 0.12, 0.35), k2 = pop(t, 0.4, 0.35);
-  h += `<div id="date" style="transform:skewX(-8deg) scale(${k1.toFixed(3)})">FRIDAY · NOV 13</div>`;
-  h += `<div id="tt" style="transform:scale(${k2.toFixed(3)})">What happened in <span class="r">America</span><br><span class="s">today</span></div>`;
+  h += `<div id="date" style="transform:skewX(-8deg) scale(${k1.toFixed(3)})">SATURDAY · NOV 14</div>`;
+  h += `<div id="tt" style="transform:scale(${k2.toFixed(3)})">What happened in <span class="r">America</span><br><span class="s">in the last 12 hours</span></div>`;
   h += `<div id="cap">${capHTML(t)}</div><div id="wf" style="opacity:${(0.85 * Math.max(0, 1 - Math.abs(t - T1) / 0.12)).toFixed(2)}"></div>`;
   $('ov').innerHTML = h; $('ov').style.transform = V !== 'O' ? `scale(${(1 + 0.25 * out * out).toFixed(3)})` : ''; return true; }
 window.renderAt = renderAt;
