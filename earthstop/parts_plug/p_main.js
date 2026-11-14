@@ -15,18 +15,19 @@ const ENDC = Math.max(VO_END + 0.3, T_CTA + 2.1), T_END = ENDC + 2.2;   // the f
 const POS = { huang: '50% 34%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
   tomb: '55% 50%', hegseth: '50% 20%', flame: '50% 55%', massie: '50% 22%', witkoff: '50% 22%', kushner: '50% 22%', putin: '50% 22%', kreml: '50% 50%', darchiev: '50% 22%', capitol: '50% 30%', mississippi: '50% 60%', anchorage: '50% 50%' };
 // shots: [start, photo | [left, right], kicker, story #]
-const N = 6, N_ST = 5;   // N_ST = number of stories in the counter
+const N = 7, N_ST = 6;   // N_ST = number of stories in the counter
 // Nov 14 MORNING edition ("Here's what happened in America in the last 12 hours")
 const SH = [
   [0, 'board', '', 0],
   [S[1], 'planes', 'AIR TRAVEL', 1], [S[2], 'atc', 'AIR TRAVEL', 1], [S[3], 'board', 'AIR TRAVEL', 1], [S[4], 'duffy', 'AIR TRAVEL', 1],
-  [S[5], 'measles', 'HEALTH', 2], [S[7], 'vaccine', 'HEALTH', 2],
-  [S[8], ['trump', 'xi'], 'SUMMIT', 3], [wordT('Vladimir', S[8]) - 0.1, 'putin', 'SUMMIT', 3], [S[9], 'shenzhen', 'SUMMIT', 3],
-  [S[10], 'kreiss', 'ALASKA', 4],
-  [S[11], 'huang', 'NVIDIA', 5], [wordT('earnings', S[11]) - 0.2, 'nvidiahq', 'NVIDIA', 5],
-  [T_CTA, 'none', '', 6]];   // her note Nov 13: no photo under the follow call
+  [S[5], 'nola', 'NEW ORLEANS', 2],
+  [S[8], 'measles', 'HEALTH', 3], [S[10], 'vaccine', 'HEALTH', 3],
+  [S[11], ['trump', 'xi'], 'SUMMIT', 4], [wordT('Vladimir', S[11]) - 0.1, 'putin', 'SUMMIT', 4], [S[12], 'shenzhen', 'SUMMIT', 4],
+  [S[13], 'kreiss', 'ALASKA', 5],
+  [S[14], 'huang', 'NVIDIA', 6], [wordT('earnings', S[14]) - 0.2, 'nvidiahq', 'NVIDIA', 6],
+  [T_CTA, 'none', '', 7]];   // her note Nov 13: no photo under the follow call
 // the 2-second recap: [photo, line] (one per story, 5–6 max)
-const RECAP = [['board', 'ALL U.S. FLIGHTS GROUNDED'], ['measles', 'MEASLES-FREE STATUS LOST'], ['xi', 'TRUMP–XI–PUTIN SUMMIT'], ['kreiss', 'ALASKA FLIPS BLUE'], ['huang', 'HUANG TO BRIEF CONGRESS']];
+const RECAP = [['board', 'ALL U.S. FLIGHTS GROUNDED'], ['nola', 'NEW ORLEANS: ALL SURVIVED'], ['measles', 'MEASLES-FREE STATUS LOST'], ['xi', 'TRUMP–XI–PUTIN SUMMIT'], ['kreiss', 'ALASKA FLIPS BLUE'], ['huang', 'HUANG TO BRIEF CONGRESS']];
 const shotIx = t => { let i = 0; while (i < SH.length - 1 && t >= SH[i + 1][0]) i++; return i; };
 // big numbers / stamps: [from, to, text, sub, colour class]
 const BIG = [
@@ -34,16 +35,18 @@ const BIG = [
   [wordT('four', S[2]), S[3] - 0.1, '4+ HOURS', 'TELECOM OUTAGE · AIR TRAFFIC CONTROL', 'r'],
   [wordT('one', S[3]), S[4] - 0.1, '1.5M PASSENGERS', 'THOUSANDS OF FLIGHTS CANCELED', 'r'],
   [wordT('cyberattack', S[4]) - 0.3, S[5] - 0.1, 'NOT A HACK', 'OLD, OVERLOADED TECH — DUFFY', 'w'],
-  [wordT('26', S[5]), S[6] - 0.1, 'LOST AFTER 26 YEARS', 'U.S. MEASLES-FREE STATUS', 'r'],
-  [wordT('5100', S[6]), S[7] - 0.1, '5,100+ CASES', 'IN 2026', 'r'],
-  [wordT('first', S[9]), wordT('nuclear', S[9]) - 0.1, 'FIRST EVER', 'TRUMP · XI · PUTIN', 'b'],
-  [wordT('nuclear', S[9]), S[10] - 0.1, 'NUCLEAR ARMS', 'TOP OF THE AGENDA', 'w'],
-  [wordT('flipping', S[10]), S[11] - 0.1, 'FLIPPED', 'ALASKA GOVERNOR → DEMOCRAT', 'b'],
-  [wordT('closed', S[11]), wordT('earnings', S[11]) - 0.3, 'CLOSED-DOOR', 'BRIEFING WITH HOUSE LAWMAKERS', 'w'],
-  [wordT('earnings', S[11]), T_CTA - 0.1, 'EARNINGS TUESDAY', 'NVIDIA · NOV 17', 'b']];
+  [wordT('capsized', S[5]), S[6] - 0.1, 'CAPSIZED', 'TANKER HIT A RIVER CRUISE BOAT', 'r'],
+  [S[6], S[8] - 0.1, 'EVERYONE SURVIVED', '“A MIRACLE” — THE MAYOR', 'b'],
+  [wordT('26', S[8]), S[9] - 0.1, 'LOST AFTER 26 YEARS', 'U.S. MEASLES-FREE STATUS', 'r'],
+  [wordT('5100', S[9]), S[10] - 0.1, '5,100+ CASES', 'IN 2026', 'r'],
+  [wordT('first', S[12]), wordT('nuclear', S[12]) - 0.1, 'FIRST EVER', 'TRUMP · XI · PUTIN', 'b'],
+  [wordT('nuclear', S[12]), S[13] - 0.1, 'NUCLEAR ARMS', 'TOP OF THE AGENDA', 'w'],
+  [wordT('flipping', S[13]), S[14] - 0.1, 'FLIPPED', 'ALASKA GOVERNOR → DEMOCRAT', 'b'],
+  [wordT('closed', S[14]), wordT('earnings', S[14]) - 0.3, 'CLOSED-DOOR', 'BRIEFING WITH HOUSE LAWMAKERS', 'w'],
+  [wordT('earnings', S[14]), T_CTA - 0.1, 'EARNINGS TUESDAY', 'NVIDIA · NOV 17', 'b']];
 // two-photo tags
 const TAGS = { trump: ['PRESIDENT', 'w'], xi: ['XI JINPING', 'w'] };
-const NAMES = { duffy: 'SEAN DUFFY', xi: 'XI JINPING', trump: 'DONALD TRUMP', putin: 'VLADIMIR PUTIN', kreiss: 'JONATHAN KREISS-TOMKINS', huang: 'JENSEN HUANG', atc: 'AIR TRAFFIC CONTROL', shenzhen: 'SHENZHEN, CHINA', nvidiahq: 'NVIDIA HQ · SANTA CLARA' };
+const NAMES = { nola: 'NEW ORLEANS', riverboat: 'MISSISSIPPI RIVER CRUISE', duffy: 'SEAN DUFFY', xi: 'XI JINPING', trump: 'DONALD TRUMP', putin: 'VLADIMIR PUTIN', kreiss: 'JONATHAN KREISS-TOMKINS', huang: 'JENSEN HUANG', atc: 'AIR TRAFFIC CONTROL', shenzhen: 'SHENZHEN, CHINA', nvidiahq: 'NVIDIA HQ · SANTA CLARA' };
 const src = k => `assets/news/big/${k}.jpg`;
 const ASP = {};
 const ORIG = {};   // per-photo zoom origin (% of height): 70 = push toward the chin so the forehead goes (Huang, her note) — default 40   // photo aspect w/h, filled in sceneReady
@@ -151,4 +154,4 @@ window.sceneReady = (async () => { await document.fonts.ready; try { FACES = awa
   await Promise.all(KEYS.map(k => new Promise(r => { const im = new Image(); im.onload = () => { ASP[k] = im.naturalWidth / im.naturalHeight; r(); }; im.onerror = r; im.src = src(k); }))); renderAt(0); return true; })();
 // audio cues for tools/plug_cues.mjs
 const CUES = [[0.02, 'whoosh', 0.5], [0.06, 'stamp', 0.6], ...SH.slice(1).map(s => [s[0], 'whoosh', 0.45]), ...BIG.map(b => [b[0], /DEAD|DIED/.test(b[2]) ? 'thud' : /RESIGNED|SPY|SILENCE/.test(b[2]) ? 'stamp' : 'pop', 0.6]),
-  [S[1], 'jet', 0.5], [S[2], 'alarm', 0.4], [S[5], 'paper', 0.5], [S[8], 'shutter', 0.6], [S[10], 'cheer', 0.4], [S[11], 'shutter', 0.6], ...(FOL_MODE === 'tiktok' ? [[T_CTA + 1.05, 'follow', 0.9]] : [[T_CTA + 0.3, 'pop', 0.6]]), [ENDC, 'whoosh', 0.5]];
+  [S[1], 'jet', 0.5], [S[2], 'alarm', 0.4], [S[8], 'paper', 0.5], [S[11], 'shutter', 0.6], [S[13], 'cheer', 0.4], [S[14], 'shutter', 0.6], ...(FOL_MODE === 'tiktok' ? [[T_CTA + 1.05, 'follow', 0.9]] : [[T_CTA + 0.3, 'pop', 0.6]]), [ENDC, 'whoosh', 0.5]];
