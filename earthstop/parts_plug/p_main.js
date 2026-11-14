@@ -9,7 +9,7 @@ const easeOut = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
 const pop = (t, a, d = 0.3) => { const k = clamp((t - a) / d, 0, 1); return k <= 0 ? 0.001 : 1 + 0.25 * Math.sin(Math.PI * k) * (1 - k) - (1 - k) * (1 - k) * 0.9; };
 const S = SENT, wordT = (w, after = 0) => { const q = WORDS.find(x => x[0] >= after - 0.01 && x[2].replace(/[^A-Za-z0-9-]/g, '').toLowerCase().startsWith(w.toLowerCase())); return q ? q[0] : after; };
 const T_CTA = S[S.length - 1];
-const FOL_MODE = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('fol') : null) || 'brand';   // 'brand' | 'tiktok' (see the FOLLOW call in renderAt)   // the last sentence is the follow call (no question to the viewers — her rule Nov 13)
+const FOL_MODE = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('fol') : null) || 'tiktok';   // her call Nov 14: the appeal restored the video, the TikTok-style follow animation is back   // 'brand' | 'tiktok' (see the FOLLOW call in renderAt)   // the last sentence is the follow call (no question to the viewers — her rule Nov 13)
 const ENDC = Math.max(VO_END + 0.3, T_CTA + 2.1), T_END = ENDC + 2.2;   // the follow animation needs ~2 s; the recap at the end lasts ~2 s and has pictures
 // photo framing: object-position (faces high in the frame)
 const POS = { huang: '50% 34%', nvidiahq: '50% 50%', flatbush: '50% 40%', brooklyn: '50% 45%', fdny: '40% 50%', colom: '50% 22%', hydesmith: '50% 22%', peltola: '50% 22%', sullivan: '50% 22%', bessent: '50% 22%',
