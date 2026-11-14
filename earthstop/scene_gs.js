@@ -149,14 +149,15 @@ function drawBoard(t, flip0, green = 0) { const g = HL.bctx, w = 1024, h = 640; 
   HL.btex.needsUpdate = true; }
 // ---------- 2) APRON: terminal + gates, a long taxiway queue with red stop bars, a runway ----------
 const APRON = mkSet({ top: '#2a62c8', bot: '#f0b878', fog: 0xe8c8a8, near: 700, far: 4200, hemi: [0xfff0e0, 0x6a6a60, 1.15], sun: [0xffc890, 2.8, V3(-60, 40, 30)], shadow: 140 });
+APRON.cam.near = 1.5; APRON.cam.far = 4500; APRON.cam.updateProjectionMatrix(); // depth precision: no z-fighting flicker on the runway/markings
 const AP = {}; { const sc = APRON.sc; const conc = new THREE.ShaderMaterial({ lights: false, uniforms: {}, vertexShader: 'varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
-    fragmentShader: `${GLSL_HASH} varying vec3 vW; void main(){ float n=vn(vW.xz*0.35)*0.5+vn(vW.xz*2.1)*0.3; vec3 c=mix(vec3(0.075,0.075,0.08),vec3(0.11,0.11,0.115),n); float j=step(0.97,fract(vW.x/7.5))+step(0.97,fract(vW.z/7.5)); c*=1.0-0.08*min(j,1.0); gl_FragColor=vec4(c,1.0); }` });
-  const g = mesh(new THREE.PlaneGeometry(3000, 3000), conc, false, false); g.rotation.x = -Math.PI / 2; sc.add(g); gplane(sc, 3000, 900, '#7a9a5a', 0, 1100, 0.01);
+    fragmentShader: `${GLSL_HASH} varying vec3 vW; void main(){ float fw=length(fwidth(vW.xz)); float fine=clamp(1.0-fw*1.5,0.0,1.0); float n=vn(vW.xz*0.35)*0.5+vn(vW.xz*2.1)*0.3*fine+0.15*(1.0-fine); vec3 c=mix(vec3(0.075,0.075,0.08),vec3(0.11,0.11,0.115),n); float j=step(0.97,fract(vW.x/7.5))+step(0.97,fract(vW.z/7.5)); c*=1.0-0.08*min(j,1.0)*clamp(1.0-fw*6.0,0.0,1.0); gl_FragColor=vec4(c,1.0); }` });
+  const g = mesh(new THREE.PlaneGeometry(3000, 3000), conc, false, false); g.rotation.x = -Math.PI / 2; sc.add(g); gplane(sc, 3000, 900, '#7a9a5a', 0, 1100, 0.12);
   // terminal (glass + white roof) with 5 jet bridges and parked planes
   bx(260, 16, 40, '#6a8aa8', 0, 8, -60, sc, { roughness: 0.15, metalness: 0.35 }); bx(270, 2, 46, '#f0ece4', 0, 17, -60, sc); for (let i = -12; i <= 12; i++) bx(0.6, 16, 0.6, '#3a3e46', i * 10.6, 8, -39.6, sc);
   AP.gate = []; for (let i = 0; i < 5; i++) { const x = -100 + i * 50; bx(3.4, 3.4, 22, '#c8ccd0', x, 6, -27, sc); const p = makePlane(...LIVERY[i % 5]); p.rotation.y = -Math.PI / 2; p.position.set(x + 8, 5.3, 6); sc.add(p); AP.gate.push(p); }
   // taxiway (yellow centre line) with the queue + red stop bar at the runway hold line; the runway itself
-  bx(1400, 0.02, 0.5, '#e8c020', 0, 0.03, 120, sc); bx(1600, 0.02, 60, '#3a3a3c', 0, 0.02, 260, sc); for (let i = -40; i <= 40; i++) bx(18, 0.03, 1.2, '#f0f0f0', i * 40, 0.04, 260, sc);
+  bx(1400, 0.1, 0.5, '#e8c020', 0, 0.06, 120, sc); bx(1600, 0.2, 60, '#3a3a3c', 0, 0.1, 260, sc); for (let i = -40; i <= 40; i++) bx(18, 0.1, 1.2, '#f0f0f0', i * 40, 0.22, 260, sc);
   AP.queue = []; for (let i = 0; i < 9; i++) { const p = makePlane(...LIVERY[(i + 2) % 5]); p.position.set(260 - i * 75, 5.3, 120); sc.add(p); AP.queue.push(p); }
   AP.stop = []; for (let i = 0; i < 14; i++) { const m = mesh(new THREE.BoxGeometry(0.35, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: '#ff2020', toneMapped: false }), false, false); m.position.set(330, 0.15, 105 + i * 2.4); sc.add(m); AP.stop.push(m); }
   AP.takeoff = makePlane('#d8302a', '#c02420'); sc.add(AP.takeoff);
